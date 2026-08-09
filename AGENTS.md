@@ -1,10 +1,21 @@
 # AGENTS.md — spectrum
 
-The theme runtime of the Vibrant Gio design system: `system.LiveTheme`,
-which polls the OS light/dark preference and publishes it as an observable
-theme; `window`, which pairs that observable with an mvu window; and
-`preferences`, which persists the chosen theme name. Interpolating theme
-tokens between the two lives above, in `pulse/transition`.
+The token and theme layer of the Vibrant Gio design system, and the surface
+every layer above it styles against. `tokens` holds the typed values —
+ADR-007's colour ramps derived from a brand seed, the MD3 type roles, and
+the 4-pt spacing, radius, elevation and motion scales; `theme` publishes
+them as one `rx.Observable` per category, so a consumer rebuilds only for
+what it reads; `color` is the perceptual mathematics those palettes are
+derived with, CIELAB tone and OKLCh hue and chroma, gamut mapped rather
+than clamped. Around that core: `system` polls the OS light/dark preference
+and accent colour, `a11y` polls its reduce-motion, contrast and text-size
+preferences, `window` pairs a theme observable with an mvu window,
+`preferences` persists the user's explicit choice, `typeset` lays a type
+role's text out in the line box the role names rather than the one its
+glyphs happen to ink, and `export` — with `cmd/vg-tokens` in front of it —
+writes a theme out as the project layout `claude.ai/design` consumes.
+Interpolating between two themes is not here; it is a layer up, in
+`pulse/transition`.
 
 **Layer.** Tier 1 of ADR-001's stack, `mvu → spectrum → prism → pulse →
 cadence → markdown`. The token, theme and `a11y` contract the rest of the
@@ -67,7 +78,9 @@ height. A control draws `max(ControlHeight, lineBox + 2×PaddingY)`, so a
 Comfortable text field in BodyLarge is 40 dp against a 36 dp floor while a
 Comfortable button in LabelLarge is exactly 36.
 
-**Golden images.** None. Spectrum stores no rendered output — it computes
-colour, type and layout values and asserts on numbers. The golden-image
-harness lives in `prism/golden`, and the repos that render use it from
-there.
+**Golden images.** None, and the absence above is that fact rather than an
+omission: `sync-agents.sh` renders a Golden images section only for a clone
+that has a `testdata/golden/` directory, and `find . -type d -name golden`
+here finds none. Spectrum stores no rendered output — it computes colour, type
+and layout values and asserts on numbers. The harness the repositories that do
+render share is `prism/golden`.
