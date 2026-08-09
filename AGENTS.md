@@ -10,12 +10,14 @@ derived with, CIELAB tone and OKLCh hue and chroma, gamut mapped rather
 than clamped. Around that core: `system` polls the OS light/dark preference
 and accent colour, `a11y` polls its reduce-motion, contrast and text-size
 preferences, `window` pairs a theme observable with an mvu window,
-`preferences` persists the user's explicit choice, `typeset` lays a type
-role's text out in the line box the role names rather than the one its
-glyphs happen to ink, and `export` — with `cmd/vg-tokens` in front of it —
-writes a theme out as the project layout `claude.ai/design` consumes.
-Interpolating between two themes is not here; it is a layer up, in
-`pulse/transition`.
+`preferences` persists the user's explicit choice and republishes it as an
+`mvu/stream.Value` — ADR-008's third destination, one current-value stream
+per path, conflating rather than queueing so a stalled observer can never
+wedge a save, `typeset` lays a type role's text out in the line box the
+role names rather than the one its glyphs happen to ink, and `export` —
+with `cmd/vg-tokens` in front of it — writes a theme out as the project
+layout `claude.ai/design` consumes. Interpolating between two themes is not
+here; it is a layer up, in `pulse/transition`.
 
 **Layer.** Tier 1 of ADR-001's stack, `mvu → spectrum → prism → pulse →
 cadence → markdown`. The token, theme and `a11y` contract the rest of the
