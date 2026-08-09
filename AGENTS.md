@@ -7,13 +7,15 @@ theme; `window`, which pairs that observable with an mvu window; and
 tokens between the two lives above, in `pulse/transition`.
 
 **Layer.** Tier 1 of ADR-001's stack, `mvu → spectrum → prism → pulse →
-cadence → markdown`. It imports mvu; the G-B3 inversion moved the token and
-theme contract down out of prism into spectrum, E3.2 moved `a11y` down the
-same way, and `spectrum/transition` moved up into `pulse/transition`. F3.3
-deleted that last shim, so spectrum has no upward edge at all: check-layers
-records zero transitional edges for it. The design-system layers above
-(prism, pulse, cadence, markdown) and the workbench applications import
-spectrum.
+cadence → markdown`. The token, theme and `a11y` contract the rest of the
+system styles against lives here rather than in prism: goals G-B3 and E3.2
+moved it down, which is what makes a tier-1 spectrum possible at all. Its
+root module imports `font` and `mvu`. Imported by `cadence`, `markdown`,
+`prism` and `pulse`. Outside the tier table, also by the demo modules
+`mvu/example` and `prism/gallery` and all seven workbench applications.
+Both directions are measured rather than typed — `scripts/check-layers.sh
+--edges` reports the graph and `scripts/sync-agents.sh` renders these
+sentences from it — so correcting them here changes nothing.
 
 **Read the canonical guide before you write code against this module.** It is
 the organization's one agent guide — the module inventory with current tags,
