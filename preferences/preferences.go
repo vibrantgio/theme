@@ -21,7 +21,12 @@
 // every [Save]/[SaveTo] to the same path from this process — it never
 // completes, so unsubscribe (or Take) when done, and note that writes made
 // by other processes or by hand are NOT observed; there is no file watcher,
-// only the in-process Save notification. And nothing here turns the stored
+// only the in-process Save notification. Since G0C.5 it rides
+// [github.com/vibrantgio/mvu/stream.Value], so a subscriber that falls behind
+// converges on the newest preferences rather than replaying every save it
+// missed — which is what a current-value stream should do, and the reason
+// this is not the mechanism for anything whose every emission is
+// load-bearing. And nothing here turns the stored
 // Theme name into a theme value — there is no name-to-theme mapping in this
 // module yet, so an application persists a string and is entirely
 // responsible for interpreting it, including for the A11y overrides, which
@@ -42,6 +47,7 @@ import (
 	"sync"
 
 	"github.com/reactivego/rx"
+	"github.com/vibrantgio/mvu/stream"
 	"github.com/vibrantgio/spectrum/a11y"
 )
 
@@ -156,24 +162,26 @@ func ObserveFrom(path string) rx.Observable[Preferences] {
 }
 
 // streams is the in-process registry behind the emit-on-write contract:
-// one multicast per (cleaned) preferences path, shared by every Observe
-// subscription and fed by every successful Save.
+// one current-value stream per (cleaned) preferences path, shared by every
+// Observe subscription and fed by every successful Save. It is never pruned,
+// which is why the stream underneath it has to be one that costs nothing
+// while nobody is watching.
 var streams struct {
 	sync.Mutex
-	byPath map[string]stream
+	byPath map[string]pathStream
 }
 
-// stream is one path's live multicast: send feeds it (Save), obs replays
-// the latest value to a new subscriber and then follows (Observe).
-type stream struct {
+// pathStream is one path's live multicast: send feeds it (Save), obs hands
+// the current value to a new subscriber and then follows (Observe).
+type pathStream struct {
 	send rx.Observer[Preferences]
 	obs  rx.Observable[Preferences]
 }
 
-// streamFor returns path's multicast, creating it — seeded with the value
+// streamFor returns path's stream, creating it — seeded with the value
 // currently on disk — on first use. The registry key is the cleaned path,
 // so Save and Observe spellings of the same file meet the same stream.
-func streamFor(path string) (stream, error) {
+func streamFor(path string) (pathStream, error) {
 	key := filepath.Clean(path)
 	streams.Lock()
 	defer streams.Unlock()
@@ -182,15 +190,19 @@ func streamFor(path string) (stream, error) {
 	}
 	p, err := LoadFrom(path)
 	if err != nil {
-		return stream{}, err
+		return pathStream{}, err
 	}
-	// Replay depth 1 (the current value), with buffer headroom so a burst
-	// of saves never blocks the saver on a slow subscriber.
-	send, obs := rx.Subject[Preferences](0, 1, 128)
-	send(p, nil, false)
-	s := stream{send: send, obs: obs}
+	// A current-value stream, seeded with what is on disk. It was a bare
+	// rx.Subject until G0C.5, and it was the organization's last one in
+	// library code: this registry is process-global and never pruned, so
+	// every shell that opened and closed over a process's life spent one of
+	// rx.Subject's 32 subscription slots permanently and left a frozen
+	// cursor behind that would eventually pin the saver. ADR-008 destination
+	// 3 — a genuine stream, but never a bare Subject.
+	send, obs := stream.Value(p)
+	s := pathStream{send: send, obs: obs}
 	if streams.byPath == nil {
-		streams.byPath = make(map[string]stream)
+		streams.byPath = make(map[string]pathStream)
 	}
 	streams.byPath[key] = s
 	return s, nil

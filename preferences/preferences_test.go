@@ -251,3 +251,87 @@ func TestSaveOverwrites(t *testing.T) {
 		t.Errorf("got %+v, want %+v", got, want)
 	}
 }
+
+// TestObserveSurvivesShellChurn is G0C.5's regression, and the reason this
+// package came off a bare rx.Subject. The stream registry is process-global
+// and never pruned, so its subscriptions are the whole life of the process:
+// a window opens, observes the user's preferences, and closes again, over and
+// over. Under a bare rx.Subject each of those cost a subscription slot
+// permanently — the 33rd Observe on one path failed with "out of subject
+// subscriptions", against whichever caller happened to be next — and each
+// departure left a frozen cursor that would eventually pin SaveTo. Neither
+// can happen now, and every cycle must still see the value last saved.
+func TestObserveSurvivesShellChurn(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "preferences.json")
+
+	// rx.GoroutineContext, because that is what an application subscribes on
+	// and it is the scheduler the defect needs: a trampoline runs the
+	// departing receiver to completion, which parks its cursor and hides the
+	// leak, while a concurrent one is cancelled before it can.
+	for i := range 100 {
+		want := preferences.Preferences{Theme: string(rune('a' + i%26))}
+		if err := preferences.SaveTo(path, want); err != nil {
+			t.Fatalf("shell %d: save: %v", i, err)
+		}
+
+		values := make(chan preferences.Preferences, 4)
+		errs := make(chan error, 1)
+		sub := preferences.ObserveFrom(path).Subscribe(rx.GoroutineContext(),
+			func(p preferences.Preferences, err error, done bool) {
+				switch {
+				case err != nil:
+					select {
+					case errs <- err:
+					default:
+					}
+				case !done:
+					select {
+					case values <- p:
+					default:
+					}
+				}
+			})
+		select {
+		case got := <-values:
+			if got != want {
+				t.Fatalf("shell %d: got %+v, want %+v", i, got, want)
+			}
+		case err := <-errs:
+			t.Fatalf("shell %d: observe failed: %v", i, err)
+		case <-time.After(5 * time.Second):
+			t.Fatalf("shell %d: no emission", i)
+		}
+		sub.Unsubscribe()
+	}
+}
+
+// TestSaveIsNotBlockedByAStalledObserver is the harsher half of the same
+// defect, and the half prism/coordination's wrapper did not fix: a live
+// observer that stops draining used to pin the ring buffer's window, so once
+// SaveTo had written bufCap more values it blocked forever — on the goroutine
+// that called Save, which in an application is the one laying out the frame.
+func TestSaveIsNotBlockedByAStalledObserver(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "preferences.json")
+
+	block := make(chan struct{})
+	stalled := preferences.ObserveFrom(path).Subscribe(rx.GoroutineContext(),
+		func(preferences.Preferences, error, bool) { <-block })
+	defer func() { close(block); stalled.Unsubscribe() }()
+	time.Sleep(50 * time.Millisecond)
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for i := range 300 {
+			if err := preferences.SaveTo(path, preferences.Preferences{Theme: string(rune('a' + i%26))}); err != nil {
+				t.Errorf("save %d: %v", i, err)
+				return
+			}
+		}
+	}()
+	select {
+	case <-done:
+	case <-time.After(10 * time.Second):
+		t.Fatal("SaveTo blocked behind an observer that stopped draining")
+	}
+}
