@@ -111,7 +111,7 @@ package tokens
 //     noticed afterwards, by F4.4. Correcting a derivation that was not the
 //     source of the number corrects nothing.
 //   - ControlHeight is a floor for controls but a *pin* for stacked rows.
-//     components/list rows, cadence's table rows and header cells and sidebar items
+//     components/list rows, patterns' table rows and header cells and sidebar items
 //     are ControlHeight tall exactly (see the row table below). Moving 28 to 32
 //     is therefore not an arithmetic tidy-up; it is a visual change to every
 //     dense list and table in the system.
@@ -161,8 +161,8 @@ package tokens
 //	row                                     Comfortable   Compact   sizing
 //	---                                     -----------   -------   ------
 //	components/list row (list.RowHeight)         36            28        pinned to ControlHeight
-//	cadence/table body row and header cell  36            28        pinned to ControlHeight
-//	cadence/sidebar item                    36            28        pinned to ControlHeight
+//	patterns/table body row and header cell  36            28        pinned to ControlHeight
+//	patterns/sidebar item                    36            28        pinned to ControlHeight
 //	components/input dropdown option row         40            36        floor formula, BodyLarge
 //
 // The narrowest of these is the 28 dp Compact row. 28 ≥ 24, so every row in

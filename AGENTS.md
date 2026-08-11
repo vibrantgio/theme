@@ -20,11 +20,11 @@ layout `claude.ai/design` consumes. Interpolating between two themes is not
 here; it is a layer up, in `effects/transition`.
 
 **Layer.** Tier 1 of ADR-001's stack, `mvu → theme → components → effects →
-cadence → markdown`. The token, theme and `a11y` contract the rest of the
+patterns → markdown`. The token, theme and `a11y` contract the rest of the
 system styles against lives here rather than in components: goals G-B3 and
 E3.2 moved it down, which is what makes a tier-1 theme possible at all. Its
-root module imports `font` and `mvu`. Imported by `cadence`, `components`,
-`effects` and `markdown`. Outside the tier table, also by the demo modules
+root module imports `font` and `mvu`. Imported by `components`, `effects`,
+`markdown` and `patterns`. Outside the tier table, also by the demo modules
 `components/gallery` and `mvu/example` and all seven workbench
 applications. Both directions are measured rather than typed —
 `scripts/check-layers.sh --edges` reports the graph and

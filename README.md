@@ -60,7 +60,7 @@ and deliberately not in `DefaultTypography.Faces`.
 
 ## Where it sits
 
-Tier 1 of the stack — `mvu → theme → components → effects → cadence → markdown` —
+Tier 1 of the stack — `mvu → theme → components → effects → patterns → markdown` —
 and since the G-B3 inversion it really is the foundation: the module that owns
 the design values everything above is styled from. theme imports
 [mvu](https://github.com/vibrantgio/mvu) and
@@ -69,7 +69,7 @@ default `Typography`'s faces — and nothing above it. The deprecated
 `spectrum/transition` alias shim was the last upward edge in the whole stack;
 F3.3 of the [org plan](https://github.com/vibrantgio/.github) deleted it in
 v0.2.0, and the layer check now records no transitional edge at all.
-Everything above imports theme — components, effects, cadence and markdown all
+Everything above imports theme — components, effects, patterns and markdown all
 read `theme` and `tokens` from here, and the
 [workbench](https://github.com/vibrantgio/workbench) applications bootstrap
 `system` and `window`. The [organization page](https://github.com/vibrantgio)
@@ -157,7 +157,7 @@ func buildLayers(modelObs rx.Observable[Model]) func(th rx.Observable[theme.Them
 }
 ```
 
-From there `th` goes straight into components and cadence components, which take it
+From there `th` goes straight into components and patterns components, which take it
 as their first argument. A layer that needs the resolved values rather than the
 `Theme` subscribes to the category it reads — each `LiveTheme` emission is a
 static snapshot, every field an `rx.Of`, so the inner observable resolves
