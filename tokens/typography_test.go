@@ -8,7 +8,7 @@ import (
 	"golang.org/x/image/math/fixed"
 
 	"github.com/vibrantgio/font/notosansmono"
-	"github.com/vibrantgio/spectrum/tokens"
+	"github.com/vibrantgio/theme/tokens"
 )
 
 func TestDefaultTypographyRolesComplete(t *testing.T) {
@@ -413,7 +413,7 @@ func TestDeterministicShaperPinsTheCollection(t *testing.T) {
 // independent by construction — nothing here reads a font off the host — which
 // is what lets a component that legitimately draws an arrow stay testable.
 //
-// The import is test-only on purpose. spectrum must not link 596 KB of symbol
+// The import is test-only on purpose. theme must not link 596 KB of symbol
 // face into every application that imports tokens, which is why the face is
 // not in DefaultTypography.Faces and why WithFaces exists instead.
 func TestSymbolFaceResolvesSymbols(t *testing.T) {

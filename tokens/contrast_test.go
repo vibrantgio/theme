@@ -5,8 +5,8 @@ import (
 	"math"
 	"testing"
 
-	"github.com/vibrantgio/spectrum/color"
-	"github.com/vibrantgio/spectrum/tokens"
+	"github.com/vibrantgio/theme/color"
+	"github.com/vibrantgio/theme/tokens"
 )
 
 // TestAPCAContrastGate is ADR-007's contrast gate over the default palette,

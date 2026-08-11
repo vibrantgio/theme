@@ -6,8 +6,8 @@ import (
 	stdcolor "image/color"
 	"strings"
 
-	"github.com/vibrantgio/spectrum/color"
-	"github.com/vibrantgio/spectrum/tokens"
+	"github.com/vibrantgio/theme/color"
+	"github.com/vibrantgio/theme/tokens"
 )
 
 // The foundation pages are static HTML that reads only from the emitted

@@ -5,8 +5,8 @@ import (
 	"math"
 	"testing"
 
-	speccolor "github.com/vibrantgio/spectrum/color"
-	"github.com/vibrantgio/spectrum/tokens"
+	speccolor "github.com/vibrantgio/theme/color"
+	"github.com/vibrantgio/theme/tokens"
 )
 
 // stateSchemes are the two default schemes with the direction their ramps

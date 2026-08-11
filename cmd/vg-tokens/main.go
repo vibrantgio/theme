@@ -1,6 +1,6 @@
 // Command vg-tokens writes the Claude Design project layout — theme.json,
 // styles.css, readme.md and the foundation pages under foundations/ — for a
-// spectrum theme into a target directory.
+// theme theme into a target directory.
 //
 // Usage:
 //
@@ -18,9 +18,9 @@ import (
 	"strings"
 
 	"github.com/reactivego/rx"
-	"github.com/vibrantgio/spectrum/export"
-	"github.com/vibrantgio/spectrum/theme"
-	"github.com/vibrantgio/spectrum/tokens"
+	"github.com/vibrantgio/theme/export"
+	"github.com/vibrantgio/theme/theme"
+	"github.com/vibrantgio/theme/tokens"
 )
 
 func main() {

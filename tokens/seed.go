@@ -99,7 +99,7 @@ package tokens
 import (
 	stdcolor "image/color"
 
-	"github.com/vibrantgio/spectrum/color"
+	"github.com/vibrantgio/theme/color"
 )
 
 // lightTones and darkTones are the shared perceptual lightness scale:
@@ -189,7 +189,7 @@ func FromSeed(seed stdcolor.NRGBA) (light, dark ColorTokens) {
 // file header; the derived default-seed variant is recorded in this
 // package's high-contrast golden test.
 //
-// It is the palette spectrum/system swaps in while the OS reports increased
+// It is the palette theme/system swaps in while the OS reports increased
 // contrast (see system.HighContrastVariant).
 func FromSeedHighContrast(seed stdcolor.NRGBA) (light, dark ColorTokens) {
 	return fromSeed(seed, hcDerivation)

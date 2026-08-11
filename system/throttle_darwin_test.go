@@ -9,7 +9,7 @@ import (
 // BenchmarkDarwinDefaultsExec documents the cost that motivates GX.11's cadence
 // split: each `defaults read -g` is a fork+exec. Run with:
 //
-//	go test -bench=DarwinDefaultsExec -benchtime=200x ./spectrum/system/...
+//	go test -bench=DarwinDefaultsExec -benchtime=200x ./theme/system/...
 //
 // On the development machine this reports ~5.5 ms/op for a single key, so the
 // original two-exec Read() was ~11 ms — i.e. ~1.1% wall-clock CPU at a 1 s poll,

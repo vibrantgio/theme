@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vibrantgio/spectrum/tokens"
+	"github.com/vibrantgio/theme/tokens"
 )
 
 func TestSpacingMonotonic(t *testing.T) {

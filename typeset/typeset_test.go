@@ -12,8 +12,8 @@ import (
 	"gioui.org/widget"
 
 	"github.com/vibrantgio/font/notosansmono"
-	"github.com/vibrantgio/spectrum/tokens"
-	"github.com/vibrantgio/spectrum/typeset"
+	"github.com/vibrantgio/theme/tokens"
+	"github.com/vibrantgio/theme/typeset"
 )
 
 // specimen carries an ascender, a descender and digits, so the ink box is the
@@ -237,7 +237,7 @@ func TestBaselineMovesWithTheLowerHalf(t *testing.T) {
 // Gio takes a line's ascent as the maximum over that line's runs, so a line
 // carrying a fallback run is taller than the probe and the deficit was computed
 // against the wrong baseline. Measured before this was fixed: 23 px on a role
-// that declares 20 — and spectrum/export writes `line-height: 20` for the same
+// that declares 20 — and theme/export writes `line-height: 20` for the same
 // role, so the two surfaces disagreed for exactly the characters the fallback
 // exists to serve.
 func TestMixedFaceLineLandsOnItsLineHeight(t *testing.T) {

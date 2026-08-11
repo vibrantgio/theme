@@ -5,7 +5,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/vibrantgio/spectrum/tokens"
+	"github.com/vibrantgio/theme/tokens"
 )
 
 // contrastPair is a named foreground/background pair for WCAG AA verification.

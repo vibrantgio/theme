@@ -20,8 +20,8 @@ import (
 	"time"
 
 	"github.com/reactivego/rx"
-	"github.com/vibrantgio/spectrum/a11y"
-	"github.com/vibrantgio/spectrum/system"
+	"github.com/vibrantgio/theme/a11y"
+	"github.com/vibrantgio/theme/system"
 )
 
 // gatedSource is a counting Source: Read blocks until a value is fed on
@@ -157,7 +157,7 @@ func a11yReadsAt(t *testing.T, n int) int32 {
 	return src.reads.Load()
 }
 
-// TestA11yFromSourceSharesOnePollLoop gives spectrum/a11y's same-shaped
+// TestA11yFromSourceSharesOnePollLoop gives theme/a11y's same-shaped
 // stream the same proof: reads at one and three subscribers match.
 func TestA11yFromSourceSharesOnePollLoop(t *testing.T) {
 	one := a11yReadsAt(t, 1)

@@ -5,7 +5,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/vibrantgio/spectrum/color"
+	"github.com/vibrantgio/theme/color"
 )
 
 // TestRelativeLuminanceAnchors pins WCAG relative luminance at the values

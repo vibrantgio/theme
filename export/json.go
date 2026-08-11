@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/vibrantgio/spectrum/color"
-	"github.com/vibrantgio/spectrum/tokens"
+	"github.com/vibrantgio/theme/color"
+	"github.com/vibrantgio/theme/tokens"
 )
 
 // Parameters is theme.json's shape: the generative parameters that

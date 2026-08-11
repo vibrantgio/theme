@@ -5,7 +5,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/vibrantgio/spectrum/color"
+	"github.com/vibrantgio/theme/color"
 )
 
 // Tolerances for asserting on the 8-bit mapped result, calibrated against

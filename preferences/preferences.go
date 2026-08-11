@@ -48,7 +48,7 @@ import (
 
 	"github.com/reactivego/rx"
 	"github.com/vibrantgio/mvu/stream"
-	"github.com/vibrantgio/spectrum/a11y"
+	"github.com/vibrantgio/theme/a11y"
 )
 
 // Preferences is the persistent user-preference set: a chosen theme name
@@ -56,7 +56,7 @@ import (
 // be used with rx.DistinctUntilChanged.
 //
 // Theme is a free-form name (e.g. "light", "dark", "auto"); the mapping
-// from name to a concrete theme.Theme is owned by later spectrum milestones.
+// from name to a concrete theme.Theme is owned by later theme milestones.
 // The empty string means "unset" — first-launch state.
 type Preferences struct {
 	Theme string         `json:"theme"`

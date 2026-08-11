@@ -37,7 +37,7 @@ type TextStyle struct {
 	// gap between lines, and not a multiplier. It means what CSS line-height
 	// means: text in this role occupies LineHeight per line whatever its
 	// glyphs measure, with the leading split evenly above and below the ink.
-	// spectrum/export writes exactly this number into
+	// theme/export writes exactly this number into
 	// `--font-<role>-line-height`, so the design-surface mirror and the Gio
 	// rendering are stating the same fact.
 	//
@@ -47,13 +47,13 @@ type TextStyle struct {
 	// so a MaxLines:1 label — nearly every control in this system — reports
 	// the same size at any line height at all, and wrapped text lands one
 	// deficit short of a whole multiple. Lay text out through
-	// spectrum/typeset, which wraps widget.Label and adds the missing leading;
+	// theme/typeset, which wraps widget.Label and adds the missing leading;
 	// components in this organization all do.
 	//
 	// Zero means "no line height" and leaves the shaper's own default in
 	// place. So does a negative one: widget.Label would install it and
 	// gioui.org/text would then baseline each line above the one before it,
-	// which is worse than any default, so spectrum/typeset drops it.
+	// which is worse than any default, so theme/typeset drops it.
 	LineHeight float32
 
 	Tracking float32

@@ -77,7 +77,7 @@ package tokens
 //	height = max(ControlHeight, contentHeight + 2×PaddingY)
 //
 // Where contentHeight is the type role's line height (see [TextStyle.LineHeight]
-// and spectrum/typeset), the two terms are close enough that either can win:
+// and theme/typeset), the two terms are close enough that either can win:
 //
 //	control                role         line height   + 2×PaddingY   ControlHeight   drawn
 //	-------                ----         -----------   ------------   -------------   -----

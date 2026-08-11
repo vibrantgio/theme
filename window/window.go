@@ -3,7 +3,7 @@
 // what lets two windows in one process show different themes at once —
 // light and dark, brand A and brand B, one document's theme and another's.
 //
-// It is the application's entry point to the whole spectrum runtime, and
+// It is the application's entry point to the whole theme runtime, and
 // three lines wide: build an mvu window, wrap it with a theme, render.
 //
 //	w := window.New(mvu.NewWindow(app.Title("Todos")), system.LiveTheme(time.Second))
@@ -37,7 +37,7 @@ import (
 	"github.com/reactivego/rx"
 
 	"github.com/vibrantgio/mvu"
-	"github.com/vibrantgio/spectrum/theme"
+	"github.com/vibrantgio/theme/theme"
 )
 
 // Window pairs an [mvu.Window] with the theme observable that scopes

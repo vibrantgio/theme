@@ -27,7 +27,7 @@ import (
 // Level3.
 //
 // The LevelN fields carry the dp depths — pulse/depth's lookup and
-// spectrum/export's --shadow-* table read them — and the StepN fields the
+// theme/export's --shadow-* table read them — and the StepN fields the
 // paired surface steps. Prefer the Dp and SurfaceStep accessors over field
 // access in new code.
 type ElevationScale struct {

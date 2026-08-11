@@ -1,4 +1,4 @@
-module github.com/vibrantgio/spectrum
+module github.com/vibrantgio/theme
 
 go 1.25.1
 

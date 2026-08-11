@@ -5,7 +5,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/vibrantgio/spectrum/color"
+	"github.com/vibrantgio/theme/color"
 )
 
 // TestOKLabRoundTripSRGBCube converts every sRGB triple through

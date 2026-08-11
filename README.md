@@ -1,8 +1,8 @@
-# spectrum
+# theme
 
 The theme runtime of [Vibrant Gio](https://github.com/vibrantgio), a design
 system for native desktop applications on macOS, Windows and Linux, written in
-pure Go on [Gio](https://gioui.org). spectrum is the layer that answers one
+pure Go on [Gio](https://gioui.org). theme is the layer that answers one
 question — *what does this window look like right now* — and answers it as a
 stream, so the answer can change while the application runs.
 
@@ -10,7 +10,7 @@ Following the operating system between light and dark is the kind of thing that
 is easy to demo and tedious to actually do: something has to poll the OS,
 notice a real change rather than re-emitting the same value, turn it into
 design tokens, and get those tokens to every widget on screen without the
-application threading a parameter through its whole view tree. spectrum does
+application threading a parameter through its whole view tree. theme does
 that in one line at startup. `system.LiveTheme` publishes the OS appearance as
 an `rx.Observable[theme.Theme]`; `window.New` binds that observable to an
 [mvu](https://github.com/vibrantgio/mvu) window and hands it to the builder
@@ -60,23 +60,23 @@ and deliberately not in `DefaultTypography.Faces`.
 
 ## Where it sits
 
-Tier 1 of the stack — `mvu → spectrum → prism → pulse → cadence → markdown` —
+Tier 1 of the stack — `mvu → theme → prism → pulse → cadence → markdown` —
 and since the G-B3 inversion it really is the foundation: the module that owns
-the design values everything above is styled from. spectrum imports
+the design values everything above is styled from. theme imports
 [mvu](https://github.com/vibrantgio/mvu) and
 [font](https://github.com/vibrantgio/font) — Roboto and Roboto Mono are the
 default `Typography`'s faces — and nothing above it. The deprecated
 `spectrum/transition` alias shim was the last upward edge in the whole stack;
 F3.3 of the [org plan](https://github.com/vibrantgio/.github) deleted it in
 v0.2.0, and the layer check now records no transitional edge at all.
-Everything above imports spectrum — prism, pulse, cadence and markdown all
+Everything above imports theme — prism, pulse, cadence and markdown all
 read `theme` and `tokens` from here, and the
 [workbench](https://github.com/vibrantgio/workbench) applications bootstrap
 `system` and `window`. The [organization page](https://github.com/vibrantgio)
 has the full tier table.
 
 ```sh
-go get github.com/vibrantgio/spectrum
+go get github.com/vibrantgio/theme
 ```
 
 Every module in the organization is on gioui.org v0.10.1,
@@ -99,7 +99,7 @@ github.com/reactivego/rx v0.3.0 and Go 1.25.1.
 
 The whole bootstrap, from `main.go` in
 [workbench/todos](https://github.com/vibrantgio/workbench/tree/master/todos) —
-the smallest complete Vibrant Gio application. Two of these lines are spectrum:
+the smallest complete Vibrant Gio application. Two of these lines are theme:
 
 ```go
 mvuWin := mvu.NewWindow(

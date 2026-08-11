@@ -5,7 +5,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/vibrantgio/spectrum/color"
+	"github.com/vibrantgio/theme/color"
 )
 
 // md3Stops is Material Design 3's thirteen standard tone stops.

@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vibrantgio/spectrum/theme"
-	"github.com/vibrantgio/spectrum/tokens"
+	"github.com/vibrantgio/theme/theme"
+	"github.com/vibrantgio/theme/tokens"
 )
 
 func TestAutoLightDarkNonNil(t *testing.T) {

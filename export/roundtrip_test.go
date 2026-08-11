@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/reactivego/rx"
-	"github.com/vibrantgio/spectrum/color"
-	"github.com/vibrantgio/spectrum/theme"
-	"github.com/vibrantgio/spectrum/tokens"
+	"github.com/vibrantgio/theme/color"
+	"github.com/vibrantgio/theme/theme"
+	"github.com/vibrantgio/theme/tokens"
 )
 
 // parseSheet is a tolerant reader of the emitted styles.css: it returns the

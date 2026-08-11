@@ -1,4 +1,4 @@
-# AGENTS.md — spectrum
+# AGENTS.md — theme
 
 The token and theme layer of the Vibrant Gio design system, and the surface
 every layer above it styles against. `tokens` holds the typed values —
@@ -19,16 +19,16 @@ with `cmd/vg-tokens` in front of it — writes a theme out as the project
 layout `claude.ai/design` consumes. Interpolating between two themes is not
 here; it is a layer up, in `pulse/transition`.
 
-**Layer.** Tier 1 of ADR-001's stack, `mvu → spectrum → prism → pulse →
+**Layer.** Tier 1 of ADR-001's stack, `mvu → theme → prism → pulse →
 cadence → markdown`. The token, theme and `a11y` contract the rest of the
 system styles against lives here rather than in prism: goals G-B3 and E3.2
-moved it down, which is what makes a tier-1 spectrum possible at all. Its
-root module imports `font` and `mvu`. Imported by `cadence`, `markdown`,
-`prism` and `pulse`. Outside the tier table, also by the demo modules
-`mvu/example` and `prism/gallery` and all seven workbench applications.
-Both directions are measured rather than typed — `scripts/check-layers.sh
---edges` reports the graph and `scripts/sync-agents.sh` renders these
-sentences from it — so correcting them here changes nothing.
+moved it down, which is what makes a tier-1 theme possible at all. Its root
+module imports `font` and `mvu`. Imported by `cadence`, `markdown`, `prism`
+and `pulse`. Outside the tier table, also by the demo modules `mvu/example`
+and `prism/gallery` and all seven workbench applications. Both directions
+are measured rather than typed — `scripts/check-layers.sh --edges` reports
+the graph and `scripts/sync-agents.sh` renders these sentences from it — so
+correcting them here changes nothing.
 
 **Read the canonical guide before you write code against this module.** It is
 the organization's one agent guide — the module inventory with current tags,
@@ -38,7 +38,7 @@ and this file links it rather than copying it:
 
     https://raw.githubusercontent.com/vibrantgio/.github/master/llms.txt
 
-**Module.** `github.com/vibrantgio/spectrum`, one module at the repository
+**Module.** `github.com/vibrantgio/theme`, one module at the repository
 root.
 
 **Build and test.** From the repository root:
@@ -70,9 +70,9 @@ own symbol coverage. The face is optional and is not in
 leading split evenly around the ink — and `gioui.org/widget.Label` does not
 deliver it. Gio gives the first line its own ascent plus descent and spends the
 line height only on the gap to the next, so a `MaxLines: 1` label measures the
-same at every line height there is. `spectrum/typeset` wraps `widget.Label` and
+same at every line height there is. `theme/typeset` wraps `widget.Label` and
 adds the missing leading; every component in the org that draws a role's text
-lays it out through `typeset.Layout`. `spectrum/export` writes the same number
+lays it out through `typeset.Layout`. `theme/export` writes the same number
 into `--font-<role>-line-height`, so the two surfaces state one fact.
 
 The consequence for sizing: `Density.ControlHeight` is a **floor**, not a
@@ -83,6 +83,6 @@ Comfortable button in LabelLarge is exactly 36.
 **Golden images.** None, and the absence above is that fact rather than an
 omission: `sync-agents.sh` renders a Golden images section only for a clone
 that has a `testdata/golden/` directory, and `find . -type d -name golden`
-here finds none. Spectrum stores no rendered output — it computes colour, type
+here finds none. theme stores no rendered output — it computes colour, type
 and layout values and asserts on numbers. The harness the repositories that do
 render share is `prism/golden`.

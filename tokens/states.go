@@ -47,7 +47,7 @@ import (
 	stdcolor "image/color"
 	"math"
 
-	"github.com/vibrantgio/spectrum/color"
+	"github.com/vibrantgio/theme/color"
 )
 
 // State enumerates the interaction states a component surface can be in.

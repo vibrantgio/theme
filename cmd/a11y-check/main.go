@@ -1,5 +1,5 @@
 // a11y-check prints OS accessibility preferences once per second.
-// Run with: go run github.com/vibrantgio/spectrum/cmd/a11y-check
+// Run with: go run github.com/vibrantgio/theme/cmd/a11y-check
 // Manual test: toggle "Reduce Motion" in System Settings > Accessibility > Display
 // and confirm the change appears within ~1 second.
 package main
@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/reactivego/rx"
-	"github.com/vibrantgio/spectrum/a11y"
+	"github.com/vibrantgio/theme/a11y"
 )
 
 func main() {

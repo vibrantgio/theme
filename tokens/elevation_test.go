@@ -3,7 +3,7 @@ package tokens
 import "testing"
 
 // TestElevationDpPreserved pins the dp shadow depths: the secondary cue
-// E2.1 keeps byte-for-byte, and what pulse/depth and spectrum/export read.
+// E2.1 keeps byte-for-byte, and what pulse/depth and theme/export read.
 func TestElevationDpPreserved(t *testing.T) {
 	want := map[ElevationLevel]float32{
 		Level0: 0, Level1: 1, Level2: 3, Level3: 6,

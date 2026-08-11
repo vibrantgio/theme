@@ -14,7 +14,7 @@
 // A design system means the CSS thing. `line-height: 20px` on a one-line
 // button makes the line box 20 px tall whatever the glyphs measure, the extra
 // space split half above and half below the ink, and that is what
-// spectrum/export already writes into `--font-<role>-line-height` for the
+// theme/export already writes into `--font-<role>-line-height` for the
 // design-surface mirror to consume. Without this package the Gio rendering and
 // the CSS it exports disagree about the same token.
 //
@@ -47,7 +47,7 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 
-	"github.com/vibrantgio/spectrum/tokens"
+	"github.com/vibrantgio/theme/tokens"
 )
 
 // Font builds the font.Font a text style shapes with. The style's typeface is
@@ -113,7 +113,7 @@ func Label(style tokens.TextStyle, maxLines int) widget.Label {
 // taller than the primary face alone. Measuring a probe string instead made
 // the deficit too large for exactly those lines: under the fallback shaper
 // applications draw with, "arrows →←" came back 25 px tall where LabelLarge
-// declares 20 and spectrum/export writes `line-height: 20`.
+// declares 20 and theme/export writes `line-height: 20`.
 //
 // # Constraints are applied once, to the corrected height
 //

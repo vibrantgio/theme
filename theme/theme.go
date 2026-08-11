@@ -2,7 +2,7 @@ package theme
 
 import (
 	"github.com/reactivego/rx"
-	"github.com/vibrantgio/spectrum/tokens"
+	"github.com/vibrantgio/theme/tokens"
 )
 
 // Theme carries an rx.Observable for each token category. Consumers subscribe

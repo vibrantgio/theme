@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/reactivego/rx"
-	"github.com/vibrantgio/spectrum/internal/poll"
+	"github.com/vibrantgio/theme/internal/poll"
 )
 
 // A11yPrefs carries the current accessibility display preferences reported by

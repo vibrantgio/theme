@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/reactivego/rx"
-	"github.com/vibrantgio/spectrum/a11y"
+	"github.com/vibrantgio/theme/a11y"
 )
 
 // fakeSource returns successive values from vals on each Read call,

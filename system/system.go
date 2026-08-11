@@ -5,13 +5,13 @@
 // rx.Observable that emits only when the value changes; [Live] wires the
 // current platform's shim, and [LiveTheme] maps that stream to
 // [theme.Theme] values whose Color matches the OS setting. Since E3.2
-// LiveTheme also composes the OS accessibility preferences (spectrum/a11y):
+// LiveTheme also composes the OS accessibility preferences (theme/a11y):
 // reduce motion zeroes the emitted motion scale's durations so animated
 // components snap, and high contrast routes the resolved palette pair
 // through [HighContrastVariant].
 //
 // Reach for it as the theme argument of a window: LiveTheme(time.Second) is
-// what every workbench application hands to spectrum/window, and from there
+// what every workbench application hands to theme/window, and from there
 // an appearance change reaches every component with no application code.
 // Pass your own Source to [FromSource] or [FromSourceTheme] to stub the OS
 // out in a test. The package never imports Gio — it speaks to the OS
@@ -72,10 +72,10 @@ import (
 	"time"
 
 	"github.com/reactivego/rx"
-	"github.com/vibrantgio/spectrum/a11y"
-	"github.com/vibrantgio/spectrum/internal/poll"
-	"github.com/vibrantgio/spectrum/theme"
-	"github.com/vibrantgio/spectrum/tokens"
+	"github.com/vibrantgio/theme/a11y"
+	"github.com/vibrantgio/theme/internal/poll"
+	"github.com/vibrantgio/theme/theme"
+	"github.com/vibrantgio/theme/tokens"
 )
 
 // Appearance is the OS-level appearance state we observe. All fields are

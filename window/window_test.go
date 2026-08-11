@@ -8,13 +8,13 @@ import (
 
 	"github.com/reactivego/rx"
 
-	"github.com/vibrantgio/spectrum/theme"
-	"github.com/vibrantgio/spectrum/tokens"
-	"github.com/vibrantgio/spectrum/window"
+	"github.com/vibrantgio/theme/theme"
+	"github.com/vibrantgio/theme/tokens"
+	"github.com/vibrantgio/theme/window"
 )
 
 // collect subscribes to obs synchronously and returns all emitted values.
-// Mirrors the helper used elsewhere in the spectrum/prism test suites.
+// Mirrors the helper used elsewhere in the theme/prism test suites.
 func collect[T any](obs rx.Observable[T]) ([]T, error) {
 	var out []T
 	err := obs.Subscribe(context.Background(), func(v T, _ error, done bool) {

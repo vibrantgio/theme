@@ -7,14 +7,14 @@ import (
 	"time"
 
 	"github.com/reactivego/rx"
-	"github.com/vibrantgio/spectrum/a11y"
-	"github.com/vibrantgio/spectrum/system"
-	"github.com/vibrantgio/spectrum/tokens"
+	"github.com/vibrantgio/theme/a11y"
+	"github.com/vibrantgio/theme/system"
+	"github.com/vibrantgio/theme/tokens"
 )
 
 // fakeSource returns successive values from vals on each Read call,
 // repeating the last value once the slice is exhausted. Mirrors the
-// pattern used in spectrum/a11y/preferences_test.go.
+// pattern used in theme/a11y/preferences_test.go.
 type fakeSource struct {
 	vals []system.Appearance
 	n    int

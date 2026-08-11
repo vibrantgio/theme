@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/reactivego/rx"
-	"github.com/vibrantgio/spectrum/system"
+	"github.com/vibrantgio/theme/system"
 )
 
 // TestDarkModeFlipEmitsWithinOneSecond is the G2.2 acceptance test.

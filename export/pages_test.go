@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/vibrantgio/spectrum/color"
-	"github.com/vibrantgio/spectrum/theme"
+	"github.com/vibrantgio/theme/color"
+	"github.com/vibrantgio/theme/theme"
 )
 
 // pageFiles are the foundation pages Write must emit, relative to the

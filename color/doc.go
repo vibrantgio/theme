@@ -17,5 +17,5 @@
 // input yields out-of-range channels, documented per function.
 //
 // The package name collides with image/color in an importer's import list;
-// alias one of them — spectrum code aliases the standard library one.
+// alias one of them — theme code aliases the standard library one.
 package color

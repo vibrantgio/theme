@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/reactivego/rx"
-	"github.com/vibrantgio/spectrum/theme"
-	"github.com/vibrantgio/spectrum/tokens"
+	"github.com/vibrantgio/theme/theme"
+	"github.com/vibrantgio/theme/tokens"
 )
 
 // collect subscribes to obs synchronously and returns all emitted values.

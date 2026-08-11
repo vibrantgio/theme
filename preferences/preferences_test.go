@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/reactivego/rx"
-	"github.com/vibrantgio/spectrum/a11y"
-	"github.com/vibrantgio/spectrum/preferences"
+	"github.com/vibrantgio/theme/a11y"
+	"github.com/vibrantgio/theme/preferences"
 )
 
 func collect[T any](obs rx.Observable[T]) ([]T, error) {

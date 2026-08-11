@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/reactivego/rx"
-	"github.com/vibrantgio/spectrum/tokens"
+	"github.com/vibrantgio/theme/tokens"
 )
 
 // AutoLightDark returns an Observable that emits a new Theme every minute.

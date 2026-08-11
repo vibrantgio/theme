@@ -14,7 +14,7 @@
 // field set — a missing one is a nil observable, not a default. And
 // AutoLightDark() reads the wall clock, not the OS: hours 7 through 17 are
 // light and the rest dark. For real OS appearance and accent tracking use
-// spectrum's system.LiveTheme instead.
+// theme's system.LiveTheme instead.
 //
 // This package is the home of the theme contract since it moved down from
 // github.com/vibrantgio/prism, so that the theme runtime sits beneath the

@@ -1,5 +1,5 @@
-// Package poll implements the one shared poll loop behind spectrum's live
-// OS-preference streams (spectrum/system, spectrum/a11y).
+// Package poll implements the one shared poll loop behind theme's live
+// OS-preference streams (theme/system, theme/a11y).
 //
 // [Shared] is the FX.5 fix for the cold-stream defect the register recorded:
 // a plain Ticker+Map observable starts a fresh ticker per subscription, so a
