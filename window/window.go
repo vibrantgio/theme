@@ -9,7 +9,7 @@
 //	w := window.New(mvu.NewWindow(app.Title("Todos")), system.LiveTheme(time.Second))
 //	err := w.Render(buildLayers(modelObs)).Wait()
 //
-// Below the window the theme contract is per component — every prism
+// Below the window the theme contract is per component — every components
 // component takes an rx.Observable[theme.Theme] — and [Window.Render]
 // exists to hand that one observable to the builder that constructs them,
 // so no application code threads it manually.

@@ -14,7 +14,7 @@ import (
 )
 
 // collect subscribes to obs synchronously and returns all emitted values.
-// Mirrors the helper used elsewhere in the theme/prism test suites.
+// Mirrors the helper used elsewhere in the theme/components test suites.
 func collect[T any](obs rx.Observable[T]) ([]T, error) {
 	var out []T
 	err := obs.Subscribe(context.Background(), func(v T, _ error, done bool) {

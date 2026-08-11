@@ -7,7 +7,7 @@
 // the first line at that line's own ascent and spends the line height only on
 // the gap to the next one. The consequence is exact and easy to miss: a label
 // with MaxLines 1 — which nearly every control in this system is — reports the
-// same size at any line height at all. Measured on prism/button's LabelLarge
+// same size at any line height at all. Measured on components/button's LabelLarge
 // specimen at 14 dp: 17 px tall at line height 0, 20, 32 and 64 alike, and the
 // rendered button byte-identical in all four.
 //

@@ -102,7 +102,7 @@ type RampSet struct {
 	Warning   Ramp
 }
 
-// ColorTokens holds the colour vocabulary consumed by every Prism component:
+// ColorTokens holds the colour vocabulary consumed by every Components component:
 // ADR-007's nine-step functional ramps, the pinned role bases, and a thin
 // semantic layer resolved from ramp steps. Each "On" field is the recommended
 // text/icon colour rendered on top of its companion pinned base.

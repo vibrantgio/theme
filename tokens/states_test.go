@@ -217,7 +217,7 @@ func TestDarkSolidWalkLandsOnPairedDepths(t *testing.T) {
 
 // TestDisabledIsOpacity verifies disabled never walks the ramp: it is the
 // normal colour at DisabledOpacity — MD3's 38%, alpha 0x61 for an opaque
-// input, the value prism already renders.
+// input, the value components already renders.
 func TestDisabledIsOpacity(t *testing.T) {
 	if tokens.DisabledOpacity != 0.38 {
 		t.Errorf("DisabledOpacity = %v, want 0.38", tokens.DisabledOpacity)

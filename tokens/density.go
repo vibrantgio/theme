@@ -60,7 +60,7 @@ package tokens
 //     shadcn's sm (32 px) and xs (24 px): a native-feeling dense mode that
 //     stays above every AppKit regular-size control.
 //
-// Why prism's existing 44 dp was rejected as Comfortable: 44 comes from touch
+// Why components' existing 44 dp was rejected as Comfortable: 44 comes from touch
 // guidelines — the WCAG 2.5.5 pointer-target minimum, next to MD3's 48 dp
 // touch target — and every desktop column above lands well below it (shadcn
 // 36, macOS 24–28; even touch-first MD3 draws its button at 40 inside a 48 dp
@@ -111,7 +111,7 @@ package tokens
 //     noticed afterwards, by F4.4. Correcting a derivation that was not the
 //     source of the number corrects nothing.
 //   - ControlHeight is a floor for controls but a *pin* for stacked rows.
-//     prism/list rows, cadence's table rows and header cells and sidebar items
+//     components/list rows, cadence's table rows and header cells and sidebar items
 //     are ControlHeight tall exactly (see the row table below). Moving 28 to 32
 //     is therefore not an arithmetic tidy-up; it is a visual change to every
 //     dense list and table in the system.
@@ -160,10 +160,10 @@ package tokens
 //
 //	row                                     Comfortable   Compact   sizing
 //	---                                     -----------   -------   ------
-//	prism/list row (list.RowHeight)         36            28        pinned to ControlHeight
+//	components/list row (list.RowHeight)         36            28        pinned to ControlHeight
 //	cadence/table body row and header cell  36            28        pinned to ControlHeight
 //	cadence/sidebar item                    36            28        pinned to ControlHeight
-//	prism/input dropdown option row         40            36        floor formula, BodyLarge
+//	components/input dropdown option row         40            36        floor formula, BodyLarge
 //
 // The narrowest of these is the 28 dp Compact row. 28 ≥ 24, so every row in
 // the system clears 2.5.8 at AA; none of them reaches 2.5.5's 44, and F4.7

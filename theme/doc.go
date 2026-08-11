@@ -3,7 +3,7 @@
 // motion, spacing, radius, elevation — so a consumer subscribes to only the
 // categories it actually reads and rebuilds only when those change.
 //
-// Reach for it whenever you build an observable prism component: button.Button,
+// Reach for it whenever you build an observable components component: button.Button,
 // input.TextField and their siblings all take an rx.Observable[theme.Theme] as
 // their first argument, and a window that emits a new Theme follows the
 // appearance change with no application code. Default() returns a static light
@@ -17,7 +17,7 @@
 // theme's system.LiveTheme instead.
 //
 // This package is the home of the theme contract since it moved down from
-// github.com/vibrantgio/prism, so that the theme runtime sits beneath the
+// github.com/vibrantgio/components, so that the theme runtime sits beneath the
 // components it themes; aliases keep the old import path working. See the
 // repository README.
 package theme

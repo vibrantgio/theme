@@ -81,7 +81,7 @@ const (
 )
 
 // DisabledOpacity is the fraction of full alpha a disabled element keeps —
-// MD3's 38% disabled-content opacity, the exact value prism already
+// MD3's 38% disabled-content opacity, the exact value components already
 // renders (alpha 0x61 of 0xff). Disabled is an opacity, not a ramp step: a
 // disabled surface keeps its colour and fades, per D2.3.
 const DisabledOpacity = 0.38
@@ -96,7 +96,7 @@ func Disabled(c stdcolor.NRGBA) stdcolor.NRGBA {
 
 // FocusRing returns the focus-ring colour: Neutral step 500, ADR-007's
 // "strong border, focusable edge". It is the colour the Outline alias
-// carried before v0.2.0 deleted it, and the one prism's button already
+// carried before v0.2.0 deleted it, and the one components' button already
 // strokes its ring with.
 func (t ColorTokens) FocusRing() stdcolor.NRGBA {
 	return t.Ramps.Neutral.Step(500)

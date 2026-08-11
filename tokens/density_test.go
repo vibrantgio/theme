@@ -24,7 +24,7 @@ func TestDensityPicksWithinTableBounds(t *testing.T) {
 			ComfortableControlHeight, MinHitTarget)
 	}
 	if MinHitTarget != 44 {
-		t.Errorf("MinHitTarget = %v, want 44 (WCAG 2.5.5, prism's current constant)", MinHitTarget)
+		t.Errorf("MinHitTarget = %v, want 44 (WCAG 2.5.5, components' current constant)", MinHitTarget)
 	}
 }
 
