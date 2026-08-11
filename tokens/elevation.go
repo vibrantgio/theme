@@ -7,7 +7,7 @@
 // same level reads as "raised" in both modes: a level-1 card is a light
 // card on a lighter ground in light mode and a dark card on a darker
 // ground in dark mode, with no mode-specific rule. The dp shadow survives
-// as the secondary cue and is what pulse/depth still renders.
+// as the secondary cue and is what effects/depth still renders.
 package tokens
 
 import (
@@ -26,7 +26,7 @@ import (
 // named Level4 or Level5 meant "as raised as it gets" and should name
 // Level3.
 //
-// The LevelN fields carry the dp depths — pulse/depth's lookup and
+// The LevelN fields carry the dp depths — effects/depth's lookup and
 // theme/export's --shadow-* table read them — and the StepN fields the
 // paired surface steps. Prefer the Dp and SurfaceStep accessors over field
 // access in new code.

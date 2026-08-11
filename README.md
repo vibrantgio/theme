@@ -60,7 +60,7 @@ and deliberately not in `DefaultTypography.Faces`.
 
 ## Where it sits
 
-Tier 1 of the stack — `mvu → theme → components → pulse → cadence → markdown` —
+Tier 1 of the stack — `mvu → theme → components → effects → cadence → markdown` —
 and since the G-B3 inversion it really is the foundation: the module that owns
 the design values everything above is styled from. theme imports
 [mvu](https://github.com/vibrantgio/mvu) and
@@ -69,7 +69,7 @@ default `Typography`'s faces — and nothing above it. The deprecated
 `spectrum/transition` alias shim was the last upward edge in the whole stack;
 F3.3 of the [org plan](https://github.com/vibrantgio/.github) deleted it in
 v0.2.0, and the layer check now records no transitional edge at all.
-Everything above imports theme — components, pulse, cadence and markdown all
+Everything above imports theme — components, effects, cadence and markdown all
 read `theme` and `tokens` from here, and the
 [workbench](https://github.com/vibrantgio/workbench) applications bootstrap
 `system` and `window`. The [organization page](https://github.com/vibrantgio)
@@ -199,10 +199,10 @@ Honest about what does not work yet:
   would use — an `org.freedesktop.appearance` portal read on Linux,
   `AppsUseLightTheme` plus a registry watch on Windows — and neither is
   written, nor claimed by any phase of the current plan.
-- **The theme snaps; nothing cross-fades it.** `pulse/transition`
+- **The theme snaps; nothing cross-fades it.** `effects/transition`
   interpolates token sets correctly, but nothing drives it: `LiveTheme` emits
   the new palette in one step, and since v0.2.0 deleted this repository's
-  deprecated alias, no module or application imports `pulse/transition` at
+  deprecated alias, no module or application imports `effects/transition` at
   all. A cross-fade today is the caller's to build out of
   `ColorTokensTween`.
 - **`preferences` persists a choice nothing reads.** No module or application

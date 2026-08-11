@@ -97,7 +97,7 @@ func TestMotionReducedZeroesEveryDuration(t *testing.T) {
 func TestMotionReducedKeepsEverythingElse(t *testing.T) {
 	// Springs and easings carry through unchanged: no finite spring
 	// completes in one frame, and a snap-stiff spring would be unstable
-	// in pulse's explicit integrator, so the zero durations alone are
+	// in effects' explicit integrator, so the zero durations alone are
 	// the reduce-motion signal (see the Reduced doc).
 	r := tokens.Motion.Reduced()
 	want := tokens.Motion

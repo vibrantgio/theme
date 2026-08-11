@@ -557,7 +557,7 @@ func (f *fakeA11ySource) Read() (a11y.A11yPrefs, error) {
 // TestFromSourceThemeReduceMotionSnaps is E3.2's snap test: under an OS
 // reduce-motion preference the emitted motion scale has every duration at
 // zero, so an animated component that derives its frame count from the
-// scale — pulse/motion's FramesAt(d, fps) = round(d·fps) = 0 frames for
+// scale — effects/motion's FramesAt(d, fps) = round(d·fps) = 0 frames for
 // every stop — is at its target on the first frame it draws.
 func TestFromSourceThemeReduceMotionSnaps(t *testing.T) {
 	appearance := &fakeSource{vals: []system.Appearance{{}}}

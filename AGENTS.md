@@ -17,14 +17,14 @@ wedge a save, `typeset` lays a type role's text out in the line box the
 role names rather than the one its glyphs happen to ink, and `export` —
 with `cmd/vg-tokens` in front of it — writes a theme out as the project
 layout `claude.ai/design` consumes. Interpolating between two themes is not
-here; it is a layer up, in `pulse/transition`.
+here; it is a layer up, in `effects/transition`.
 
-**Layer.** Tier 1 of ADR-001's stack, `mvu → theme → components → pulse →
+**Layer.** Tier 1 of ADR-001's stack, `mvu → theme → components → effects →
 cadence → markdown`. The token, theme and `a11y` contract the rest of the
 system styles against lives here rather than in components: goals G-B3 and
 E3.2 moved it down, which is what makes a tier-1 theme possible at all. Its
 root module imports `font` and `mvu`. Imported by `cadence`, `components`,
-`markdown` and `pulse`. Outside the tier table, also by the demo modules
+`effects` and `markdown`. Outside the tier table, also by the demo modules
 `components/gallery` and `mvu/example` and all seven workbench
 applications. Both directions are measured rather than typed —
 `scripts/check-layers.sh --edges` reports the graph and
