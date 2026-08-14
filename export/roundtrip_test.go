@@ -29,6 +29,13 @@ func parseSheet(t *testing.T, src string) map[string]map[string]string {
 		switch {
 		case strings.HasSuffix(line, "{"):
 			sel := strings.TrimSpace(strings.TrimSuffix(line, "{"))
+			if strings.HasPrefix(sel, "@") {
+				// At-rules (@font-face) carry no custom properties and may
+				// legitimately repeat — one block per face. Read through
+				// them without recording a selector block.
+				cur = map[string]string{}
+				continue
+			}
 			if _, dup := blocks[sel]; dup {
 				t.Fatalf("styles.css: duplicate block %q", sel)
 			}

@@ -40,6 +40,9 @@ func readmeMD(s Snapshot) string {
 		"- `foundations/color.html` — every ramp, pin, step purpose and measured\n" +
 		"  APCA Lc / WCAG ratio per text pair, in both modes.\n" +
 		"- `foundations/type.html` — every type role at its real metrics.\n" +
+		"- `fonts/` — the faces behind `--font-family` and `--font-family-code`,\n" +
+		"  self-hosted with their licences: the same Roboto regular and medium the\n" +
+		"  Gio applications embed, and Roboto Mono from the font repository.\n" +
 		"- `foundations/layout.html` — the spacing scale, the control metrics at both\n" +
 		"  density settings, the radius scale and tonal elevation as rendered\n" +
 		"  specimens.\n\n" +
