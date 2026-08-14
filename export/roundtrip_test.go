@@ -469,6 +469,25 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"border: 2px solid var(--color-neutral-500);",
 		".checkbox:checked, .checkbox.is-checked {",
 		"radial-gradient(circle, var(--color-accent) 5px, var(--color-surface) 5px)",
+		// Card (G2.2): patterns/card — level-1 fill under a 1 dp neutral 500
+		// stroke, .elevated one storey deeper with no stroke and no shadow;
+		// radius Lg, S4 inset (the outlined padding gives back the border's
+		// 1px), S3 slot gaps.
+		"padding: calc(var(--space-4) - 1px);",
+		"border-radius: var(--radius-lg);",
+		"background: var(--elevation-1);",
+		"background: var(--elevation-2);",
+		"gap: var(--space-3);",
+		// Table (G2.2): patterns/table — Surface ground, neutral-300 header
+		// band under neutral-700 label-large, control-height row pitch,
+		// Divider rules inside the rows, S3 cell inset, and the 10x5 dp
+		// neutral-700 sort chevron on the active column only.
+		"background: var(--color-neutral-300);",
+		"height: var(--density-control-height);",
+		"border-bottom: 1px solid var(--color-divider);",
+		"padding: 0 var(--space-3);",
+		".table th.sort-asc::after { border-bottom: 5px solid var(--color-neutral-700); }",
+		".table th.sort-desc::after { border-top: 5px solid var(--color-neutral-700); }",
 	} {
 		if !strings.Contains(classes, frag) {
 			t.Errorf("class layer lacks %q", frag)
