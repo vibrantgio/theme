@@ -102,6 +102,12 @@ h3 {
 // everything var()-driven from there.
 func page(title, heading, intro, style, body string) string {
 	var b strings.Builder
+	// The @dsCard marker must be the file's first line: claude.ai/design's
+	// pane renders cards, not files, and it builds its card index from this
+	// comment. A page without it uploads fine and then never appears in the
+	// UI — the failure mode is silent, which is why the marker is emitted
+	// here rather than remembered.
+	fmt.Fprintf(&b, "<!-- @dsCard name=%q group=\"Foundations\" -->\n", heading)
 	b.WriteString("<!doctype html>\n<html lang=\"en\">\n<head>\n")
 	b.WriteString("<meta charset=\"utf-8\">\n")
 	b.WriteString("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n")
