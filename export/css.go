@@ -58,6 +58,18 @@ var pinRoles = []struct {
 	{"divider", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Divider }},
 	{"accent", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Primary }},
 	{"on-accent", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.OnPrimary }},
+	// The solid-fill state walk (ADR-007 / D2.3): hover one rung from the pin
+	// toward the ramp's 900 end, pressed two — SolidStateColor, the exact
+	// resolution components/button's filled register draws. They are emitted
+	// as first-class tokens because a walked pin is off-ramp: no var()
+	// arithmetic over the ramp steps could reproduce it, and ADR-007's whole
+	// point is that states are real, addressable colours a sheet can emit.
+	{"accent-hover", func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.SolidStateColor(tokens.RolePrimary, tokens.StateHover)
+	}},
+	{"accent-pressed", func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.SolidStateColor(tokens.RolePrimary, tokens.StatePressed)
+	}},
 	{"secondary", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Secondary }},
 	{"on-secondary", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.OnSecondary }},
 	{"tertiary", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Tertiary }},
@@ -273,8 +285,25 @@ func scaleVars(s Snapshot) []cssVar {
 	for _, stop := range durationStops {
 		vars = append(vars, cssVar{"--duration-" + stop.name, ms(stop.pick(s.Motion))})
 	}
+	// The interaction-state base the class layer builds on (G1.2). The focus
+	// ring is Neutral step 500 (tokens.FocusRing) — a var() reference, like
+	// the elevation surfaces, so .dark flips it with the ramp — at the 2 dp
+	// stroke width components/button pins; the disabled fraction is
+	// tokens.DisabledOpacity as a color-mix() percentage, because disabled is
+	// an opacity, not a ramp step.
+	vars = append(vars,
+		cssVar{"--color-focus-ring", "var(--color-neutral-500)"},
+		cssVar{"--focus-ring-width", px(focusRingWidthDp)},
+		cssVar{"--state-disabled-opacity", fnum(tokens.DisabledOpacity*100) + "%"},
+	)
 	return vars
 }
+
+// focusRingWidthDp is the focus ring's stroke width — the 2 dp
+// components/button draws (drawButton's gtx.Dp(2) stroke), identical in
+// every emphasis register because keyboard visibility is not a loudness
+// property.
+const focusRingWidthDp = 2
 
 // densityVars renders one density setting's per-setting metrics. The :root
 // block carries tokens.Comfortable's; the .compact override block carries
@@ -328,5 +357,112 @@ func stylesCSS(s Snapshot) string {
 	block(&b, ".dark", colorVars(s.Dark))
 	b.WriteString("\n")
 	block(&b, ".compact", densityVars(tokens.Compact))
+	b.WriteString("\n")
+	b.WriteString(componentClasses)
 	return b.String()
 }
+
+// componentClasses is the class layer (G1.2): the component vocabulary the
+// design surface composes screens from, defined entirely over the token
+// variables above — no literal colours, sizes or radii, so a re-branded
+// sheet re-brands the components with it, and .dark/.compact flip them like
+// everything else.
+//
+// It mirrors components/button, the source of truth: .btn is the filled
+// register by default, .tonal and .ghost are the G0A.1 emphasis modifiers,
+// and every state resolves as ADR-007's ramp walks from exactly the rungs
+// buttonColors picks (button.go: tonalGround 200 / tonalText 900,
+// ghostGround 200 / ghostText 700 / ghostTextOnWash 900; the filled fill
+// walks via SolidStateColor into --color-accent-hover/-pressed). Because
+// each register's blocks override every state it treats, later register
+// blocks never bleed a state from an earlier one; :disabled resolutions are
+// per-register for the same reason. Selected resolves as tokens.StateColor
+// resolves StateSelected — the two-step walk pressed takes.
+const componentClasses = `/* ---- Component classes (G1.2) ----
+   The class vocabulary, built only on the tokens above. .btn mirrors
+   components/button: filled by default, .tonal and .ghost the emphasis
+   modifiers, states resolved as ADR-007 ramp walks from the same rungs the
+   Gio side draws. The focus ring is identical in every register: keyboard
+   visibility is not an emphasis property. */
+
+.btn {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  appearance: none;
+  border: none;
+  margin: 0;
+  text-decoration: none;
+  user-select: none;
+  white-space: nowrap;
+  cursor: pointer;
+  min-height: var(--density-control-height);
+  padding: var(--density-padding-y) var(--density-padding-x);
+  border-radius: var(--radius-md);
+  font-family: var(--font-family);
+  font-size: var(--font-label-large-size);
+  line-height: var(--font-label-large-line-height);
+  font-weight: var(--font-label-large-weight);
+  letter-spacing: var(--font-label-large-tracking);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+/* Filled states: the solid fill walks from the pin toward the ramp's 900
+   end (hover one rung, pressed and selected two) — the walked stops are
+   tokens, not mixes. */
+.btn:hover { background: var(--color-accent-hover); }
+.btn.selected { background: var(--color-accent-pressed); }
+.btn:active { background: var(--color-accent-pressed); }
+
+/* Keyboard focus keeps the resting fill and adds the ring — a stroke
+   centred on the control's edge, as the Gio side draws it. */
+.btn:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: calc(var(--focus-ring-width) / -2);
+}
+
+/* Disabled is an opacity, not a ramp step: each colour keeps its hue and
+   fades to the disabled fraction of its alpha. */
+.btn:disabled {
+  cursor: default;
+  background: color-mix(in srgb, var(--color-accent) var(--state-disabled-opacity), transparent);
+  color: color-mix(in srgb, var(--color-on-accent) var(--state-disabled-opacity), transparent);
+}
+
+/* Tonal: a tinted fill off the role's own ramp — ground 200 under the
+   ramp's 900 text; hover walks one step, pressed and selected two. */
+.btn.tonal {
+  background: var(--color-primary-200);
+  color: var(--color-primary-900);
+}
+.btn.tonal:hover { background: var(--color-primary-300); }
+.btn.tonal.selected { background: var(--color-primary-400); }
+.btn.tonal:active { background: var(--color-primary-400); }
+.btn.tonal:disabled {
+  background: color-mix(in srgb, var(--color-primary-200) var(--state-disabled-opacity), transparent);
+  color: color-mix(in srgb, var(--color-primary-900) var(--state-disabled-opacity), transparent);
+}
+
+/* Ghost: no ground at rest — the neutral ramp's low-contrast text over
+   whatever surface it sits on; under the pointer it performs that
+   surface's own hover (300) and press (400), the text walking to 900 with
+   the ground. No selected treatment: a ghost stays quiet. */
+.btn.ghost {
+  background: transparent;
+  color: var(--color-neutral-700);
+}
+.btn.ghost:hover {
+  background: var(--color-neutral-300);
+  color: var(--color-neutral-900);
+}
+.btn.ghost:active {
+  background: var(--color-neutral-400);
+  color: var(--color-neutral-900);
+}
+.btn.ghost:disabled {
+  background: transparent;
+  color: color-mix(in srgb, var(--color-neutral-700) var(--state-disabled-opacity), transparent);
+}
+`

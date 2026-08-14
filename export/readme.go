@@ -34,7 +34,8 @@ func readmeMD(s Snapshot) string {
 		"  (the paired dark colours only) and one `.compact` class override block (the\n" +
 		"  compact density metrics only). Add `class=\"dark\"` to the root element to\n" +
 		"  switch modes, `class=\"compact\"` to any subtree to densify it; the two\n" +
-		"  switches are orthogonal.\n" +
+		"  switches are orthogonal. Below the token blocks sits the component class\n" +
+		"  layer (`.btn` and its modifiers) — see Component classes.\n" +
 		"- `theme.json` — the generative parameters; see the reproducibility contract\n" +
 		"  below.\n" +
 		"- `foundations/color.html` — every ramp, pin, step purpose and measured\n" +
@@ -73,7 +74,8 @@ func readmeMD(s Snapshot) string {
 	fmt.Fprintf(&b, "| `--elevation-<level>` | %s | tonal surface fills — the DEFAULT elevation cue; `var()` references into the neutral ramp (level 0 is the bg pin), so they flip with `.dark` |\n", joinTokens("--elevation-", elevationNames()))
 	fmt.Fprintf(&b, "| `--shadow-<level>` | %s | dp box-shadows — the OPT-IN cue for floating transients (menus, dialogs, tooltips) layered over the tonal fill; resting surfaces use the fill alone |\n", joinTokens("--shadow-", elevationNames()))
 	fmt.Fprintf(&b, "| `--ease-<name>` | %s | MD3 easing presets as `cubic-bezier()`; emphasized is the documented single-bezier stand-in for MD3's two-segment path |\n", joinTokens("--ease-", easeNames()))
-	fmt.Fprintf(&b, "| `--duration-<stop>` | %s | MD3-pinned duration stops, ms; the reduce-motion variant zeroes them |\n\n", joinTokens("--duration-", durationNames()))
+	fmt.Fprintf(&b, "| `--duration-<stop>` | %s | MD3-pinned duration stops, ms; the reduce-motion variant zeroes them |\n", joinTokens("--duration-", durationNames()))
+	b.WriteString("| interaction states | `--color-focus-ring`, `--focus-ring-width`, `--state-disabled-opacity` | the focus ring (neutral 500 by reference, so it flips with `.dark`; 2 px stroke) and the disabled fade fraction for `color-mix()` |\n\n")
 
 	b.WriteString("## Step purposes (ADR-007)\n\n" +
 		"| Step | Job |\n| --- | --- |\n" +
@@ -86,6 +88,23 @@ func readmeMD(s Snapshot) string {
 		"| 900 | high-contrast body text (Lc ≥ 90) · pressed |\n\n" +
 		"The pinned base — not a ramp step — is the solid fill; hover and pressed on a\n" +
 		"solid walk one and two steps from the pin toward 900.\n\n")
+
+	b.WriteString("## Component classes\n\n" +
+		"`styles.css` ends with the component class layer, defined entirely over the\n" +
+		"tokens above — no literal colours, sizes or radii — so it re-brands, flips\n" +
+		"to `.dark` and densifies to `.compact` with the sheet.\n\n" +
+		"`.btn` is the button, **filled** by default: the accent pin under its\n" +
+		"on-colour. Two modifier classes select the quieter emphasis registers —\n" +
+		"`.btn.tonal` (a tinted fill: primary 200 under primary 900 text) and\n" +
+		"`.btn.ghost` (no ground at rest; neutral 700 text). Interaction states\n" +
+		"resolve as the step walks above: hover walks one step (`:hover`), pressed\n" +
+		"and selected two (`:active`, `.selected`); a filled button's solid fill\n" +
+		"walks via the emitted `--color-accent-hover` / `--color-accent-pressed`\n" +
+		"stops. Keyboard focus (`:focus-visible`) keeps the resting fill and draws\n" +
+		"the ring — `--focus-ring-width` of `--color-focus-ring`, identical in every\n" +
+		"register. Disabled (`:disabled`) fades each colour to\n" +
+		"`--state-disabled-opacity` of its alpha. A ghost has no selected\n" +
+		"treatment: it stays quiet.\n\n")
 
 	b.WriteString("## Elevation: default vs opt-in\n\n" +
 		"Elevation is tonal (E2.1): a raised surface separates from its ground by\n" +

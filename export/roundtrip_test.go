@@ -356,6 +356,93 @@ func TestRoundTripMotion(t *testing.T) {
 	}
 }
 
+// TestRoundTripButtonClasses asserts the G1.2 class layer cannot drift from
+// components/button's resolution: the walked solid-fill stops equal
+// SolidStateColor's per mode, the focus ring is FocusRing by reference, the
+// disabled fraction is DisabledOpacity, and every register/state rule picks
+// exactly the ramp rungs button.go's constants pick (tonalGround 200 /
+// tonalText 900, ghostGround 200 / ghostText 700 / ghostTextOnWash 900) —
+// with not one literal colour in the layer.
+func TestRoundTripButtonClasses(t *testing.T) {
+	snap, sheet, _ := writeDefault(t)
+	root, dark := sheet[":root"], sheet[".dark"]
+
+	// The solid-fill state walk, per mode. Written against SolidStateColor
+	// directly, not through pinRoles, so the emitter cannot drift with its
+	// own table.
+	for i, mode := range []struct {
+		vars map[string]string
+		tok  tokens.ColorTokens
+	}{{root, snap.Light}, {dark, snap.Dark}} {
+		if got, want := mode.vars["--color-accent-hover"], wantHex(mode.tok.SolidStateColor(tokens.RolePrimary, tokens.StateHover)); got != want {
+			t.Errorf("--color-accent-hover (mode %d) = %q, want SolidStateColor hover %q", i, got, want)
+		}
+		if got, want := mode.vars["--color-accent-pressed"], wantHex(mode.tok.SolidStateColor(tokens.RolePrimary, tokens.StatePressed)); got != want {
+			t.Errorf("--color-accent-pressed (mode %d) = %q, want SolidStateColor pressed %q", i, got, want)
+		}
+		// The ring reference's target must resolve to FocusRing per mode.
+		hex, ok := mode.vars["--color-neutral-500"]
+		if !ok {
+			hex = root["--color-neutral-500"]
+		}
+		if want := wantHex(mode.tok.FocusRing()); hex != want {
+			t.Errorf("--color-focus-ring (mode %d) resolves to %q, want FocusRing %q", i, hex, want)
+		}
+	}
+	if got := root["--color-focus-ring"]; got != "var(--color-neutral-500)" {
+		t.Errorf("--color-focus-ring = %q, want the neutral-500 reference", got)
+	}
+	if got := wantPx(t, "--focus-ring-width", root["--focus-ring-width"]); got != 2 {
+		t.Errorf("--focus-ring-width = %v, want the 2 dp stroke components/button draws", got)
+	}
+	if got, want := root["--state-disabled-opacity"], fmt.Sprintf("%v%%", tokens.DisabledOpacity*100); got != want {
+		t.Errorf("--state-disabled-opacity = %q, want %q", got, want)
+	}
+
+	// The class layer itself: token references only, at button.go's rungs.
+	src := stylesCSS(snap)
+	idx := strings.Index(src, ".btn")
+	if idx < 0 {
+		t.Fatal("styles.css has no .btn class layer")
+	}
+	classes := src[idx:]
+	if strings.Contains(classes, "#") {
+		t.Error("the class layer contains a literal colour; every value must be a token reference")
+	}
+	for _, frag := range []string{
+		// Structure from the density, radius and label-large tokens.
+		"min-height: var(--density-control-height);",
+		"padding: var(--density-padding-y) var(--density-padding-x);",
+		"border-radius: var(--radius-md);",
+		"font-size: var(--font-label-large-size);",
+		// Filled: the pin under its on-colour; states via the walked stops.
+		"background: var(--color-accent);",
+		"color: var(--color-on-accent);",
+		".btn:hover { background: var(--color-accent-hover); }",
+		".btn.selected { background: var(--color-accent-pressed); }",
+		".btn:active { background: var(--color-accent-pressed); }",
+		// The ring, identical in every register.
+		"outline: var(--focus-ring-width) solid var(--color-focus-ring);",
+		// Disabled fades to the disabled fraction of each colour's alpha.
+		"color-mix(in srgb, var(--color-accent) var(--state-disabled-opacity), transparent)",
+		// Tonal: ground 200 under 900 text; hover 300; pressed/selected 400.
+		"background: var(--color-primary-200);",
+		"color: var(--color-primary-900);",
+		".btn.tonal:hover { background: var(--color-primary-300); }",
+		".btn.tonal.selected { background: var(--color-primary-400); }",
+		".btn.tonal:active { background: var(--color-primary-400); }",
+		// Ghost: nothing at rest under 700 text; wash 300/400 under 900.
+		"color: var(--color-neutral-700);",
+		"background: var(--color-neutral-300);",
+		"background: var(--color-neutral-400);",
+		"color: var(--color-neutral-900);",
+	} {
+		if !strings.Contains(classes, frag) {
+			t.Errorf("class layer lacks %q", frag)
+		}
+	}
+}
+
 // TestThemeJSONReproduces asserts theme.json's reproducibility claim: its
 // seed alone regenerates the exported palette through FromSeed, and every
 // recorded parameter matches the tokens and the sheet.
