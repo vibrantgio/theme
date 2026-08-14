@@ -106,8 +106,10 @@ func page(title, heading, intro, style, body string) string {
 	// pane renders cards, not files, and it builds its card index from this
 	// comment. A page without it uploads fine and then never appears in the
 	// UI — the failure mode is silent, which is why the marker is emitted
-	// here rather than remembered.
-	fmt.Fprintf(&b, "<!-- @dsCard name=%q group=\"Foundations\" -->\n", heading)
+	// here rather than remembered. The parser takes exactly this group-only
+	// form; a first attempt with an extra name="…" attribute produced no
+	// card, so the card's display name comes from the page, not the marker.
+	b.WriteString("<!-- @dsCard group=\"Foundations\" -->\n")
 	b.WriteString("<!doctype html>\n<html lang=\"en\">\n<head>\n")
 	b.WriteString("<meta charset=\"utf-8\">\n")
 	b.WriteString("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n")
