@@ -513,10 +513,60 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		".crumb:hover, .crumb.is-hover { color: var(--color-neutral-900); }",
 		".crumbs .crumb:last-child, .crumb.current { color: var(--color-text); }",
 		"border-left: 6px solid var(--color-neutral-700);",
+		// Overlays (G2.4). The scrim is the --color-scrim token — the class
+		// layer stays literal-free; the pattern's fixed black lives in :root
+		// beside the shadows' (asserted below this loop).
+		"background: var(--color-scrim);",
+		// Dialog: patterns/modal's centred level-2 surface — the 75% width
+		// inside the 180–560 dp clamp, the 120 dp height floor, the S5 inset
+		// giving back the neutral-500 border's 1px, S3 gaps, radius Lg.
+		"min-width: 180px;",
+		"max-width: 560px;",
+		"min-height: 120px;",
+		"padding: calc(var(--space-5) - 1px);",
+		"font-size: var(--font-title-medium-size);",
+		".dialog-footer {",
+		"justify-content: flex-end;",
+		// Popover: level-3 fill (the deepest rung — an unscrimmed, shadowless
+		// overlay separates by fill alone) under the neutral-500 stroke,
+		// radius Md, S3 inset; the tail is the surface's own fill.
+		"background: var(--elevation-3);",
+		"padding: calc(var(--space-3) - 1px);",
+		"border-top: 6px solid var(--elevation-3);",
+		"border-bottom: 6px solid var(--elevation-3);",
+		// Tooltip: inverse-video — Text ground under a Surface label,
+		// radius Sm, S2/S1 padding.
+		"background: var(--color-text);",
+		"color: var(--color-surface);",
+		"border-radius: var(--radius-sm);",
+		"padding: var(--space-1) var(--space-2);",
+		// Toast: the 20% accent tint over the level-2 base (toast.go
+		// tintSurface's 0x33 blend), the accent outline, the level-3 cast
+		// shadow — the opt-in cue for a floating transient — and the level
+		// pins mapped exactly as accentColor maps them.
+		"background: color-mix(in srgb, var(--color-accent) 20%, var(--elevation-2));",
+		"border: 1px solid var(--color-accent);",
+		"box-shadow: var(--shadow-3);",
+		"min-height: 36px;",
+		"background: color-mix(in srgb, var(--color-success) 20%, var(--elevation-2));",
+		"background: color-mix(in srgb, var(--color-warning) 20%, var(--elevation-2));",
+		"background: color-mix(in srgb, var(--color-error) 20%, var(--elevation-2));",
 	} {
 		if !strings.Contains(classes, frag) {
 			t.Errorf("class layer lacks %q", frag)
 		}
+	}
+
+	// The scrim token (G2.4): modal.go scrimColor's black at alpha 0x80 in
+	// the alpha that reproduces it under sRGB compositing (Gio composites in
+	// linear RGB — see scrimRGBA's derivation), mode-invariant like the
+	// shadows' fixed black, so it lives in :root and .dark never overrides
+	// it.
+	if got := root["--color-scrim"]; got != scrimRGBA {
+		t.Errorf("--color-scrim = %q, want scrimRGBA %q", got, scrimRGBA)
+	}
+	if _, ok := dark["--color-scrim"]; ok {
+		t.Error("--color-scrim is overridden in .dark; the scrim is mode-invariant")
 	}
 }
 

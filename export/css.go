@@ -296,8 +296,28 @@ func scaleVars(s Snapshot) []cssVar {
 		cssVar{"--focus-ring-width", px(focusRingWidthDp)},
 		cssVar{"--state-disabled-opacity", fnum(tokens.DisabledOpacity*100) + "%"},
 	)
+	// The scrim (G2.4): patterns/modal's full-canvas dimmer — black at alpha
+	// 0x80 (modal.go scrimColor), deliberately the same in both modes because
+	// a scrim dims by reducing luminance, so it lives with the mode-invariant
+	// scales rather than in the colour schemes. Like the shadows' fixed black,
+	// it is a constant of the pattern, not a ramp resolution; emitting it as a
+	// token keeps the class layer itself literal-free.
+	vars = append(vars, cssVar{"--color-scrim", scrimRGBA})
 	return vars
 }
+
+// scrimRGBA is modal.go's scrimColor — color.NRGBA{0, 0, 0, 0x80} — as the
+// CSS colour that REPRODUCES it, which is not rgba(0,0,0,0.502): Gio
+// composites the translucent black in linear RGB while a browser composites
+// plain-alpha backgrounds in the sRGB space the pixels are stored in, so the
+// literal alpha would dim roughly twice as hard as the pattern does
+// (measured on the G2.4 mirror: 123 vs Gio's 181 over the #f7f6fd bg pin).
+// The sRGB-equivalent alpha — the a solving srgb(bg)·(1−a) =
+// srgb(linear(bg)·0.5) — is 0.267 over the light grounds (bg ≈ 247), 0.28 at
+// mid-grey and 0.30 near black: 0.28 is the compromise, within ±0.013 of
+// exact across the whole tonal range (≤ ~3/255 per channel on any ground),
+// and one value serves both modes exactly as the Gio constant does.
+const scrimRGBA = "rgba(0, 0, 0, 0.28)"
 
 // focusRingWidthDp is the focus ring's stroke width — the 2 dp
 // components/button draws (drawButton's gtx.Dp(2) stroke), identical in
@@ -362,7 +382,7 @@ func stylesCSS(s Snapshot) string {
 	return b.String()
 }
 
-// componentClasses is the class layer (G1.2, extended by G2.1–G2.3): the
+// componentClasses is the class layer (G1.2, extended by G2.1–G2.4): the
 // component vocabulary the design surface composes screens from, defined
 // over the token variables above — not one literal colour, so a re-branded
 // sheet re-brands the components with it, and .dark/.compact flip them like
@@ -394,15 +414,16 @@ func stylesCSS(s Snapshot) string {
 // pseudo-class, so a forced specimen provably renders as the live state.
 // Disabled needs no twin: the pages force it with the native attribute.
 const componentClasses = `/* ---- Component classes (G1.2, forms and tags G2.1, card and table G2.2,
-   navigation G2.3) ----
+   navigation G2.3, overlays G2.4) ----
    The class vocabulary, built only on the tokens above. .btn mirrors
    components/button: filled by default, .tonal and .ghost the emphasis
    modifiers, states resolved as ADR-007 ramp walks from the same rungs the
    Gio side draws. .input/.select/.checkbox/.radio mirror components/input,
    .tag the chip patterns/pricing and patterns/hero draw, .card the
-   patterns/card surface, .table the patterns/table grid, and the navigation
+   patterns/card surface, .table the patterns/table grid, the navigation
    family — .navbar, .tabs, .sidebar, .crumbs — the four patterns of the same
-   names. The focus ring is
+   names, and the overlay family — .scrim/.dialog (patterns/modal), .popover,
+   .tooltip, .toast — the transient surfaces. The focus ring is
    identical in every register: keyboard visibility is not an emphasis
    property. Each state rule carries a forcing twin class (.is-hover,
    .is-active, .is-focus, .is-checked) so a static page can show the state
@@ -967,5 +988,201 @@ const componentClasses = `/* ---- Component classes (G1.2, forms and tags G2.1, 
 .sidebar:focus-visible, .sidebar.is-focus {
   outline: var(--focus-ring-width) solid var(--color-focus-ring);
   outline-offset: calc(var(--focus-ring-width) / -2);
+}
+
+/* ---- Overlays (G2.4) ----
+   The transient surfaces: the scrimmed dialog (patterns/modal), the
+   unscrimmed popover (patterns/popover), the inverse-video tooltip
+   (patterns/tooltip) and the floating toast (patterns/toast). The elevation
+   grammar is E2.2's: a scrimmed modal sits at level 2 (the scrim, not the
+   fill, isolates it); an unscrimmed, shadowless popover separates by fill
+   alone and takes the deepest level 3; a toast floats and can leave, so it
+   keeps the level-3 cast shadow on its level-2 tinted base; the tooltip
+   takes no rung at all — it inverts instead, because a bubble that small
+   needs the stronger cue. */
+
+/* Scrim (modal.go drawModal/scrimColor): the full-canvas dimmer under a
+   dialog — --color-scrim, black at the fixed 50% alpha in both modes. The
+   scrim centres the dialog, exactly as drawModal centres the surface in the
+   canvas. Behaviour is part of the pattern: on a PANEL a scrim press invokes
+   OnClose; on a DECISION the scrim is INERT — it absorbs presses and answers
+   none of them, because dismissal is one of the decision's answers and a
+   stray click must not give it. */
+.scrim {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--color-scrim);
+}
+
+/* Dialog (modal.go drawModal): the centred surface — width 75% of the
+   canvas clamped to 180–560 dp, height hugging its content between the
+   120 dp floor and the 560 dp cap (overflow clips), a level-2 fill under
+   the 1 dp neutral 500 stroke, radius Lg, an S5 inset and S3 gaps between
+   header, body and footer. The padding gives back the border's 1px, the
+   card's trick, so content lands where the Gio inset puts it. G0A.2's two
+   intents share this one surface: a PANEL carries a ghost icon close
+   (.btn.ghost.icon) in its header and no footer of its own; a DECISION
+   carries no X anywhere and a .dialog-footer whose right-aligned actions
+   end in the Return-bound default. */
+.dialog {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 75%;
+  min-width: 180px;
+  max-width: 560px;
+  min-height: 120px;
+  max-height: min(75%, 560px);
+  overflow: hidden;
+  padding: calc(var(--space-5) - 1px);
+  border: 1px solid var(--color-neutral-500);
+  border-radius: var(--radius-lg);
+  background: var(--elevation-2);
+  color: var(--color-text);
+}
+
+/* The header row (modal.go headerWidget): the title-medium title on the
+   left, the close affordance — when the intent shows one — on the right,
+   middle-aligned so the ghost button's square drives the row height. */
+.dialog-header {
+  display: flex;
+  align-items: center;
+}
+.dialog-title {
+  flex: 1;
+  font-family: var(--font-family);
+  font-size: var(--font-title-medium-size);
+  line-height: var(--font-title-medium-line-height);
+  font-weight: var(--font-title-medium-weight);
+  letter-spacing: var(--font-title-medium-tracking);
+}
+
+/* The footer row (modal.go footerWidget): right-aligned actions with S2
+   gaps. Each action is a bare widget owning its own focus ring — the
+   dialog wraps and decorates nothing. */
+.dialog-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+/* Popover (popover.go drawPopover): the unscrimmed anchored surface —
+   content plus an S3 inset (the padding gives back the border's 1px),
+   clamped to the 48x24 dp minimum, the deepest level-3 fill under the 1 dp
+   neutral 500 stroke, radius Md. Positioning against the anchor is the
+   page's: the pattern centres the surface on the anchor's midline, one S2
+   gap away on the Placement side. */
+.popover {
+  box-sizing: border-box;
+  display: inline-block;
+  min-width: 48px;
+  min-height: 24px;
+  padding: calc(var(--space-3) - 1px);
+  border: 1px solid var(--color-neutral-500);
+  border-radius: var(--radius-md);
+  background: var(--elevation-3);
+  color: var(--color-text);
+}
+
+/* The tail (popover.go drawTail): a triangle 12 dp across the base and
+   6 dp deep in the surface's own fill, bridging the gap with its tip at
+   the anchor. The modifier names the popover's Placement — a .top popover
+   sits above its anchor, so its tail points down. */
+.popover-tail { width: 0; height: 0; }
+.popover-tail.top {
+  border-left: 6px solid transparent;   /* 12 dp base */
+  border-right: 6px solid transparent;
+  border-top: 6px solid var(--elevation-3);  /* 6 dp deep, tip down */
+}
+.popover-tail.bottom {
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 6px solid var(--elevation-3);
+}
+.popover-tail.left {
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-left: 6px solid var(--elevation-3);
+}
+.popover-tail.right {
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-right: 6px solid var(--elevation-3);
+}
+
+/* Tooltip (tooltip.go drawSurface): the inverse-video bubble — the Text
+   pin as ground under a label in Surface, label-small, radius Sm, S2/S1
+   padding, clamped to the 24x16 dp minimum. No rung on the elevation
+   ladder and no shadow: inversion is the whole cue. */
+.tooltip {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  min-width: 24px;
+  min-height: 16px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-text);
+  color: var(--color-surface);
+  white-space: nowrap;
+  font-family: var(--font-family);
+  font-size: var(--font-label-small-size);
+  line-height: var(--font-label-small-line-height);
+  font-weight: var(--font-label-small-weight);
+  letter-spacing: var(--font-label-small-tracking);
+}
+
+/* Toast (toast.go paintToast): one queued notification — 240 dp wide, a
+   36 dp legibility floor that deliberately does not follow density (E1.4:
+   a toast is not a control), radius Md, label-medium at the Text pin over
+   a level-2 base tinted 20% with the level accent, ringed by the 1 dp
+   accent outline (padding gives the ring's 1px back), and floating on the
+   level-3 cast shadow — the one overlay that keeps its shadow, because on
+   dark themes the shadow, not the fill, is what separates it. The level
+   modifiers swap the accent exactly as accentColor maps them: the accent
+   pin for info (the default), then the success, warning and error pins. */
+.toast {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  width: 240px;
+  min-height: 36px;
+  padding: calc(var(--space-2) - 1px) calc(var(--space-3) - 1px);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-accent) 20%, var(--elevation-2));
+  color: var(--color-text);
+  box-shadow: var(--shadow-3);
+  font-family: var(--font-family);
+  font-size: var(--font-label-medium-size);
+  line-height: var(--font-label-medium-line-height);
+  font-weight: var(--font-label-medium-weight);
+  letter-spacing: var(--font-label-medium-tracking);
+}
+.toast.success {
+  border-color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 20%, var(--elevation-2));
+}
+.toast.warning {
+  border-color: var(--color-warning);
+  background: color-mix(in srgb, var(--color-warning) 20%, var(--elevation-2));
+}
+.toast.error {
+  border-color: var(--color-error);
+  background: color-mix(in srgb, var(--color-error) 20%, var(--elevation-2));
+}
+
+/* The stack (toast.go paintStack): a corner-anchored column with S2 gaps,
+   inset S4 from the canvas edges (the page anchors it); newest toast
+   nearest the anchored edge. */
+.toast-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 240px;
 }
 `
