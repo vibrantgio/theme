@@ -488,6 +488,31 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"padding: 0 var(--space-3);",
 		".table th.sort-asc::after { border-bottom: 5px solid var(--color-neutral-700); }",
 		".table th.sort-desc::after { border-top: 5px solid var(--color-neutral-700); }",
+		// Navigation (G2.3): the four patterns. The navbar bar is the shell's
+		// density pin over the Surface ground; link/tab cells carry the 2 dp
+		// underline slot the Active/selected cell fills with the accent pin;
+		// hover is the Surface storey's one-rung walk to neutral 300.
+		"min-height: calc(var(--density-control-height) + 2 * var(--density-padding-y));",
+		".navbar-link.selected, .tab.selected {",
+		"border-bottom-color: var(--color-accent);",
+		".navbar-link:hover, .navbar-link.is-hover,",
+		// Tabs: the strip is exactly ControlHeight tall.
+		"height: var(--density-control-height);",
+		// Sidebar: the contractual widths, the selected row's two-step walk
+		// to primary 400 (StateColor(RolePrimary, 200, StateSelected)), the
+		// neutral-700 toggle glyph, and the rail-level focus ring.
+		".sidebar.collapsed { width: 48px; }",
+		".sidebar-item.selected { background: var(--color-primary-400); }",
+		".sidebar-item:hover, .sidebar-item.is-hover { background: var(--color-neutral-300); }",
+		"background: var(--color-neutral-700);",
+		".sidebar:focus-visible, .sidebar.is-focus {",
+		// Breadcrumb: title-small, neutral-700 ancestors hovering to 900,
+		// the Text-pin current segment by position or forced, the 12 dp
+		// neutral-700 chevron.
+		"font-size: var(--font-title-small-size);",
+		".crumb:hover, .crumb.is-hover { color: var(--color-neutral-900); }",
+		".crumbs .crumb:last-child, .crumb.current { color: var(--color-text); }",
+		"border-left: 6px solid var(--color-neutral-700);",
 	} {
 		if !strings.Contains(classes, frag) {
 			t.Errorf("class layer lacks %q", frag)
