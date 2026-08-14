@@ -46,7 +46,11 @@ func readmeMD(s Snapshot) string {
 		"  Gio applications embed, and Roboto Mono from the font repository.\n" +
 		"- `foundations/layout.html` — the spacing scale, the control metrics at both\n" +
 		"  density settings, the radius scale and tonal elevation as rendered\n" +
-		"  specimens.\n\n" +
+		"  specimens.\n" +
+		"- `components/*.html` — hand-authored component pages (not generated):\n" +
+		"  every class-layer component in every register and state, at both\n" +
+		"  densities, as copyable markup. `buttons.html` covers `.btn` and `.tag`,\n" +
+		"  `forms.html` the native-element form controls.\n\n" +
 		"Each page reads only from `styles.css` — every styled value is a `var(--…)`\n" +
 		"reference — and carries a light/dark toggle. Annotation numbers are printed for\n" +
 		"both modes, labelled `L` and `D`.\n\n")
@@ -90,9 +94,15 @@ func readmeMD(s Snapshot) string {
 		"solid walk one and two steps from the pin toward 900.\n\n")
 
 	b.WriteString("## Component classes\n\n" +
-		"`styles.css` ends with the component class layer, defined entirely over the\n" +
-		"tokens above — no literal colours, sizes or radii — so it re-brands, flips\n" +
-		"to `.dark` and densifies to `.compact` with the sheet.\n\n" +
+		"`styles.css` ends with the component class layer, defined over the tokens\n" +
+		"above — no literal colours anywhere, the only literal lengths being the\n" +
+		"component constants the Gio side also hardcodes (the 20 dp checkbox/radio\n" +
+		"glyph, its 10 dp dot, the 16 dp dropdown chevron, the 1/2 dp input\n" +
+		"borders) — so it re-brands, flips to `.dark` and densifies to `.compact`\n" +
+		"with the sheet. Every pointer/keyboard state rule carries a forcing twin\n" +
+		"class (`.is-hover`, `.is-active`, `.is-focus`, `.is-checked`) grouped into\n" +
+		"the same rule, so a static page can show a state with exactly the live\n" +
+		"declarations; disabled is forced with the native attribute.\n\n" +
 		"`.btn` is the button, **filled** by default: the accent pin under its\n" +
 		"on-colour. Two modifier classes select the quieter emphasis registers —\n" +
 		"`.btn.tonal` (a tinted fill: primary 200 under primary 900 text) and\n" +
@@ -104,7 +114,24 @@ func readmeMD(s Snapshot) string {
 		"the ring — `--focus-ring-width` of `--color-focus-ring`, identical in every\n" +
 		"register. Disabled (`:disabled`) fades each colour to\n" +
 		"`--state-disabled-opacity` of its alpha. A ghost has no selected\n" +
-		"treatment: it stays quiet.\n\n")
+		"treatment: it stays quiet. `.btn.icon` is the icon-only form: a square\n" +
+		"the density's control height on a side, the glyph (an inline SVG on\n" +
+		"`currentColor`) inset by the density's vertical padding.\n\n" +
+		"`.tag` is the chip the patterns draw: a Full-radius pill at `label-small`\n" +
+		"metrics with S1/S2 padding — filled (accent under on-accent) by default,\n" +
+		"`.tag.tonal` the primary-200 tinted fill under the accent pin. Tags are\n" +
+		"labels, not controls: no interaction states.\n\n" +
+		"The form controls dress native elements — no script anywhere:\n" +
+		"`.input` (text `<input>`, and `<select class=\"input select\">` inside a\n" +
+		"`.select-wrap` for the chevron), `.checkbox` and `.radio` on their native\n" +
+		"input types with `appearance: none`. They resolve exactly as\n" +
+		"`components/input` does: Surface ground under `body-large` text, neutral\n" +
+		"500 strong border, neutral 700 placeholder and chevron, focus promoting\n" +
+		"the border to the accent pin (2 dp on the text field, the shared ring on\n" +
+		"checkbox/radio), disabled fading every colour via `color-mix()`. The\n" +
+		"checkbox's checked state is the solid accent fill (the Gio side draws no\n" +
+		"checkmark); the radio's is the accent ring and 10 dp dot around a Surface\n" +
+		"gap.\n\n")
 
 	b.WriteString("## Elevation: default vs opt-in\n\n" +
 		"Elevation is tonal (E2.1): a raised surface separates from its ground by\n" +

@@ -418,24 +418,57 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		// Filled: the pin under its on-colour; states via the walked stops.
 		"background: var(--color-accent);",
 		"color: var(--color-on-accent);",
-		".btn:hover { background: var(--color-accent-hover); }",
+		".btn:hover, .btn.is-hover { background: var(--color-accent-hover); }",
 		".btn.selected { background: var(--color-accent-pressed); }",
-		".btn:active { background: var(--color-accent-pressed); }",
-		// The ring, identical in every register.
+		".btn:active, .btn.is-active { background: var(--color-accent-pressed); }",
+		// The ring, identical in every register — and its forcing twins
+		// (G2.1): a static page shows a state through a class grouped into
+		// the same rule as the live pseudo-class, never through duplicated
+		// declarations.
 		"outline: var(--focus-ring-width) solid var(--color-focus-ring);",
+		".btn:focus-visible, .btn.is-focus,",
+		".checkbox:focus-visible, .checkbox.is-focus,",
+		".radio:focus-visible, .radio.is-focus {",
 		// Disabled fades to the disabled fraction of each colour's alpha.
 		"color-mix(in srgb, var(--color-accent) var(--state-disabled-opacity), transparent)",
 		// Tonal: ground 200 under 900 text; hover 300; pressed/selected 400.
 		"background: var(--color-primary-200);",
 		"color: var(--color-primary-900);",
-		".btn.tonal:hover { background: var(--color-primary-300); }",
+		".btn.tonal:hover, .btn.tonal.is-hover { background: var(--color-primary-300); }",
 		".btn.tonal.selected { background: var(--color-primary-400); }",
-		".btn.tonal:active { background: var(--color-primary-400); }",
+		".btn.tonal:active, .btn.tonal.is-active { background: var(--color-primary-400); }",
+		// Icon-only: a control-height square, glyph inset by PaddingY.
+		"width: var(--density-control-height);",
+		"padding: var(--density-padding-y);",
 		// Ghost: nothing at rest under 700 text; wash 300/400 under 900.
 		"color: var(--color-neutral-700);",
 		"background: var(--color-neutral-300);",
 		"background: var(--color-neutral-400);",
 		"color: var(--color-neutral-900);",
+		// Tag (G2.1): the patterns' chip — Full-radius pill, S1/S2 padding,
+		// label-small text; filled accent/on-accent, tonal primary-200 under
+		// the accent pin.
+		"padding: var(--space-1) var(--space-2);",
+		"border-radius: var(--radius-full);",
+		"font-size: var(--font-label-small-size);",
+		// Forms (G2.1): components/input's resolution — Surface under body
+		// text, neutral 500 strong border, neutral 700 placeholder/glyph,
+		// focus promoting the border to the accent pin, disabled fading via
+		// color-mix.
+		"border: 1px solid var(--color-neutral-500);",
+		"background: var(--color-surface);",
+		"font-size: var(--font-body-large-size);",
+		".input::placeholder { color: var(--color-neutral-700); opacity: 1; }",
+		"border-color: var(--color-accent);",
+		"box-shadow: inset 0 0 0 1px var(--color-accent);",
+		"color-mix(in srgb, var(--color-neutral-500) var(--state-disabled-opacity), transparent)",
+		// Dropdown chevron: neutral 700, the low-contrast glyph step.
+		"border-top: 8px solid var(--color-neutral-700);",
+		// Checkbox/radio: 2 dp neutral 500 border over Surface; checked is
+		// the accent fill (checkbox) / the 10 dp accent dot (radio).
+		"border: 2px solid var(--color-neutral-500);",
+		".checkbox:checked, .checkbox.is-checked {",
+		"radial-gradient(circle, var(--color-accent) 5px, var(--color-surface) 5px)",
 	} {
 		if !strings.Contains(classes, frag) {
 			t.Errorf("class layer lacks %q", frag)
