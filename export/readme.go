@@ -120,8 +120,12 @@ func readmeMD(s Snapshot) string {
 		"`currentColor`) inset by the density's vertical padding.\n\n" +
 		"`.tag` is the chip the patterns draw: a Full-radius pill at `label-small`\n" +
 		"metrics with S1/S2 padding — filled (accent under on-accent) by default,\n" +
-		"`.tag.tonal` the primary-200 tinted fill under the accent pin. Tags are\n" +
-		"labels, not controls: no interaction states.\n\n" +
+		"`.tag.tonal` the primary-200 tinted fill under the accent pin. Status\n" +
+		"chips are `.tag.success` / `.tag.warning` / `.tag.error`: the same\n" +
+		"level colour the toast carries, resolved the same way — the level pin\n" +
+		"tinted 20% over the Surface ground, ringed by the 1 dp level outline,\n" +
+		"under the text pin. Compose them for status; never inline-style a\n" +
+		"status colour. Tags are labels, not controls: no interaction states.\n\n" +
 		"The form controls dress native elements — no script anywhere:\n" +
 		"`.input` (text `<input>`, and `<select class=\"input select\">` inside a\n" +
 		"`.select-wrap` for the chevron), `.checkbox` and `.radio` on their native\n" +

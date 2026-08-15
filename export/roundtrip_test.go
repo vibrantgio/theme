@@ -451,6 +451,17 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"padding: var(--space-1) var(--space-2);",
 		"border-radius: var(--radius-full);",
 		"font-size: var(--font-label-small-size);",
+		// Status tags (I2.1): the toast's level resolution at chip scale —
+		// the level pin tinted 20% over the Surface ground, the 1 dp level
+		// outline (padding giving its 1px back), the Text pin on top.
+		".tag.success, .tag.warning, .tag.error {",
+		"padding: calc(var(--space-1) - 1px) calc(var(--space-2) - 1px);",
+		"border: 1px solid var(--color-success);",
+		"background: color-mix(in srgb, var(--color-success) 20%, var(--color-surface));",
+		"border: 1px solid var(--color-warning);",
+		"background: color-mix(in srgb, var(--color-warning) 20%, var(--color-surface));",
+		"border: 1px solid var(--color-error);",
+		"background: color-mix(in srgb, var(--color-error) 20%, var(--color-surface));",
 		// Forms (G2.1): components/input's resolution — Surface under body
 		// text, neutral 500 strong border, neutral 700 placeholder/glyph,
 		// focus promoting the border to the accent pin, disabled fading via
