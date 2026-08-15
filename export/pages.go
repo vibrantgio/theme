@@ -386,7 +386,7 @@ func colorHTML(s Snapshot) string {
 	}
 
 	intro := "Each role carries a nine-step functional ramp (100&ndash;900) where the step is the meaning &mdash; " +
-		"100&ndash;300 tinted fills, hovers and subtle borders, 500 the mid-value reference, 700&ndash;900 text and pressed states (ADR-007) &mdash; " +
+		"100&ndash;300 tinted fills, hovers and subtle borders, 500 the mid-value reference, 700&ndash;900 text and pressed states &mdash; " +
 		"plus a pinned base. Dark mode is the paired ramp: the same step keeps the same job. " +
 		"Swatches are painted through the token sheet, so the toggle restyles them; " +
 		"annotation values are printed for both modes, labelled L and D. " +
@@ -587,7 +587,7 @@ func layoutHTML(s Snapshot) string {
 	b.WriteString("</div>\n</section>\n")
 
 	b.WriteString("<section>\n<h2>Elevation</h2>\n")
-	b.WriteString("<p class=\"intro\">Elevation is tonal (E2.1): a raised surface separates from its ground by colour, " +
+	b.WriteString("<p class=\"intro\">Elevation is tonal: a raised surface separates from its ground by colour, " +
 		"one neutral-ramp step per storey, and <code>--elevation-N</code> is that surface fill &mdash; the default cue, " +
 		"resolved as a <code>var()</code> reference into the neutral ramp so it flips with the mode. " +
 		"The cards below sit on the step-100 ground; level 0 is the bg pin and levels 1&ndash;3 are steps 200/300/400. " +
@@ -606,7 +606,7 @@ func layoutHTML(s Snapshot) string {
 
 	b.WriteString("<h3>The opt-in shadow</h3>\n")
 	b.WriteString("<p class=\"intro\">The dp shadows survive as <code>--shadow-N</code> for floating transients only &mdash; " +
-		"menus, dialogs, tooltips (E2.2): a float adds its shadow on top of its tonal fill; resting surfaces use the fill alone.</p>\n")
+		"menus, dialogs, tooltips: a float adds its shadow on top of its tonal fill; resting surfaces use the fill alone.</p>\n")
 	b.WriteString("<div class=\"elevation-ground\">\n")
 	for _, level := range elevationLevels {
 		fmt.Fprintf(&b, "<div>\n<div class=\"surface-card\" style=\"background: var(--elevation-%s); box-shadow: var(--shadow-%s)\">%s</div>\n", level.name, level.name, level.name)

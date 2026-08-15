@@ -20,7 +20,7 @@ func readmeMD(s Snapshot) string {
 		"**nine-step functional ramp (100–900)** on a shared lightness scale, with the\n"+
 		"role's **base pinned separately** so the brand colour is reproduced exactly, and\n"+
 		"**dark mode is the paired ramp** — the same step keeps the same job in both\n"+
-		"modes, so nothing is assigned twice (ADR-007). The contrast gate is APCA\n"+
+		"modes, so nothing is assigned twice. The contrast gate is APCA\n"+
 		"(step 900 reaches |Lc| 90 and step 700 |Lc| 60 over the 100/200 grounds, every\n"+
 		"pin's on-colour |Lc| 60 over its pin); WCAG 2 ratios are reported alongside but\n"+
 		"do not gate.\n\n", hexRGB(s.Seed))
@@ -82,7 +82,7 @@ func readmeMD(s Snapshot) string {
 	b.WriteString("| interaction states | `--color-focus-ring`, `--focus-ring-width`, `--state-disabled-opacity` | the focus ring (neutral 500 by reference, so it flips with `.dark`; 2 px stroke) and the disabled fade fraction for `color-mix()` |\n")
 	b.WriteString("| scrim | `--color-scrim` | the modal backdrop dimmer: translucent black, identical in both modes — a scrim dims by reducing luminance, so it never flips with `.dark`. The alpha is the sRGB-compositing equivalent of the Gio pattern's 50% linear-space black |\n\n")
 
-	b.WriteString("## Step purposes (ADR-007)\n\n" +
+	b.WriteString("## Step purposes\n\n" +
 		"| Step | Job |\n| --- | --- |\n" +
 		"| 100 | tinted fill · app ground |\n" +
 		"| 200 | tinted fill · card / raised surface |\n" +
@@ -135,7 +135,7 @@ func readmeMD(s Snapshot) string {
 		"gap.\n\n")
 
 	b.WriteString("## Elevation: default vs opt-in\n\n" +
-		"Elevation is tonal (E2.1): a raised surface separates from its ground by\n" +
+		"Elevation is tonal: a raised surface separates from its ground by\n" +
 		"colour, one neutral-ramp step per storey — level 0 is the bg pin over the\n" +
 		"step-100 ground and levels 1–3 fill with neutral 200/300/400. The ladder\n" +
 		"stops at 3: desktop has no six-storey stack. `--elevation-N`\n" +
@@ -143,7 +143,7 @@ func readmeMD(s Snapshot) string {
 		"ramps are paired scales, the same level reads as raised in both modes with\n" +
 		"no mode-specific rule. The dp shadow is the **opt-in** secondary cue,\n" +
 		"reserved for floating transients — menus, dialogs, tooltips — which layer\n" +
-		"`--shadow-N` over their tonal fill (E2.2). Resting surfaces never cast one.\n\n")
+		"`--shadow-N` over their tonal fill. Resting surfaces never cast one.\n\n")
 
 	b.WriteString("## Density\n\n" +
 		"Two published settings, one variable family: comfortable (36 dp controls,\n" +
