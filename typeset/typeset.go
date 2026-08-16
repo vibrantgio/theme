@@ -35,6 +35,11 @@
 // face it names, because Gio takes a line's ascent as the maximum over that
 // line's runs — a line holding a fallback run is taller than its primary face
 // and needs less added, not the same. See [Layout].
+//
+// The same split applies one level up: a caller whose Min.Y floor exceeds the
+// line box — layout.Flex hands an exact cell height down as a minimum —
+// gets the ink centred within the floored height rather than pinned to the
+// top of it. See [Layout] for the details.
 package typeset
 
 import (
@@ -91,12 +96,12 @@ func Label(style tokens.TextStyle, maxLines int) widget.Label {
 // leading split evenly above and below the ink and the baseline moved to
 // match.
 //
-// It is a no-op in two cases, and returns lbl.Layout's own result unchanged in
-// both. An absolute line height smaller than the natural line of this text —
-// an unset or negative one included — has no leading to distribute. And a
-// label whose LineHeightScale is not 1 is asking for a height relative to the
-// face's metrics, which the shaper already applies to every line including the
-// first, so there is nothing missing to add.
+// The correction is a no-op in two cases. An absolute line height smaller
+// than the natural line of this text — an unset or negative one included —
+// has no leading to distribute. And a label whose LineHeightScale is not 1 is
+// asking for a height relative to the face's metrics, which the shaper
+// already applies to every line including the first, so there is nothing
+// missing to add. The floor handling below still applies on both paths.
 //
 // The extra height is a single deficit, added once, not once per line. Gio
 // already spends the line height on the gap between lines, so the only line
@@ -124,21 +129,41 @@ func Label(style tokens.TextStyle, maxLines int) widget.Label {
 // corrected size once with the caller's own constraints. The result fits the
 // constraints it was given, which is what every other Gio widget promises, and
 // callers no longer have to zero Constraints.Min to be told the truth.
+//
+// # A floor above the line box centres the ink too
+//
+// When the caller's Min.Y exceeds the corrected line box — layout.Flex hands
+// an exact cell height down to every rigid child as a minimum, so this is
+// every label in an exact-height row — the surplus is split around the line
+// box the same way the leading is split around the ink: half above, rounded
+// down, half below, with the baseline tracking the ink. Left to
+// widget.Label, that surplus would all land below the ink and the text would
+// pin to the top of its cell; a parent aligning on Middle sees a child that
+// claims the whole cell and has nothing left to centre.
+//
+// The floor is handled on every path, including the two no-op cases above:
+// the finding is about the caller's floor, not the line box, so a label with
+// no line height of its own centres in an exact-height cell exactly as a
+// corrected one does. A Max.Y below the corrected height, by contrast, keeps
+// the ink anchored to the top and moves the baseline with the bottom edge.
+//
+// The half-above is rounded down in both splits, so a layout the floor never
+// exceeded stays pixel-identical to what it was.
 func Layout(gtx layout.Context, sh *text.Shaper, lbl widget.Label, f font.Font, size unit.Sp, txt string, material op.CallOp) layout.Dimensions {
 	if gtx.Sp(lbl.LineHeight) < 0 {
-		// widget.Label installs any non-zero LineHeight; this function bails
-		// at <= 0. Without this the two disagree and a negative reaches the
-		// shaper with scale 1, which baselines each line above the last.
+		// widget.Label installs any non-zero LineHeight; this function's
+		// correction bails at <= 0. Without this the two disagree and a
+		// negative reaches the shaper with scale 1, which baselines each
+		// line above the last.
 		lbl.LineHeight = 0
 	}
 	box := gtx.Sp(lbl.LineHeight)
-	if box <= 0 || lbl.LineHeightScale != 1 {
-		return lbl.Layout(gtx, sh, f, size, txt, material)
-	}
 
-	deficit := box - naturalLine(gtx, sh, lbl, f, size, txt, material, box)
-	if deficit <= 0 {
-		return lbl.Layout(gtx, sh, f, size, txt, material)
+	deficit := 0
+	if box > 0 && lbl.LineHeightScale == 1 {
+		if d := box - naturalLine(gtx, sh, lbl, f, size, txt, material, box); d > 0 {
+			deficit = d
+		}
 	}
 
 	// Min.Y is dropped for the inner layout so widget.Label reports the ink it
@@ -152,20 +177,31 @@ func Layout(gtx layout.Context, sh *text.Shaper, lbl widget.Label, f font.Font, 
 	call := rec.Stop()
 
 	above := deficit / 2
-	off := op.Offset(image.Pt(0, above)).Push(gtx.Ops)
-	call.Add(gtx.Ops)
-	off.Pop()
-
 	dims.Size.Y += deficit
 	// Baseline is measured up from the bottom of the dimensions, so it grows
 	// by the half added below the ink, not by the whole deficit.
 	dims.Baseline += deficit - above
 
-	// The ink is anchored to the top of the box, so whichever way the caller's
-	// constraints move the bottom edge, the baseline moves with it.
-	boxed := dims.Size.Y
+	corrected := dims.Size.Y
 	dims.Size = gtx.Constraints.Constrain(dims.Size)
-	dims.Baseline += dims.Size.Y - boxed
+	if surplus := dims.Size.Y - corrected; surplus > 0 {
+		// The caller's floor exceeds the line box: centre the box within it,
+		// half above rounded down, and keep the baseline on the ink.
+		above += surplus / 2
+		dims.Baseline += surplus - surplus/2
+	} else {
+		// The caller's Max shrank the box: the ink stays anchored to the top,
+		// so the baseline moves with the bottom edge.
+		dims.Baseline += surplus
+	}
+
+	if above > 0 {
+		off := op.Offset(image.Pt(0, above)).Push(gtx.Ops)
+		call.Add(gtx.Ops)
+		off.Pop()
+	} else {
+		call.Add(gtx.Ops)
+	}
 	return dims
 }
 

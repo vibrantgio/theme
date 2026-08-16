@@ -308,6 +308,76 @@ func TestResultFitsTheCallersConstraints(t *testing.T) {
 	}
 }
 
+// TestFloorCentresTheInk pins where the ink sits under a Min.Y floor, via the
+// baseline: Dimensions.Baseline is measured up from the bottom, so with the
+// glyphs fixed it names the ink's vertical position exactly. Three cases:
+// no floor, a floor below the line box (which must change nothing), and a
+// floor above it — layout.Flex hands an exact cell height down as a minimum,
+// so this is every label in an exact-height row. The surplus splits half
+// above (rounded down) and half below; left to widget.Label it would all
+// land below and the ink would pin to the top of the cell.
+func TestFloorCentresTheInk(t *testing.T) {
+	var ops op.Ops
+	sh := pinned()
+	style := styleAt(20)
+	f := typeset.Font(style, font.Normal)
+
+	free := gtx(&ops, 1<<20)
+	base := typeset.Layout(free, sh, typeset.Label(style, 1), f, unit.Sp(style.Size), specimen, op.CallOp{})
+	if base.Size.Y != 20 {
+		t.Fatalf("no floor: box %d px, want the 20 px line box", base.Size.Y)
+	}
+
+	low := gtx(&ops, 1<<20)
+	low.Constraints.Min.Y = 12
+	if dims := typeset.Layout(low, sh, typeset.Label(style, 1), f, unit.Sp(style.Size), specimen, op.CallOp{}); dims != base {
+		t.Errorf("floor 12 below the 20 px line box: %+v, want the unfloored %+v", dims, base)
+	}
+
+	high := gtx(&ops, 1<<20)
+	high.Constraints.Min.Y = 41 // odd, so the rounding direction is visible
+	dims := typeset.Layout(high, sh, typeset.Label(style, 1), f, unit.Sp(style.Size), specimen, op.CallOp{})
+	if dims.Size.Y != 41 {
+		t.Fatalf("floor 41: reported %d px, want the floor", dims.Size.Y)
+	}
+	surplus := 41 - base.Size.Y // 21: 10 above (rounded down), 11 below
+	if want := base.Baseline + surplus - surplus/2; dims.Baseline != want {
+		t.Errorf("floor 41: baseline %d, want %d (unfloored %d + %d below the ink)",
+			dims.Baseline, want, base.Baseline, surplus-surplus/2)
+	}
+}
+
+// TestFloorCentresOnTheUncorrectedPathsToo pins that the floor split is not
+// tied to the line-box correction: a label with no line height of its own,
+// and one whose LineHeightScale asks for face-relative height, take the
+// correction's no-op path — and must still centre in an exact-height cell,
+// because the floor problem is the caller's cell, not the line box.
+func TestFloorCentresOnTheUncorrectedPathsToo(t *testing.T) {
+	var ops op.Ops
+	sh := pinned()
+	style := styleAt(0)
+	f := typeset.Font(style, font.Normal)
+
+	for name, lbl := range map[string]widget.Label{
+		"no line height": {MaxLines: 1},
+		"scaled":         {MaxLines: 1, LineHeight: unit.Sp(20), LineHeightScale: 1.2},
+	} {
+		free := gtx(&ops, 1<<20)
+		base := typeset.Layout(free, sh, lbl, f, unit.Sp(style.Size), specimen, op.CallOp{})
+
+		floored := gtx(&ops, 1<<20)
+		floored.Constraints.Min.Y = base.Size.Y + 21
+		dims := typeset.Layout(floored, sh, lbl, f, unit.Sp(style.Size), specimen, op.CallOp{})
+		if dims.Size.Y != base.Size.Y+21 {
+			t.Fatalf("%s: reported %d px under a %d px floor", name, dims.Size.Y, base.Size.Y+21)
+		}
+		if want := base.Baseline + 21 - 21/2; dims.Baseline != want {
+			t.Errorf("%s: baseline %d, want %d (unfloored %d + 11 below the ink)",
+				name, dims.Baseline, want, base.Baseline)
+		}
+	}
+}
+
 // TestNegativeLineHeightNeverReachesTheShaper covers the mismatch between the
 // two guards. widget.Label installs any LineHeight that is != 0 where Layout
 // bails at <= 0, so a negative one used to pass straight through with
