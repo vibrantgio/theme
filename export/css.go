@@ -340,11 +340,22 @@ func densityVars(d tokens.Density) []cssVar {
 }
 
 // block renders one selector's declarations.
+// kindOther is the Claude Design pane's kind marker for custom properties
+// its token classifier cannot type on its own — the easing curves and
+// durations. Without the marker the pane's self-check re-adds it by hand on
+// every pass and the next regeneration wipes it again; emitting it here is
+// the durable half of that handshake.
+const kindOther = "/* @kind other */"
+
 func block(b *strings.Builder, selector string, vars []cssVar) {
 	b.WriteString(selector)
 	b.WriteString(" {\n")
 	for _, v := range vars {
-		fmt.Fprintf(b, "  %s: %s;\n", v.name, v.value)
+		if strings.HasPrefix(v.name, "--ease-") || strings.HasPrefix(v.name, "--duration-") {
+			fmt.Fprintf(b, "  %s: %s; %s\n", v.name, v.value, kindOther)
+		} else {
+			fmt.Fprintf(b, "  %s: %s;\n", v.name, v.value)
+		}
 	}
 	b.WriteString("}\n")
 }

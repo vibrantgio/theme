@@ -47,6 +47,12 @@ func parseSheet(t *testing.T, src string) map[string]map[string]string {
 			if cur == nil {
 				t.Fatalf("styles.css: declaration outside a block: %q", line)
 			}
+			// Declarations may carry a trailing kind annotation for the
+			// Claude Design pane's token classifier ("; /* @kind other */");
+			// strip it so the value checks see the bare declaration.
+			if i := strings.Index(line, "/*"); i >= 0 && strings.HasSuffix(line, "*/") {
+				line = strings.TrimSpace(line[:i])
+			}
 			name, val, ok := strings.Cut(line, ":")
 			if !ok || !strings.HasSuffix(val, ";") {
 				t.Fatalf("styles.css: malformed declaration: %q", line)
