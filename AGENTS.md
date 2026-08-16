@@ -25,7 +25,7 @@ system styles against lives here rather than in components: goals G-B3 and
 E3.2 moved it down, which is what makes a tier-1 theme possible at all. Its
 root module imports `font` and `mvu`. Imported by `components`, `effects`,
 `markdown` and `patterns`. Outside the tier table, also by the demo modules
-`components/gallery` and `mvu/example` and all seven workbench
+`components/gallery` and `mvu/example` and all eight workbench
 applications. Both directions are measured rather than typed —
 `scripts/check-layers.sh --edges` reports the graph and
 `scripts/sync-agents.sh` renders these sentences from it — so correcting
