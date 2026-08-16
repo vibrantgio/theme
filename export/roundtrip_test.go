@@ -451,6 +451,18 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"background: var(--color-neutral-300);",
 		"background: var(--color-neutral-400);",
 		"color: var(--color-neutral-900);",
+		// Ghost in a raised host (I3.1): the wash re-derives from the host
+		// surface's own storey — the level-2 dialog and elevated card walk
+		// 400/500, the level-3 popover 500/600 — token references all the
+		// way, exactly buttonColors' ghostGroundStep walk.
+		".dialog .btn.ghost:hover, .dialog .btn.ghost.is-hover,",
+		".card.elevated .btn.ghost:hover, .card.elevated .btn.ghost.is-hover {",
+		".dialog .btn.ghost:active, .dialog .btn.ghost.is-active,",
+		".card.elevated .btn.ghost:active, .card.elevated .btn.ghost.is-active {",
+		".popover .btn.ghost:hover, .popover .btn.ghost.is-hover {",
+		".popover .btn.ghost:active, .popover .btn.ghost.is-active {",
+		"background: var(--color-neutral-500);",
+		"background: var(--color-neutral-600);",
 		// Tag (G2.1): the patterns' chip — Full-radius pill, S1/S2 padding,
 		// label-small text; filled accent/on-accent, tonal primary-200 under
 		// the accent pin.
