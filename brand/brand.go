@@ -1,0 +1,280 @@
+// Package brand keeps the brand colour a person chose, so a palette worth
+// keeping outlives the application that generated it, and hands it back as
+// the options a live theme stream is built with.
+//
+// What is kept is one colour. [tokens.FromSeed] is a pure function of its
+// seed and reproduces its own output from the primary it pins, so the seed
+// alone regenerates every ramp, pin and on-colour of both schemes exactly —
+// there is nothing else to store, and storing the generated colours instead
+// would freeze a palette that the generator is still entitled to improve.
+// What is kept alongside it is provenance, not input: where the colour came
+// from and when it was kept, so a file found six months later can say what
+// it is.
+//
+// # The file
+//
+// One JSON object:
+//
+//	{
+//	  "seed": "#e8112d",
+//	  "source": "harbour.jpg",
+//	  "saved": "2026-08-19T11:04:31Z"
+//	}
+//
+// It sits in an OS-appropriate config directory:
+//
+//   - darwin:  ~/Library/Application Support/vibrantgio/theme.json
+//   - linux:   $XDG_CONFIG_HOME/vibrantgio/theme.json (or ~/.config/...)
+//   - windows: %AppData%\vibrantgio\theme.json
+//
+// That is [os.UserConfigDir], the same root theme/preferences resolves
+// against, because a chosen brand is config rather than data. The path is
+// per user and NOT per application: the point of keeping a brand is that
+// everything the person opens wears it, so the directory is the design
+// system's, and one file serves every application that asks.
+//
+// The seed is spelled the way theme/export's theme.json spells it —
+// lowercase #rrggbb under the key "seed" — so the two files agree on how a
+// seed is written, and an exported theme.json dropped in as this file loads
+// without translation. Keys this package does not know are ignored.
+//
+// # Adopting it
+//
+// [Kept] reads the file and folds every way it can go wrong into the zero
+// [Brand], which is "nothing was kept". A zero Brand's [Brand.Options] is
+// nil and its [Brand.Colors] are the package defaults, so the adopting call
+// is one line that behaves exactly as it did before this package existed
+// when there is nothing to adopt:
+//
+//	th := system.LiveTheme(time.Second, brand.Kept().Options()...)
+//
+// The kept brand pins the palette pair; which side of it shows is still the
+// OS's to decide, and still changes live. Adoption replaces the seed, never
+// the light/dark switching.
+//
+// A missing file and an unreadable one are deliberately the same answer to
+// [Kept]: an application asking for a brand it does not have must draw
+// something, and what it draws is the default palette either way. Use
+// [Load] when the difference matters — it separates "no file" from "a file
+// that would not parse" — and note that neither is worth interrupting a
+// person over.
+package brand
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"image/color"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/vibrantgio/theme/system"
+	"github.com/vibrantgio/theme/tokens"
+)
+
+// dirName is the directory the file sits in under the user's config
+// directory — the design system's own name, because the file is shared by
+// every application that adopts the brand rather than owned by one of them.
+const dirName = "vibrantgio"
+
+// fileName is the file itself. It is theme/export's name for the same fact
+// on purpose: both files answer "which seed is this theme", and a reader
+// that finds either knows what it is holding.
+const fileName = "theme.json"
+
+// Brand is a kept brand colour with the provenance that explains it.
+//
+// The zero Brand is "nothing kept": Seed's alpha is zero, which no kept
+// colour has, so [Brand.Chosen] can tell the two apart without a second
+// field and every method degrades to the package defaults.
+type Brand struct {
+	// Seed is the colour the palette derives from, opaque. It is the
+	// whole input: tokens.FromSeed(Seed) is both schemes.
+	Seed color.NRGBA
+
+	// Source names where the colour was found — a picture's file name, a
+	// hand-typed hex, whatever the chooser can honestly say. It is
+	// provenance and nothing reads it back as input; empty is allowed and
+	// means the chooser had nothing to say.
+	Source string
+
+	// Saved is when the colour was kept. [Save] fills it with the current
+	// time when it is zero, so a caller that does not care about the clock
+	// still writes an honest file.
+	Saved time.Time
+}
+
+// Chosen reports whether this Brand carries a colour. It is false for the
+// zero Brand — the value [Kept] returns when there is no file, or none that
+// parses.
+func (b Brand) Chosen() bool { return b.Seed.A != 0 }
+
+// Colors returns the pair of schemes the brand generates, or the package
+// defaults when nothing was kept. It is what a caller needs before a theme
+// stream has emitted anything — the palette to draw the first frame in, so
+// that frame is already wearing the kept brand rather than flashing the
+// default one at the person who chose against it.
+func (b Brand) Colors() (light, dark tokens.ColorTokens) {
+	if !b.Chosen() {
+		return tokens.DefaultLight, tokens.DefaultDark
+	}
+	return tokens.FromSeed(b.Seed)
+}
+
+// Options returns the theme-stream options that put the kept brand on the
+// stream, and nil when nothing was kept — so splatting the result into a
+// stream constructor adopts a brand when there is one and changes nothing
+// when there is not.
+//
+// The option pins the palette pair, which means the OS accent colour no
+// longer overrides it: a deliberately chosen brand outranks the desktop's.
+// Light and dark still follow the OS.
+func (b Brand) Options() []system.Option {
+	if !b.Chosen() {
+		return nil
+	}
+	return []system.Option{system.WithSeed(b.Seed)}
+}
+
+// Path returns the file's path for this user. It creates nothing.
+func Path() (string, error) {
+	dir, err := os.UserConfigDir()
+	if err != nil {
+		return "", fmt.Errorf("brand: path: %w", err)
+	}
+	return filepath.Join(dir, dirName, fileName), nil
+}
+
+// Kept is the forgiving read: the kept brand, or the zero [Brand] when
+// there is none to be had for any reason at all — no file, an unreadable
+// directory, a file that is not JSON, a seed that is not a colour. Nothing
+// an application does with a brand is worth failing to start over, and the
+// answer it needs in every one of those cases is the same one.
+func Kept() Brand {
+	b, _, err := Load()
+	if err != nil {
+		return Brand{}
+	}
+	return b
+}
+
+// KeptFrom is [Kept] against an explicit path, which is what a test points
+// at a temporary directory.
+func KeptFrom(path string) Brand {
+	b, _, err := LoadFrom(path)
+	if err != nil {
+		return Brand{}
+	}
+	return b
+}
+
+// Load reads the kept brand from this user's file. The bool reports whether
+// a brand was found; the error reports why one could not be read. A missing
+// file is (zero, false, nil) — not having chosen a brand is not a failure.
+func Load() (Brand, bool, error) {
+	path, err := Path()
+	if err != nil {
+		return Brand{}, false, err
+	}
+	return LoadFrom(path)
+}
+
+// LoadFrom is [Load] against an explicit path.
+func LoadFrom(path string) (Brand, bool, error) {
+	data, err := os.ReadFile(path)
+	if errors.Is(err, fs.ErrNotExist) {
+		return Brand{}, false, nil
+	}
+	if err != nil {
+		return Brand{}, false, fmt.Errorf("brand: load: %w", err)
+	}
+	var f file
+	if err := json.Unmarshal(data, &f); err != nil {
+		return Brand{}, false, fmt.Errorf("brand: load %s: %w", path, err)
+	}
+	seed, err := parseHex(f.Seed)
+	if err != nil {
+		return Brand{}, false, fmt.Errorf("brand: load %s: %w", path, err)
+	}
+	b := Brand{Seed: seed, Source: f.Source}
+	if f.Saved != "" {
+		// An unreadable timestamp costs the provenance, not the brand: the
+		// colour is what the file is for, and it parsed.
+		if ts, err := time.Parse(time.RFC3339, f.Saved); err == nil {
+			b.Saved = ts
+		}
+	}
+	return b, true, nil
+}
+
+// Save writes the brand to this user's file, creating the directory. A
+// brand with no colour is refused: writing one would leave a file that
+// [Kept] reads back as nothing kept, which is a slower way of deleting it.
+func Save(b Brand) error {
+	path, err := Path()
+	if err != nil {
+		return err
+	}
+	return SaveTo(path, b)
+}
+
+// SaveTo is [Save] against an explicit path.
+func SaveTo(path string, b Brand) error {
+	if !b.Chosen() {
+		return errors.New("brand: save: the brand carries no colour")
+	}
+	if b.Saved.IsZero() {
+		b.Saved = time.Now()
+	}
+	data, err := json.MarshalIndent(file{
+		Seed:   hexRGB(b.Seed),
+		Source: b.Source,
+		Saved:  b.Saved.UTC().Format(time.RFC3339),
+	}, "", "  ")
+	if err != nil {
+		return fmt.Errorf("brand: save: %w", err)
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return fmt.Errorf("brand: save: %w", err)
+	}
+	if err := os.WriteFile(path, append(data, '\n'), 0o644); err != nil {
+		return fmt.Errorf("brand: save: %w", err)
+	}
+	return nil
+}
+
+// file is the JSON shape on disk. It is separate from [Brand] so the file's
+// spelling — a hex string, an RFC 3339 timestamp — is a decision this
+// package makes once rather than a shape every caller has to hold a colour
+// in.
+type file struct {
+	Seed   string `json:"seed"`
+	Source string `json:"source,omitempty"`
+	Saved  string `json:"saved,omitempty"`
+}
+
+// hexRGB writes a colour as lowercase #rrggbb. A kept seed is opaque, so
+// alpha is never written.
+func hexRGB(c color.NRGBA) string {
+	return fmt.Sprintf("#%02x%02x%02x", c.R, c.G, c.B)
+}
+
+// parseHex reads #rrggbb, in either case, and returns it opaque. Anything
+// else — an empty string, a name, a short form, trailing rubbish — is an
+// error, because a file whose seed cannot be read is a file with no brand
+// in it and saying so is more useful than guessing a colour.
+func parseHex(s string) (color.NRGBA, error) {
+	h := strings.TrimPrefix(strings.TrimSpace(s), "#")
+	if len(h) != 6 {
+		return color.NRGBA{}, fmt.Errorf("seed %q is not a #rrggbb colour", s)
+	}
+	v, err := strconv.ParseUint(h, 16, 32)
+	if err != nil {
+		return color.NRGBA{}, fmt.Errorf("seed %q is not a #rrggbb colour", s)
+	}
+	return color.NRGBA{R: uint8(v >> 16), G: uint8(v >> 8), B: uint8(v), A: 0xff}, nil
+}
