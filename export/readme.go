@@ -64,7 +64,7 @@ func readmeMD(s Snapshot) string {
 	for i, pin := range pinRoles {
 		pinNames[i] = "`--color-" + pin.name + "`"
 	}
-	fmt.Fprintf(&b, "| pins & semantic layer | %s | pinned bases, their on-colours, and the ramp-resolved surface/divider |\n", strings.Join(pinNames, ", "))
+	fmt.Fprintf(&b, "| pins & semantic layer | %s | pinned bases, their on-colours, the ramp-resolved surface/divider, and the inverse pair the counterpart scheme's ramp resolves |\n", strings.Join(pinNames, ", "))
 	b.WriteString("| `--font-family` | `--font-family` | the typeface every prose role uses |\n")
 	b.WriteString("| `--font-family-code` | `--font-family-code` | the monospace typeface the code role uses |\n")
 	typeNames := make([]string, len(typeRoles))
@@ -121,10 +121,9 @@ func readmeMD(s Snapshot) string {
 		"`.tag` is the chip the patterns draw: a Full-radius pill at `label-small`\n" +
 		"metrics with S1/S2 padding — filled (accent under on-accent) by default,\n" +
 		"`.tag.tonal` the primary-200 tinted fill under the accent pin. Status\n" +
-		"chips are `.tag.success` / `.tag.warning` / `.tag.error`: the same\n" +
-		"level colour the toast carries, resolved the same way — the level pin\n" +
-		"tinted 20% over the Surface ground, ringed by the 1 dp level outline,\n" +
-		"under the text pin. Compose them for status; never inline-style a\n" +
+		"chips are `.tag.success` / `.tag.warning` / `.tag.error`: the level\n" +
+		"pin tinted 20% over the Surface ground, ringed by the 1 dp level\n" +
+		"outline, under the text pin. Compose them for status; never inline-style a\n" +
 		"status colour. Tags are labels, not controls: no interaction states.\n\n" +
 		"The form controls dress native elements — no script anywhere:\n" +
 		"`.input` (text `<input>`, and `<select class=\"input select\">` inside a\n" +

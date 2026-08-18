@@ -148,17 +148,39 @@ type ColorTokens struct {
 	// except in the high-contrast variant, which resolves it from the
 	// strong-border step 500 (see FromSeedHighContrast).
 	Divider color.NRGBA
+
+	// The inverse pair: a surface deliberately on the wrong side of the
+	// scheme, dark in a light scheme and light in a dark one, with the
+	// on-colour to read on it. It is what a transient message stands on —
+	// a message that can appear over any surface separates by being the
+	// one thing built from the opposite scheme, not by out-elevating what
+	// it covers.
+	//
+	// Both resolve from the *counterpart* scheme's neutral ramp, which is
+	// the whole of the derivation: a light scheme's inverse pair is the
+	// dark scheme's Surface and Text, and a dark scheme's is the light
+	// scheme's. So the pair carries the same measured separation the
+	// counterpart scheme's own reading pair does — nothing about it is an
+	// approximation — and it re-derives with the seed and the
+	// high-contrast variant like every other role.
+	InverseSurface   color.NRGBA // counterpart Neutral.Step(200)
+	OnInverseSurface color.NRGBA // text/icon over it — counterpart Neutral.Step(900)
 }
 
 // resolveAliases fills every field defined as a resolution of a ramp step —
-// since v0.2.0 that is Surface and Divider, the two semantic fields; the
-// five MD3 aliases it also filled were deleted with the deprecation window.
-// dividerStep is the Neutral step Divider resolves from: 300 in the default
-// derivation, 500 in the high-contrast variant. Constructing tokens through
-// it is what keeps each field byte-identical to its documented resolution;
-// FromSeed and FromSeedHighContrast build both schemes through it.
-func resolveAliases(t ColorTokens, dividerStep int) ColorTokens {
+// Surface and Divider off this scheme's own neutral ramp, and the inverse
+// pair off the counterpart scheme's; the five MD3 aliases it also filled
+// were deleted with the deprecation window. dividerStep is the Neutral step
+// Divider resolves from: 300 in the default derivation, 500 in the
+// high-contrast variant. counterpart is the other scheme's neutral ramp —
+// the dark one while building the light scheme and the light one while
+// building the dark. Constructing tokens through it is what keeps each
+// field byte-identical to its documented resolution; FromSeed and
+// FromSeedHighContrast build both schemes through it.
+func resolveAliases(t ColorTokens, dividerStep int, counterpart Ramp) ColorTokens {
 	t.Surface = t.Ramps.Neutral.Step(200)
 	t.Divider = t.Ramps.Neutral.Step(dividerStep)
+	t.InverseSurface = counterpart.Step(200)
+	t.OnInverseSurface = counterpart.Step(900)
 	return t
 }

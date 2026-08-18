@@ -469,9 +469,9 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"padding: var(--space-1) var(--space-2);",
 		"border-radius: var(--radius-full);",
 		"font-size: var(--font-label-small-size);",
-		// Status tags (I2.1): the toast's level resolution at chip scale —
-		// the level pin tinted 20% over the Surface ground, the 1 dp level
-		// outline (padding giving its 1px back), the Text pin on top.
+		// Status tags (I2.1): the level pin tinted 20% over the Surface
+		// ground, the 1 dp level outline (padding giving its 1px back),
+		// the Text pin on top.
 		".tag.success, .tag.warning, .tag.error {",
 		"padding: calc(var(--space-1) - 1px) calc(var(--space-2) - 1px);",
 		"border: 1px solid var(--color-success);",
@@ -569,17 +569,19 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"color: var(--color-surface);",
 		"border-radius: var(--radius-sm);",
 		"padding: var(--space-1) var(--space-2);",
-		// Toast: the 20% accent tint over the level-2 base (toast.go
-		// tintSurface's 0x33 blend), the accent outline, the level-3 cast
-		// shadow — the opt-in cue for a floating transient — and the level
-		// pins mapped exactly as accentColor maps them.
-		"background: color-mix(in srgb, var(--color-accent) 20%, var(--elevation-2));",
-		"border: 1px solid var(--color-accent);",
+		// Toast: the inverse pair — the counterpart scheme's surface under
+		// its own on-colour — with no outline at all, the level-3 cast
+		// shadow (the opt-in cue for a floating transient) and the level's
+		// leading edge as a two-stop gradient off that level's ramp at the
+		// step-400 rung.
+		"color: var(--color-on-inverse-surface);",
+		"background: linear-gradient(to right, var(--color-primary-400) 0 var(--space-1), var(--color-inverse-surface) var(--space-1));",
 		"box-shadow: var(--shadow-3);",
 		"min-height: 36px;",
-		"background: color-mix(in srgb, var(--color-success) 20%, var(--elevation-2));",
-		"background: color-mix(in srgb, var(--color-warning) 20%, var(--elevation-2));",
-		"background: color-mix(in srgb, var(--color-error) 20%, var(--elevation-2));",
+		"padding-left: calc(var(--space-1) + var(--space-3));",
+		"background: linear-gradient(to right, var(--color-success-400) 0 var(--space-1), var(--color-inverse-surface) var(--space-1));",
+		"background: linear-gradient(to right, var(--color-warning-400) 0 var(--space-1), var(--color-inverse-surface) var(--space-1));",
+		"background: linear-gradient(to right, var(--color-error-400) 0 var(--space-1), var(--color-inverse-surface) var(--space-1));",
 	} {
 		if !strings.Contains(classes, frag) {
 			t.Errorf("class layer lacks %q", frag)

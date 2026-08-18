@@ -153,6 +153,50 @@ func TestAPCAContrastGateHighContrast(t *testing.T) {
 	}
 }
 
+// TestInverseSurfaceBodyTextContrast gates the inverse pair in every
+// scheme the seed pipeline derives — both default schemes and both
+// high-contrast ones — at WCAG AA for body text (4.5:1). The inverse
+// surface is what a transient message stands on, so its on-colour is read
+// as running text and the body-text ratio is the bar that matters; unlike
+// the ramp gates above this one is WCAG-gated rather than WCAG-reported,
+// because 4.5:1 is the number the role's contract is written in. APCA is
+// logged alongside, the mirror of the arrangement the other gates use.
+//
+// The pair is also, by derivation, the counterpart scheme's own Surface
+// and Text — so a failure here is a failure of that scheme's reading pair,
+// not of a separate approximation. The test asserts the derivation too:
+// measuring a pair that had quietly stopped being the counterpart's would
+// prove nothing about the chip a light scheme actually paints.
+func TestInverseSurfaceBodyTextContrast(t *testing.T) {
+	hcLight, hcDark := tokens.FromSeedHighContrast(tokens.DefaultSeed)
+	for _, s := range []struct {
+		name             string
+		tok, counterpart tokens.ColorTokens
+	}{
+		{"DefaultLight", tokens.DefaultLight, tokens.DefaultDark},
+		{"DefaultDark", tokens.DefaultDark, tokens.DefaultLight},
+		{"HighContrastLight", hcLight, hcDark},
+		{"HighContrastDark", hcDark, hcLight},
+	} {
+		t.Run(s.name, func(t *testing.T) {
+			wcag := color.ContrastRatio(s.tok.OnInverseSurface, s.tok.InverseSurface)
+			lc := color.APCA(s.tok.OnInverseSurface, s.tok.InverseSurface)
+			t.Logf("inverse pair %v on %v: WCAG %.2f:1 (gate ≥ %.1f:1), Lc %.2f (reported)",
+				s.tok.OnInverseSurface, s.tok.InverseSurface, wcag, wcagAA, lc)
+			if wcag < wcagAA {
+				t.Errorf("inverse pair: WCAG %.2f:1 < %.1f:1 — body text on the inverse surface is unreadable",
+					wcag, wcagAA)
+			}
+			if got, want := s.tok.InverseSurface, s.counterpart.Surface; got != want {
+				t.Errorf("InverseSurface = %v, want the counterpart scheme's Surface %v", got, want)
+			}
+			if got, want := s.tok.OnInverseSurface, s.counterpart.Text; got != want {
+				t.Errorf("OnInverseSurface = %v, want the counterpart scheme's Text %v", got, want)
+			}
+		})
+	}
+}
+
 // wcagAAA is WCAG 2's AAA normal-text ratio, reported (never gated on) by
 // the high-contrast gate's log lines.
 const wcagAAA = 7.0

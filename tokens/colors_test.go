@@ -24,6 +24,7 @@ func tokenPairs(t tokens.ColorTokens) []contrastPair {
 	n := t.Ramps.Neutral
 	return []contrastPair{
 		{"Background/Text", t.Background, t.Text},
+		{"InverseSurface/OnInverseSurface", t.InverseSurface, t.OnInverseSurface},
 		{"Surface/Neutral.Step(900)", t.Surface, n.Step(900)},
 		{"Neutral.Step(300)/Neutral.Step(700)", n.Step(300), n.Step(700)},
 		{"Primary/OnPrimary", t.Primary, t.OnPrimary},
@@ -88,14 +89,18 @@ func TestRampStepAddressing(t *testing.T) {
 // TestSemanticLayerResolvesFromRamps verifies the semantic layer resolves
 // per ADR-007's surface mapping in both default schemes. Through v0.1.x
 // this also pinned the five MD3 aliases to their ramp steps; F3.3 deleted
-// them, leaving Surface and Divider as the only resolved fields.
+// them, leaving Surface, Divider and the inverse pair as the resolved
+// fields. The inverse pair is the one resolution that reads across the
+// scheme boundary: it is the counterpart scheme's own Surface and Text, so
+// each scheme's inverse chip is built out of the other one.
 func TestSemanticLayerResolvesFromRamps(t *testing.T) {
 	for _, s := range []struct {
-		name string
-		tok  tokens.ColorTokens
+		name        string
+		tok         tokens.ColorTokens
+		counterpart tokens.ColorTokens
 	}{
-		{"DefaultLight", tokens.DefaultLight},
-		{"DefaultDark", tokens.DefaultDark},
+		{"DefaultLight", tokens.DefaultLight, tokens.DefaultDark},
+		{"DefaultDark", tokens.DefaultDark, tokens.DefaultLight},
 	} {
 		n := s.tok.Ramps.Neutral
 		checks := []struct {
@@ -105,6 +110,8 @@ func TestSemanticLayerResolvesFromRamps(t *testing.T) {
 		}{
 			{"Surface = Neutral.Step(200)", s.tok.Surface, n.Step(200)},
 			{"Divider = Neutral.Step(300)", s.tok.Divider, n.Step(300)},
+			{"InverseSurface = the counterpart scheme's Surface", s.tok.InverseSurface, s.counterpart.Surface},
+			{"OnInverseSurface = the counterpart scheme's Text", s.tok.OnInverseSurface, s.counterpart.Text},
 		}
 		for _, c := range checks {
 			if c.got != c.want {
@@ -139,6 +146,7 @@ func TestAllRampStepsPopulated(t *testing.T) {
 			"Success": s.tok.Success, "OnSuccess": s.tok.OnSuccess,
 			"Warning": s.tok.Warning, "OnWarning": s.tok.OnWarning,
 			"Background": s.tok.Background, "Text": s.tok.Text,
+			"InverseSurface": s.tok.InverseSurface, "OnInverseSurface": s.tok.OnInverseSurface,
 		} {
 			if c.A != 0xff {
 				t.Errorf("%s: %s = %v, want an opaque colour", s.name, name, c)
@@ -422,13 +430,19 @@ func defaultGolden() (light, dark tokens.ColorTokens) {
 		Background:  hex(0x18, 0x17, 0x1c),
 		Text:        hex(0xee, 0xed, 0xf4),
 	}
-	fill := func(t tokens.ColorTokens) tokens.ColorTokens {
-		n := t.Ramps.Neutral
+	// Surface, Divider and the inverse pair are recorded as the resolutions
+	// they are — the first two off this scheme's neutral ramp, the inverse
+	// pair off the counterpart scheme's, which is what makes a light
+	// scheme's inverse chip dark and a dark scheme's light.
+	fill := func(t, counterpart tokens.ColorTokens) tokens.ColorTokens {
+		n, o := t.Ramps.Neutral, counterpart.Ramps.Neutral
 		t.Surface = n.Step(200)
 		t.Divider = n.Step(300)
+		t.InverseSurface = o.Step(200)
+		t.OnInverseSurface = o.Step(900)
 		return t
 	}
-	return fill(light), fill(dark)
+	return fill(light, dark), fill(dark, light)
 }
 
 // hcGolden returns the recorded palette FromSeedHighContrast derives from
@@ -636,13 +650,15 @@ func hcGolden() (light, dark tokens.ColorTokens) {
 		Background:  hex(0x18, 0x17, 0x1c),
 		Text:        white,
 	}
-	fill := func(t tokens.ColorTokens) tokens.ColorTokens {
-		n := t.Ramps.Neutral
+	fill := func(t, counterpart tokens.ColorTokens) tokens.ColorTokens {
+		n, o := t.Ramps.Neutral, counterpart.Ramps.Neutral
 		t.Surface = n.Step(200)
 		t.Divider = n.Step(500) // the HC variant's strong-border divider
+		t.InverseSurface = o.Step(200)
+		t.OnInverseSurface = o.Step(900)
 		return t
 	}
-	return fill(light), fill(dark)
+	return fill(light, dark), fill(dark, light)
 }
 
 // TestFromSeedHighContrastGoldenPalette pins the high-contrast variant
@@ -724,6 +740,7 @@ func diffTokens(t *testing.T, scheme string, got, want tokens.ColorTokens) {
 			"Warning": c.Warning, "OnWarning": c.OnWarning,
 			"Background": c.Background, "Text": c.Text,
 			"Surface": c.Surface, "Divider": c.Divider,
+			"InverseSurface": c.InverseSurface, "OnInverseSurface": c.OnInverseSurface,
 		}
 	}
 	g, w := fields(got), fields(want)

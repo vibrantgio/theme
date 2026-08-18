@@ -64,6 +64,17 @@
 //     two rungs — the default seed's dark primary is now #d0c4ff — and the
 //     solid state walk still lands on exact rungs (hover 800, pressed 900).
 //
+//   - The inverse pair. Each scheme's InverseSurface and OnInverseSurface
+//     are the *other* scheme's Surface and Text — its neutral ramp's steps
+//     200 and 900 — so a light scheme's inverse chip is dark and a dark
+//     scheme's is light, and the pair's separation is the counterpart
+//     scheme's own body-text separation rather than a second measurement
+//     (WCAG 13.75:1 light, 15.06:1 dark on the default seed; the
+//     high-contrast variant widens both to 15.99:1 and 17.11:1 by
+//     deepening the 900 stop the on-colour reads off). Both
+//     schemes are derived in one pass here, so neither needs anything the
+//     other has not already computed.
+//
 //   - On-colours. Light bases sit at tone 40, so their on-colour is White
 //     (Lc ≥ 85, WCAG ≈ 6.4:1); dark bases sit at L* 82, so their on-colour
 //     is their own dark ramp's step 100 (Lc ≥ 73, WCAG ≈ 11:1). D2.4's
@@ -227,6 +238,9 @@ func fromSeed(seed stdcolor.NRGBA, d derivation) (light, dark ColorTokens) {
 		return color.Tone(roles[i].hue, roles[i].chroma, d.darkOnTone)
 	}
 
+	// Each scheme's inverse pair resolves off the other scheme's neutral
+	// ramp — both are derived here, so the pair costs nothing and needs no
+	// second rule (see ColorTokens.InverseSurface).
 	light = resolveAliases(ColorTokens{
 		Ramps: RampSet{
 			Neutral: lr[0], Primary: lr[1], Secondary: lr[2], Tertiary: lr[3],
@@ -246,7 +260,7 @@ func fromSeed(seed stdcolor.NRGBA, d derivation) (light, dark ColorTokens) {
 		OnWarning:   White,
 		Background:  lr[0].Step(100),
 		Text:        lr[0].Step(900),
-	}, d.dividerStep)
+	}, d.dividerStep, dr[0])
 	dark = resolveAliases(ColorTokens{
 		Ramps: RampSet{
 			Neutral: dr[0], Primary: dr[1], Secondary: dr[2], Tertiary: dr[3],
@@ -266,7 +280,7 @@ func fromSeed(seed stdcolor.NRGBA, d derivation) (light, dark ColorTokens) {
 		OnWarning:   darkOn(6),
 		Background:  dr[0].Step(100),
 		Text:        dr[0].Step(900),
-	}, d.dividerStep)
+	}, d.dividerStep, lr[0])
 	return light, dark
 }
 
