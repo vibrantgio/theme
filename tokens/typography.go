@@ -1,6 +1,7 @@
 package tokens
 
 import (
+	"fmt"
 	"sync"
 
 	"gioui.org/font"
@@ -15,6 +16,7 @@ import (
 const (
 	WeightRegular = 400
 	WeightMedium  = 500
+	WeightBold    = 700
 )
 
 // FontWeight converts a CSS-style numeric weight, where regular is 400, to
@@ -59,6 +61,60 @@ type TextStyle struct {
 	Tracking float32
 }
 
+// DocumentHeadingScale is the six-step heading ladder a prose surface sets
+// its headings in: a rendered document, an article, a note, a long-form
+// reading column — anywhere running text is broken up by headings that recur
+// every few paragraphs rather than announcing a screen. Index i holds level
+// i+1; use Level to address the scale by heading level.
+//
+// It exists because the Display, Headline and Title roles are screen
+// furniture. Those roles size the one big line at the top of a view, and at a
+// 16 dp reading size the largest of them is twice the body — which reads as a
+// poster inside a paragraph stream, wraps a title that should fit one line,
+// and leaves too little room below it for six levels to be told apart. A
+// document wants a quieter ladder that still has six rungs.
+//
+// # The proportions
+//
+// The ladder is geometric in the body role's size, stepping by about 1.13
+// from level 6 up to level 1:
+//
+//	level 1   1.6 × body    level 4   1.125 × body
+//	level 2   1.4 × body    level 5   1.0   × body
+//	level 3   1.25 × body   level 6   0.875 × body
+//
+// The two ends are the fixed points. Level 1 at roughly 1.6 × body is the
+// largest a heading can be while a page of prose still reads as one text
+// rather than as a banner over some paragraphs, and it is where a
+// measurement of typeset reading surfaces puts the top of the ladder. The
+// bottom lands at the reading size: a level-5 heading sets in the body's own
+// size and a level-6 heading just under it, because below the reading size a
+// heading stops reading as a heading and starts reading as fine print. The
+// even step between them is the point — a ladder that crowds two adjacent
+// levels together to buy a bigger jump elsewhere leaves the reader unable to
+// rank the two it crowded.
+//
+// # The weight
+//
+// Every stop is bold, and the weight does not fall with the level. Size does
+// most of the work at the top of the ladder, but by level 5 there is no size
+// difference left to do any, so weight is all that separates a heading from
+// the paragraph under it — and a scale whose deep levels fade towards the
+// body weight ends in rungs the reader cannot pick out at all. Measured on
+// typeset reading surfaces, their headings hold a stroke about 1.5 times the
+// stroke of their own body text at every level they use, which is the bold
+// face's ratio against regular rather than the medium face's.
+type DocumentHeadingScale [6]TextStyle
+
+// Level returns the style for heading level n, where n is 1–6. Any other n is
+// a programming error and panics.
+func (s DocumentHeadingScale) Level(n int) TextStyle {
+	if n < 1 || n > len(s) {
+		panic(fmt.Sprintf("tokens: DocumentHeadingScale.Level(%d): level must be 1–%d", n, len(s)))
+	}
+	return s[n-1]
+}
+
 // Typography holds one TextStyle per Material Design 3 type role.
 type Typography struct {
 	DisplayLarge  TextStyle
@@ -86,6 +142,14 @@ type Typography struct {
 	// grid has no code role, so Code sits outside the grid as a sixteenth
 	// style, carrying a body role's metrics on the mono face.
 	Code TextStyle
+
+	// DocumentHeadings is the heading ladder for prose surfaces, derived from
+	// BodyLarge rather than borrowed from the Headline and Title roles; see
+	// [DocumentHeadingScale] for what it is for and how its steps are
+	// proportioned. It sits outside the MD3 grid the way Code does, and it
+	// replaces none of the display roles: a screen's own headline keeps
+	// taking them.
+	DocumentHeadings DocumentHeadingScale
 
 	// Faces is the font collection both shapers build from. Every Typeface a
 	// role names must appear in it, or text in that role falls back to
@@ -266,6 +330,8 @@ func (t Typography) WithFaces(extra ...font.FontFace) Typography {
 // metrics on Roboto Mono, Roboto's companion mono face (G-F0); Faces carries
 // the twelve Roboto faces first — the default family for text that names no
 // typeface — then the four Roboto Mono faces Code resolves against.
+// DocumentHeadings is the seventeenth style, six bold stops stepped off
+// BodyLarge for prose surfaces; see [DocumentHeadingScale].
 //
 // Sixteen faces, and no symbol face: font/notosansmono is deliberately absent,
 // because Shaper's system fallback already covers what it carries and more.
@@ -292,6 +358,20 @@ var DefaultTypography = Typography{
 	BodySmall:  TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 12, LineHeight: 16, Tracking: 0.4},
 
 	Code: TextStyle{Typeface: "Roboto Mono", Weight: WeightRegular, Size: 14, LineHeight: 20, Tracking: 0.25},
+
+	// The document ladder, in BodyLarge's 16 dp: 25.5, 22.5, 20, 18, 16, 14 —
+	// 1.6, 1.4, 1.25, 1.125, 1.0 and 0.875 times the body, an even step of
+	// about 1.13 all the way down. Line height loosens as the size falls,
+	// from a quarter over the largest stop to nearly half over the smallest,
+	// because large type needs proportionally less leading than small type.
+	DocumentHeadings: DocumentHeadingScale{
+		{Typeface: "Roboto", Weight: WeightBold, Size: 25.5, LineHeight: 32, Tracking: 0},
+		{Typeface: "Roboto", Weight: WeightBold, Size: 22.5, LineHeight: 28, Tracking: 0},
+		{Typeface: "Roboto", Weight: WeightBold, Size: 20, LineHeight: 26, Tracking: 0},
+		{Typeface: "Roboto", Weight: WeightBold, Size: 18, LineHeight: 24, Tracking: 0},
+		{Typeface: "Roboto", Weight: WeightBold, Size: 16, LineHeight: 22, Tracking: 0},
+		{Typeface: "Roboto", Weight: WeightBold, Size: 14, LineHeight: 20, Tracking: 0},
+	},
 
 	Faces: append(roboto.FontFaces(), robotomono.FontFaces()...),
 

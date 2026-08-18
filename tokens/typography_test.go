@@ -59,28 +59,133 @@ func TestDefaultTypographyCode(t *testing.T) {
 	}
 }
 
+// TestDocumentHeadingScaleIsComplete: the ladder is a type role like any
+// other, so every stop names a face and carries a size, a weight and a line
+// height. A zero stop would silently fall back to the shaper's defaults on a
+// prose surface.
+func TestDocumentHeadingScaleIsComplete(t *testing.T) {
+	for level := 1; level <= 6; level++ {
+		style := tokens.DefaultTypography.DocumentHeadings.Level(level)
+		if style.Typeface == "" {
+			t.Errorf("level %d: no typeface", level)
+		}
+		if style.Size <= 0 {
+			t.Errorf("level %d: zero size", level)
+		}
+		if style.Weight <= 0 {
+			t.Errorf("level %d: zero weight", level)
+		}
+		if style.LineHeight <= 0 {
+			t.Errorf("level %d: zero line height", level)
+		}
+	}
+}
+
+// TestDocumentHeadingScaleProportions pins the ladder to the body role it is
+// stepped off: level 1 at 1.6 times BodyLarge, level 2 at 1.4, level 5 at the
+// reading size itself and level 6 just under it.
+func TestDocumentHeadingScaleProportions(t *testing.T) {
+	body := tokens.DefaultTypography.BodyLarge.Size
+	want := []struct {
+		level int
+		ratio float32
+	}{
+		{1, 1.6}, {2, 1.4}, {3, 1.25}, {4, 1.125}, {5, 1.0}, {6, 0.875},
+	}
+	for _, w := range want {
+		got := tokens.DefaultTypography.DocumentHeadings.Level(w.level).Size / body
+		if diff := got - w.ratio; diff > 0.02 || diff < -0.02 {
+			t.Errorf("level %d sets at %.3f times the %g dp body, want %.3f",
+				w.level, got, body, w.ratio)
+		}
+	}
+}
+
+// TestDocumentHeadingScaleStepsEvenly is the complaint the ladder exists to
+// answer: adjacent levels a reader cannot rank. Every step down must be a
+// real one, and no step may be so much smaller than its neighbours that the
+// pair it separates reads as one level.
+func TestDocumentHeadingScaleStepsEvenly(t *testing.T) {
+	scale := tokens.DefaultTypography.DocumentHeadings
+	var steps []float32
+	for level := 2; level <= 6; level++ {
+		above, here := scale.Level(level-1).Size, scale.Level(level).Size
+		if here >= above {
+			t.Fatalf("level %d sets at %g dp against level %d's %g; the ladder must fall",
+				level, here, level-1, above)
+		}
+		steps = append(steps, above/here)
+	}
+	for i, step := range steps {
+		if step < 1.10 {
+			t.Errorf("levels %d and %d differ by only %.3f; adjacent levels must be tellable apart",
+				i+1, i+2, step)
+		}
+		if step > 1.20 {
+			t.Errorf("levels %d and %d differ by %.3f; a step that wide crowds the levels below it",
+				i+1, i+2, step)
+		}
+	}
+}
+
+// TestDocumentHeadingScaleIsBoldThroughout: by the bottom of the ladder there
+// is no size difference left to mark a heading, so weight carries it, and a
+// weight that fades with the level would end in rungs indistinguishable from
+// the paragraph under them.
+func TestDocumentHeadingScaleIsBoldThroughout(t *testing.T) {
+	for level := 1; level <= 6; level++ {
+		if got := tokens.DefaultTypography.DocumentHeadings.Level(level).Weight; got != tokens.WeightBold {
+			t.Errorf("level %d is weight %d, want the bold %d", level, got, tokens.WeightBold)
+		}
+	}
+}
+
+// TestDocumentHeadingScaleLevelAddressesTheIndex: Level(n) is the ladder's
+// only documented accessor, so it must agree with the index it wraps and
+// reject a level that is not one of the six.
+func TestDocumentHeadingScaleLevelAddressesTheIndex(t *testing.T) {
+	scale := tokens.DefaultTypography.DocumentHeadings
+	for level := 1; level <= 6; level++ {
+		if got, want := scale.Level(level), scale[level-1]; got != want {
+			t.Errorf("Level(%d) = %+v, want index %d's %+v", level, got, level-1, want)
+		}
+	}
+	for _, level := range []int{-1, 0, 7} {
+		func() {
+			defer func() {
+				if recover() == nil {
+					t.Errorf("Level(%d) returned instead of panicking", level)
+				}
+			}()
+			scale.Level(level)
+		}()
+	}
+}
+
 // TestDefaultShaperResolvesRobotoEveryWeight shapes text through the pinned
 // shaper for every distinct weight the default typography names. It uses
 // DeterministicShaper rather than Shaper deliberately: with system fonts off,
 // only the Roboto collection can answer, so glyphs coming back at all proves
 // Roboto resolved rather than proving this machine owns some other face.
-// Different total advances between regular and medium then prove the weights
-// resolve to distinct faces rather than collapsing onto one.
+// Different total advances between regular, medium and bold then prove the
+// weights resolve to distinct faces rather than collapsing onto one.
 func TestDefaultShaperResolvesRobotoEveryWeight(t *testing.T) {
 	typ := tokens.DefaultTypography
 	weights := map[int]bool{}
-	for _, style := range []tokens.TextStyle{
+	styles := []tokens.TextStyle{
 		typ.DisplayLarge, typ.DisplayMedium, typ.DisplaySmall,
 		typ.HeadlineLarge, typ.HeadlineMedium, typ.HeadlineSmall,
 		typ.TitleLarge, typ.TitleMedium, typ.TitleSmall,
 		typ.LabelLarge, typ.LabelMedium, typ.LabelSmall,
 		typ.BodyLarge, typ.BodyMedium, typ.BodySmall,
-	} {
+	}
+	styles = append(styles, typ.DocumentHeadings[:]...)
+	for _, style := range styles {
 		weights[style.Weight] = true
 	}
-	if !weights[tokens.WeightRegular] || !weights[tokens.WeightMedium] {
-		t.Fatalf("default typography names weights %v, want both %d and %d",
-			weights, tokens.WeightRegular, tokens.WeightMedium)
+	if !weights[tokens.WeightRegular] || !weights[tokens.WeightMedium] || !weights[tokens.WeightBold] {
+		t.Fatalf("default typography names weights %v, want all of %d, %d and %d",
+			weights, tokens.WeightRegular, tokens.WeightMedium, tokens.WeightBold)
 	}
 
 	shaper := typ.DeterministicShaper()
@@ -103,10 +208,16 @@ func TestDefaultShaperResolvesRobotoEveryWeight(t *testing.T) {
 		}
 		advances[weight] = advance
 	}
-	if advances[tokens.WeightRegular] == advances[tokens.WeightMedium] {
-		t.Errorf("regular and medium shaped to identical advances (%v); "+
-			"medium likely fell back to the regular face",
-			advances[tokens.WeightRegular])
+	pairs := []struct{ a, b int }{
+		{tokens.WeightRegular, tokens.WeightMedium},
+		{tokens.WeightMedium, tokens.WeightBold},
+		{tokens.WeightRegular, tokens.WeightBold},
+	}
+	for _, p := range pairs {
+		if advances[p.a] == advances[p.b] {
+			t.Errorf("weights %d and %d shaped to identical advances (%v); "+
+				"one likely fell back to the other's face", p.a, p.b, advances[p.a])
+		}
 	}
 }
 
