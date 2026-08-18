@@ -13,11 +13,13 @@ preferences, `window` pairs a theme observable with an mvu window,
 `preferences` persists the user's explicit choice and republishes it as an
 `mvu/stream.Value` — ADR-008's third destination, one current-value stream
 per path, conflating rather than queueing so a stalled observer can never
-wedge a save, `typeset` lays a type role's text out in the line box the
-role names rather than the one its glyphs happen to ink, and `export` —
-with `cmd/vg-tokens` in front of it — writes a theme out as the project
-layout `claude.ai/design` consumes. Interpolating between two themes is not
-here; it is a layer up, in `effects/transition`.
+wedge a save, `imageseed` pulls brand-seed candidates out of a picture —
+pixels clustered in the same OKLab space `color` measures, ranked so a
+vivid minority leads a drab majority, `typeset` lays a type role's text out
+in the line box the role names rather than the one its glyphs happen to
+ink, and `export` — with `cmd/vg-tokens` in front of it — writes a theme
+out as the project layout `claude.ai/design` consumes. Interpolating
+between two themes is not here; it is a layer up, in `effects/transition`.
 
 **Layer.** Tier 1 of ADR-001's stack, `mvu → theme → components → effects →
 patterns → markdown`. The token, theme and `a11y` contract the rest of the
