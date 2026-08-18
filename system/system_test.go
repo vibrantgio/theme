@@ -188,7 +188,8 @@ func TestFromSourceThemeWithSeedEmitsSeededLight(t *testing.T) {
 	if len(colors) != 1 || colors[0] != wantLight {
 		t.Fatalf("seeded light palette mismatch")
 	}
-	// ADR-007: the light primary base is the seed pinned byte-exact.
+	// ADR-007: the light primary base pins the seed, which for a brand
+	// colour already carrying the palette's accent chroma is byte-exact.
 	if colors[0].Primary != customSeed {
 		t.Errorf("light Primary must pin the seed byte-exact: got %+v, want %+v", colors[0].Primary, customSeed)
 	}
@@ -272,10 +273,14 @@ func TestFromSourceThemeFollowsEachAccent(t *testing.T) {
 			if len(colors) != 1 || colors[0] != wantLight {
 				t.Fatalf("accent %s: light palette is not FromSeed of its seed", tc.name)
 			}
-			// ADR-007: the light primary base pins the seed byte-exact, so
-			// an accented button matches the OS accent colour exactly.
-			if colors[0].Primary != tc.seed {
-				t.Errorf("accent %s: light Primary = %+v, want the seed %+v", tc.name, colors[0].Primary, tc.seed)
+			// The light primary base pins the accent seed at its own hue
+			// and depth with the palette's accent chroma on it, so an
+			// accented button matches the OS accent colour whenever that
+			// colour already carries the accent chroma — which the vivid
+			// system colours do.
+			wantPin, _ := tokens.FromSeed(tc.seed)
+			if colors[0].Primary != wantPin.Primary {
+				t.Errorf("accent %s: light Primary = %+v, want the pinned base %+v", tc.name, colors[0].Primary, wantPin.Primary)
 			}
 		})
 	}
@@ -393,8 +398,9 @@ func TestFromSourceThemeFollowsAccentSeed(t *testing.T) {
 	if len(colors) != 1 || colors[0] != wantLight {
 		t.Fatalf("light palette is not FromSeed of the raw accent seed")
 	}
-	// ADR-007: the light primary base pins the seed byte-exact, so an
-	// accented button matches the OS accent colour exactly.
+	// ADR-007: the light primary base pins the seed, byte-exact for a
+	// desktop accent that already carries the palette's accent chroma, so
+	// an accented button matches the OS accent colour.
 	if colors[0].Primary != rawAccent {
 		t.Errorf("light Primary = %+v, want the raw seed %+v", colors[0].Primary, rawAccent)
 	}
@@ -692,8 +698,8 @@ func TestFromSourceThemeReduceMotionComposesOnSeededPalette(t *testing.T) {
 
 func TestFromSourceThemeHighContrastDefaultDerivesVariant(t *testing.T) {
 	// E3.3's default hook: high contrast on with the default palette emits
-	// tokens.FromSeedHighContrast of the default seed — the light Primary
-	// of the resolved pair IS the seed per the FromSeed pin contract.
+	// tokens.FromSeedHighContrast of the resolved pair's light Primary
+	// base, and deriving from that base reproduces the seed's own variant.
 	appearance := &fakeSource{vals: []system.Appearance{{}}}
 	prefs := &fakeA11ySource{vals: []a11y.A11yPrefs{{HighContrast: true}}}
 	wantLight, _ := tokens.FromSeedHighContrast(tokens.DefaultSeed)
@@ -714,9 +720,10 @@ func TestFromSourceThemeHighContrastDefaultDerivesVariant(t *testing.T) {
 func TestHighContrastVariantDerivesFromPrimaryPin(t *testing.T) {
 	// The default hook's contract for every pair shape: the variant is
 	// tokens.FromSeedHighContrast of the pair's light Primary pin. For a
-	// seeded pair that pin is the seed byte-for-byte; for a hand-built
-	// WithPalette pair it is still the pinned brand base, so a hand-built
-	// palette gets a seed-derived high-contrast approximation via its pin.
+	// seeded pair the derivation reproduces itself from that pin, so the
+	// result is the seed's own variant; for a hand-built WithPalette pair
+	// the pin is still the pinned brand base, so a hand-built palette gets
+	// a derived high-contrast approximation via its pin.
 	seededLight, seededDark := tokens.FromSeed(customSeed)
 	wantLight, wantDark := tokens.FromSeedHighContrast(customSeed)
 	gotLight, gotDark := system.HighContrastVariant(seededLight, seededDark)

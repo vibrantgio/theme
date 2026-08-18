@@ -210,9 +210,9 @@ type colorPair struct {
 
 // WithSeed derives the light/dark pair from one brand colour via
 // tokens.FromSeed (derived once, up front — not per emission). The light
-// primary is the seed byte-for-byte; everything else is generated per
-// ADR-007. The pair is pinned: a stream given WithSeed ignores the OS
-// accent colour.
+// primary is that colour at its own hue and depth with the palette's accent
+// chroma on it; everything else is generated per ADR-007. The pair is
+// pinned: a stream given WithSeed ignores the OS accent colour.
 func WithSeed(seed color.NRGBA) Option {
 	return func(c *config) {
 		c.pal.light, c.pal.dark = tokens.FromSeed(seed)
@@ -249,13 +249,14 @@ func WithA11ySource(src a11y.Source) Option {
 // chosen palette, whether that came from WithSeed, WithPalette, the OS
 // accent, or the defaults.
 //
-// The default (E3.3) re-derives from the resolved pair's own seed:
-// tokens.FromSeedHighContrast of light.Primary, which for every
-// seed-derived pair — the defaults, WithSeed, an OS accent — IS the seed,
-// byte-for-byte, per the FromSeed pin contract. A hand-built WithPalette
-// pair carries no seed, but its light Primary is still its pinned brand
-// base, so it gets a seed-derived high-contrast approximation via that pin
-// — FromSeedHighContrast accepts any colour, so derivation never fails.
+// The default (E3.3) re-derives from the resolved pair's own brand base:
+// tokens.FromSeedHighContrast of light.Primary. For every seed-derived pair
+// — the defaults, WithSeed, an OS accent — that base is what the seed
+// derived, and the derivation reproduces itself from it, so the result is
+// the seed's own variant. A hand-built WithPalette pair carries no seed,
+// but its light Primary is still its pinned brand base, so it gets a
+// derived high-contrast approximation via that pin —
+// FromSeedHighContrast accepts any colour, so derivation never fails.
 // Derivations are memoized per pair, mirroring the per-seed palette cache.
 //
 // It is a variable so an application (or test) can substitute its own
@@ -294,7 +295,7 @@ var (
 // the OS accent is ignored. With no palette option the stream follows the
 // OS accent live: a raw Appearance.AccentSeed (Windows, Linux) or a
 // non-default [Accent] (macOS) emits tokens.FromSeed of that seed colour
-// (the light primary is the seed byte-for-byte per ADR-007), the raw seed
+// (the light primary pins that colour per ADR-007), the raw seed
 // beating the enum if a source ever sets both. No accent at all —
 // AccentDefault with no AccentSeed: multicolour on macOS, an unsupported
 // desktop, or a failed read — emits tokens.DefaultLight/DefaultDark. An

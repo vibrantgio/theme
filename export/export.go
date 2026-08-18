@@ -14,9 +14,10 @@ import (
 // observable, with the paired dark colour scheme and the seed recovered
 // from the light scheme's primary pin. It is the input Write serialises.
 type Snapshot struct {
-	// Seed is the brand seed the colour schemes derive from — the light
-	// scheme's pinned Primary, which FromSeed guarantees is the seed
-	// byte-for-byte.
+	// Seed is the colour the schemes derive from — the light scheme's
+	// pinned Primary, the brand seed carrying the palette's accent chroma.
+	// FromSeed reproduces its own output from it, which is what makes the
+	// snapshot reproducible.
 	Seed stdcolor.NRGBA
 
 	// Light is the colour scheme the theme emitted; Dark is its paired

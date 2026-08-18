@@ -317,7 +317,7 @@ func scaleVars(s Snapshot) []cssVar {
 // composites the translucent black in linear RGB while a browser composites
 // plain-alpha backgrounds in the sRGB space the pixels are stored in, so the
 // literal alpha would dim roughly twice as hard as the pattern does
-// (measured on the G2.4 mirror: 123 vs Gio's 181 over the #f7f6fd bg pin).
+// (measured on the G2.4 mirror: 123 vs Gio's 181 over the light bg pin).
 // The sRGB-equivalent alpha — the a solving srgb(bg)·(1−a) =
 // srgb(linear(bg)·0.5) — is 0.267 over the light grounds (bg ≈ 247), 0.28 at
 // mid-grey and 0.30 near black: 0.28 is the compromise, within ±0.013 of

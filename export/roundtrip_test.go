@@ -601,9 +601,11 @@ func TestRoundTripButtonClasses(t *testing.T) {
 	}
 }
 
-// TestThemeJSONReproduces asserts theme.json's reproducibility claim: its
-// seed alone regenerates the exported palette through FromSeed, and every
-// recorded parameter matches the tokens and the sheet.
+// TestThemeJSONReproduces asserts theme.json's reproducibility claim: the
+// one colour it records alone regenerates the exported palette through
+// FromSeed, and every recorded parameter matches the tokens and the sheet.
+// That colour is the light scheme's primary base — the brand seed with the
+// palette's accent chroma on it — and FromSeed reproduces itself from it.
 func TestThemeJSONReproduces(t *testing.T) {
 	snap, sheet, js := writeDefault(t)
 	var p Parameters
@@ -616,8 +618,8 @@ func TestThemeJSONReproduces(t *testing.T) {
 		t.Fatalf("theme.json seed %q: %v", p.Seed, err)
 	}
 	seed := stdcolor.NRGBA{R: r, G: g, B: b, A: 0xff}
-	if seed != tokens.DefaultSeed {
-		t.Errorf("seed = %q, want the default seed %s", p.Seed, wantHex(tokens.DefaultSeed))
+	if seed != tokens.DefaultLight.Primary {
+		t.Errorf("seed = %q, want the default palette's primary base %s", p.Seed, wantHex(tokens.DefaultLight.Primary))
 	}
 	light, dark := tokens.FromSeed(seed)
 	if light != snap.Light || dark != snap.Dark {

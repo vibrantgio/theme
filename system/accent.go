@@ -30,10 +30,12 @@ const (
 
 // accentSeeds are the seed colours each accent derives its palette from:
 // Apple's published System Colors (HIG "System Colors", macOS light
-// appearance, sRGB). Graphite uses systemGray. The light primary base is
-// this seed byte-for-byte (ADR-007 pins bases to the seed), so an accented
-// button matches the OS accent exactly; the dark base is the seed's dark
-// re-tone per tokens.FromSeed.
+// appearance, sRGB). Graphite uses systemGray. The light primary base pins
+// this seed at its own hue and depth with the palette's accent chroma on it
+// (ADR-007 pins bases to the seed), which for a system colour already
+// carrying that chroma — or for graphite, which carries none — is the seed
+// exactly, so an accented button matches the OS accent; the dark base is
+// the seed's dark re-tone per tokens.FromSeed.
 var accentSeeds = map[Accent]color.NRGBA{
 	AccentRed:      {R: 0xFF, G: 0x3B, B: 0x30, A: 0xFF}, // systemRed
 	AccentOrange:   {R: 0xFF, G: 0x95, B: 0x00, A: 0xFF}, // systemOrange

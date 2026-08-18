@@ -125,7 +125,7 @@ type ColorTokens struct {
 	Ramps RampSet
 
 	// Pinned accent bases and their on-colours (ADR-007 "solid fill").
-	Primary     color.NRGBA // pinned primary base — in a light scheme, the seed itself
+	Primary     color.NRGBA // pinned primary base — in a light scheme, the lifted seed
 	OnPrimary   color.NRGBA // text/icon over Primary
 	Secondary   color.NRGBA // pinned secondary base
 	OnSecondary color.NRGBA // text/icon over Secondary
