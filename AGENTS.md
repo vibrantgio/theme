@@ -23,13 +23,13 @@ here; it is a layer up, in `effects/transition`.
 patterns → markdown`. The token, theme and `a11y` contract the rest of the
 system styles against lives here rather than in components: goals G-B3 and
 E3.2 moved it down, which is what makes a tier-1 theme possible at all. Its
-root module imports `font` and `mvu`. Imported by `components`, `effects`,
-`markdown` and `patterns`. Outside the tier table, also by the demo modules
-`components/gallery` and `mvu/example` and all seven workbench
-applications. Both directions are measured rather than typed —
-`scripts/check-layers.sh --edges` reports the graph and
+root module imports `font` and `mvu`. That direction is measured rather
+than typed — `scripts/check-layers.sh --edges` reports the graph and
 `scripts/sync-agents.sh` renders these sentences from it — so correcting
-them here changes nothing.
+them here changes nothing. The other direction is measured too and
+deliberately not written down: the gate checks the graph both ways, but a
+public API's consumers are unknowable, so this file says what its module
+needs and never who needs it.
 
 **Read the canonical guide before you write code against this module.** It is
 the organization's one agent guide — the module inventory with current tags,
