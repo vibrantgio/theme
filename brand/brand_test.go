@@ -298,16 +298,17 @@ func TestThePathIsOneSharedFileUnderTheConfigDir(t *testing.T) {
 	}
 }
 
-// TestTheChosenBaseSurvivesTheRoundTrip: the second choice the file carries
-// comes back as it went in, under its own key, beside the seed.
+// TestTheChosenBaseSurvivesTheRoundTrip: the second choice the file carries is
+// a name per appearance, and both come back as they went in, under one key
+// beside the seed.
 func TestTheChosenBaseSurvivesTheRoundTrip(t *testing.T) {
 	path := file(t)
-	if err := brand.SaveTo(path, brand.Brand{Seed: harbourRed, Base: "catppuccin-latte"}); err != nil {
+	pair := brand.BasePair{Light: "catppuccin-latte", Dark: "catppuccin-mocha"}
+	if err := brand.SaveTo(path, brand.Brand{Seed: harbourRed, Base: pair}); err != nil {
 		t.Fatalf("save: %v", err)
 	}
-	got := brand.KeptFrom(path)
-	if got.Base != "catppuccin-latte" {
-		t.Errorf("the base came back as %q, want catppuccin-latte", got.Base)
+	if got := brand.KeptFrom(path); got.Base != pair {
+		t.Errorf("the base came back as %+v, want %+v", got.Base, pair)
 	}
 	var raw map[string]any
 	data, err := os.ReadFile(path)
@@ -317,8 +318,56 @@ func TestTheChosenBaseSurvivesTheRoundTrip(t *testing.T) {
 	if err := json.Unmarshal(data, &raw); err != nil {
 		t.Fatalf("the file is not JSON: %v", err)
 	}
-	if raw["base"] != "catppuccin-latte" {
-		t.Errorf("the file spells the base as %v under \"base\", want catppuccin-latte", raw["base"])
+	base, ok := raw["base"].(map[string]any)
+	if !ok {
+		t.Fatalf("the file spells the base as %#v, want an object with a member per appearance", raw["base"])
+	}
+	if base["light"] != "catppuccin-latte" || base["dark"] != "catppuccin-mocha" {
+		t.Errorf("the file reads light=%v dark=%v, want catppuccin-latte and catppuccin-mocha", base["light"], base["dark"])
+	}
+}
+
+// TestOneKeptBaseReachesBothAppearances is the migration: every theme.json
+// written while a base was one name has that name and no appearance attached
+// to it, and it has to arrive somewhere. It arrives in both members — the only
+// honest answer a package that cannot measure a style has — and the reader,
+// which can measure one, keeps it for the appearance it was fitted to and
+// takes its own default for the other.
+func TestOneKeptBaseReachesBothAppearances(t *testing.T) {
+	path := file(t)
+	const older = `{"seed":"#e8112d","base":"dracula","source":"harbour.jpg"}`
+	if err := os.WriteFile(path, []byte(older), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	got, ok, err := brand.LoadFrom(path)
+	if err != nil || !ok {
+		t.Fatalf("load: got (%v, %v), want a brand and no error", ok, err)
+	}
+	if got.Seed != harbourRed {
+		t.Errorf("seed came back as %v, want %v", got.Seed, harbourRed)
+	}
+	light, dark := got.Base.Names()
+	if light != "dracula" || dark != "dracula" {
+		t.Errorf("one kept base loaded as light=%q dark=%q, want it offered to both appearances", light, dark)
+	}
+}
+
+// TestAPairMayNameOneAppearance: a file that says something about one
+// appearance and nothing about the other is not damaged. The member it names
+// stands and the other is empty, which is the value that means the reader's
+// own default applies.
+func TestAPairMayNameOneAppearance(t *testing.T) {
+	path := file(t)
+	const half = `{"seed":"#e8112d","base":{"dark":"dracula"}}`
+	if err := os.WriteFile(path, []byte(half), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	got := brand.KeptFrom(path)
+	if got.Base.Dark != "dracula" || got.Base.Light != "" {
+		t.Errorf("the pair came back as %+v, want the dark member alone", got.Base)
+	}
+	if !got.Base.Chosen() {
+		t.Error("a pair naming one appearance reports nothing chosen")
 	}
 }
 
@@ -339,8 +388,8 @@ func TestAFileWithNoBaseIsStillAKeptBrand(t *testing.T) {
 	if got.Seed != harbourRed {
 		t.Errorf("seed came back as %v, want %v", got.Seed, harbourRed)
 	}
-	if got.Base != "" {
-		t.Errorf("a file with no base loaded base %q, want none", got.Base)
+	if got.Base.Chosen() {
+		t.Errorf("a file with no base loaded base %+v, want none", got.Base)
 	}
 }
 
