@@ -60,23 +60,19 @@
 //   - The three status roles are hue-fixed, not seed-derived. A semantic
 //     colour must not rotate with the brand: a purple "success" says
 //     nothing. Each takes the OKLCh hue and chroma of a canonical Material
-//     colour, measured with this module's own converters and recorded here
-//     (measurements from F4.6; the error pair predates it, from D2.2):
+//     colour, measured with this module's own converters and recorded here:
 //
-//       error    hue  28.7°, chroma 0.178  — MD3's canonical error base
-//                                            #B3261E (its "hue 25,
-//                                            chroma 84"), L* 39.7
-//       success  hue 144.2°, chroma 0.162  — Material Green 500 #4CAF50,
-//                                            L* 63.98
-//       warning  hue  84.9°, chroma 0.172  — Material Amber 500 #FFC107,
-//                                            L* 81.52
+//     error    hue  28.7°, chroma 0.178  — #B3261E, L* 39.7
+//     success  hue 144.2°, chroma 0.162  — #4CAF50, L* 63.98
+//     warning  hue  84.9°, chroma 0.172  — #FFC107, L* 81.52
 //
-//     The palette anchor of each family is its 500 shade, so that is what
-//     is measured; only the hue and chroma are taken, since the depths come
-//     from the shared lightness scale like every other role. The three land
-//     56–59° apart on the OKLCh hue circle — far enough that warning is not
-//     read as error at a glance, which is the whole point of a status
-//     colour.
+//     Those sources are MD3's canonical error base — "hue 25, chroma 84"
+//     on its own scale — and Material Green 500 and Amber 500. The palette
+//     anchor of each family is its 500 shade, so that is what is measured;
+//     only the hue and chroma are taken, since the depths come from the
+//     shared lightness scale like every other role. The three land 56–59°
+//     apart on the OKLCh hue circle — far enough that warning is not read
+//     as error at a glance, which is the whole point of a status colour.
 //
 //   - Pins. The light primary base is the seed at its own hue and CIELAB
 //     depth with the accent dial applied to its chroma (ADR-007: "the seed
