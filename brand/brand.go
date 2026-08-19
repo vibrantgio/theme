@@ -17,6 +17,7 @@
 //
 //	{
 //	  "seed": "#e8112d",
+//	  "base": "catppuccin-latte",
 //	  "source": "harbour.jpg",
 //	  "saved": "2026-08-19T11:04:31Z"
 //	}
@@ -37,6 +38,22 @@
 // lowercase #rrggbb under the key "seed" — so the two files agree on how a
 // seed is written, and an exported theme.json dropped in as this file loads
 // without translation. Keys this package does not know are ignored.
+//
+// "base" is the second thing a person chooses and the only other thing the
+// file holds: the name of the syntax palette code is coloured from. It is a
+// name and not a palette for the same reason the seed is not a set of ramps
+// — the styling is derived from it, and the derivation is entitled to
+// improve. This package neither resolves the name nor judges it: it does not
+// know what styles exist, so an empty or unrecognised name is the reader's to
+// fall back on, and the fallback is whatever that reader's default base is.
+//
+// # The styles folder
+//
+// [StylesDir] names a folder beside the file, where a person can drop style
+// files of their own for a highlighter to load — the same shared directory,
+// so a style added once is offered by every application that looks. This
+// package only says where it is. Nothing here reads it, creates it, or has an
+// opinion about what a style file contains.
 //
 // # Adopting it
 //
@@ -86,6 +103,11 @@ const dirName = "vibrantgio"
 // that finds either knows what it is holding.
 const fileName = "theme.json"
 
+// stylesDirName is the folder beside the file, holding style files a person
+// added themselves. It is one folder for the same reason the file is one
+// file: a style dropped in once is available to everything that looks.
+const stylesDirName = "styles"
+
 // Brand is a kept brand colour with the provenance that explains it.
 //
 // The zero Brand is "nothing kept": Seed's alpha is zero, which no kept
@@ -95,6 +117,15 @@ type Brand struct {
 	// Seed is the colour the palette derives from, opaque. It is the
 	// whole input: tokens.FromSeed(Seed) is both schemes.
 	Seed color.NRGBA
+
+	// Base names the syntax palette code is coloured from. It is the one
+	// other choice the file carries, and it is carried as a name: what
+	// resolves it is the highlighting package the reader uses, and what an
+	// unknown name means is that reader's default. Empty is the ordinary
+	// state — nothing chosen, the reader's default applies — so a file
+	// written before this field existed reads as a brand with no base and
+	// behaves exactly as it did.
+	Base string
 
 	// Source names where the colour was found — a picture's file name, a
 	// hand-typed hex, whatever the chooser can honestly say. It is
@@ -149,6 +180,18 @@ func Path() (string, error) {
 	return filepath.Join(dir, dirName, fileName), nil
 }
 
+// StylesDir returns the folder beside the file where a person's own style
+// files live, for whatever knows how to read one. It creates nothing and does
+// not report whether the folder is there: a folder nobody has made yet holds
+// no styles, which is the same answer as an empty one.
+func StylesDir() (string, error) {
+	dir, err := os.UserConfigDir()
+	if err != nil {
+		return "", fmt.Errorf("brand: styles dir: %w", err)
+	}
+	return filepath.Join(dir, dirName, stylesDirName), nil
+}
+
 // Kept is the forgiving read: the kept brand, or the zero [Brand] when
 // there is none to be had for any reason at all — no file, an unreadable
 // directory, a file that is not JSON, a seed that is not a colour. Nothing
@@ -200,7 +243,7 @@ func LoadFrom(path string) (Brand, bool, error) {
 	if err != nil {
 		return Brand{}, false, fmt.Errorf("brand: load %s: %w", path, err)
 	}
-	b := Brand{Seed: seed, Source: f.Source}
+	b := Brand{Seed: seed, Base: strings.TrimSpace(f.Base), Source: f.Source}
 	if f.Saved != "" {
 		// An unreadable timestamp costs the provenance, not the brand: the
 		// colour is what the file is for, and it parsed.
@@ -232,6 +275,7 @@ func SaveTo(path string, b Brand) error {
 	}
 	data, err := json.MarshalIndent(file{
 		Seed:   hexRGB(b.Seed),
+		Base:   strings.TrimSpace(b.Base),
 		Source: b.Source,
 		Saved:  b.Saved.UTC().Format(time.RFC3339),
 	}, "", "  ")
@@ -253,6 +297,7 @@ func SaveTo(path string, b Brand) error {
 // in.
 type file struct {
 	Seed   string `json:"seed"`
+	Base   string `json:"base,omitempty"`
 	Source string `json:"source,omitempty"`
 	Saved  string `json:"saved,omitempty"`
 }

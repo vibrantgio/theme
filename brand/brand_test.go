@@ -298,6 +298,89 @@ func TestThePathIsOneSharedFileUnderTheConfigDir(t *testing.T) {
 	}
 }
 
+// TestTheChosenBaseSurvivesTheRoundTrip: the second choice the file carries
+// comes back as it went in, under its own key, beside the seed.
+func TestTheChosenBaseSurvivesTheRoundTrip(t *testing.T) {
+	path := file(t)
+	if err := brand.SaveTo(path, brand.Brand{Seed: harbourRed, Base: "catppuccin-latte"}); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+	got := brand.KeptFrom(path)
+	if got.Base != "catppuccin-latte" {
+		t.Errorf("the base came back as %q, want catppuccin-latte", got.Base)
+	}
+	var raw map[string]any
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		t.Fatalf("the file is not JSON: %v", err)
+	}
+	if raw["base"] != "catppuccin-latte" {
+		t.Errorf("the file spells the base as %v under \"base\", want catppuccin-latte", raw["base"])
+	}
+}
+
+// TestAFileWithNoBaseIsStillAKeptBrand: every theme.json written before the
+// field existed has no base in it, and reading one has to be uneventful —
+// the brand loads, the seed is intact, and the base comes back empty, which
+// is the value that means "the reader's own default applies".
+func TestAFileWithNoBaseIsStillAKeptBrand(t *testing.T) {
+	path := file(t)
+	const older = `{"seed":"#e8112d","source":"harbour.jpg"}`
+	if err := os.WriteFile(path, []byte(older), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	got, ok, err := brand.LoadFrom(path)
+	if err != nil || !ok {
+		t.Fatalf("load: got (%v, %v), want a brand and no error", ok, err)
+	}
+	if got.Seed != harbourRed {
+		t.Errorf("seed came back as %v, want %v", got.Seed, harbourRed)
+	}
+	if got.Base != "" {
+		t.Errorf("a file with no base loaded base %q, want none", got.Base)
+	}
+}
+
+// TestNoBaseIsNotWritten: an unchosen base leaves no key behind, so the file
+// says what was chosen and nothing else.
+func TestNoBaseIsNotWritten(t *testing.T) {
+	path := file(t)
+	if err := brand.SaveTo(path, brand.Brand{Seed: harbourRed}); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	var raw map[string]any
+	if err := json.Unmarshal(data, &raw); err != nil {
+		t.Fatalf("the file is not JSON: %v", err)
+	}
+	if _, ok := raw["base"]; ok {
+		t.Errorf("a brand with no base wrote %q into the file", "base")
+	}
+}
+
+// TestTheStylesFolderSitsBesideTheFile: styles a person adds are shared the
+// way the brand is, in one folder under the same directory, so a style added
+// once is offered by everything that looks for one.
+func TestTheStylesFolderSitsBesideTheFile(t *testing.T) {
+	dir, err := brand.StylesDir()
+	if err != nil {
+		t.Skipf("this machine has no user config directory: %v", err)
+	}
+	path, err := brand.Path()
+	if err != nil {
+		t.Skipf("this machine has no user config directory: %v", err)
+	}
+	if want := filepath.Join(filepath.Dir(path), "styles"); dir != want {
+		t.Errorf("the styles folder is %s, want %s", dir, want)
+	}
+}
+
 // assertDefaults asserts that a brand carrying nothing leaves an
 // application exactly where it was.
 func assertDefaults(t *testing.T, b brand.Brand) {
