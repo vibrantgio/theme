@@ -1,6 +1,7 @@
 package tokens_test
 
 import (
+	"fmt"
 	stdcolor "image/color"
 	"math"
 	"testing"
@@ -195,6 +196,161 @@ func TestInverseSurfaceBodyTextContrast(t *testing.T) {
 			}
 		})
 	}
+}
+
+// accentPairs returns one scheme's pinned accent pairings: each base with
+// the ink the derivation chose to read it in.
+func accentPairs(t tokens.ColorTokens) []struct {
+	name     string
+	base, on stdcolor.NRGBA
+} {
+	return []struct {
+		name     string
+		base, on stdcolor.NRGBA
+	}{
+		{"Primary", t.Primary, t.OnPrimary},
+		{"Secondary", t.Secondary, t.OnSecondary},
+		{"Tertiary", t.Tertiary, t.OnTertiary},
+		{"Error", t.Error, t.OnError},
+		{"Success", t.Success, t.OnSuccess},
+		{"Warning", t.Warning, t.OnWarning},
+	}
+}
+
+// TestAccentOnColoursClearTheFloorForEverySeed is the whole-population gate
+// on the on-colour rule: over the shared seed sweep, in both schemes of both
+// derivations, every pinned accent pairing reaches WCAG AA for body text.
+//
+// It is the property the rule exists for. The bases are pinned to depths
+// their usual ink clears — except the light primary base, which is the brand
+// colour itself and can land anywhere on the axis, which is how a light
+// brand colour used to come back under white text at 2.1:1. The ink is
+// chosen by measurement now, and because the two candidates are the ends of
+// the tonal axis, the better of them clears 4.5:1 over any colour whatever:
+// no seed can produce a pairing this gate has to fail.
+//
+// Three further properties are asserted alongside the number, because a
+// number alone would not notice them going:
+//
+//   - The ink is always one of the two ends on offer, and where the
+//     preferred one falls short the chosen one reads at least as well. A
+//     rule that flipped an ink into a worse pairing would still clear the
+//     floor most of the time.
+//   - Nothing moves for a base whose usual ink already clears the floor.
+//     This is what keeps every downstream golden in the design system on
+//     the canonical seed exactly where it was.
+//   - The increased-contrast variant never reads below the default's, which
+//     is what its stricter floor is worth on a pairing whose two candidates
+//     are already the ends of the axis.
+func TestAccentOnColoursClearTheFloorForEverySeed(t *testing.T) {
+	worstLight, worstDark := 99.0, 99.0
+	flips := 0
+	for _, seed := range sweepSeeds() {
+		light, dark := tokens.FromSeed(seed)
+		hcLight, hcDark := tokens.FromSeedHighContrast(seed)
+		for _, s := range []struct {
+			name string
+			tok  tokens.ColorTokens
+			// variant is the increased-contrast scheme this one is asked to
+			// be no better than; for the variant's own rows it is itself.
+			variant tokens.ColorTokens
+			light   bool
+			// deflt marks the rows FromSeed derived, the only ones the
+			// no-op guarantee is written about: the variant's floor is its
+			// own and higher, so it is entitled to question an ink FromSeed
+			// is satisfied with.
+			deflt bool
+		}{
+			{"FromSeed light", light, hcLight, true, true},
+			{"FromSeed dark", dark, hcDark, false, true},
+			{"FromSeedHighContrast light", hcLight, hcLight, true, false},
+			{"FromSeedHighContrast dark", hcDark, hcDark, false, false},
+		} {
+			for i, p := range accentPairs(s.tok) {
+				got := color.ContrastRatio(p.on, p.base)
+				if got < wcagAA {
+					t.Errorf("seed %v: %s %s: %v on %v measures %.2f:1, under the %.1f:1 floor",
+						seed, s.name, p.name, p.on, p.base, got, wcagAA)
+				}
+				if s.light {
+					if got < worstLight {
+						worstLight = got
+					}
+					// The light scheme's two candidates are the ends of the
+					// axis, so the ink is one of them, and White is what a
+					// pairing that already clears the floor keeps.
+					if p.on != tokens.White && p.on != tokens.Black {
+						t.Errorf("seed %v: %s %s: ink %v is neither end of the tonal axis",
+							seed, s.name, p.name, p.on)
+					}
+					if p.on == tokens.Black {
+						flips++
+						white := color.ContrastRatio(tokens.White, p.base)
+						if got < white {
+							t.Errorf("seed %v: %s %s: ink flipped to Black at %.2f:1, worse than White's %.2f:1",
+								seed, s.name, p.name, got, white)
+						}
+						if s.deflt && white >= wcagAA {
+							t.Errorf("seed %v: %s %s: ink flipped to Black though White measured %.2f:1 — a passing pairing moved",
+								seed, s.name, p.name, white)
+						}
+					}
+				} else if got < worstDark {
+					worstDark = got
+				}
+				// The variant asks more of the same pairing and can never
+				// answer with less.
+				v := accentPairs(s.variant)[i]
+				if hc := color.ContrastRatio(v.on, v.base); hc < got-1e-9 {
+					t.Errorf("seed %v: %s %s: the high-contrast variant measures %.2f:1, under the default's %.2f:1",
+						seed, s.name, p.name, hc, got)
+				}
+			}
+		}
+	}
+	t.Logf("over %d seeds: worst light accent pairing %.2f:1, worst dark %.2f:1; %d light inks flipped to Black",
+		len(sweepSeeds()), worstLight, worstDark, flips)
+}
+
+// TestContainerAndFillPairingsClearTheFloorForEverySeed gates the pairings
+// the accents' containers and fills are made of, which the on-colour rule
+// deliberately leaves alone: the ramps' own text steps over their own
+// tinted grounds, in every role ramp of every scheme the pipeline derives.
+//
+// They need no rule of their own and the gate says why: a ramp step is
+// realized at a fixed CIELAB depth, and depth is what luminance is, so a
+// step's contrast against another step of the same ramp is the same
+// measurement for every seed there is. The sweep is here to hold that claim
+// rather than to look for a seed that breaks it.
+func TestContainerAndFillPairingsClearTheFloorForEverySeed(t *testing.T) {
+	worst, worstAt := 99.0, ""
+	for _, seed := range sweepSeeds() {
+		light, dark := tokens.FromSeed(seed)
+		hcLight, hcDark := tokens.FromSeedHighContrast(seed)
+		for _, s := range []struct {
+			name string
+			tok  tokens.ColorTokens
+		}{
+			{"FromSeed light", light}, {"FromSeed dark", dark},
+			{"FromSeedHighContrast light", hcLight}, {"FromSeedHighContrast dark", hcDark},
+		} {
+			for _, r := range namedRamps(s.tok) {
+				for _, text := range []int{700, 900} {
+					for _, ground := range []int{100, 200} {
+						got := color.ContrastRatio(r.ramp.Step(text), r.ramp.Step(ground))
+						if got < wcagAA {
+							t.Errorf("seed %v: %s %s step %d on step %d measures %.2f:1, under the %.1f:1 floor",
+								seed, s.name, r.name, text, ground, got, wcagAA)
+						}
+						if got < worst {
+							worst, worstAt = got, fmt.Sprintf("%s %s %d on %d", s.name, r.name, text, ground)
+						}
+					}
+				}
+			}
+		}
+	}
+	t.Logf("over %d seeds: worst container/fill pairing %.2f:1 (%s)", len(sweepSeeds()), worst, worstAt)
 }
 
 // wcagAAA is WCAG 2's AAA normal-text ratio, reported (never gated on) by

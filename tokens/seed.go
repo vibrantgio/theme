@@ -121,10 +121,41 @@
 //     schemes are derived in one pass here, so neither needs anything the
 //     other has not already computed.
 //
-//   - On-colours. Light bases sit at tone 40, so their on-colour is White
-//     (Lc ≥ 85, WCAG ≈ 6.4:1); dark bases sit at L* 82, so their on-colour
-//     is their own dark ramp's step 100 (Lc ≥ 73, WCAG ≈ 11:1). D2.4's
-//     APCA gate enforces ADR-007's Lc ≥ 60 on both.
+//   - On-colours are measured, not assumed. Each pinned base is read in the
+//     ink that reaches 4.5:1 over it — WCAG AA for body text — with the
+//     scheme's usual ink preferred and the other end of the tonal axis
+//     taken when the usual one falls short (see onColour). In the light
+//     scheme the pair on offer is White and Black; in the dark scheme it is
+//     the role's own step-100 depth and White.
+//
+//     Almost every base keeps the ink it always had, and the rule is a
+//     no-op there: a light base at tone 40 carries White at Lc ≥ 85, WCAG
+//     ≈ 6.4:1, and a dark base at L* 82 carries its deep ink at Lc ≥ 73,
+//     WCAG ≈ 11:1. What the rule is for is the one base pinned to no
+//     depth — the primary base is the brand colour itself, so a light brand
+//     colour used to come back under white text at as little as 2.1:1. Now
+//     its ink flips and the colour does not move: an accent stays true to
+//     the seed, the way the design language pairs a high tone with a dark
+//     ink everywhere else. Across a 411-seed sweep 266 of the light
+//     schemes' primary inks flip — nothing else in either scheme does, the
+//     other bases being pinned to depths their usual ink clears — and no
+//     pinned pairing any seed produces measures under the floor. The
+//     container and fill pairings the ramps carry are untouched by all of
+//     this and stay where they were: a ramp step is realized at a fixed
+//     depth, so its 700-and-900 text over its 100 and 200 grounds measures
+//     the same 5.4:1 and up whatever the seed. The APCA gate above still
+//     enforces its own Lc ≥ 60 on top of all of it.
+//
+//     The state walk under a solid fill is not part of this, and cannot
+//     be: a fill walks toward its ramp's 900 end whichever depth its pin
+//     sits at (see states.go), so on a mid-depth accent one ink reads at
+//     rest and the other reads pressed, and one token cannot be both.
+//     Choosing each ink for the whole walk instead of for the resting pair
+//     was measured over the same sweep and buys four pairings back under
+//     the pointer at the cost of eighty-three at rest — the wrong trade,
+//     since resting is where a surface is read. The walk keeps its own
+//     rule, and what it needs is a walk that knows which way its pin
+//     faces.
 //
 // FromSeedHighContrast (task E3.3) derives the increased-contrast variant
 // from the same seed by the same machinery — it is a FromSeed option, not a
@@ -147,10 +178,22 @@
 //   - Each pinned base's on-colour is pushed further from its base. The
 //     dark pins' on-colours drop from their ramp's step 100 (L* 8, Lc ≈ 74
 //     — just under the variant's Lc ≥ 75 floor) to tone 0, the scale's
-//     floor (Lc ≥ 76.3). The light pins keep White: it is already the far
-//     end of the axis and already clears the floor (Lc ≥ 85.7), so the
-//     pins do not move — the light primary base is the same lifted seed
-//     FromSeed pins, the same contract.
+//     floor (Lc ≥ 76.3). The light pins keep White wherever White is the
+//     better of the two ends: it is already the far end of the axis and
+//     already clears the floor (Lc ≥ 85.7), so the pins do not move — the
+//     light primary base is the same lifted seed FromSeed pins, the same
+//     contract.
+//
+//     The on-colour rule follows the variant to a stricter floor: the
+//     light ink stands only while it reaches 7:1 rather than 4.5:1, so the
+//     variant questions an ink the default is satisfied with. What it can
+//     do with the answer is bounded by the axis, which has no ink further
+//     out than its two ends — where neither reaches the floor the better
+//     of the two stands in both derivations, so the variant's flipped set
+//     is the default's plus the sliver where the light ink clears AA and
+//     the dark ink still reads higher. Every variant pairing therefore
+//     measures at least what the default's does, which is the property its
+//     gate holds.
 package tokens
 
 import (
@@ -194,8 +237,10 @@ const (
 	lightPinTone     = 40        // MD3's accent-base tone; the default seed's own depth
 	darkPinTone      = 82        // the dark scale's step-700 L*; D2.4 raised it from the
 	// spike's 65 — no on-colour reaches Lc 60 over an L* 65 mid-tone
-	darkOnTone   = 8 // dark pins' on-colour depth: the dark scale's step-100 L*
-	hcDarkOnTone = 0 // high contrast pushes the dark on-colours to the axis floor
+	darkOnTone   = 8   // dark pins' on-colour depth: the dark scale's step-100 L*
+	hcDarkOnTone = 0   // high contrast pushes the dark on-colours to the axis floor
+	onFloor      = 4.5 // WCAG AA body text: the ratio an on-colour has to reach
+	hcOnFloor    = 7.0 // the increased-contrast variant asks AAA of the same pair
 )
 
 // derivation is the knob set that separates FromSeed from its high-contrast
@@ -206,14 +251,46 @@ const (
 // third hand-written scheme.
 type derivation struct {
 	lightTones, darkTones [9]int
-	dividerStep           int // ramp step Divider resolves from
-	darkOnTone            int // L* of the dark pins' on-colours
+	dividerStep           int     // ramp step Divider resolves from
+	darkOnTone            int     // L* of the dark pins' on-colours
+	onFloor               float64 // the ratio an on-colour has to reach over its base
 }
 
 var (
-	defaultDerivation = derivation{lightTones, darkTones, 300, darkOnTone}
-	hcDerivation      = derivation{hcLightTones, hcDarkTones, 500, hcDarkOnTone}
+	defaultDerivation = derivation{lightTones, darkTones, 300, darkOnTone, onFloor}
+	hcDerivation      = derivation{hcLightTones, hcDarkTones, 500, hcDarkOnTone, hcOnFloor}
 )
+
+// onColour picks the ink one pinned base is read in. The preferred ink
+// stands while it reaches the floor over that base; below it the ink flips
+// to the other end of the tonal axis, unless that end reads worse still —
+// a base no ink can carry keeps the better of the two rather than the
+// darker of the two.
+//
+// Which is the whole of the rule the light scheme needed. Its bases used to
+// take White unconditionally, which is right for a base at the depth MD3
+// pins accents at and wrong for the one base that is not pinned to a depth
+// at all: the primary base is the brand colour itself, and a light brand
+// colour under white text measured as little as 2.1:1 where the floor is
+// 4.5. Flipping the ink rather than deepening the colour is what keeps a
+// palette true to the colour it was seeded with.
+//
+// The two ends are pure White and pure Black, and that is load-bearing
+// rather than tidy: over any colour whatever, the better of white and black
+// reaches 4.58:1, so no seed can produce a pinned pairing under the floor.
+// An ink one rung short of the axis end — the ramp's own 900 stop, say —
+// gives that guarantee up (it bottoms out at 4.31:1 across a seed sweep),
+// and an on-colour is text, where a tint buys nothing anyway.
+func onColour(base, preferred, other stdcolor.NRGBA, floor float64) stdcolor.NRGBA {
+	got := color.ContrastRatio(preferred, base)
+	if got >= floor {
+		return preferred
+	}
+	if color.ContrastRatio(other, base) > got {
+		return other
+	}
+	return preferred
+}
 
 // liftChroma turns a brand colour's own measured chroma into the chroma
 // the accent family is rendered at. A brand colour under greyChroma is
@@ -357,14 +434,22 @@ func fromSeed(seed stdcolor.NRGBA, d derivation) (light, dark ColorTokens) {
 		lr[i] = rampOf(d.lightTones, role.hue, role.chroma)
 		dr[i] = rampOf(d.darkTones, role.hue, role.chroma)
 	}
-	lightPin := func(i int) stdcolor.NRGBA {
-		return color.Tone(roles[i].hue, roles[i].chroma, lightPinTone)
+	// The pinned bases and the ink each is read in. Index 0 is the neutral
+	// role, which carries surfaces rather than a solid fill and has no pin.
+	// Every ink is measured over the base it sits on rather than assumed
+	// from the scheme (see onColour); the light scheme's alternative is the
+	// far end of the tonal axis and the dark scheme's is White, so in each
+	// scheme the pair on offer is the ramp's own dark end and its light one.
+	var lightBase, darkBase, lightInk, darkInk [7]stdcolor.NRGBA
+	for i := 1; i < len(roles); i++ {
+		lightBase[i] = color.Tone(roles[i].hue, roles[i].chroma, lightPinTone)
+		darkBase[i] = color.Tone(roles[i].hue, roles[i].chroma, darkPinTone)
 	}
-	darkPin := func(i int) stdcolor.NRGBA {
-		return color.Tone(roles[i].hue, roles[i].chroma, darkPinTone)
-	}
-	darkOn := func(i int) stdcolor.NRGBA {
-		return color.Tone(roles[i].hue, roles[i].chroma, d.darkOnTone)
+	lightBase[1] = primary // the lifted seed, never read off a ramp step
+	for i := 1; i < len(roles); i++ {
+		deep := color.Tone(roles[i].hue, roles[i].chroma, d.darkOnTone)
+		lightInk[i] = onColour(lightBase[i], White, Black, d.onFloor)
+		darkInk[i] = onColour(darkBase[i], deep, White, d.onFloor)
 	}
 
 	// Each scheme's inverse pair resolves off the other scheme's neutral
@@ -375,18 +460,18 @@ func fromSeed(seed stdcolor.NRGBA, d derivation) (light, dark ColorTokens) {
 			Neutral: lr[0], Primary: lr[1], Secondary: lr[2], Tertiary: lr[3],
 			Error: lr[4], Success: lr[5], Warning: lr[6],
 		},
-		Primary:     primary, // the lifted seed, never read off a ramp step
-		OnPrimary:   White,
-		Secondary:   lightPin(2),
-		OnSecondary: White,
-		Tertiary:    lightPin(3),
-		OnTertiary:  White,
-		Error:       lightPin(4),
-		OnError:     White,
-		Success:     lightPin(5),
-		OnSuccess:   White,
-		Warning:     lightPin(6),
-		OnWarning:   White,
+		Primary:     lightBase[1], // the lifted seed, never read off a ramp step
+		OnPrimary:   lightInk[1],
+		Secondary:   lightBase[2],
+		OnSecondary: lightInk[2],
+		Tertiary:    lightBase[3],
+		OnTertiary:  lightInk[3],
+		Error:       lightBase[4],
+		OnError:     lightInk[4],
+		Success:     lightBase[5],
+		OnSuccess:   lightInk[5],
+		Warning:     lightBase[6],
+		OnWarning:   lightInk[6],
 		Background:  lr[0].Step(100),
 		Text:        lr[0].Step(900),
 	}, d.dividerStep, dr[0])
@@ -395,18 +480,18 @@ func fromSeed(seed stdcolor.NRGBA, d derivation) (light, dark ColorTokens) {
 			Neutral: dr[0], Primary: dr[1], Secondary: dr[2], Tertiary: dr[3],
 			Error: dr[4], Success: dr[5], Warning: dr[6],
 		},
-		Primary:     darkPin(1),
-		OnPrimary:   darkOn(1),
-		Secondary:   darkPin(2),
-		OnSecondary: darkOn(2),
-		Tertiary:    darkPin(3),
-		OnTertiary:  darkOn(3),
-		Error:       darkPin(4),
-		OnError:     darkOn(4),
-		Success:     darkPin(5),
-		OnSuccess:   darkOn(5),
-		Warning:     darkPin(6),
-		OnWarning:   darkOn(6),
+		Primary:     darkBase[1],
+		OnPrimary:   darkInk[1],
+		Secondary:   darkBase[2],
+		OnSecondary: darkInk[2],
+		Tertiary:    darkBase[3],
+		OnTertiary:  darkInk[3],
+		Error:       darkBase[4],
+		OnError:     darkInk[4],
+		Success:     darkBase[5],
+		OnSuccess:   darkInk[5],
+		Warning:     darkBase[6],
+		OnWarning:   darkInk[6],
 		Background:  dr[0].Step(100),
 		Text:        dr[0].Step(900),
 	}, d.dividerStep, lr[0])

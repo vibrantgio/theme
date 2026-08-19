@@ -62,6 +62,29 @@ func contrastRatio(c1, c2 color.NRGBA) float64 {
 
 const wcagAA = 4.5
 
+// sweepSeeds is the seed sweep the derivation's whole-population properties
+// are asserted over: eleven chosen colours — the default seed, the nine
+// macOS system accents and both ends of the tonal axis — and four hundred
+// random ones from a fixed source, so the population is wide and the run is
+// the same one every time. It is deliberately shared: a property that has
+// to hold for every seed should be read against the same seeds as every
+// other, or two gates disagree about what "every seed" meant.
+func sweepSeeds() []color.NRGBA {
+	rng := rand.New(rand.NewSource(20260818))
+	seeds := []color.NRGBA{
+		tokens.DefaultSeed,
+		{0xff, 0x3b, 0x30, 0xff}, {0xff, 0x95, 0x00, 0xff}, {0xff, 0xcc, 0x00, 0xff},
+		{0x28, 0xcd, 0x41, 0xff}, {0x00, 0x7a, 0xff, 0xff}, {0xaf, 0x52, 0xde, 0xff},
+		{0xff, 0x2d, 0x55, 0xff}, {0x8e, 0x8e, 0x93, 0xff}, {0x00, 0x00, 0x00, 0xff},
+		{0xff, 0xff, 0xff, 0xff},
+	}
+	for i := 0; i < 400; i++ {
+		seeds = append(seeds, color.NRGBA{
+			uint8(rng.Intn(256)), uint8(rng.Intn(256)), uint8(rng.Intn(256)), 0xff})
+	}
+	return seeds
+}
+
 // TestRampStepAddressing verifies Step's 100–900 addressing over the
 // backing array and that out-of-vocabulary steps panic.
 func TestRampStepAddressing(t *testing.T) {
@@ -238,19 +261,7 @@ func TestFromSeedPinsTheLiftedSeed(t *testing.T) {
 // and is rebuilt from it — so it is asserted over a wide sweep of seeds
 // rather than the handful the rest of the package uses.
 func TestFromSeedReproducesItselfFromItsBase(t *testing.T) {
-	rng := rand.New(rand.NewSource(20260818))
-	seeds := []color.NRGBA{
-		tokens.DefaultSeed,
-		{0xff, 0x3b, 0x30, 0xff}, {0xff, 0x95, 0x00, 0xff}, {0xff, 0xcc, 0x00, 0xff},
-		{0x28, 0xcd, 0x41, 0xff}, {0x00, 0x7a, 0xff, 0xff}, {0xaf, 0x52, 0xde, 0xff},
-		{0xff, 0x2d, 0x55, 0xff}, {0x8e, 0x8e, 0x93, 0xff}, {0x00, 0x00, 0x00, 0xff},
-		{0xff, 0xff, 0xff, 0xff},
-	}
-	for i := 0; i < 400; i++ {
-		seeds = append(seeds, color.NRGBA{
-			uint8(rng.Intn(256)), uint8(rng.Intn(256)), uint8(rng.Intn(256)), 0xff})
-	}
-	for _, seed := range seeds {
+	for _, seed := range sweepSeeds() {
 		light, dark := tokens.FromSeed(seed)
 		if l, d := tokens.FromSeed(light.Primary); l != light || d != dark {
 			t.Fatalf("FromSeed(%v): re-deriving from the light Primary base %v does not reproduce the pair",

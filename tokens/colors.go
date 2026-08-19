@@ -58,10 +58,16 @@ var (
 	}
 )
 
-// White is pure white. Unlike the named palettes above it is part of the
-// semantic layer: FromSeed uses it as the on-colour over every light-mode
-// pinned base.
-var White = color.NRGBA{0xff, 0xff, 0xff, 0xff}
+// White and Black are the two ends of the tonal axis. Unlike the named
+// palettes above they are part of the semantic layer: they are the pair
+// FromSeed chooses a light-scheme on-colour from, by measuring both over
+// the base rather than assuming one. White carries almost every accent —
+// a pinned base sits deep enough to read white text — and Black is what an
+// accent light enough to lose its white ink takes instead.
+var (
+	White = color.NRGBA{0xff, 0xff, 0xff, 0xff}
+	Black = color.NRGBA{0x00, 0x00, 0x00, 0xff}
+)
 
 // Ramp is one colour role's nine-step functional ramp per ADR-007. Steps run
 // 100–900 in hundreds and the step number carries the meaning: 100–300 are
