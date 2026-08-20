@@ -57,22 +57,94 @@
 //     light 100–400 and dark 700–900 are gamut-limited at this hue, the
 //     dark primary base among them (see the pins below).
 //
-//   - The three status roles are hue-fixed, not seed-derived. A semantic
+//   - The four status roles are hue-anchored, not seed-derived. A semantic
 //     colour must not rotate with the brand: a purple "success" says
-//     nothing. Each takes the OKLCh hue and chroma of a canonical Material
-//     colour, measured with this module's own converters and recorded here:
+//     nothing, and an "info" wearing the accent says whatever the brand
+//     happens to be — under a red brand it says error louder than error
+//     does. Each anchor takes the OKLCh hue and chroma of a canonical
+//     Material colour, measured with this module's own converters and
+//     recorded here:
 //
 //     error    hue  28.7°, chroma 0.178  — #B3261E, L* 39.7
 //     success  hue 144.2°, chroma 0.162  — #4CAF50, L* 63.98
 //     warning  hue  84.9°, chroma 0.172  — #FFC107, L* 81.52
+//     info     hue 248.8°, chroma 0.169  — #2196F3, L* 60.43
 //
 //     Those sources are MD3's canonical error base — "hue 25, chroma 84"
-//     on its own scale — and Material Green 500 and Amber 500. The palette
-//     anchor of each family is its 500 shade, so that is what is measured;
-//     only the hue and chroma are taken, since the depths come from the
-//     shared lightness scale like every other role. The three land 56–59°
-//     apart on the OKLCh hue circle — far enough that warning is not read
-//     as error at a glance, which is the whole point of a status colour.
+//     on its own scale — and Material Green, Amber and Blue 500. The
+//     palette anchor of each family is its 500 shade, so that is what is
+//     measured; only the hue and chroma are taken, since the depths come
+//     from the shared lightness scale like every other role. The four land
+//     56.2°, 59.3°, 104.6° and 139.9° apart around the OKLCh hue circle —
+//     far enough that no status colour is read as its neighbour at a
+//     glance, which is the whole point of a status colour.
+//
+//   - The seed tints the status anchors, and only tints them. A palette
+//     that ignored the brand entirely would drop four foreign colours into
+//     it, so each anchor rotates toward the accent hue along the shorter
+//     arc — by at most statusTint, 3°, and never in chroma. The bound is
+//     what makes it a tint rather than a rotation: 3° is a twentieth of the
+//     smallest gap between two anchors (56.2°), so tinting every anchor to
+//     its limit still leaves 50.2° between the closest pair, and no seed can
+//     make one status role converge on, reorder past, or leave the family of
+//     another. Error stays inside 25.7°–31.7°, which is red whatever the
+//     brand is. A seed at or under greyChroma tints nothing: the same rule
+//     liftChroma follows, that a dial must not invent a hue where the brand
+//     has none.
+//
+//     3° rather than a rounder 5° because the cost of a tint is not paid in
+//     hue, where the bound holds it, but in the chroma the gamut happens to
+//     hold at the rotated hue, where nothing does. Measured: at 5° a red
+//     brand took the light success mark from #006B13 to #226A00, a green far
+//     enough toward olive to be read as a different colour, and a purple
+//     brand took the dark warning pin's chroma from 0.1675 to 0.1458. At 3°
+//     the same two measure #136B00 and 0.1536 — half the drift, for a tint
+//     nobody was going to notice either way.
+//
+//     What the bound buys, measured: over the 411-seed sweep the accent is
+//     never closer to the fixed error anchor than the error role is, in
+//     either scheme — a red-heavy brand pulls the error onto true red
+//     rather than pulling the accent past it (see the accent-versus-error
+//     gate in this package's contrast tests).
+//
+//   - Status containers are tonal, not blended. The container of a status
+//     role — the ground an alert or a tinted banner fills with — is the
+//     role's own hue at containerChroma, 0.055, realized at the role ramp's
+//     step-300 depth: StatusContainer, with OnStatusContainer for the mark
+//     read on it. Deriving it that way is the point. A container mixed
+//     instead by alpha-compositing the pinned base over the neutral Surface
+//     — 12% of the base over a flat grey, which is what the tinted banner
+//     used to do — interpolates in non-linear sRGB, which is neither
+//     hue-preserving nor chroma-preserving: the four status fills came out
+//     at chroma 0.0155–0.0212, near enough to grey that no one could tell
+//     them apart, and the error fill's hue dragged 28.7° → 21.6°, toward
+//     magenta. A red container that has lost seven degrees of hue and
+//     seven-eighths of its chroma is the "dirty pink" the treatment was
+//     reported as. Realized at a tone the container keeps its parent's hue
+//     exactly (the tonal solver holds hue by construction) and all four
+//     carry the same measured chroma, so they differ in hue and nothing
+//     else — which is the only way four status grounds read as four.
+//
+//     0.055 is the dial the sRGB gamut allows at both container depths for
+//     every anchor across its whole tint window: the binding case is amber
+//     at the dark step-300 depth, which holds 0.0637 at the worst hue in
+//     that window, and the dial keeps 14% of headroom under it so
+//     quantization can never clip one container and not another.
+//
+//     OnStatusContainer takes the most chromatic rung of the role's own
+//     ramp that reaches graphicFloor over the container — WCAG 1.4.11's 3:1
+//     for a non-text graphic, which is what a status mark is (MarkOn, in
+//     containers.go, is the general form and the toast's leading edge takes
+//     the same rule against a different ground). Asking for the most
+//     chromatic rung rather than naming one is what keeps four hues equally
+//     saturated: sRGB holds a red only at mid depths and an amber only at
+//     high ones, so a fixed rung serves one hue at the cost of the others.
+//     Light schemes land on step 700 and dark on 500, except amber, whose
+//     chroma peaks high enough on the dark scale to take step 600 or 700
+//     there; the worst mark-on-container pairing over the whole seed sweep
+//     measures 4.47:1, and the default seed's eight measure 4.52 and up. Body text on a container is
+//     not this pairing and does not use it — the neutral Text token
+//     measures 11.6:1 or better over all eight containers.
 //
 //   - Pins. The light primary base is the seed at its own hue and CIELAB
 //     depth with the accent dial applied to its chroma (ADR-007: "the seed
@@ -161,7 +233,7 @@
 //   - The 700 text step deepens to the default scale's 900 depth in both
 //     modes — light 700 L* 39 → 6, dark 700 L* 82 → 94 — so 700 text meets
 //     the same Lc ≥ 90 bar the default asks only of 900 (light min Lc 90.7,
-//     dark 93.0 across the seven ramps; APCA's soft black clamp caps lighter
+//     dark 93.0 across the role ramps; APCA's soft black clamp caps lighter
 //     choices below 90, the same wall D2.4 hit). The 800 and 900 stops
 //     slide outward — light 3 and 0, dark 97 and 100 — keeping the ladder
 //     strictly monotonic and the 900 gate clear with margin (light Lc 92.3,
@@ -194,6 +266,7 @@ package tokens
 
 import (
 	stdcolor "image/color"
+	"math"
 
 	"github.com/vibrantgio/theme/color"
 )
@@ -230,13 +303,25 @@ const (
 	successChroma    = 0.162     // OKLCh chroma of #4CAF50
 	warningHue       = 84.9      // OKLCh hue of Material Amber 500 #FFC107
 	warningChroma    = 0.172     // OKLCh chroma of #FFC107
+	infoHue          = 248.8     // OKLCh hue of Material Blue 500 #2196F3
+	infoChroma       = 0.169     // OKLCh chroma of #2196F3
+	statusTint       = 3.0       // degrees a status anchor may rotate toward the accent
 	lightPinTone     = 40        // MD3's accent-base tone; the default seed's own depth
-	darkPinTone      = 82        // the dark scale's step-700 L*; D2.4 raised it from the
+	statusPinTone    = 39        // the light scale's step-700 L*: a status pin IS its ramp's
+	// 700 stop rather than landing 3/255 beside it, which is what a
+	// tone-40 pin against a tone-39 rung came out as
+	darkPinTone = 82 // the dark scale's step-700 L*; D2.4 raised it from the
 	// spike's 65 — no on-colour reaches Lc 60 over an L* 65 mid-tone
 	darkOnTone   = 8   // dark pins' on-colour depth: the dark scale's step-100 L*
 	hcDarkOnTone = 0   // high contrast pushes the dark on-colours to the axis floor
 	onFloor      = 4.5 // WCAG AA body text: the ratio an on-colour has to reach
 	hcOnFloor    = 7.0 // the increased-contrast variant asks AAA of the same pair
+
+	// The status container dial and the floor its mark is chosen against;
+	// see the file header for both derivations and their measurements.
+	containerChroma = 0.055 // every status container's measured OKLCh chroma
+	containerStep   = 300   // the ramp step a status container is realized at
+	graphicFloor    = 3.0   // WCAG 1.4.11 non-text contrast: what a status mark owes its container
 )
 
 // derivation is the knob set that separates FromSeed from its high-contrast
@@ -359,6 +444,31 @@ func packRGB(c stdcolor.NRGBA) uint32 {
 	return uint32(c.R)<<16 | uint32(c.G)<<8 | uint32(c.B)
 }
 
+// tintToward rotates a fixed status anchor toward the accent hue along the
+// shorter arc of the OKLCh hue circle, by at most statusTint degrees. It is
+// the whole of the seed's influence on a status role: the anchor's chroma
+// is never touched, so no brand can wash a status colour out or light one
+// up, and the rotation is bounded far below the gap between two anchors, so
+// no brand can make one status role read as another. A brand at or under
+// greyChroma has no hue to lend and lends none.
+//
+// The bound is what makes the tint safe to state as a property rather than
+// to check case by case: the smallest gap between two anchors is 56.2°, and
+// tinting both to their limits toward each other closes it by at most 10°.
+func tintToward(anchor, accentHue, accentChroma float64) float64 {
+	if accentChroma <= greyChroma {
+		return anchor
+	}
+	// The signed shorter arc from the anchor to the accent, in (-180, 180].
+	delta := math.Mod(accentHue-anchor+540, 360) - 180
+	if delta > statusTint {
+		delta = statusTint
+	} else if delta < -statusTint {
+		delta = -statusTint
+	}
+	return math.Mod(anchor+delta+360, 360)
+}
+
 // rampOf sweeps one role's hue and chroma across a lightness scale.
 func rampOf(tones [9]int, hue, chroma float64) Ramp {
 	var r Ramp
@@ -414,18 +524,26 @@ func fromSeed(seed stdcolor.NRGBA, d derivation) (light, dark ColorTokens) {
 	_, accent, hue := color.OKLChFromNRGBA(primary)
 	accent = liftChroma(accent)
 
+	// The status anchors are fixed hues the seed may only tint (see
+	// tintToward and the file header); the accent family rotates with the
+	// brand outright.
 	roles := []struct {
 		hue, chroma float64
+		// pinTone is the light scheme's pin depth. The accent roles take
+		// MD3's tone 40; the status roles take their ramp's own step-700
+		// depth, so a status pin and its 700 rung are one colour.
+		pinTone int
 	}{
-		{hue, neutralChroma},
-		{hue, accent},
-		{hue, accent * secondaryShare},
-		{hue + tertiaryHueShift, accent * tertiaryShare},
-		{errorHue, errorChroma},
-		{successHue, successChroma},
-		{warningHue, warningChroma},
+		{hue, neutralChroma, lightPinTone},
+		{hue, accent, lightPinTone},
+		{hue, accent * secondaryShare, lightPinTone},
+		{hue + tertiaryHueShift, accent * tertiaryShare, lightPinTone},
+		{tintToward(errorHue, hue, accent), errorChroma, statusPinTone},
+		{tintToward(successHue, hue, accent), successChroma, statusPinTone},
+		{tintToward(warningHue, hue, accent), warningChroma, statusPinTone},
+		{tintToward(infoHue, hue, accent), infoChroma, statusPinTone},
 	}
-	var lr, dr [7]Ramp
+	var lr, dr [8]Ramp
 	for i, role := range roles {
 		lr[i] = rampOf(d.lightTones, role.hue, role.chroma)
 		dr[i] = rampOf(d.darkTones, role.hue, role.chroma)
@@ -436,9 +554,9 @@ func fromSeed(seed stdcolor.NRGBA, d derivation) (light, dark ColorTokens) {
 	// from the scheme (see onColour); the light scheme's alternative is the
 	// far end of the tonal axis and the dark scheme's is White, so in each
 	// scheme the pair on offer is the ramp's own dark end and its light one.
-	var lightBase, darkBase, lightInk, darkInk [7]stdcolor.NRGBA
+	var lightBase, darkBase, lightInk, darkInk [8]stdcolor.NRGBA
 	for i := 1; i < len(roles); i++ {
-		lightBase[i] = color.Tone(roles[i].hue, roles[i].chroma, lightPinTone)
+		lightBase[i] = color.Tone(roles[i].hue, roles[i].chroma, roles[i].pinTone)
 		darkBase[i] = color.Tone(roles[i].hue, roles[i].chroma, darkPinTone)
 	}
 	lightBase[1] = primary // the lifted seed, never read off a ramp step
@@ -454,7 +572,7 @@ func fromSeed(seed stdcolor.NRGBA, d derivation) (light, dark ColorTokens) {
 	light = resolveAliases(ColorTokens{
 		Ramps: RampSet{
 			Neutral: lr[0], Primary: lr[1], Secondary: lr[2], Tertiary: lr[3],
-			Error: lr[4], Success: lr[5], Warning: lr[6],
+			Error: lr[4], Success: lr[5], Warning: lr[6], Info: lr[7],
 		},
 		Primary:     lightBase[1], // the lifted seed, never read off a ramp step
 		OnPrimary:   lightInk[1],
@@ -468,13 +586,15 @@ func fromSeed(seed stdcolor.NRGBA, d derivation) (light, dark ColorTokens) {
 		OnSuccess:   lightInk[5],
 		Warning:     lightBase[6],
 		OnWarning:   lightInk[6],
+		Info:        lightBase[7],
+		OnInfo:      lightInk[7],
 		Background:  lr[0].Step(100),
 		Text:        lr[0].Step(900),
 	}, d.dividerStep, dr[0])
 	dark = resolveAliases(ColorTokens{
 		Ramps: RampSet{
 			Neutral: dr[0], Primary: dr[1], Secondary: dr[2], Tertiary: dr[3],
-			Error: dr[4], Success: dr[5], Warning: dr[6],
+			Error: dr[4], Success: dr[5], Warning: dr[6], Info: dr[7],
 		},
 		Primary:     darkBase[1],
 		OnPrimary:   darkInk[1],
@@ -488,6 +608,8 @@ func fromSeed(seed stdcolor.NRGBA, d derivation) (light, dark ColorTokens) {
 		OnSuccess:   darkInk[5],
 		Warning:     darkBase[6],
 		OnWarning:   darkInk[6],
+		Info:        darkBase[7],
+		OnInfo:      darkInk[7],
 		Background:  dr[0].Step(100),
 		Text:        dr[0].Step(900),
 	}, d.dividerStep, lr[0])

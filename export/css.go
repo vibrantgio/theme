@@ -44,6 +44,7 @@ var rampRoles = []struct {
 	{"error", func(r tokens.RampSet) tokens.Ramp { return r.Error }},
 	{"success", func(r tokens.RampSet) tokens.Ramp { return r.Success }},
 	{"warning", func(r tokens.RampSet) tokens.Ramp { return r.Warning }},
+	{"info", func(r tokens.RampSet) tokens.Ramp { return r.Info }},
 }
 
 // pinRoles orders the pinned bases and the semantic layer under their CSS
@@ -86,7 +87,65 @@ var pinRoles = []struct {
 	{"on-success", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.OnSuccess }},
 	{"warning", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Warning }},
 	{"on-warning", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.OnWarning }},
+	{"info", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Info }},
+	{"on-info", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.OnInfo }},
+	// The status containers and the marks read on them. They are emitted as
+	// first-class tokens for the same reason the state walk above is: a
+	// container is realized at a tone rather than mixed, so no var()
+	// arithmetic over the ramp steps could reproduce one, and the mark is
+	// the rung the container's own contrast chose, which a sheet has no way
+	// to measure.
+	{"error-container", func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.StatusContainer(tokens.RoleError)
+	}},
+	{"on-error-container", func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.OnStatusContainer(tokens.RoleError)
+	}},
+	{"success-container", func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.StatusContainer(tokens.RoleSuccess)
+	}},
+	{"on-success-container", func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.OnStatusContainer(tokens.RoleSuccess)
+	}},
+	{"warning-container", func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.StatusContainer(tokens.RoleWarning)
+	}},
+	{"on-warning-container", func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.OnStatusContainer(tokens.RoleWarning)
+	}},
+	{"info-container", func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.StatusContainer(tokens.RoleInfo)
+	}},
+	{"on-info-container", func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.OnStatusContainer(tokens.RoleInfo)
+	}},
+	// Each status role's mark on the inverse surface: the most chromatic
+	// rung of that role's ramp that reads over the counterpart scheme's
+	// card at the on-colour floor (MarkOn). It is a token rather than a
+	// ramp reference because which rung answers depends on the hue — a red
+	// holds its chroma at mid depths and an amber at high ones — so the two
+	// schemes and the four roles do not all land on one rung, and a sheet
+	// naming a rung would have to name four of them and could not flip them
+	// with the scheme.
+	{"error-on-inverse", func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.MarkOn(tokens.RoleError, t.InverseSurface, onFloor)
+	}},
+	{"success-on-inverse", func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.MarkOn(tokens.RoleSuccess, t.InverseSurface, onFloor)
+	}},
+	{"warning-on-inverse", func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.MarkOn(tokens.RoleWarning, t.InverseSurface, onFloor)
+	}},
+	{"info-on-inverse", func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.MarkOn(tokens.RoleInfo, t.InverseSurface, onFloor)
+	}},
 }
+
+// onFloor is WCAG AA for body text, the floor a mark on the inverse surface
+// is chosen against: a toast's leading edge is the only thing that says
+// which level the toast is, and it says it in a sliver, so it is held to the
+// text floor rather than to the 3:1 a non-text graphic owes its ground.
+const onFloor = 4.5
 
 // typeRoles orders the fifteen MD3 type roles under their CSS names, plus
 // code — the sixteenth style outside the MD3 grid, the mono face at
@@ -606,7 +665,7 @@ const componentClasses = `/* ---- Component classes ----
 }
 
 /* Status tags (tag.go colors): the level modifiers carry the level's
-   pinned fixed-hue role tinted 20% over the ground and drawn pure as the
+   pinned hue-anchored role tinted 20% over the ground and drawn pure as the
    1 dp outline (padding gives the ring's 1px back), under the Text pin.
    The ground is the Surface pin because a chip rests on the pane it
    labels; it does not float, which is the whole of the difference between
@@ -1217,10 +1276,16 @@ const componentClasses = `/* ---- Component classes ----
    no outline, which on the old tinted level-2 base was the only thing
    giving the chip an edge.
    The level shows as a leading edge one S1 wide, painted as a two-stop
-   gradient so the chip's own radius rounds it: the level's ramp at step
-   400, the deepest rung that still reads over the inverse ground in both
-   schemes (step 500 collapses on a light scheme's dark chip). Info takes
-   the primary ramp, then success, warning and error. */
+   gradient so the chip's own radius rounds it: the level's own mark on the
+   inverse surface, which is the most chromatic rung of that level's ramp
+   still reading over the chip. Which rung that is depends on the hue and on
+   the scheme, so it arrives as a token rather than as a ramp reference —
+   a single rung for all of it cost the light scheme its reds, the error
+   edge coming out the pale salmon a red turns into when it is asked to sit
+   as light as an amber wants to. Each level takes its own status ramp —
+   info included, which reads off the info ramp rather than off the accent,
+   so a themed brand cannot make an informational chip wear the colour of an
+   alarming one. */
 .toast {
   box-sizing: border-box;
   display: flex;
@@ -1230,7 +1295,7 @@ const componentClasses = `/* ---- Component classes ----
   padding: var(--space-2) var(--space-3);
   padding-left: calc(var(--space-1) + var(--space-3));
   border-radius: var(--radius-md);
-  background: linear-gradient(to right, var(--color-primary-400) 0 var(--space-1), var(--color-inverse-surface) var(--space-1));
+  background: linear-gradient(to right, var(--color-info-on-inverse) 0 var(--space-1), var(--color-inverse-surface) var(--space-1));
   color: var(--color-on-inverse-surface);
   box-shadow: var(--shadow-3);
   font-family: var(--font-family);
@@ -1240,13 +1305,13 @@ const componentClasses = `/* ---- Component classes ----
   letter-spacing: var(--font-label-medium-tracking);
 }
 .toast.success {
-  background: linear-gradient(to right, var(--color-success-400) 0 var(--space-1), var(--color-inverse-surface) var(--space-1));
+  background: linear-gradient(to right, var(--color-success-on-inverse) 0 var(--space-1), var(--color-inverse-surface) var(--space-1));
 }
 .toast.warning {
-  background: linear-gradient(to right, var(--color-warning-400) 0 var(--space-1), var(--color-inverse-surface) var(--space-1));
+  background: linear-gradient(to right, var(--color-warning-on-inverse) 0 var(--space-1), var(--color-inverse-surface) var(--space-1));
 }
 .toast.error {
-  background: linear-gradient(to right, var(--color-error-400) 0 var(--space-1), var(--color-inverse-surface) var(--space-1));
+  background: linear-gradient(to right, var(--color-error-on-inverse) 0 var(--space-1), var(--color-inverse-surface) var(--space-1));
 }
 
 /* The stack (toast.go paintStack): a corner-anchored column with S2 gaps,

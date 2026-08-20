@@ -78,6 +78,10 @@ const (
 	RoleError
 	RoleSuccess
 	RoleWarning
+	// RoleInfo is last because the values above it are what callers have
+	// compiled against; a fourth status role is an addition, not a
+	// renumbering.
+	RoleInfo
 )
 
 // DisabledOpacity is the fraction of full alpha a disabled element keeps —
@@ -171,6 +175,8 @@ func (t ColorTokens) rampFor(role Role) Ramp {
 		return t.Ramps.Success
 	case RoleWarning:
 		return t.Ramps.Warning
+	case RoleInfo:
+		return t.Ramps.Info
 	}
 	panic(fmt.Sprintf("tokens: unknown Role %d", role))
 }
@@ -189,6 +195,8 @@ func (t ColorTokens) pinFor(role Role) stdcolor.NRGBA {
 		return t.Success
 	case RoleWarning:
 		return t.Warning
+	case RoleInfo:
+		return t.Info
 	}
 	panic(fmt.Sprintf("tokens: Role %d has no pinned solid fill", role))
 }

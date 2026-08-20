@@ -94,10 +94,12 @@ func (r Ramp) Step(n int) color.NRGBA {
 // tints and text shades, while the role's base colour is pinned separately
 // on ColorTokens (see ColorTokens.Primary).
 //
-// Error, Success and Warning are the semantic status roles. Unlike Primary,
-// Secondary and Tertiary they do not rotate with the seed — a purple
-// "success" would be useless — so each is derived at a fixed hue and
-// chroma; see the seed.go file header for the three measurements.
+// Error, Success, Warning and Info are the semantic status roles. Unlike
+// Primary, Secondary and Tertiary they do not rotate with the seed — a
+// purple "success" would be useless, and an "info" wearing the accent says
+// whatever the brand happens to say — so each is anchored at a fixed hue
+// and chroma the seed may only tint, by at most a few degrees of hue. See
+// the seed.go file header for the four measurements and the bound.
 type RampSet struct {
 	Neutral   Ramp
 	Primary   Ramp
@@ -106,6 +108,7 @@ type RampSet struct {
 	Error     Ramp
 	Success   Ramp
 	Warning   Ramp
+	Info      Ramp
 }
 
 // ColorTokens holds the colour vocabulary consumed by every Components component:
@@ -143,6 +146,8 @@ type ColorTokens struct {
 	OnSuccess   color.NRGBA // text/icon over Success
 	Warning     color.NRGBA // pinned warning base
 	OnWarning   color.NRGBA // text/icon over Warning
+	Info        color.NRGBA // pinned info base
+	OnInfo      color.NRGBA // text/icon over Info
 
 	// The thin semantic layer (ADR-007's surface mapping). Background and
 	// Text are pins — the "bg" and "text" bases E0.1 emits — while Surface

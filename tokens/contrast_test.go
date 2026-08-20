@@ -69,6 +69,7 @@ func TestAPCAContrastGate(t *testing.T) {
 				{"Error", s.tok.Error, s.tok.OnError},
 				{"Success", s.tok.Success, s.tok.OnSuccess},
 				{"Warning", s.tok.Warning, s.tok.OnWarning},
+				{"Info", s.tok.Info, s.tok.OnInfo},
 			} {
 				lc := color.APCA(p.on, p.base)
 				wcag := color.ContrastRatio(p.on, p.base)
@@ -141,6 +142,7 @@ func TestAPCAContrastGateHighContrast(t *testing.T) {
 				{"Error", s.tok.Error, s.tok.OnError},
 				{"Success", s.tok.Success, s.tok.OnSuccess},
 				{"Warning", s.tok.Warning, s.tok.OnWarning},
+				{"Info", s.tok.Info, s.tok.OnInfo},
 			} {
 				lc := color.APCA(p.on, p.base)
 				wcag := color.ContrastRatio(p.on, p.base)
@@ -214,6 +216,7 @@ func accentPairs(t tokens.ColorTokens) []struct {
 		{"Error", t.Error, t.OnError},
 		{"Success", t.Success, t.OnSuccess},
 		{"Warning", t.Warning, t.OnWarning},
+		{"Info", t.Info, t.OnInfo},
 	}
 }
 
@@ -363,4 +366,229 @@ func wcagAAAVerdict(ratio float64) string {
 		return "pass"
 	}
 	return "fail"
+}
+
+// statusRoles is the four semantic status roles with the fixed anchor hue
+// each is derived from, in the order the derivation builds them.
+var statusRoles = []struct {
+	name   string
+	role   tokens.Role
+	anchor float64 // the fixed OKLCh anchor hue, before any seed tint
+}{
+	{"Error", tokens.RoleError, 28.7},
+	{"Success", tokens.RoleSuccess, 144.2},
+	{"Warning", tokens.RoleWarning, 84.9},
+	{"Info", tokens.RoleInfo, 248.8},
+}
+
+// statusTintBound is the derivation's cap on how far a seed may rotate a
+// status anchor, restated here so the gate reads against a number of its own
+// rather than against the one the code under test used.
+const statusTintBound = 3.0
+
+// hueGap is the angular distance between two OKLCh hues in degrees, in
+// [0,180] — the shorter way round the circle.
+func hueGap(a, b float64) float64 {
+	d := math.Abs(math.Mod(a-b+540, 360) - 180)
+	return d
+}
+
+// roleHue reads a role's realized hue off its ramp's mid-value step, which
+// is the rung furthest from both ends of the lightness scale and so the one
+// least disturbed by gamut mapping or 8-bit quantization.
+func roleHue(t tokens.ColorTokens, role tokens.Role) float64 {
+	var r tokens.Ramp
+	switch role {
+	case tokens.RoleError:
+		r = t.Ramps.Error
+	case tokens.RoleSuccess:
+		r = t.Ramps.Success
+	case tokens.RoleWarning:
+		r = t.Ramps.Warning
+	case tokens.RoleInfo:
+		r = t.Ramps.Info
+	default:
+		r = t.Ramps.Primary
+	}
+	_, _, h := color.OKLChFromNRGBA(r.Step(500))
+	return h
+}
+
+// The slack the gates below allow a hue measurement, which is entirely the
+// eight-bit realization and none of it the derivation. How much a byte costs
+// depends on how much chroma the colour has to spend it on: a ramp's
+// mid-value step carries most of its role's chroma and pins its hue to
+// within a degree, while a container carries the 0.055 dial and pins its hue
+// to within about a degree and a half. Both are far below the five-degree
+// tint bound these gates are actually about, and both are far below
+// anything an eye resolves at these chromas.
+const (
+	quantizationSlack = 1.0 // a hue read off a ramp's mid-value step
+	containerSlack    = 2.0 // a hue read off a container, at the container dial
+)
+
+// TestStatusAnchorsHoldTheirFamiliesForEverySeed is the whole-population
+// gate on the status anchors and the bound on the seed's tint, over the
+// shared seed sweep, in both schemes of both derivations.
+//
+// Three properties, and they are the reasons the anchors exist:
+//
+//   - Every status role stays within statusTintBound of its own fixed
+//     anchor, so no brand can rotate a semantic colour out of its family.
+//     An error is red under every seed there is.
+//   - No two status roles come within 45° of each other, so four status
+//     grounds always read as four rather than as two pairs.
+//   - The error role is never further from true red than the accent is. A
+//     red-heavy brand pulls the error onto the red anchor rather than
+//     pulling the accent past it, which is what stops a themed accent from
+//     out-reddening the colour that means "this went wrong".
+func TestStatusAnchorsHoldTheirFamiliesForEverySeed(t *testing.T) {
+	const redAnchor = 28.7
+	worstTint, worstSep, worstRed := 0.0, 999.0, 999.0
+	worstRedAt := ""
+	for _, seed := range sweepSeeds() {
+		light, dark := tokens.FromSeed(seed)
+		hcLight, hcDark := tokens.FromSeedHighContrast(seed)
+		for _, s := range []struct {
+			name string
+			tok  tokens.ColorTokens
+		}{
+			{"FromSeed light", light}, {"FromSeed dark", dark},
+			{"FromSeedHighContrast light", hcLight}, {"FromSeedHighContrast dark", hcDark},
+		} {
+			hues := make([]float64, len(statusRoles))
+			for i, r := range statusRoles {
+				hues[i] = roleHue(s.tok, r.role)
+				if drift := hueGap(hues[i], r.anchor); drift > statusTintBound+quantizationSlack {
+					t.Errorf("seed %v: %s %s sits at hue %.1f°, %.1f° off its %.1f° anchor — past the %.1f° tint bound",
+						seed, s.name, r.name, hues[i], drift, r.anchor, statusTintBound)
+				} else if drift > worstTint {
+					worstTint = drift
+				}
+			}
+			for i := range hues {
+				for j := i + 1; j < len(hues); j++ {
+					if gap := hueGap(hues[i], hues[j]); gap < 45 {
+						t.Errorf("seed %v: %s %s and %s are %.1f° apart, under the 45° floor",
+							seed, s.name, statusRoles[i].name, statusRoles[j].name, gap)
+					} else if gap < worstSep {
+						worstSep = gap
+					}
+				}
+			}
+			// The accent-versus-error gate. Redness is read as distance to
+			// the fixed red anchor: the error role must be at least as close
+			// to it as the accent is. A seed inside the error's own tint
+			// window puts the two on the same hue ray, where the two
+			// realizations differ by a fraction of a degree and the sign of
+			// the margin is eight-bit noise — hence the slack, which is what
+			// the narrowest margins logged below are made of.
+			errRed := hueGap(hues[0], redAnchor)
+			accentRed := hueGap(roleHue(s.tok, tokens.RolePrimary), redAnchor)
+			if errRed > accentRed+quantizationSlack {
+				t.Errorf("seed %v: %s: the accent sits %.1f° from true red and the error %.1f° — the accent reads redder than the error",
+					seed, s.name, accentRed, errRed)
+			}
+			if margin := accentRed - errRed; margin < worstRed {
+				worstRed, worstRedAt = margin, fmt.Sprintf("seed %v, %s", seed, s.name)
+			}
+		}
+	}
+	t.Logf("over %d seeds: worst tint drift %.2f° (bound %.1f°), closest two status roles %.1f° apart, narrowest accent-versus-error margin %.2f° (%s)",
+		len(sweepSeeds()), worstTint, statusTintBound, worstSep, worstRed, worstRedAt)
+}
+
+// TestStatusContainersKeepTheirParentsHue is the whole-population gate on
+// the tonal container derivation, over the shared seed sweep, in both
+// schemes of both derivations. It is the gate the blended treatment could
+// not have passed: its fills measured chroma 0.0155–0.0212 against a dial of
+// 0.055, and its red fill's hue landed 7° off its parent's.
+//
+// Four properties per container: it carries its parent role's hue, it
+// carries the container dial's chroma, the neutral body-text token reaches
+// WCAG AA over it, and the mark the derivation chose for it reaches WCAG
+// 1.4.11's 3:1 non-text floor over it.
+func TestStatusContainersKeepTheirParentsHue(t *testing.T) {
+	const dial, dialSlack, graphicFloor = 0.055, 0.004, 3.0
+	worstText, worstMark, worstChroma := 99.0, 99.0, 99.0
+	for _, seed := range sweepSeeds() {
+		light, dark := tokens.FromSeed(seed)
+		hcLight, hcDark := tokens.FromSeedHighContrast(seed)
+		for _, s := range []struct {
+			name string
+			tok  tokens.ColorTokens
+		}{
+			{"FromSeed light", light}, {"FromSeed dark", dark},
+			{"FromSeedHighContrast light", hcLight}, {"FromSeedHighContrast dark", hcDark},
+		} {
+			for _, r := range statusRoles {
+				container := s.tok.StatusContainer(r.role)
+				mark := s.tok.OnStatusContainer(r.role)
+				_, chroma, hue := color.OKLChFromNRGBA(container)
+				if drift := hueGap(hue, roleHue(s.tok, r.role)); drift > containerSlack {
+					t.Errorf("seed %v: %s %s container %v sits at hue %.1f°, %.1f° off its parent's — a container has left its family",
+						seed, s.name, r.name, container, hue, drift)
+				}
+				if math.Abs(chroma-dial) > dialSlack {
+					t.Errorf("seed %v: %s %s container %v measures chroma %.4f, want the %.3f dial",
+						seed, s.name, r.name, container, chroma, dial)
+				}
+				if chroma < worstChroma {
+					worstChroma = chroma
+				}
+				if got := color.ContrastRatio(s.tok.Text, container); got < wcagAA {
+					t.Errorf("seed %v: %s %s container: body text measures %.2f:1, under the %.1f:1 floor",
+						seed, s.name, r.name, got, wcagAA)
+				} else if got < worstText {
+					worstText = got
+				}
+				if got := color.ContrastRatio(mark, container); got < graphicFloor {
+					t.Errorf("seed %v: %s %s container: the mark %v measures %.2f:1, under the %.1f:1 non-text floor",
+						seed, s.name, r.name, mark, got, graphicFloor)
+				} else if got < worstMark {
+					worstMark = got
+				}
+			}
+		}
+	}
+	t.Logf("over %d seeds: worst container chroma %.4f (dial %.3f), worst body text on a container %.2f:1, worst mark on a container %.2f:1",
+		len(sweepSeeds()), worstChroma, dial, worstText, worstMark)
+}
+
+// TestStatusPinsAreTheirRampsSeventhStep holds the one rule the status roles
+// were left without: a status role's pinned base and its ramp's step 700 are
+// one colour, in both schemes, for every seed. They used to be realized at
+// two depths a single tone apart — the pin at MD3's tone 40 and the rung at
+// the scale's 39 — so five of six light role fills came back 3/255 per
+// channel beside the rung they claimed to be, and a palette effectively
+// shipped two Errors that differed by one percent.
+//
+// It is asserted of FromSeed only. The increased-contrast variant deepens
+// its text steps and leaves its fills where they are, exactly as it leaves
+// the light pins' White on-colours alone, so its 700 rung is deliberately
+// not its pin.
+func TestStatusPinsAreTheirRampsSeventhStep(t *testing.T) {
+	for _, seed := range sweepSeeds() {
+		light, dark := tokens.FromSeed(seed)
+		for _, s := range []struct {
+			name string
+			tok  tokens.ColorTokens
+		}{{"light", light}, {"dark", dark}} {
+			for _, p := range []struct {
+				name string
+				pin  stdcolor.NRGBA
+				ramp tokens.Ramp
+			}{
+				{"Error", s.tok.Error, s.tok.Ramps.Error},
+				{"Success", s.tok.Success, s.tok.Ramps.Success},
+				{"Warning", s.tok.Warning, s.tok.Ramps.Warning},
+				{"Info", s.tok.Info, s.tok.Ramps.Info},
+			} {
+				if got, want := p.pin, p.ramp.Step(700); got != want {
+					t.Errorf("seed %v: %s %s pin = %v, want its ramp's step 700 %v",
+						seed, s.name, p.name, got, want)
+				}
+			}
+		}
+	}
 }

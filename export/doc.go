@@ -19,14 +19,22 @@
 // Colour variables follow ADR-007's families exactly:
 //
 //   - --color-<role>-100 … --color-<role>-900 — the nine-step functional
-//     ramps, roles neutral, primary, secondary, tertiary, error, success
-//     and warning. The last three are the status roles: hue-fixed rather
-//     than seed-derived, so a re-brand never rotates them.
+//     ramps, roles neutral, primary, secondary, tertiary, error, success,
+//     warning and info. The last four are the status roles: anchored to
+//     fixed semantic hues rather than seed-derived, so a re-brand tints
+//     them by a few degrees and never rotates them out of their families.
 //   - Pinned bases and the semantic layer: --color-accent is the Primary
 //     pin (the reference project's .btn-primary consumes --color-accent, per
 //     ADR-007), with --color-on-accent its on-colour; --color-secondary,
-//     --color-tertiary, --color-error, --color-success and --color-warning
-//     are the other role pins with their --color-on-* companions; --color-bg, --color-text are the pinned
+//     --color-tertiary, --color-error, --color-success, --color-warning and
+//     --color-info are the other role pins with their --color-on-*
+//     companions; --color-<status>-container and
+//     --color-on-<status>-container are the four status roles' tonal
+//     containers and the marks read on them, realized at a tone rather than
+//     mixed, so a container keeps its parent's hue exactly;
+//     --color-<status>-on-inverse is each status role's mark on the inverse
+//     surface, which is not a fixed ramp step — which rung answers depends
+//     on the hue and on the scheme; --color-bg, --color-text are the pinned
 //     background and body text; --color-surface and --color-divider are the
 //     semantic layer's ramp-resolved card and separator colours.
 //
