@@ -575,13 +575,13 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		// leading edge as a two-stop gradient in that level's own mark on
 		// the inverse surface.
 		"color: var(--color-on-inverse-surface);",
-		"background: linear-gradient(to right, var(--color-info-on-inverse) 0 var(--space-1), var(--color-inverse-surface) var(--space-1));",
+		"background: linear-gradient(to right, var(--color-info-on-inverse) 0 var(--space-2), var(--color-inverse-surface) var(--space-2));",
 		"box-shadow: var(--shadow-3);",
 		"min-height: 36px;",
-		"padding-left: calc(var(--space-1) + var(--space-3));",
-		"background: linear-gradient(to right, var(--color-success-on-inverse) 0 var(--space-1), var(--color-inverse-surface) var(--space-1));",
-		"background: linear-gradient(to right, var(--color-warning-on-inverse) 0 var(--space-1), var(--color-inverse-surface) var(--space-1));",
-		"background: linear-gradient(to right, var(--color-error-on-inverse) 0 var(--space-1), var(--color-inverse-surface) var(--space-1));",
+		"padding-left: calc(var(--space-2) + var(--space-3));",
+		"background: linear-gradient(to right, var(--color-success-on-inverse) 0 var(--space-2), var(--color-inverse-surface) var(--space-2));",
+		"background: linear-gradient(to right, var(--color-warning-on-inverse) 0 var(--space-2), var(--color-inverse-surface) var(--space-2));",
+		"background: linear-gradient(to right, var(--color-error-on-inverse) 0 var(--space-2), var(--color-inverse-surface) var(--space-2));",
 	} {
 		if !strings.Contains(classes, frag) {
 			t.Errorf("class layer lacks %q", frag)

@@ -119,14 +119,13 @@ var pinRoles = []struct {
 	{"on-info-container", func(t tokens.ColorTokens) stdcolor.NRGBA {
 		return t.OnStatusContainer(tokens.RoleInfo)
 	}},
-	// Each status role's mark on the inverse surface: the most chromatic
-	// rung of that role's ramp that reads over the counterpart scheme's
-	// card at the on-colour floor (MarkOn). It is a token rather than a
-	// ramp reference because which rung answers depends on the hue — a red
-	// holds its chroma at mid depths and an amber at high ones — so the two
-	// schemes and the four roles do not all land on one rung, and a sheet
-	// naming a rung would have to name four of them and could not flip them
-	// with the scheme.
+	// Each status role's mark on the inverse surface: the rung of that
+	// role's ramp nearest its mid-value step that reads over the
+	// counterpart scheme's card at the on-colour floor (MarkOn). It is a
+	// token rather than a ramp reference because the two schemes do not
+	// land on one rung — a light scheme's marks come off step 500 and a
+	// dark scheme's off step 400, its ramps having turned light by 500 —
+	// so a sheet naming a rung could not flip them with the scheme.
 	{"error-on-inverse", func(t tokens.ColorTokens) stdcolor.NRGBA {
 		return t.MarkOn(tokens.RoleError, t.InverseSurface, onFloor)
 	}},
@@ -143,8 +142,9 @@ var pinRoles = []struct {
 
 // onFloor is WCAG AA for body text, the floor a mark on the inverse surface
 // is chosen against: a toast's leading edge is the only thing that says
-// which level the toast is, and it says it in a sliver, so it is held to the
-// text floor rather than to the 3:1 a non-text graphic owes its ground.
+// which level the toast is, so it is held to the text floor rather than to
+// the 3:1 a non-text graphic owes its ground. The floor does not bind — over
+// the seed sweep, 3.0 picks the same rungs — it states what the mark owes.
 const onFloor = 4.5
 
 // typeRoles orders the fifteen MD3 type roles under their CSS names, plus
@@ -1275,17 +1275,24 @@ const componentClasses = `/* ---- Component classes ----
    rather than for the separation — this layer is temporary — and there is
    no outline, which on the old tinted level-2 base was the only thing
    giving the chip an edge.
-   The level shows as a leading edge one S1 wide, painted as a two-stop
+   The level shows as a leading edge one S2 wide, painted as a two-stop
    gradient so the chip's own radius rounds it: the level's own mark on the
-   inverse surface, which is the most chromatic rung of that level's ramp
-   still reading over the chip. Which rung that is depends on the hue and on
-   the scheme, so it arrives as a token rather than as a ramp reference —
-   a single rung for all of it cost the light scheme its reds, the error
-   edge coming out the pale salmon a red turns into when it is asked to sit
-   as light as an amber wants to. Each level takes its own status ramp —
-   info included, which reads off the info ramp rather than off the accent,
-   so a themed brand cannot make an informational chip wear the colour of an
-   alarming one. */
+   inverse surface, the rung of that level's ramp nearest its mid-value step
+   that still reads over the chip. It was one S1, which is the width this
+   desktop keeps for separators, pane strokes and insets — furniture it does
+   not want looked at — and a mark identified by its colour cannot be drawn
+   at furniture width. Two stops is as wide as the air above the message and
+   two thirds of the air beside it, which is where the widening stops: an
+   edge as wide as the gap it holds the text off by reads as a panel the
+   message sits next to rather than as the chip's own edge.
+   The mark arrives as a token rather than as a ramp reference because the
+   two schemes do not land on one rung — a light scheme's marks come off
+   step 500 and a dark scheme's off step 400 — and because one rung for both
+   cost the light scheme its reds, the error edge coming out the pale salmon
+   a red turns into when it is asked to sit as light as an amber wants to.
+   Each level takes its own status ramp — info included, which reads off the
+   info ramp rather than off the accent, so a themed brand cannot make an
+   informational chip wear the colour of an alarming one. */
 .toast {
   box-sizing: border-box;
   display: flex;
@@ -1293,9 +1300,9 @@ const componentClasses = `/* ---- Component classes ----
   width: 240px;
   min-height: 36px;
   padding: var(--space-2) var(--space-3);
-  padding-left: calc(var(--space-1) + var(--space-3));
+  padding-left: calc(var(--space-2) + var(--space-3));
   border-radius: var(--radius-md);
-  background: linear-gradient(to right, var(--color-info-on-inverse) 0 var(--space-1), var(--color-inverse-surface) var(--space-1));
+  background: linear-gradient(to right, var(--color-info-on-inverse) 0 var(--space-2), var(--color-inverse-surface) var(--space-2));
   color: var(--color-on-inverse-surface);
   box-shadow: var(--shadow-3);
   font-family: var(--font-family);
@@ -1305,13 +1312,13 @@ const componentClasses = `/* ---- Component classes ----
   letter-spacing: var(--font-label-medium-tracking);
 }
 .toast.success {
-  background: linear-gradient(to right, var(--color-success-on-inverse) 0 var(--space-1), var(--color-inverse-surface) var(--space-1));
+  background: linear-gradient(to right, var(--color-success-on-inverse) 0 var(--space-2), var(--color-inverse-surface) var(--space-2));
 }
 .toast.warning {
-  background: linear-gradient(to right, var(--color-warning-on-inverse) 0 var(--space-1), var(--color-inverse-surface) var(--space-1));
+  background: linear-gradient(to right, var(--color-warning-on-inverse) 0 var(--space-2), var(--color-inverse-surface) var(--space-2));
 }
 .toast.error {
-  background: linear-gradient(to right, var(--color-error-on-inverse) 0 var(--space-1), var(--color-inverse-surface) var(--space-1));
+  background: linear-gradient(to right, var(--color-error-on-inverse) 0 var(--space-2), var(--color-inverse-surface) var(--space-2));
 }
 
 /* The stack (toast.go paintStack): a corner-anchored column with S2 gaps,
