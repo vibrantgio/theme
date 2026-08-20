@@ -498,8 +498,9 @@ const componentClasses = `/* ---- Component classes ----
    components/button: filled by default, .tonal and .ghost the emphasis
    modifiers, states resolved as one-rung ramp walks from the same rungs the
    Gio side draws. .input/.select/.checkbox/.radio mirror components/input,
-   .tag the chip patterns/tag draws (for pricing, hero, and the status
-   levels), .card the
+   .tag the pill patterns/tag draws (for pricing, hero, and the status
+   levels; the chip's dismiss affordance is a Gio interaction and has no
+   class here), .card the
    patterns/card surface, .table the patterns/table grid, the navigation
    family — .navbar, .tabs, .sidebar, .crumbs — the four patterns of the same
    names, and the overlay family — .scrim/.dialog (patterns/modal), .popover,
@@ -636,19 +637,27 @@ const componentClasses = `/* ---- Component classes ----
 
 /* ---- Tag ----
    The chip patterns/tag draws (the shared home of patterns/pricing's
-   "Popular" chip and patterns/hero's eyebrow): a Full-radius pill, S1/S2
-   padding, sized to its label-small text. Filled by default — the accent
-   pin under its on-colour; .tonal is the eyebrow — the primary 200 tinted
-   fill under the accent pin. All call sites request SemiBold, which the
-   pinned shaper resolves to the Medium face (the nearest registered
-   weight), so the sheet says the label role's own weight rather than
-   asking the browser to synthesize a 600. A tag is a label, not a
-   control: it has no interaction states. */
+   "Popular" chip and patterns/hero's eyebrow): a Full-radius pill sized to
+   its label-small text, S2 either side and the S1 stop spent once across
+   the two vertical edges rather than once on each — so the pill is the
+   label's line box plus S1, and the type inside it is untouched. Filled by
+   default — the accent pin under its on-colour; .tonal is the eyebrow — the
+   primary 200 tinted fill under the accent pin. All call sites request
+   SemiBold, which the pinned shaper resolves to the Medium face (the
+   nearest registered weight), so the sheet says the label role's own weight
+   rather than asking the browser to synthesize a 600.
+
+   Every modifier but the default rings itself, and the ring is not
+   decoration: a tint and the surface it rests on are the same lightness by
+   construction, so a tinted pill measures around 1:1 against the pane it
+   sits on and its edge would be invisible. The accent pin's fill separates
+   on its own and takes no ring. The padding gives the ring's 1px back so
+   every chip measures the same box. */
 .tag {
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
-  padding: var(--space-1) var(--space-2);
+  padding: calc(var(--space-1) / 2) var(--space-2);
   border-radius: var(--radius-full);
   white-space: nowrap;
   font-family: var(--font-family);
@@ -660,32 +669,36 @@ const componentClasses = `/* ---- Component classes ----
   color: var(--color-on-accent);
 }
 .tag.tonal {
+  padding: calc(var(--space-1) / 2 - 1px) calc(var(--space-2) - 1px);
+  border: 1px solid var(--color-accent);
   background: var(--color-primary-200);
   color: var(--color-accent);
 }
 
-/* Status tags (tag.go colors): the level modifiers carry the level's
-   pinned hue-anchored role tinted 20% over the ground and drawn pure as the
-   1 dp outline (padding gives the ring's 1px back), under the Text pin.
-   The ground is the Surface pin because a chip rests on the pane it
-   labels; it does not float, which is the whole of the difference between
-   a status chip and a transient message. Status is vocabulary: compose
-   these, never inline-style a status colour. */
+/* Status tags (tag.go colors): the level modifiers carry the level's tonal
+   container — the role's own hue realized at one measured chroma and depth
+   by the theme, which is why the background names a token rather than
+   mixing one — ringed by the 1 dp level pin, under the Text pin. A mixed
+   ground was what these used to wear, and compositing a pinned base over
+   the neutral Surface in non-linear sRGB holds neither the hue nor the
+   chroma: the four came out near enough to grey that no two of them could
+   be told apart. Status is vocabulary: compose these, never inline-style a
+   status colour. */
 .tag.success, .tag.warning, .tag.error {
-  padding: calc(var(--space-1) - 1px) calc(var(--space-2) - 1px);
+  padding: calc(var(--space-1) / 2 - 1px) calc(var(--space-2) - 1px);
   color: var(--color-text);
 }
 .tag.success {
   border: 1px solid var(--color-success);
-  background: color-mix(in srgb, var(--color-success) 20%, var(--color-surface));
+  background: var(--color-success-container);
 }
 .tag.warning {
   border: 1px solid var(--color-warning);
-  background: color-mix(in srgb, var(--color-warning) 20%, var(--color-surface));
+  background: var(--color-warning-container);
 }
 .tag.error {
   border: 1px solid var(--color-error);
-  background: color-mix(in srgb, var(--color-error) 20%, var(--color-surface));
+  background: var(--color-error-container);
 }
 
 /* ---- Form controls ----

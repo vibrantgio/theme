@@ -463,23 +463,29 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		".popover .btn.ghost:active, .popover .btn.ghost.is-active {",
 		"background: var(--color-neutral-500);",
 		"background: var(--color-neutral-600);",
-		// Tag (G2.1): the patterns' chip — Full-radius pill, S1/S2 padding,
-		// label-small text; filled accent/on-accent, tonal primary-200 under
-		// the accent pin.
-		"padding: var(--space-1) var(--space-2);",
+		// Tag (G2.1): the patterns' chip — Full-radius pill, S2 either side
+		// and the S1 stop spent once across both vertical edges,
+		// label-small text; filled accent/on-accent, tonal primary-200
+		// under the accent pin and ringed in it, because a tint and its
+		// ground are the same lightness and the edge would not read.
+		"padding: calc(var(--space-1) / 2) var(--space-2);",
 		"border-radius: var(--radius-full);",
 		"font-size: var(--font-label-small-size);",
-		// Status tags (I2.1): the level pin tinted 20% over the Surface
-		// ground, the 1 dp level outline (padding giving its 1px back),
-		// the Text pin on top.
+		".tag.tonal {",
+		"border: 1px solid var(--color-accent);",
+		"background: var(--color-primary-200);",
+		// Status tags (I2.1): the level's realized tonal container, the
+		// 1 dp level outline (padding giving its 1px back), the Text pin on
+		// top. The container is a token and not a mix: compositing a pin
+		// over the neutral Surface holds neither the hue nor the chroma.
 		".tag.success, .tag.warning, .tag.error {",
-		"padding: calc(var(--space-1) - 1px) calc(var(--space-2) - 1px);",
+		"padding: calc(var(--space-1) / 2 - 1px) calc(var(--space-2) - 1px);",
 		"border: 1px solid var(--color-success);",
-		"background: color-mix(in srgb, var(--color-success) 20%, var(--color-surface));",
+		"background: var(--color-success-container);",
 		"border: 1px solid var(--color-warning);",
-		"background: color-mix(in srgb, var(--color-warning) 20%, var(--color-surface));",
+		"background: var(--color-warning-container);",
 		"border: 1px solid var(--color-error);",
-		"background: color-mix(in srgb, var(--color-error) 20%, var(--color-surface));",
+		"background: var(--color-error-container);",
 		// Forms (G2.1): components/input's resolution — Surface under body
 		// text, neutral 500 strong border, neutral 700 placeholder/glyph,
 		// focus promoting the border to the accent pin, disabled fading via
