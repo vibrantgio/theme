@@ -369,22 +369,105 @@ func wcagAAAVerdict(ratio float64) string {
 }
 
 // statusRoles is the four semantic status roles with the fixed anchor hue
-// each is derived from, in the order the derivation builds them.
+// each is derived from, in the order the derivation builds them. bends marks
+// the one family whose anchor is a track rather than a number: warning
+// rotates toward orange as the tone it is realized at deepens.
 var statusRoles = []struct {
 	name   string
 	role   tokens.Role
 	anchor float64 // the fixed OKLCh anchor hue, before any seed tint
+	bends  bool    // whether that anchor moves with the depth it is realized at
 }{
-	{"Error", tokens.RoleError, 28.7},
-	{"Success", tokens.RoleSuccess, 144.2},
-	{"Warning", tokens.RoleWarning, 84.9},
-	{"Info", tokens.RoleInfo, 248.8},
+	{"Error", tokens.RoleError, 28.7, false},
+	{"Success", tokens.RoleSuccess, 144.2, false},
+	{"Warning", tokens.RoleWarning, 84.9, true},
+	{"Info", tokens.RoleInfo, 248.8, false},
 }
 
-// statusTintBound is the derivation's cap on how far a seed may rotate a
-// status anchor, restated here so the gate reads against a number of its own
-// rather than against the one the code under test used.
-const statusTintBound = 3.0
+// The derivation's own bounds, restated here so the gates read against
+// numbers of their own rather than against the ones the code under test
+// used: how far a seed may rotate a status anchor, and the warning family's
+// hue-versus-depth track — amber at and above L* 82, then 2.178° of rotation
+// toward orange per L* of further depth, stopped at 30°.
+const (
+	statusTintBound  = 3.0
+	warningBendFrom  = 82.0
+	warningBendSlope = 2.178
+	warningBendBound = 30.0
+)
+
+// anchorAt is the hue statusRoles[i]'s family is anchored to at one realized
+// CIELAB depth, before any seed tint. For three of the four it is the anchor
+// at every depth; for warning it is the bent track.
+func anchorAt(i, tone int) float64 {
+	anchor := statusRoles[i].anchor
+	if !statusRoles[i].bends {
+		return anchor
+	}
+	rotate := warningBendSlope * (warningBendFrom - float64(tone))
+	if rotate <= 0 {
+		return anchor
+	}
+	if rotate > warningBendBound {
+		rotate = warningBendBound
+	}
+	return math.Mod(anchor-rotate+360, 360)
+}
+
+// signedRotation is the rotation from a to b in (-180, 180], negative
+// toward orange from an amber anchor.
+func signedRotation(from, to float64) float64 {
+	return math.Mod(to-from+540, 360) - 180
+}
+
+// hueReadChroma is the realized OKLCh chroma below which a rung's hue cannot
+// be read — by these gates or by anyone. A hue is an angle on a circle whose
+// radius is the chroma, so eight-bit quantization costs about 0.12/C degrees
+// of hue: measured over the four anchors across every rung of all four
+// lightness scales, a rung at chroma 0.0119 reads 3.5° off the hue it was
+// asked for and one at 0.0131 reads 4.8° off, while every rung at or above
+// 0.045 reads within 1.7°. Those pale and near-black rungs are exactly the
+// ones with no hue to confuse — a colour that has given up its chroma has
+// given up its family too — so the per-rung gates below skip them and report
+// how many they skipped rather than pretending to measure them.
+const hueReadChroma = 0.045
+
+// rungSlack is the hue-reading slack the per-rung gates allow above that
+// threshold: 1.7° measured, 2.0° allowed. What the sweep then reports is a
+// worst drift of 4.49° against a 5.0° allowance (3.0° of tint plus this),
+// and a deepest warning bend of 33.88° against 35.0° (30.0° of bend plus
+// the same) — the whole of both margins being the eight bits, not the
+// derivation.
+const rungSlack = 2.0
+
+// roleRamp returns one role's ramp out of a scheme.
+func roleRamp(t tokens.ColorTokens, role tokens.Role) tokens.Ramp {
+	switch role {
+	case tokens.RoleError:
+		return t.Ramps.Error
+	case tokens.RoleSuccess:
+		return t.Ramps.Success
+	case tokens.RoleWarning:
+		return t.Ramps.Warning
+	case tokens.RoleInfo:
+		return t.Ramps.Info
+	case tokens.RoleSecondary:
+		return t.Ramps.Secondary
+	case tokens.RoleTertiary:
+		return t.Ramps.Tertiary
+	case tokens.RoleNeutral:
+		return t.Ramps.Neutral
+	default:
+		return t.Ramps.Primary
+	}
+}
+
+// rungTone reads back the CIELAB depth a realized rung sits at, which is
+// what the warning family's hue rule keys on.
+func rungTone(c stdcolor.NRGBA) int {
+	l, _, _ := color.LabFromNRGBA(c)
+	return int(math.Round(l))
+}
 
 // hueGap is the angular distance between two OKLCh hues in degrees, in
 // [0,180] — the shorter way round the circle.
@@ -419,33 +502,76 @@ func roleHue(t tokens.ColorTokens, role tokens.Role) float64 {
 // depends on how much chroma the colour has to spend it on: a ramp's
 // mid-value step carries most of its role's chroma and pins its hue to
 // within a degree, while a container carries the 0.055 dial and pins its hue
-// to within about a degree and a half. Both are far below the five-degree
-// tint bound these gates are actually about, and both are far below
-// anything an eye resolves at these chromas.
+// to within about a degree and a half — 1.42° measured over the sweep,
+// against the rung it is realized from. Both are far below the 3° tint bound
+// these gates are actually about, and both are far below anything an eye
+// resolves at these chromas.
 const (
 	quantizationSlack = 1.0 // a hue read off a ramp's mid-value step
 	containerSlack    = 2.0 // a hue read off a container, at the container dial
 )
 
+// statusSeparation is the floor between two status families' realized hues,
+// and warningErrorSeparation is the floor for the one pair the warning
+// family's bend deliberately closes.
+//
+// 45° is the old floor and still the floor for the five pairs the bend does
+// not touch. Warning and error are the sixth: bounding the bend at 30° puts
+// the deepest warning at 54.9° against an error anchored at 28.7°, and a
+// seed lying between the two anchors tints them toward each other — the
+// error to 31.7°, the warning's anchor to 81.9° and thence to 51.9° — so
+// 20.2° is the narrowest the derivation can make the pair. The gate asks
+// 18°, that number less the hue-reading slack the two rungs each carry.
+//
+// 20.2° is not a gate-shaped compromise but the number the bound was chosen
+// at, by rendering the two families side by side at every depth a warning is
+// painted at: at L* 39 the deepest warning realizes #944600 against the
+// error's #b0250f, at L* 28 #6d3100 against #861100, at L* 63 #ed7819
+// against #f96c54. A bend of 35° measures #9a4100 against #b0250f, where the
+// two begin to read as one family; the bend stops short of that. Measured
+// over the sweep the pair closes to 19.6°, and the five unbent pairs to
+// 53.0° — wider than the 50.2° they used to hold, because the bend takes
+// warning away from green and blue as fast as it takes it toward red.
+const (
+	statusSeparation       = 45.0
+	warningErrorSeparation = 18.0
+)
+
 // TestStatusAnchorsHoldTheirFamiliesForEverySeed is the whole-population
 // gate on the status anchors and the bound on the seed's tint, over the
-// shared seed sweep, in both schemes of both derivations.
+// shared seed sweep, in both schemes of both derivations — and, since one
+// family's anchor is a function of the depth it is realized at, at every
+// rung of every ramp rather than at one reference rung.
 //
-// Three properties, and they are the reasons the anchors exist:
+// Four properties, and they are the reasons the anchors exist:
 //
-//   - Every status role stays within statusTintBound of its own fixed
-//     anchor, so no brand can rotate a semantic colour out of its family.
-//     An error is red under every seed there is.
-//   - No two status roles come within 45° of each other, so four status
-//     grounds always read as four rather than as two pairs.
+//   - Every status rung stays within statusTintBound of its own family's
+//     anchor at that rung's own depth, so no brand can rotate a semantic
+//     colour out of its family. An error is red under every seed there is,
+//     and a warning is the amber-to-orange the bend describes and nothing
+//     else.
+//   - The warning family's rotation is bounded and one-signed: no rung ever
+//     sits more than warningBendBound below the amber anchor, and none
+//     sits above it. A bend that ran away would take deep warning into the
+//     error's family; a bend that ran the other way would take light
+//     warning into chartreuse.
+//   - No two status families come within statusSeparation of each other at
+//     the same depth, except the warning-and-error pair the bend closes on
+//     purpose, which holds warningErrorSeparation.
 //   - The error role is never further from true red than the accent is. A
 //     red-heavy brand pulls the error onto the red anchor rather than
 //     pulling the accent past it, which is what stops a themed accent from
 //     out-reddening the colour that means "this went wrong".
+//
+// Rungs under hueReadChroma are skipped rather than measured, for the reason
+// recorded on that constant; the count is logged so a derivation that
+// quietly washed a family out would show up as a skip count that moved.
 func TestStatusAnchorsHoldTheirFamiliesForEverySeed(t *testing.T) {
 	const redAnchor = 28.7
 	worstTint, worstSep, worstRed := 0.0, 999.0, 999.0
-	worstRedAt := ""
+	worstWarnErr, worstBend := 999.0, 0.0
+	worstRedAt, worstSepAt := "", ""
+	measured, skipped := 0, 0
 	for _, seed := range sweepSeeds() {
 		light, dark := tokens.FromSeed(seed)
 		hcLight, hcDark := tokens.FromSeedHighContrast(seed)
@@ -456,23 +582,69 @@ func TestStatusAnchorsHoldTheirFamiliesForEverySeed(t *testing.T) {
 			{"FromSeed light", light}, {"FromSeed dark", dark},
 			{"FromSeedHighContrast light", hcLight}, {"FromSeedHighContrast dark", hcDark},
 		} {
-			hues := make([]float64, len(statusRoles))
-			for i, r := range statusRoles {
-				hues[i] = roleHue(s.tok, r.role)
-				if drift := hueGap(hues[i], r.anchor); drift > statusTintBound+quantizationSlack {
-					t.Errorf("seed %v: %s %s sits at hue %.1f°, %.1f° off its %.1f° anchor — past the %.1f° tint bound",
-						seed, s.name, r.name, hues[i], drift, r.anchor, statusTintBound)
-				} else if drift > worstTint {
-					worstTint = drift
+			for step := 0; step < 9; step++ {
+				// Each family's realized hue at this one depth, or "no hue
+				// to read" for a rung with too little chroma to carry one.
+				hues := make([]float64, len(statusRoles))
+				legible := make([]bool, len(statusRoles))
+				for i, r := range statusRoles {
+					rung := roleRamp(s.tok, r.role)[step]
+					_, chroma, hue := color.OKLChFromNRGBA(rung)
+					if chroma < hueReadChroma {
+						skipped++
+						continue
+					}
+					measured++
+					hues[i], legible[i] = hue, true
+					tone := rungTone(rung)
+					anchor := anchorAt(i, tone)
+					if drift := hueGap(hue, anchor); drift > statusTintBound+rungSlack {
+						t.Errorf("seed %v: %s %s rung %d (L* %d) sits at hue %.1f°, %.1f° off its %.1f° anchor — past the %.1f° tint bound",
+							seed, s.name, r.name, (step+1)*100, tone, hue, drift, anchor, statusTintBound)
+					} else if drift > worstTint {
+						worstTint = drift
+					}
+					if !r.bends {
+						continue
+					}
+					// The bend's own bound, measured from the untinted
+					// anchor so a runaway track cannot hide inside the
+					// restatement above.
+					rot := signedRotation(r.anchor, hue)
+					if rot > statusTintBound+rungSlack || rot < -(warningBendBound+statusTintBound+rungSlack) {
+						t.Errorf("seed %v: %s %s rung %d (L* %d) has rotated %+.1f° from its %.1f° anchor — outside the [-%.1f°, 0°] bend",
+							seed, s.name, r.name, (step+1)*100, tone, rot, r.anchor, warningBendBound)
+					}
+					if -rot > worstBend {
+						worstBend = -rot
+					}
 				}
-			}
-			for i := range hues {
-				for j := i + 1; j < len(hues); j++ {
-					if gap := hueGap(hues[i], hues[j]); gap < 45 {
-						t.Errorf("seed %v: %s %s and %s are %.1f° apart, under the 45° floor",
-							seed, s.name, statusRoles[i].name, statusRoles[j].name, gap)
-					} else if gap < worstSep {
-						worstSep = gap
+				for i := range hues {
+					for j := i + 1; j < len(hues); j++ {
+						if !legible[i] || !legible[j] {
+							continue
+						}
+						floor, bend := statusSeparation, false
+						if statusRoles[i].bends || statusRoles[j].bends {
+							// Warning against error is the pair the bend
+							// closes; warning against green or blue is not,
+							// and the bend widens both of those.
+							if statusRoles[i].role == tokens.RoleError || statusRoles[j].role == tokens.RoleError {
+								floor, bend = warningErrorSeparation, true
+							}
+						}
+						gap := hueGap(hues[i], hues[j])
+						if gap < floor {
+							t.Errorf("seed %v: %s %s and %s are %.1f° apart at rung %d, under the %.1f° floor",
+								seed, s.name, statusRoles[i].name, statusRoles[j].name, gap, (step+1)*100, floor)
+						}
+						if bend {
+							if gap < worstWarnErr {
+								worstWarnErr = gap
+							}
+						} else if gap < worstSep {
+							worstSep, worstSepAt = gap, fmt.Sprintf("%s and %s", statusRoles[i].name, statusRoles[j].name)
+						}
 					}
 				}
 			}
@@ -482,8 +654,11 @@ func TestStatusAnchorsHoldTheirFamiliesForEverySeed(t *testing.T) {
 			// window puts the two on the same hue ray, where the two
 			// realizations differ by a fraction of a degree and the sign of
 			// the margin is eight-bit noise — hence the slack, which is what
-			// the narrowest margins logged below are made of.
-			errRed := hueGap(hues[0], redAnchor)
+			// the narrowest margins logged below are made of. Both are read
+			// off their ramps' mid-value step, the rung furthest from either
+			// end of the lightness scale and so the least disturbed by gamut
+			// mapping; neither family bends.
+			errRed := hueGap(roleHue(s.tok, tokens.RoleError), redAnchor)
 			accentRed := hueGap(roleHue(s.tok, tokens.RolePrimary), redAnchor)
 			if errRed > accentRed+quantizationSlack {
 				t.Errorf("seed %v: %s: the accent sits %.1f° from true red and the error %.1f° — the accent reads redder than the error",
@@ -494,8 +669,10 @@ func TestStatusAnchorsHoldTheirFamiliesForEverySeed(t *testing.T) {
 			}
 		}
 	}
-	t.Logf("over %d seeds: worst tint drift %.2f° (bound %.1f°), closest two status roles %.1f° apart, narrowest accent-versus-error margin %.2f° (%s)",
-		len(sweepSeeds()), worstTint, statusTintBound, worstSep, worstRed, worstRedAt)
+	t.Logf("over %d seeds: %d rungs measured, %d skipped under chroma %.3f; worst tint drift %.2f° (bound %.1f°), deepest warning bend %.2f° (bound %.1f°), closest unbent pair %.1f° apart (%s, floor %.1f°), closest warning-versus-error %.1f° (floor %.1f°), narrowest accent-versus-error margin %.2f° (%s)",
+		len(sweepSeeds()), measured, skipped, hueReadChroma, worstTint, statusTintBound,
+		worstBend, warningBendBound, worstSep, worstSepAt, statusSeparation,
+		worstWarnErr, warningErrorSeparation, worstRed, worstRedAt)
 }
 
 // TestStatusContainersKeepTheirParentsHue is the whole-population gate on
@@ -508,9 +685,18 @@ func TestStatusAnchorsHoldTheirFamiliesForEverySeed(t *testing.T) {
 // carries the container dial's chroma, the neutral body-text token reaches
 // WCAG AA over it, and the mark the derivation chose for it reaches WCAG
 // 1.4.11's 3:1 non-text floor over it.
+//
+// "Its parent's hue" is read off the rung the container is realized at
+// rather than off the ramp's mid-value step, because one family's hue is a
+// function of the depth it is realized at (see seed.go's bend): a container
+// standing at the step-300 depth owes that depth's hue, and measuring it
+// against a depth it does not stand at would gate the wrong thing. For the
+// three families that do not bend the two readings are the same rung's worth
+// of eight-bit noise apart, and the gate reads the same as it did.
 func TestStatusContainersKeepTheirParentsHue(t *testing.T) {
 	const dial, dialSlack, graphicFloor = 0.055, 0.004, 3.0
 	worstText, worstMark, worstChroma := 99.0, 99.0, 99.0
+	worstHue := 0.0
 	for _, seed := range sweepSeeds() {
 		light, dark := tokens.FromSeed(seed)
 		hcLight, hcDark := tokens.FromSeedHighContrast(seed)
@@ -525,9 +711,17 @@ func TestStatusContainersKeepTheirParentsHue(t *testing.T) {
 				container := s.tok.StatusContainer(r.role)
 				mark := s.tok.OnStatusContainer(r.role)
 				_, chroma, hue := color.OKLChFromNRGBA(container)
-				if drift := hueGap(hue, roleHue(s.tok, r.role)); drift > containerSlack {
-					t.Errorf("seed %v: %s %s container %v sits at hue %.1f°, %.1f° off its parent's — a container has left its family",
-						seed, s.name, r.name, container, hue, drift)
+				parent := roleRamp(s.tok, r.role).Step(300)
+				_, _, parentHue := color.OKLChFromNRGBA(parent)
+				if drift := hueGap(hue, parentHue); drift > containerSlack {
+					t.Errorf("seed %v: %s %s container %v sits at hue %.1f°, %.1f° off its step-300 rung's %.1f° — a container has left its family",
+						seed, s.name, r.name, container, hue, drift, parentHue)
+				} else if drift > worstHue {
+					worstHue = drift
+				}
+				if got, want := rungTone(container), rungTone(parent); got != want {
+					t.Errorf("seed %v: %s %s container %v realizes at L* %d, not its step-300 rung's L* %d",
+						seed, s.name, r.name, container, got, want)
 				}
 				if math.Abs(chroma-dial) > dialSlack {
 					t.Errorf("seed %v: %s %s container %v measures chroma %.4f, want the %.3f dial",
@@ -551,8 +745,8 @@ func TestStatusContainersKeepTheirParentsHue(t *testing.T) {
 			}
 		}
 	}
-	t.Logf("over %d seeds: worst container chroma %.4f (dial %.3f), worst body text on a container %.2f:1, worst mark on a container %.2f:1",
-		len(sweepSeeds()), worstChroma, dial, worstText, worstMark)
+	t.Logf("over %d seeds: worst container chroma %.4f (dial %.3f), worst hue drift from the step-300 rung %.2f° (slack %.1f°), worst body text on a container %.2f:1, worst mark on a container %.2f:1",
+		len(sweepSeeds()), worstChroma, dial, worstHue, containerSlack, worstText, worstMark)
 }
 
 // TestStatusPinsAreTheirRampsSeventhStep holds the one rule the status roles

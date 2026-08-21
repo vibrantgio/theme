@@ -43,25 +43,43 @@ import (
 	"github.com/vibrantgio/theme/color"
 )
 
-// StatusContainer returns the role's tonal container: its own hue at
-// containerChroma, realized at the depth of its ramp's containerStep rung.
+// StatusContainer returns the role's tonal container: its ramp's
+// containerStep rung with the chroma pulled down to containerChroma.
 //
 // It is defined for every role that has a ramp, status or accent, because
-// the derivation asks the ramp and not a table: the hue and the role's own
-// chroma are read back off the ramp's mid-value step 500, and the chroma
-// asked for is the lesser of the dial and what the role actually carries.
-// That last clause is what keeps a brandless palette brandless — a neutral
-// seed's accent ramp carries no chroma, so its container carries none
-// either, rather than inventing a hue the brand does not have.
+// the derivation asks the ramp and not a table. The depth and the hue both
+// come off the rung the container is realized at, which is what lets a role
+// whose hue varies with depth — warning, which bends toward orange as its
+// tone deepens (see seed.go) — carry that hue into its container without
+// this file knowing there is a bend.
+//
+// The chroma is the one quantity read off the ramp's mid-value step 500
+// instead, and the asymmetry is the point: hue answers "which colour, at
+// this depth", which is a property of the depth, while chroma is only being
+// asked "has this role a colour at all", which is a property of the role
+// and is best read where the gamut constrains it least. The answer is the
+// lesser of the dial and what the role actually carries, which is what
+// keeps a brandless palette brandless — a neutral seed's accent ramp
+// carries no chroma, so its container carries none either, rather than
+// inventing a hue the brand does not have.
+//
+// Moving the hue reading one rung costs the families that do not bend a
+// byte and no more: over a 216-colour seed grid, 1172 of the 6048
+// non-warning containers change at all and every one of them by 1/255 in a
+// single channel, which is the whole difference between reading an angle
+// off a rung at one chroma and off a rung at another. Nothing about their
+// derivation changed; the eight bits landed one step over.
 //
 // RoleNeutral is accepted and yields the neutral ramp's own step, chroma 0.
 func (t ColorTokens) StatusContainer(role Role) stdcolor.NRGBA {
 	r := t.rampFor(role) // validates role
-	_, chroma, hue := color.OKLChFromNRGBA(r.Step(500))
+	rung := r.Step(containerStep)
+	tone, _, _ := color.LabFromNRGBA(rung)
+	_, _, hue := color.OKLChFromNRGBA(rung)
+	_, chroma, _ := color.OKLChFromNRGBA(r.Step(500))
 	if chroma > containerChroma {
 		chroma = containerChroma
 	}
-	tone, _, _ := color.LabFromNRGBA(r.Step(containerStep))
 	return color.NRGBAFromToneChromaHue(tone, chroma, hue)
 }
 
