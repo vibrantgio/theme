@@ -16,14 +16,17 @@ per path, conflating rather than queueing so a stalled observer can never
 wedge a save, `brand` keeps the chosen brand seed and optional `"mono"`
 code-face name in one per-user `theme.json` and hands them back as the
 options a live theme stream is built with, so a palette worth keeping
-outlives the run that generated it, `imageseed` pulls brand-seed candidates
-out of a picture — pixels clustered in the same OKLab space `color`
-measures, ranked so a vivid minority leads a drab majority, `typeset` lays
-a type role's text out in the line box the role names rather than the one
-its glyphs happen to ink, and `export` — with `cmd/vg-tokens` in front of
-it — writes a theme out as the project layout `claude.ai/design` consumes.
-Interpolating between two themes is not here; it is a layer up, in
-`effects/transition`.
+outlives the run that generated it — and that stream wears Noto Color Emoji
+as fallback (`Typography.WithEmoji` / `EmojiTypography`; `LiveTheme`
+defaults to it, `Brand` applies it on top of the code face) while
+`DefaultTypography` stays Roboto + Roboto Mono so goldens do not parse the
+9.9 MB face, `imageseed` pulls brand-seed candidates out of a picture —
+pixels clustered in the same OKLab space `color` measures, ranked so a
+vivid minority leads a drab majority, `typeset` lays a type role's text out
+in the line box the role names rather than the one its glyphs happen to
+ink, and `export` — with `cmd/vg-tokens` in front of it — writes a theme
+out as the project layout `claude.ai/design` consumes. Interpolating
+between two themes is not here; it is a layer up, in `effects/transition`.
 
 **Layer.** Tier 1 of ADR-001's stack, `mvu → theme → components → effects →
 patterns → markdown`. The token, theme and `a11y` contract the rest of the
