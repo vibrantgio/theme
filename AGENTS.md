@@ -13,16 +13,17 @@ preferences, `window` pairs a theme observable with an mvu window,
 `preferences` persists the user's explicit choice and republishes it as an
 `mvu/stream.Value` — ADR-008's third destination, one current-value stream
 per path, conflating rather than queueing so a stalled observer can never
-wedge a save, `brand` keeps the chosen brand seed in one per-user file and
-hands it back as the options a live theme stream is built with, so a
-palette worth keeping outlives the run that generated it, `imageseed` pulls
-brand-seed candidates out of a picture — pixels clustered in the same OKLab
-space `color` measures, ranked so a vivid minority leads a drab majority,
-`typeset` lays a type role's text out in the line box the role names rather
-than the one its glyphs happen to ink, and `export` — with `cmd/vg-tokens`
-in front of it — writes a theme out as the project layout
-`claude.ai/design` consumes. Interpolating between two themes is not here;
-it is a layer up, in `effects/transition`.
+wedge a save, `brand` keeps the chosen brand seed and optional `"mono"`
+code-face name in one per-user `theme.json` and hands them back as the
+options a live theme stream is built with, so a palette worth keeping
+outlives the run that generated it, `imageseed` pulls brand-seed candidates
+out of a picture — pixels clustered in the same OKLab space `color`
+measures, ranked so a vivid minority leads a drab majority, `typeset` lays
+a type role's text out in the line box the role names rather than the one
+its glyphs happen to ink, and `export` — with `cmd/vg-tokens` in front of
+it — writes a theme out as the project layout `claude.ai/design` consumes.
+Interpolating between two themes is not here; it is a layer up, in
+`effects/transition`.
 
 **Layer.** Tier 1 of ADR-001's stack, `mvu → theme → components → effects →
 patterns → markdown`. The token, theme and `a11y` contract the rest of the
@@ -71,6 +72,14 @@ test that legitimately draws an arrow stays deterministic, and how an
 application that cannot rely on system fonts — a container, a kiosk — ships its
 own symbol coverage. The face is optional and is not in
 `DefaultTypography.Faces`; see ADR-003.
+
+**Kept `"mono"`.** `brand.Brand` carries `Mono`, persisted as `"mono"` in
+`theme.json` beside `"seed"` and `"base"`. Empty, absent, or unknown falls
+back to Roboto Mono. `"JetBrains Mono"` restyles `Typography.Code` and
+appends the four JetBrains faces via `system.WithTypography`;
+`Brand.Options()` includes that option so every app that already does
+`LiveTheme(..., brand.Kept().Options()...)` picks it up. Default
+typography, goldens, and `DeterministicShaper` stay on Roboto Mono.
 
 **Line height means the line box, and `typeset` is how.**
 `tokens.TextStyle.LineHeight` is the CSS thing — the height of one line box,
