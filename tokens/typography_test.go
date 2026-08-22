@@ -622,3 +622,163 @@ func TestWithFacesCopies(t *testing.T) {
 		t.Errorf("WithFaces() with no faces gave %d faces, want %d", len(plain.Faces), baseFaces)
 	}
 }
+
+// TestCodeFaceAppliesJetBrainsMono: naming the face restyles Code and
+// appends the four JetBrains faces; Roboto and Roboto Mono stay.
+func TestCodeFaceAppliesJetBrainsMono(t *testing.T) {
+	def := tokens.DefaultTypography
+	got := tokens.CodeFace("JetBrains Mono")
+	if got.Code.Typeface != "JetBrains Mono" {
+		t.Errorf("Code.Typeface = %q, want %q", got.Code.Typeface, "JetBrains Mono")
+	}
+	code, body := got.Code, def.BodyMedium
+	if code.Size != body.Size || code.LineHeight != body.LineHeight ||
+		code.Tracking != body.Tracking || code.Weight != body.Weight {
+		t.Errorf("Code metrics = %+v, want BodyMedium's %+v on the new face", code, body)
+	}
+	if len(got.Faces) != len(def.Faces)+4 {
+		t.Fatalf("Faces grew to %d, want %d (default plus four JetBrains)", len(got.Faces), len(def.Faces)+4)
+	}
+	for i, face := range def.Faces {
+		if got.Faces[i].Font != face.Font {
+			t.Errorf("Faces[%d] = %+v, want the default %+v; Roboto or Roboto Mono was displaced",
+				i, got.Faces[i].Font, face.Font)
+		}
+	}
+	for i, face := range got.Faces[len(def.Faces):] {
+		if face.Font.Typeface != "JetBrains Mono" {
+			t.Errorf("appended Faces[%d] typeface = %q, want %q", i, face.Font.Typeface, "JetBrains Mono")
+		}
+	}
+	if def.Code.Typeface != "Roboto Mono" {
+		t.Error("CodeFace mutated DefaultTypography.Code")
+	}
+	if len(def.Faces) != len(tokens.DefaultTypography.Faces) {
+		t.Error("CodeFace mutated DefaultTypography.Faces")
+	}
+}
+
+// TestCodeFaceFallsBackToRobotoMono: empty, the default name, and junk
+// are the same answer — DefaultTypography itself, so the shared cache
+// is the one goldens already pin.
+func TestCodeFaceFallsBackToRobotoMono(t *testing.T) {
+	def := tokens.DefaultTypography
+	for _, name := range []string{"", "Roboto Mono", "Comic Sans", "jetbrains mono"} {
+		got := tokens.CodeFace(name)
+		if got.Code.Typeface != "Roboto Mono" {
+			t.Errorf("CodeFace(%q).Code.Typeface = %q, want Roboto Mono", name, got.Code.Typeface)
+		}
+		if got.Shaper() != def.Shaper() {
+			t.Errorf("CodeFace(%q) built its own shaper; the fallback must be DefaultTypography", name)
+		}
+		if len(got.Faces) != len(def.Faces) {
+			t.Errorf("CodeFace(%q) has %d faces, want the default %d", name, len(got.Faces), len(def.Faces))
+		}
+	}
+}
+
+// TestCodeFaceSharesOneJetBrainsShaper: two snapshots of the applied
+// face share a cache, the way two snapshots of DefaultTypography do.
+func TestCodeFaceSharesOneJetBrainsShaper(t *testing.T) {
+	first := tokens.CodeFace("JetBrains Mono")
+	second := tokens.CodeFace("JetBrains Mono")
+	if first.Shaper() != second.Shaper() {
+		t.Error("two CodeFace(\"JetBrains Mono\") snapshots built two shapers")
+	}
+	if first.DeterministicShaper() != second.DeterministicShaper() {
+		t.Error("two CodeFace(\"JetBrains Mono\") snapshots built two pinned shapers")
+	}
+	if first.Shaper() == tokens.DefaultTypography.Shaper() {
+		t.Error("JetBrains typography reused DefaultTypography's shaper")
+	}
+}
+
+// TestWithCodeFaceAppendsJetBrainsToTheReceiver: the method applies the
+// name to any Typography, not only the default.
+func TestWithCodeFaceAppendsJetBrainsToTheReceiver(t *testing.T) {
+	base := tokens.DefaultTypography.WithFaces()
+	got := base.WithCodeFace("JetBrains Mono")
+	if got.Code.Typeface != "JetBrains Mono" {
+		t.Errorf("Code.Typeface = %q, want %q", got.Code.Typeface, "JetBrains Mono")
+	}
+	if len(got.Faces) != len(base.Faces)+4 {
+		t.Fatalf("Faces grew to %d, want %d", len(got.Faces), len(base.Faces)+4)
+	}
+	if base.Code.Typeface != "Roboto Mono" {
+		t.Error("WithCodeFace mutated the receiver's Code")
+	}
+	if len(base.Faces) != len(tokens.DefaultTypography.Faces) {
+		t.Error("WithCodeFace mutated the receiver's Faces")
+	}
+}
+
+// TestIsCodeFaceNamesTheTwoFaces the themer will offer: exactly those,
+// and nothing a person typed by hand.
+func TestIsCodeFaceNamesTheTwoFaces(t *testing.T) {
+	for _, name := range []string{"Roboto Mono", "JetBrains Mono"} {
+		if !tokens.IsCodeFace(name) {
+			t.Errorf("IsCodeFace(%q) = false, want true", name)
+		}
+	}
+	for _, name := range []string{"", "Comic Sans", "jetbrains mono", "Roboto"} {
+		if tokens.IsCodeFace(name) {
+			t.Errorf("IsCodeFace(%q) = true, want false", name)
+		}
+	}
+}
+
+// TestDefaultShaperResolvesJetBrainsMono: the applied face's pinned
+// shaper resolves all four JetBrains requests to distinct faces, and
+// none of them collapse onto Roboto Mono.
+func TestDefaultShaperResolvesJetBrainsMono(t *testing.T) {
+	typ := tokens.CodeFace("JetBrains Mono")
+	combos := []struct {
+		name string
+		font font.Font
+	}{
+		{"regular-normal", font.Font{Typeface: "JetBrains Mono", Style: font.Regular, Weight: font.Normal}},
+		{"regular-bold", font.Font{Typeface: "JetBrains Mono", Style: font.Regular, Weight: font.Bold}},
+		{"italic-normal", font.Font{Typeface: "JetBrains Mono", Style: font.Italic, Weight: font.Normal}},
+		{"italic-bold", font.Font{Typeface: "JetBrains Mono", Style: font.Italic, Weight: font.Bold}},
+	}
+	ids := map[string][]text.GlyphID{}
+	for _, c := range combos {
+		advance, glyphIDs := shapeRunThrough(t, typ, c.font)
+		ids[c.name] = glyphIDs
+		monoAdvance, _ := shapeRunThrough(t, typ, font.Font{Typeface: "Roboto Mono", Style: c.font.Style, Weight: c.font.Weight})
+		if advance == monoAdvance {
+			t.Errorf("%s: JetBrains advance %v equals Roboto Mono's; %q likely fell back",
+				c.name, advance, c.font.Typeface)
+		}
+	}
+	for i, a := range combos {
+		for _, b := range combos[i+1:] {
+			if idsEqual(ids[a.name], ids[b.name]) {
+				t.Errorf("%s and %s shaped to identical glyph IDs; the two requests collapsed onto one face",
+					a.name, b.name)
+			}
+		}
+	}
+}
+
+// shapeRunThrough is shapeRun against an explicit Typography, so a test
+// can pin a collection other than DefaultTypography.
+func shapeRunThrough(t *testing.T, typ tokens.Typography, f font.Font) (fixed.Int26_6, []text.GlyphID) {
+	t.Helper()
+	shaper := typ.DeterministicShaper()
+	shaper.LayoutString(text.Parameters{
+		Font:     f,
+		PxPerEm:  fixed.I(16),
+		MaxWidth: 100000,
+	}, "wiiim... {mono[0] != prose}")
+	var advance fixed.Int26_6
+	var ids []text.GlyphID
+	for g, ok := shaper.NextGlyph(); ok; g, ok = shaper.NextGlyph() {
+		advance += g.Advance
+		ids = append(ids, g.ID)
+	}
+	if len(ids) == 0 {
+		t.Fatalf("font %+v: no glyphs shaped; the face did not resolve", f)
+	}
+	return advance, ids
+}

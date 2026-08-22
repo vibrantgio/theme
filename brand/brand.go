@@ -21,6 +21,7 @@
 //	    "light": "catppuccin-latte",
 //	    "dark": "catppuccin-mocha"
 //	  },
+//	  "mono": "JetBrains Mono",
 //	  "source": "harbour.jpg",
 //	  "saved": "2026-08-19T11:04:31Z"
 //	}
@@ -42,14 +43,20 @@
 // seed is written, and an exported theme.json dropped in as this file loads
 // without translation. Keys this package does not know are ignored.
 //
-// "base" is the second thing a person chooses and the only other thing the
-// file holds: the name of the syntax palette code is coloured from, one per
-// appearance. It is a name and not a palette for the same reason the seed is
-// not a set of ramps — the styling is derived from it, and the derivation is
-// entitled to improve. This package neither resolves the name nor judges it:
-// it does not know what styles exist, so an empty or unrecognised name is the
-// reader's to fall back on, and the fallback is whatever that reader's default
-// base is.
+// "base" is the second thing a person chooses: the name of the syntax
+// palette code is coloured from, one per appearance. It is a name and not a
+// palette for the same reason the seed is not a set of ramps — the styling
+// is derived from it, and the derivation is entitled to improve. This
+// package neither resolves the name nor judges it: it does not know what
+// styles exist, so an empty or unrecognised name is the reader's to fall
+// back on, and the fallback is whatever that reader's default base is.
+//
+// "mono" is the third: the typeface name fenced code wears. It sits beside
+// "seed" and "base", not under a "fonts" object — that nesting is the
+// export tree's, and an exported theme.json dropped in as this file still
+// loads because unknown object keys are ignored. Empty, absent, or a name
+// this package does not ship is Roboto Mono, the default Code face. The
+// one other name it knows is "JetBrains Mono".
 //
 // It is a pair because a syntax palette is fitted to a ground: a set of inks
 // somebody balanced against a near-white page is not the set they would
@@ -136,13 +143,20 @@ type Brand struct {
 	Seed color.NRGBA
 
 	// Base names the syntax palettes code is coloured from, one per
-	// appearance. It is the one other choice the file carries, and it is
-	// carried as a name: what resolves it is the highlighting package the
-	// reader uses, and what an unknown name means is that reader's default.
-	// Empty is the ordinary state — nothing chosen, the reader's default
-	// applies — so a file written before this field existed reads as a brand
-	// with no base and behaves exactly as it did.
+	// appearance. It is carried as a name: what resolves it is the
+	// highlighting package the reader uses, and what an unknown name means
+	// is that reader's default. Empty is the ordinary state — nothing
+	// chosen, the reader's default applies — so a file written before this
+	// field existed reads as a brand with no base and behaves exactly as it
+	// did.
 	Base BasePair
+
+	// Mono names the typeface fenced code wears. It is a sibling of Seed
+	// and Base, spelled under the file key "mono". Empty is Roboto Mono —
+	// nothing chosen, the default Code face. The one other name this
+	// package applies is "JetBrains Mono"; any other string is stored as
+	// written and ignored at apply time, the same fallback empty uses.
+	Mono string
 
 	// Source names where the colour was found — a picture's file name, a
 	// hand-typed hex, whatever the chooser can honestly say. It is
@@ -202,19 +216,34 @@ func (b Brand) Colors() (light, dark tokens.ColorTokens) {
 	return tokens.FromSeed(b.Seed)
 }
 
+// Typography returns the type roles the brand wears, or DefaultTypography
+// when Mono is empty or unknown. It is the first-frame twin of Colors: a
+// caller that snapshots DefaultTypography while the stream is about to
+// emit JetBrains Mono flashes Roboto Mono on the first code block.
+func (b Brand) Typography() tokens.Typography {
+	return tokens.CodeFace(b.Mono)
+}
+
 // Options returns the theme-stream options that put the kept brand on the
 // stream, and nil when nothing was kept — so splatting the result into a
 // stream constructor adopts a brand when there is one and changes nothing
 // when there is not.
 //
-// The option pins the palette pair, which means the OS accent colour no
-// longer overrides it: a deliberately chosen brand outranks the desktop's.
-// Light and dark still follow the OS.
+// The seed option pins the palette pair, which means the OS accent colour
+// no longer overrides it: a deliberately chosen brand outranks the
+// desktop's. Light and dark still follow the OS. When Mono names a known
+// code face, a [system.WithTypography] option is included so the stream
+// wears it; every application that already does
+// LiveTheme(..., brand.Kept().Options()...) picks the face up.
 func (b Brand) Options() []system.Option {
 	if !b.Chosen() {
 		return nil
 	}
-	return []system.Option{system.WithSeed(b.Seed)}
+	opts := []system.Option{system.WithSeed(b.Seed)}
+	if tokens.IsCodeFace(b.Mono) {
+		opts = append(opts, system.WithTypography(tokens.CodeFace(b.Mono)))
+	}
+	return opts
 }
 
 // Path returns the file's path for this user. It creates nothing.
@@ -289,7 +318,7 @@ func LoadFrom(path string) (Brand, bool, error) {
 	if err != nil {
 		return Brand{}, false, fmt.Errorf("brand: load %s: %w", path, err)
 	}
-	b := Brand{Seed: seed, Base: f.Base.pair(), Source: f.Source}
+	b := Brand{Seed: seed, Base: f.Base.pair(), Mono: strings.TrimSpace(f.Mono), Source: f.Source}
 	if f.Saved != "" {
 		// An unreadable timestamp costs the provenance, not the brand: the
 		// colour is what the file is for, and it parsed.
@@ -322,6 +351,7 @@ func SaveTo(path string, b Brand) error {
 	data, err := json.MarshalIndent(file{
 		Seed:   hexRGB(b.Seed),
 		Base:   baseFrom(b.Base),
+		Mono:   strings.TrimSpace(b.Mono),
 		Source: b.Source,
 		Saved:  b.Saved.UTC().Format(time.RFC3339),
 	}, "", "  ")
@@ -344,6 +374,7 @@ func SaveTo(path string, b Brand) error {
 type file struct {
 	Seed   string     `json:"seed"`
 	Base   *baseField `json:"base,omitempty"`
+	Mono   string     `json:"mono,omitempty"`
 	Source string     `json:"source,omitempty"`
 	Saved  string     `json:"saved,omitempty"`
 }

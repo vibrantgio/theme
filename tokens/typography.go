@@ -2,10 +2,12 @@ package tokens
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 
 	"gioui.org/font"
 	"gioui.org/text"
+	"github.com/vibrantgio/font/jetbrainsmono"
 	"github.com/vibrantgio/font/roboto"
 	"github.com/vibrantgio/font/robotomono"
 )
@@ -328,6 +330,78 @@ func (t Typography) WithFaces(extra ...font.FontFace) Typography {
 	t.Faces = faces
 	t.shapers = &shaperCache{}
 	return t
+}
+
+// The two code faces a kept theme can name. Anything else — empty, absent,
+// or a name this package does not ship — is Roboto Mono, the default.
+const (
+	CodeFaceRoboto    = "Roboto Mono"
+	CodeFaceJetBrains = "JetBrains Mono"
+)
+
+// IsCodeFace reports whether name is one of the two faces Code can wear.
+// Empty is not a name: it is the file saying nothing, and the default stands.
+func IsCodeFace(name string) bool {
+	switch strings.TrimSpace(name) {
+	case CodeFaceRoboto, CodeFaceJetBrains:
+		return true
+	default:
+		return false
+	}
+}
+
+// CodeFace returns DefaultTypography with the named code face applied. It
+// is what a brand and a first-frame snapshot share, so the stream and the
+// opening frame cannot disagree. Empty, "Roboto Mono", and any unknown
+// name return DefaultTypography itself — the shared cache, not a copy.
+func CodeFace(name string) Typography {
+	switch strings.TrimSpace(name) {
+	case CodeFaceJetBrains:
+		return jetbrainsMonoTypography()
+	default:
+		return DefaultTypography
+	}
+}
+
+// WithCodeFace returns a copy of t whose Code role names the face. "JetBrains
+// Mono" appends that family's four faces; Roboto and Roboto Mono stay in the
+// collection. Empty, "Roboto Mono", and any unknown name leave Code on
+// Roboto Mono and add no faces. Applying a name that t already wears
+// returns t, so DefaultTypography.WithCodeFace("") keeps the process-wide
+// shaper cache.
+func (t Typography) WithCodeFace(name string) Typography {
+	switch strings.TrimSpace(name) {
+	case CodeFaceJetBrains:
+		if t.Code.Typeface == CodeFaceJetBrains {
+			return t
+		}
+		t.Code.Typeface = CodeFaceJetBrains
+		return t.WithFaces(jetbrainsmono.FontFaces()...)
+	default:
+		if t.Code.Typeface == CodeFaceRoboto {
+			return t
+		}
+		t.Code.Typeface = CodeFaceRoboto
+		t.shapers = &shaperCache{}
+		return t
+	}
+}
+
+var (
+	jetbrainsOnce sync.Once
+	jetbrainsTyp  Typography
+)
+
+// jetbrainsMonoTypography is DefaultTypography with Code on JetBrains Mono
+// and that family's four faces appended. Built once so every brand and
+// every first-frame snapshot share one shaper.
+func jetbrainsMonoTypography() Typography {
+	jetbrainsOnce.Do(func() {
+		t := DefaultTypography.WithFaces(jetbrainsmono.FontFaces()...)
+		t.Code.Typeface = CodeFaceJetBrains
+		jetbrainsTyp = t
+	})
+	return jetbrainsTyp
 }
 
 // DefaultTypography is the canonical MD3 typography: Roboto throughout, the

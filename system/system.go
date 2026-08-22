@@ -156,15 +156,21 @@ func Live(interval time.Duration) rx.Observable[Appearance] {
 // any palette option pins the pair — the app chose its brand, so the OS
 // accent is ignored. Palette options choose which light/dark pair is
 // emitted; they never affect when emissions happen, so OS dark-mode
-// tracking keeps working with a branded palette. [WithA11ySource] chooses
-// where the accessibility preferences composed into the emissions are read
-// from.
+// tracking keeps working with a branded palette. [WithTypography] chooses
+// the type roles the stream emits; the default is tokens.DefaultTypography.
+// [WithA11ySource] chooses where the accessibility preferences composed
+// into the emissions are read from.
 type Option func(*config)
 
-// config is everything the options configure: the palette machinery and
-// the accessibility-preference source the stream composes on top of it.
+// config is everything the options configure: the palette machinery, the
+// typography the stream emits, and the accessibility-preference source
+// the stream composes on top of it.
 type config struct {
 	pal *palette
+
+	// typ is the type roles every emission carries. The default is
+	// tokens.DefaultTypography; [WithTypography] replaces it.
+	typ tokens.Typography
 
 	// a11ySrc overrides where accessibility preferences come from. nil
 	// means the per-constructor default: the live OS source for
@@ -173,9 +179,12 @@ type config struct {
 }
 
 // newConfig applies opts over the defaults. When several palette options
-// are given, the last one wins.
+// or several [WithTypography] options are given, the last one of each wins.
 func newConfig(opts []Option) *config {
-	c := &config{pal: &palette{light: tokens.DefaultLight, dark: tokens.DefaultDark}}
+	c := &config{
+		pal: &palette{light: tokens.DefaultLight, dark: tokens.DefaultDark},
+		typ: tokens.DefaultTypography,
+	}
 	for _, opt := range opts {
 		opt(c)
 	}
@@ -242,6 +251,16 @@ func WithA11ySource(src a11y.Source) Option {
 	}
 }
 
+// WithTypography supplies the type roles the stream emits. The default is
+// tokens.DefaultTypography — Roboto throughout, Roboto Mono for Code.
+// A brand that names a code face uses this so every emission wears it;
+// goldens and DeterministicShaper stay on the default.
+func WithTypography(t tokens.Typography) Option {
+	return func(c *config) {
+		c.typ = t
+	}
+}
+
 // HighContrastVariant selects the high-contrast variant of a resolved
 // light/dark palette pair. The theme stream calls it while the OS
 // "Increase Contrast" preference is on, AFTER palette precedence has
@@ -287,8 +306,9 @@ var (
 
 // LiveTheme bridges system-appearance changes to a theme.Theme stream.
 // Each emission is a fresh theme.Theme whose Color field matches the OS
-// dark-mode setting; the remaining token categories use their package
-// defaults, modulated by the OS accessibility preferences below.
+// dark-mode setting; Typography is [WithTypography]'s value or
+// tokens.DefaultTypography; the remaining token categories use their
+// package defaults, modulated by the OS accessibility preferences below.
 //
 // Which light/dark pair flips is decided by precedence: an explicit
 // [WithSeed] or [WithPalette] wins outright — the app chose its brand, and
@@ -353,7 +373,7 @@ func (c *config) theme(v rx.Tuple2[Appearance, a11y.A11yPrefs]) theme.Theme {
 	}
 	return theme.Theme{
 		Color:      rx.Of(colors),
-		Typography: rx.Of(tokens.DefaultTypography),
+		Typography: rx.Of(c.typ),
 		Density:    rx.Of(tokens.Comfortable),
 		Motion:     rx.Of(motion),
 		Spacing:    rx.Of(tokens.Spacing),

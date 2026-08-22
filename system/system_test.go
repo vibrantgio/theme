@@ -542,6 +542,47 @@ func TestFromSourceThemeWithPaletteSurvivesLightToDark(t *testing.T) {
 	}
 }
 
+func TestFromSourceThemeWithTypographyEmitsIt(t *testing.T) {
+	src := &fakeSource{vals: []system.Appearance{{}}}
+	want := tokens.CodeFace("JetBrains Mono")
+
+	themes, err := collect(system.FromSourceTheme(src, time.Hour, system.WithTypography(want)).Take(1))
+	if err != nil {
+		t.Fatalf("theme observe: %v", err)
+	}
+	if len(themes) != 1 {
+		t.Fatalf("expected 1 theme, got %d", len(themes))
+	}
+	got, err := collect(themes[0].Typography)
+	if err != nil {
+		t.Fatalf("typography observe: %v", err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("expected 1 typography, got %d", len(got))
+	}
+	if got[0].Code.Typeface != "JetBrains Mono" {
+		t.Errorf("Code.Typeface = %q, want JetBrains Mono", got[0].Code.Typeface)
+	}
+	if got[0].Shaper() != want.Shaper() {
+		t.Error("the stream built its own shaper instead of emitting the one WithTypography was given")
+	}
+}
+
+func TestFromSourceThemeWithoutTypographyIsTheDefault(t *testing.T) {
+	src := &fakeSource{vals: []system.Appearance{{}}}
+	themes, err := collect(system.FromSourceTheme(src, time.Hour).Take(1))
+	if err != nil {
+		t.Fatalf("theme observe: %v", err)
+	}
+	got, err := collect(themes[0].Typography)
+	if err != nil {
+		t.Fatalf("typography observe: %v", err)
+	}
+	if len(got) != 1 || got[0].Shaper() != tokens.DefaultTypography.Shaper() {
+		t.Error("with no WithTypography the stream did not emit DefaultTypography")
+	}
+}
+
 // --- E3.2: accessibility preferences composed into the theme ---
 
 // fakeA11ySource returns successive values from vals on each Read call,

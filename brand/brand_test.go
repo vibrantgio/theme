@@ -116,6 +116,12 @@ func TestAnExportedThemeJSONIsAKeptBrand(t *testing.T) {
 	if got.Seed != harbourRed {
 		t.Errorf("the exported theme.json read back as %v, want %v", got.Seed, harbourRed)
 	}
+	if got.Mono != "" {
+		t.Errorf("the exported fonts.mono leaked into Brand.Mono as %q; the new key is a sibling of seed, not nested under fonts", got.Mono)
+	}
+	if got.Typography().Code.Typeface != "Roboto Mono" {
+		t.Error("an exported theme.json applied a code face; unknown object keys must be ignored")
+	}
 }
 
 // TestNothingKeptIsExactlyTheDefaultPalette: an application that has never
@@ -413,6 +419,198 @@ func TestNoBaseIsNotWritten(t *testing.T) {
 	}
 }
 
+// TestTheChosenMonoSurvivesTheRoundTrip: the third choice the file carries
+// is a typeface name, under one key beside the seed, and it comes back as
+// it went in.
+func TestTheChosenMonoSurvivesTheRoundTrip(t *testing.T) {
+	path := file(t)
+	if err := brand.SaveTo(path, brand.Brand{Seed: harbourRed, Mono: "JetBrains Mono"}); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+	if got := brand.KeptFrom(path); got.Mono != "JetBrains Mono" {
+		t.Errorf("the mono came back as %q, want %q", got.Mono, "JetBrains Mono")
+	}
+	var raw map[string]any
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		t.Fatalf("the file is not JSON: %v", err)
+	}
+	if raw["mono"] != "JetBrains Mono" {
+		t.Errorf("the file spells mono as %#v, want the string %q beside seed", raw["mono"], "JetBrains Mono")
+	}
+	if _, ok := raw["fonts"]; ok {
+		t.Error("the file nested the face under fonts; mono is a sibling of seed")
+	}
+}
+
+// TestAFileWithNoMonoIsStillAKeptBrand: every theme.json written before the
+// field existed has no mono in it, and reading one has to be uneventful —
+// the brand loads, the seed is intact, and the face comes back empty, which
+// is the value that means Roboto Mono.
+func TestAFileWithNoMonoIsStillAKeptBrand(t *testing.T) {
+	path := file(t)
+	const older = `{"seed":"#e8112d","source":"harbour.jpg"}`
+	if err := os.WriteFile(path, []byte(older), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	got, ok, err := brand.LoadFrom(path)
+	if err != nil || !ok {
+		t.Fatalf("load: got (%v, %v), want a brand and no error", ok, err)
+	}
+	if got.Seed != harbourRed {
+		t.Errorf("seed came back as %v, want %v", got.Seed, harbourRed)
+	}
+	if got.Mono != "" {
+		t.Errorf("a file with no mono loaded %q, want none", got.Mono)
+	}
+	if got.Typography().Code.Typeface != "Roboto Mono" {
+		t.Error("a file with no mono did not fall back to Roboto Mono")
+	}
+}
+
+// TestAnEmptyMonoInTheFileIsRobotoMono: a present key with nothing in it
+// is the same as no key — the default face, and a rewrite omits it.
+func TestAnEmptyMonoInTheFileIsRobotoMono(t *testing.T) {
+	path := file(t)
+	if err := os.WriteFile(path, []byte(`{"seed":"#e8112d","mono":""}`), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	got := brand.KeptFrom(path)
+	if got.Mono != "" {
+		t.Errorf("an empty mono loaded as %q, want none", got.Mono)
+	}
+	if got.Typography().Code.Typeface != "Roboto Mono" {
+		t.Error("an empty mono did not fall back to Roboto Mono")
+	}
+}
+
+// TestAnEmptyMonoIsNotWritten: an unchosen face leaves no key behind.
+func TestAnEmptyMonoIsNotWritten(t *testing.T) {
+	path := file(t)
+	if err := brand.SaveTo(path, brand.Brand{Seed: harbourRed, Mono: ""}); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	var raw map[string]any
+	if err := json.Unmarshal(data, &raw); err != nil {
+		t.Fatalf("the file is not JSON: %v", err)
+	}
+	if _, ok := raw["mono"]; ok {
+		t.Errorf("a brand with no mono wrote %q into the file", "mono")
+	}
+}
+
+// TestAJunkMonoIsStoredAndIgnored: a name this package does not ship
+// survives the file — it is what was written — and applies as Roboto Mono.
+func TestAJunkMonoIsStoredAndIgnored(t *testing.T) {
+	path := file(t)
+	const junk = `{"seed":"#e8112d","mono":"Comic Sans"}`
+	if err := os.WriteFile(path, []byte(junk), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	got := brand.KeptFrom(path)
+	if got.Mono != "Comic Sans" {
+		t.Errorf("the junk name came back as %q, want it stored as written", got.Mono)
+	}
+	if got.Typography().Code.Typeface != "Roboto Mono" {
+		t.Errorf("a junk name applied %q, want Roboto Mono", got.Typography().Code.Typeface)
+	}
+	opts := got.Options()
+	if n := len(opts); n != 1 {
+		t.Fatalf("a junk name produced %d options, want only WithSeed", n)
+	}
+	streamed := streamTypography(t, opts)
+	if streamed.Code.Typeface != "Roboto Mono" {
+		t.Errorf("the stream wore %q for a junk name, want Roboto Mono", streamed.Code.Typeface)
+	}
+}
+
+// TestTheKeptMonoDressesTheStream is the adoption seam for the face:
+// Options includes WithTypography when Mono names a known face, and the
+// stream emits Code in that face.
+func TestTheKeptMonoDressesTheStream(t *testing.T) {
+	path := file(t)
+	if err := brand.SaveTo(path, brand.Brand{Seed: harbourRed, Mono: "JetBrains Mono"}); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+	kept := brand.KeptFrom(path)
+	opts := kept.Options()
+	if len(opts) != 2 {
+		t.Fatalf("a known mono produced %d options, want WithSeed and WithTypography", len(opts))
+	}
+	got := streamTypography(t, opts)
+	if got.Code.Typeface != "JetBrains Mono" {
+		t.Errorf("the stream wore %q, want JetBrains Mono", got.Code.Typeface)
+	}
+	def := tokens.DefaultTypography
+	if len(got.Faces) != len(def.Faces)+4 {
+		t.Errorf("the stream's Faces has %d entries, want %d (default plus four JetBrains)",
+			len(got.Faces), len(def.Faces)+4)
+	}
+	for i, face := range def.Faces {
+		if got.Faces[i].Font != face.Font {
+			t.Errorf("Faces[%d] = %+v, want the default %+v", i, got.Faces[i].Font, face.Font)
+		}
+	}
+}
+
+// TestTheFirstFrameWearsTheSameFaceTheStreamDoes: apps snapshot
+// Brand.Typography before the stream emits; that value and the emission
+// must be the same typography, or the first code block flashes Roboto Mono.
+func TestTheFirstFrameWearsTheSameFaceTheStreamDoes(t *testing.T) {
+	for _, name := range []string{"", "JetBrains Mono", "Roboto Mono", "Comic Sans"} {
+		t.Run(name, func(t *testing.T) {
+			path := file(t)
+			if err := brand.SaveTo(path, brand.Brand{Seed: harbourRed, Mono: name}); err != nil {
+				t.Fatalf("save: %v", err)
+			}
+			kept := brand.KeptFrom(path)
+			opening := kept.Typography()
+			streamed := streamTypography(t, kept.Options())
+			if opening.Code.Typeface != streamed.Code.Typeface {
+				t.Errorf("first frame Code.Typeface = %q, stream = %q", opening.Code.Typeface, streamed.Code.Typeface)
+			}
+			if opening.Shaper() != streamed.Shaper() {
+				t.Error("first frame and stream built two shapers for the same face")
+			}
+		})
+	}
+}
+
+// TestAnAbsentFileHasNoMono: nothing kept is Roboto Mono, no options.
+func TestAnAbsentFileHasNoMono(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "absent.json")
+	got := brand.KeptFrom(path)
+	if got.Mono != "" {
+		t.Errorf("an absent file loaded mono %q, want none", got.Mono)
+	}
+	if typ := got.Typography(); typ.Shaper() != tokens.DefaultTypography.Shaper() {
+		t.Error("an absent file did not fall back to DefaultTypography")
+	}
+	if got.Options() != nil {
+		t.Error("an absent file produced stream options")
+	}
+}
+
+func streamTypography(t *testing.T, opts []system.Option) tokens.Typography {
+	t.Helper()
+	th, err := system.FromSourceTheme(fixed{}, time.Hour, opts...).First()
+	if err != nil {
+		t.Fatalf("theme: %v", err)
+	}
+	got, err := th.Typography.First()
+	if err != nil {
+		t.Fatalf("typography: %v", err)
+	}
+	return got
+}
+
 // TestTheStylesFolderSitsBesideTheFile: styles a person adds are shared the
 // way the brand is, in one folder under the same directory, so a style added
 // once is offered by everything that looks for one.
@@ -443,6 +641,9 @@ func assertDefaults(t *testing.T, b brand.Brand) {
 	light, dark := b.Colors()
 	if light != tokens.DefaultLight || dark != tokens.DefaultDark {
 		t.Error("no brand produced something other than the default palette")
+	}
+	if typ := b.Typography(); typ.Shaper() != tokens.DefaultTypography.Shaper() {
+		t.Error("no brand produced a typography other than the default")
 	}
 }
 
