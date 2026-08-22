@@ -73,6 +73,16 @@ application that cannot rely on system fonts — a container, a kiosk — ships 
 own symbol coverage. The face is optional and is not in
 `DefaultTypography.Faces`; see ADR-003.
 
+**Live emoji.** Gio's system fallback does not serve color emoji, so the
+live stream wears Noto Color Emoji as fallback: `Typography.WithEmoji`
+appends the one face and returns the receiver when it is already there;
+`EmojiTypography()` is `DefaultTypography.WithEmoji()`, built once.
+`LiveTheme`'s default typography is that value, and `Brand.Typography()` /
+`Brand.Options()` apply `WithEmoji` on top of `CodeFace`, including when
+Mono is empty. First-frame snapshots must use that same value — snapshot
+`DefaultTypography` and the first emoji flashes tofu. Goldens stay on
+`DefaultTypography`; do not put the 9.9 MB face in the default collection.
+
 **Kept `"mono"`.** `brand.Brand` carries `Mono`, persisted as `"mono"` in
 `theme.json` beside `"seed"` and `"base"`. Empty, absent, or unknown falls
 back to Roboto Mono. `"JetBrains Mono"` restyles `Typography.Code` and

@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"gioui.org/font"
+
 	"github.com/vibrantgio/theme/brand"
 	"github.com/vibrantgio/theme/export"
 	"github.com/vibrantgio/theme/system"
@@ -522,18 +524,22 @@ func TestAJunkMonoIsStoredAndIgnored(t *testing.T) {
 		t.Errorf("a junk name applied %q, want Roboto Mono", got.Typography().Code.Typeface)
 	}
 	opts := got.Options()
-	if n := len(opts); n != 1 {
-		t.Fatalf("a junk name produced %d options, want only WithSeed", n)
+	if n := len(opts); n != 2 {
+		t.Fatalf("a junk name produced %d options, want WithSeed and WithTypography", n)
 	}
 	streamed := streamTypography(t, opts)
 	if streamed.Code.Typeface != "Roboto Mono" {
 		t.Errorf("the stream wore %q for a junk name, want Roboto Mono", streamed.Code.Typeface)
 	}
+	live := tokens.EmojiTypography()
+	if streamed.Shaper() != live.Shaper() {
+		t.Error("a junk name did not put EmojiTypography on the stream")
+	}
 }
 
 // TestTheKeptMonoDressesTheStream is the adoption seam for the face:
-// Options includes WithTypography when Mono names a known face, and the
-// stream emits Code in that face.
+// Options includes WithTypography so the stream emits Code in that face
+// with the emoji fallback on top.
 func TestTheKeptMonoDressesTheStream(t *testing.T) {
 	path := file(t)
 	if err := brand.SaveTo(path, brand.Brand{Seed: harbourRed, Mono: "JetBrains Mono"}); err != nil {
@@ -549,9 +555,9 @@ func TestTheKeptMonoDressesTheStream(t *testing.T) {
 		t.Errorf("the stream wore %q, want JetBrains Mono", got.Code.Typeface)
 	}
 	def := tokens.DefaultTypography
-	if len(got.Faces) != len(def.Faces)+4 {
-		t.Errorf("the stream's Faces has %d entries, want %d (default plus four JetBrains)",
-			len(got.Faces), len(def.Faces)+4)
+	if len(got.Faces) != len(def.Faces)+5 {
+		t.Errorf("the stream's Faces has %d entries, want %d (default plus four JetBrains plus emoji)",
+			len(got.Faces), len(def.Faces)+5)
 	}
 	for i, face := range def.Faces {
 		if got.Faces[i].Font != face.Font {
@@ -579,8 +585,20 @@ func TestTheFirstFrameWearsTheSameFaceTheStreamDoes(t *testing.T) {
 			if opening.Shaper() != streamed.Shaper() {
 				t.Error("first frame and stream built two shapers for the same face")
 			}
+			if !hasEmojiFace(opening.Faces) || !hasEmojiFace(streamed.Faces) {
+				t.Error("first frame and stream must both wear Noto Color Emoji")
+			}
 		})
 	}
+}
+
+func hasEmojiFace(faces []font.FontFace) bool {
+	for _, f := range faces {
+		if f.Font.Typeface == "Noto Color Emoji" {
+			return true
+		}
+	}
+	return false
 }
 
 // TestAnAbsentFileHasNoMono: nothing kept is Roboto Mono, no options.
@@ -590,8 +608,9 @@ func TestAnAbsentFileHasNoMono(t *testing.T) {
 	if got.Mono != "" {
 		t.Errorf("an absent file loaded mono %q, want none", got.Mono)
 	}
-	if typ := got.Typography(); typ.Shaper() != tokens.DefaultTypography.Shaper() {
-		t.Error("an absent file did not fall back to DefaultTypography")
+	live := tokens.EmojiTypography()
+	if typ := got.Typography(); typ.Shaper() != live.Shaper() {
+		t.Error("an absent file did not fall back to EmojiTypography")
 	}
 	if got.Options() != nil {
 		t.Error("an absent file produced stream options")
@@ -642,8 +661,9 @@ func assertDefaults(t *testing.T, b brand.Brand) {
 	if light != tokens.DefaultLight || dark != tokens.DefaultDark {
 		t.Error("no brand produced something other than the default palette")
 	}
-	if typ := b.Typography(); typ.Shaper() != tokens.DefaultTypography.Shaper() {
-		t.Error("no brand produced a typography other than the default")
+	live := tokens.EmojiTypography()
+	if typ := b.Typography(); typ.Shaper() != live.Shaper() {
+		t.Error("no brand produced a typography other than EmojiTypography")
 	}
 }
 

@@ -578,8 +578,9 @@ func TestFromSourceThemeWithoutTypographyIsTheDefault(t *testing.T) {
 	if err != nil {
 		t.Fatalf("typography observe: %v", err)
 	}
-	if len(got) != 1 || got[0].Shaper() != tokens.DefaultTypography.Shaper() {
-		t.Error("with no WithTypography the stream did not emit DefaultTypography")
+	live := tokens.EmojiTypography()
+	if len(got) != 1 || got[0].Shaper() != live.Shaper() {
+		t.Error("with no WithTypography the stream did not emit EmojiTypography")
 	}
 }
 

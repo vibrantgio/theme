@@ -157,7 +157,7 @@ func Live(interval time.Duration) rx.Observable[Appearance] {
 // accent is ignored. Palette options choose which light/dark pair is
 // emitted; they never affect when emissions happen, so OS dark-mode
 // tracking keeps working with a branded palette. [WithTypography] chooses
-// the type roles the stream emits; the default is tokens.DefaultTypography.
+// the type roles the stream emits; the default is tokens.EmojiTypography().
 // [WithA11ySource] chooses where the accessibility preferences composed
 // into the emissions are read from.
 type Option func(*config)
@@ -169,7 +169,7 @@ type config struct {
 	pal *palette
 
 	// typ is the type roles every emission carries. The default is
-	// tokens.DefaultTypography; [WithTypography] replaces it.
+	// tokens.EmojiTypography(); [WithTypography] replaces it.
 	typ tokens.Typography
 
 	// a11ySrc overrides where accessibility preferences come from. nil
@@ -183,7 +183,7 @@ type config struct {
 func newConfig(opts []Option) *config {
 	c := &config{
 		pal: &palette{light: tokens.DefaultLight, dark: tokens.DefaultDark},
-		typ: tokens.DefaultTypography,
+		typ: tokens.EmojiTypography(),
 	}
 	for _, opt := range opts {
 		opt(c)
@@ -252,9 +252,10 @@ func WithA11ySource(src a11y.Source) Option {
 }
 
 // WithTypography supplies the type roles the stream emits. The default is
-// tokens.DefaultTypography — Roboto throughout, Roboto Mono for Code.
-// A brand that names a code face uses this so every emission wears it;
-// goldens and DeterministicShaper stay on the default.
+// tokens.EmojiTypography() — DefaultTypography with Noto Color Emoji
+// appended as fallback. A brand that names a code face uses this so
+// every emission wears it (and still applies WithEmoji). Goldens and
+// DeterministicShaper stay on DefaultTypography.
 func WithTypography(t tokens.Typography) Option {
 	return func(c *config) {
 		c.typ = t
@@ -307,7 +308,7 @@ var (
 // LiveTheme bridges system-appearance changes to a theme.Theme stream.
 // Each emission is a fresh theme.Theme whose Color field matches the OS
 // dark-mode setting; Typography is [WithTypography]'s value or
-// tokens.DefaultTypography; the remaining token categories use their
+// tokens.EmojiTypography(); the remaining token categories use their
 // package defaults, modulated by the OS accessibility preferences below.
 //
 // Which light/dark pair flips is decided by precedence: an explicit

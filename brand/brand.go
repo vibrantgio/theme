@@ -216,12 +216,15 @@ func (b Brand) Colors() (light, dark tokens.ColorTokens) {
 	return tokens.FromSeed(b.Seed)
 }
 
-// Typography returns the type roles the brand wears, or DefaultTypography
-// when Mono is empty or unknown. It is the first-frame twin of Colors: a
-// caller that snapshots DefaultTypography while the stream is about to
-// emit JetBrains Mono flashes Roboto Mono on the first code block.
+// Typography returns the type roles the brand wears: CodeFace of Mono,
+// then WithEmoji, including when Mono is empty or unknown. It is the
+// first-frame twin of Colors. A caller that snapshots DefaultTypography
+// while the stream is about to emit EmojiTypography flashes tofu on the
+// first emoji; a caller that snapshots DefaultTypography while the
+// stream is about to emit JetBrains Mono flashes Roboto Mono on the
+// first code block.
 func (b Brand) Typography() tokens.Typography {
-	return tokens.CodeFace(b.Mono)
+	return tokens.CodeFace(b.Mono).WithEmoji()
 }
 
 // Options returns the theme-stream options that put the kept brand on the
@@ -231,19 +234,19 @@ func (b Brand) Typography() tokens.Typography {
 //
 // The seed option pins the palette pair, which means the OS accent colour
 // no longer overrides it: a deliberately chosen brand outranks the
-// desktop's. Light and dark still follow the OS. When Mono names a known
-// code face, a [system.WithTypography] option is included so the stream
-// wears it; every application that already does
-// LiveTheme(..., brand.Kept().Options()...) picks the face up.
+// desktop's. Light and dark still follow the OS. A
+// [system.WithTypography] option always rides along so the stream wears
+// the same value [Brand.Typography] snapshots — CodeFace of Mono, then
+// WithEmoji, including when Mono is empty. Every application that
+// already does LiveTheme(..., brand.Kept().Options()...) picks both up.
 func (b Brand) Options() []system.Option {
 	if !b.Chosen() {
 		return nil
 	}
-	opts := []system.Option{system.WithSeed(b.Seed)}
-	if tokens.IsCodeFace(b.Mono) {
-		opts = append(opts, system.WithTypography(tokens.CodeFace(b.Mono)))
+	return []system.Option{
+		system.WithSeed(b.Seed),
+		system.WithTypography(tokens.CodeFace(b.Mono).WithEmoji()),
 	}
-	return opts
 }
 
 // Path returns the file's path for this user. It creates nothing.

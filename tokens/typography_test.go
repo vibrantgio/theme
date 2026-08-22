@@ -761,6 +761,74 @@ func TestDefaultShaperResolvesJetBrainsMono(t *testing.T) {
 	}
 }
 
+// TestEmojiTypographyResolvesGrin: the live default's pinned shaper
+// serves 😀 from the appended face, and Latin stays on Roboto. This is
+// the collection LiveTheme emits; DefaultTypography stays tofu so
+// goldens do not move.
+func TestEmojiTypographyResolvesGrin(t *testing.T) {
+	typ := tokens.EmojiTypography()
+	shaper := typ.DeterministicShaper()
+	appended := len(typ.Faces) - 1
+
+	gid, faceIdx := resolvedGlyph(t, shaper, '😀')
+	if gid == 0 {
+		t.Fatal("😀 resolved to glyph ID 0 (.notdef) on EmojiTypography")
+	}
+	if faceIdx != appended {
+		t.Errorf("😀 resolved on face %d, want the appended emoji face %d", faceIdx, appended)
+	}
+	if _, faceIdx := resolvedGlyph(t, shaper, 'A'); faceIdx != 0 {
+		t.Errorf("'A' resolved on face %d, want Roboto at 0", faceIdx)
+	}
+
+	if tofu, _ := resolvedGlyph(t, tokens.DefaultTypography.DeterministicShaper(), '😀'); tofu != 0 {
+		t.Errorf("😀 on DefaultTypography.DeterministicShaper resolved to glyph %d, want 0 (tofu control)", tofu)
+	}
+}
+
+// TestCodeFaceWithEmojiKeepsJetBrainsAndResolvesGrin: applying the
+// emoji face on top of a named code face must not restyle Code.
+func TestCodeFaceWithEmojiKeepsJetBrainsAndResolvesGrin(t *testing.T) {
+	typ := tokens.CodeFace("JetBrains Mono").WithEmoji()
+	if typ.Code.Typeface != "JetBrains Mono" {
+		t.Errorf("Code.Typeface = %q, want JetBrains Mono", typ.Code.Typeface)
+	}
+	gid, faceIdx := resolvedGlyph(t, typ.DeterministicShaper(), '😀')
+	if gid == 0 {
+		t.Fatal("😀 resolved to .notdef after CodeFace.WithEmoji")
+	}
+	if faceIdx != len(typ.Faces)-1 {
+		t.Errorf("😀 resolved on face %d, want the appended emoji face %d", faceIdx, len(typ.Faces)-1)
+	}
+	if _, faceIdx := resolvedGlyph(t, typ.DeterministicShaper(), 'A'); faceIdx != 0 {
+		t.Errorf("'A' resolved on face %d, want Roboto at 0", faceIdx)
+	}
+}
+
+// TestWithEmojiKeepsTheSharedCache: a second WithEmoji on a collection
+// that already has the face is the receiver, and DefaultTypography.
+// WithEmoji is the EmojiTypography singleton.
+func TestWithEmojiKeepsTheSharedCache(t *testing.T) {
+	live := tokens.EmojiTypography()
+	if again := live.WithEmoji(); again.Shaper() != live.Shaper() {
+		t.Error("WithEmoji on EmojiTypography allocated a new cache")
+	}
+	if got := tokens.DefaultTypography.WithEmoji(); got.Shaper() != live.Shaper() {
+		t.Error("DefaultTypography.WithEmoji() did not return the EmojiTypography singleton")
+	}
+	if live.Shaper() == tokens.DefaultTypography.Shaper() {
+		t.Error("EmojiTypography reused DefaultTypography's shaper")
+	}
+
+	jb := tokens.CodeFace("JetBrains Mono").WithEmoji()
+	if again := jb.WithEmoji(); again.Shaper() != jb.Shaper() {
+		t.Error("WithEmoji on the JetBrains live value allocated a new cache")
+	}
+	if second := tokens.CodeFace("JetBrains Mono").WithEmoji(); second.Shaper() != jb.Shaper() {
+		t.Error("two CodeFace(\"JetBrains Mono\").WithEmoji() snapshots built two shapers")
+	}
+}
+
 // shapeRunThrough is shapeRun against an explicit Typography, so a test
 // can pin a collection other than DefaultTypography.
 func shapeRunThrough(t *testing.T, typ tokens.Typography, f font.Font) (fixed.Int26_6, []text.GlyphID) {

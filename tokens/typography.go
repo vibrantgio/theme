@@ -8,6 +8,7 @@ import (
 	"gioui.org/font"
 	"gioui.org/text"
 	"github.com/vibrantgio/font/jetbrainsmono"
+	"github.com/vibrantgio/font/notocoloremoji"
 	"github.com/vibrantgio/font/roboto"
 	"github.com/vibrantgio/font/robotomono"
 )
@@ -404,6 +405,66 @@ func jetbrainsMonoTypography() Typography {
 	return jetbrainsTyp
 }
 
+// WithEmoji returns t with Noto Color Emoji appended as fallback, so a
+// pinned shaper resolves 😀 instead of Roboto's .notdef. Nothing names
+// that typeface as a role: the shaper reaches it only for runes the
+// faces ahead of it cannot serve.
+//
+// If t already carries the face, the receiver is returned unchanged so
+// the shared cache is kept. DefaultTypography.WithEmoji() is
+// [EmojiTypography], and CodeFace("JetBrains Mono").WithEmoji() is the
+// matching JetBrains singleton, so a first-frame snapshot and the
+// stream that is about to emit the same value share one shaper.
+func (t Typography) WithEmoji() Typography {
+	if hasEmojiFace(t.Faces) {
+		return t
+	}
+	if t.shapers == DefaultTypography.shapers {
+		return EmojiTypography()
+	}
+	if jb := jetbrainsMonoTypography(); t.shapers == jb.shapers {
+		return jetbrainsEmojiTypography()
+	}
+	return t.WithFaces(notocoloremoji.FontFace())
+}
+
+func hasEmojiFace(faces []font.FontFace) bool {
+	for _, f := range faces {
+		if f.Font.Typeface == notocoloremoji.Font.Typeface {
+			return true
+		}
+	}
+	return false
+}
+
+var (
+	emojiOnce          sync.Once
+	emojiTyp           Typography
+	jetbrainsEmojiOnce sync.Once
+	jetbrainsEmojiTyp  Typography
+)
+
+// EmojiTypography is DefaultTypography.WithEmoji(), built once. It is
+// the live default: LiveTheme emits it, and Brand.Typography is it
+// when Mono is empty. DefaultTypography itself stays Roboto and
+// Roboto Mono so goldens and DeterministicShaper do not parse 9.9 MB
+// of color emoji on every pinned render.
+func EmojiTypography() Typography {
+	emojiOnce.Do(func() {
+		emojiTyp = DefaultTypography.WithFaces(notocoloremoji.FontFace())
+	})
+	return emojiTyp
+}
+
+// jetbrainsEmojiTypography is CodeFace("JetBrains Mono").WithEmoji(),
+// built once so Brand.Typography and Brand.Options share a cache.
+func jetbrainsEmojiTypography() Typography {
+	jetbrainsEmojiOnce.Do(func() {
+		jetbrainsEmojiTyp = jetbrainsMonoTypography().WithFaces(notocoloremoji.FontFace())
+	})
+	return jetbrainsEmojiTyp
+}
+
 // DefaultTypography is the canonical MD3 typography: Roboto throughout, the
 // Material Design 3 sizes, and the official MD3 line heights and tracking. Display, Headline, Title Large and Body roles are regular weight;
 // Title Medium/Small and the Label roles are medium. Code is BodyMedium's
@@ -416,6 +477,10 @@ func jetbrainsMonoTypography() Typography {
 // Sixteen faces, and no symbol face: font/notosansmono is deliberately absent,
 // because Shaper's system fallback already covers what it carries and more.
 // Add it with WithFaces where there is no system to fall back on.
+//
+// No color-emoji face either: Noto Color Emoji is 9.9 MB and no golden
+// contains emoji. The live stream wears it through [EmojiTypography];
+// goldens stay on this value.
 var DefaultTypography = Typography{
 	DisplayLarge:  TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 57, LineHeight: 64, Tracking: -0.25},
 	DisplayMedium: TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 45, LineHeight: 52, Tracking: 0},
