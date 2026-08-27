@@ -64,12 +64,24 @@ func contrastRatio(c1, c2 color.NRGBA) float64 {
 const wcagAA = 4.5
 
 // sweepSeeds is the seed sweep the derivation's whole-population properties
-// are asserted over: eleven chosen colours — the default seed, the nine
-// macOS system accents and both ends of the tonal axis — and four hundred
-// random ones from a fixed source, so the population is wide and the run is
-// the same one every time. It is deliberately shared: a property that has
-// to hold for every seed should be read against the same seeds as every
-// other, or two gates disagree about what "every seed" meant.
+// are asserted over: fourteen chosen colours — the default seed, the nine
+// macOS system accents, both ends of the tonal axis and three pastels — and
+// four hundred random ones from a fixed source, so the population is wide
+// and the run is the same one every time. It is deliberately shared: a
+// property that has to hold for every seed should be read against the same
+// seeds as every other, or two gates disagree about what "every seed"
+// meant.
+//
+// The three pastels are named rather than left to the random draw because
+// of the shape they have, not the colours they are. A palette published for
+// a dark scheme states its accents at a high tone — around L* 73 to L* 85 —
+// and people seed a brand with one, which is a seed that reads perfectly in
+// the dark scheme and lands the light scheme's primary pin a whisper off
+// the paper. That shape is what put a 1.95:1 link on a light page (see
+// ink.go); the random draw covers it thinly and by accident, and a
+// regression that only a randomly drawn seed catches is one a future change
+// to the draw can lose. So the shape is in the matrix by name: a blue, a
+// mauve and a green at L* 72.8, 74.0 and 84.8.
 func sweepSeeds() []color.NRGBA {
 	rng := rand.New(rand.NewSource(20260818))
 	seeds := []color.NRGBA{
@@ -78,6 +90,7 @@ func sweepSeeds() []color.NRGBA {
 		{0x28, 0xcd, 0x41, 0xff}, {0x00, 0x7a, 0xff, 0xff}, {0xaf, 0x52, 0xde, 0xff},
 		{0xff, 0x2d, 0x55, 0xff}, {0x8e, 0x8e, 0x93, 0xff}, {0x00, 0x00, 0x00, 0xff},
 		{0xff, 0xff, 0xff, 0xff},
+		{0x89, 0xb4, 0xfa, 0xff}, {0xcb, 0xa6, 0xf7, 0xff}, {0xa6, 0xe3, 0xa1, 0xff},
 	}
 	for i := 0; i < 400; i++ {
 		seeds = append(seeds, color.NRGBA{

@@ -103,7 +103,7 @@
 //     the same two measure #136B00 and 0.1536 — half the drift, for a tint
 //     nobody was going to notice either way.
 //
-//     What the bound buys, measured: over the 411-seed sweep the accent is
+//     What the bound buys, measured: over the 414-seed sweep the accent is
 //     never closer to the fixed error anchor than the error role is, in
 //     either scheme — a red-heavy brand pulls the error onto true red
 //     rather than pulling the accent past it (see the accent-versus-error
@@ -281,7 +281,7 @@
 //     colour used to come back under white text at as little as 2.1:1. Now
 //     its ink flips and the colour does not move: an accent stays true to
 //     the seed, the way the design language pairs a high tone with a dark
-//     ink everywhere else. Across a 411-seed sweep 266 of the light
+//     ink everywhere else. Across a 414-seed sweep 269 of the light
 //     schemes' primary inks flip — nothing else in either scheme does, the
 //     other bases being pinned to depths their usual ink clears — and no
 //     pinned pairing any seed produces measures under the floor. The
