@@ -215,6 +215,138 @@ func TestDarkSolidWalkLandsOnPairedDepths(t *testing.T) {
 	}
 }
 
+// offPins are pins no scheme carries: colours a caller fixes on one control
+// and expects to survive a scheme change. They are spread over the tonal
+// axis on purpose — one at each end and two in the middle — because a
+// caller's pin can sit anywhere on the ladder, including past its 900 rung,
+// where a role's own pin never does.
+var offPins = []struct {
+	name string
+	c    color.NRGBA
+}{
+	{"deep red", color.NRGBA{0xb3, 0x26, 0x1e, 0xff}},
+	{"bright red", color.NRGBA{0xff, 0x3b, 0x30, 0xff}},
+	{"pale mint", color.NRGBA{0xd7, 0xf5, 0xe4, 0xff}},
+	{"near black", color.NRGBA{0x05, 0x05, 0x05, 0xff}},
+	{"white", tokens.White},
+}
+
+// TestRoleLaddersTrackTheNeutralLadder is the evidence for the ladder
+// PinnedStateColor walks on. Every ramp in a scheme sweeps one shared
+// lightness scale and only the neutral sweeps it at zero chroma, so the
+// neutral ramp is the scale itself; the coloured ramps are the same scale
+// realized at a hue and a chroma, which the tonal solver may pull a fraction
+// of an L* off target where the gamut bites. This bounds that fraction over
+// the whole seed sweep, which is what makes "ladder a caller's pin on the
+// neutral ramp" cost nothing measurable against laddering it on any other.
+func TestRoleLaddersTrackTheNeutralLadder(t *testing.T) {
+	const tol = 1.0 // L*
+	for _, seed := range sweepSeeds() {
+		light, dark := tokens.FromSeed(seed)
+		for _, s := range []struct {
+			name string
+			tok  tokens.ColorTokens
+		}{{"light", light}, {"dark", dark}} {
+			for _, r := range allRoles {
+				ramp := rampForRole(s.tok, r.role)
+				for i := range ramp {
+					lRole, _, _ := speccolor.LabFromNRGBA(ramp[i])
+					lNeutral, _, _ := speccolor.LabFromNRGBA(s.tok.Ramps.Neutral[i])
+					if math.Abs(lRole-lNeutral) > tol {
+						t.Errorf("seed %v %s %s step %d: L* %.2f, neutral ladder %.2f, differ by more than %.1f",
+							seed, s.name, r.name, (i+1)*100, lRole, lNeutral, tol)
+					}
+				}
+			}
+		}
+	}
+}
+
+// TestPinnedStateColorWalksLikeARolePin verifies the caller's pin gets the
+// role pin's treatment whole: normal and focus return it untouched, disabled
+// is the opacity, dragged follows pressed, and hover and pressed move
+// strictly toward the 900 end of the paired scale — darker in light mode,
+// lighter in dark — fully opaque.
+func TestPinnedStateColorWalksLikeARolePin(t *testing.T) {
+	for _, s := range stateSchemes {
+		for _, p := range offPins {
+			if got := s.tok.PinnedStateColor(p.c, tokens.StateNormal); got != p.c {
+				t.Errorf("%s %s: normal = %v, want the pin %v", s.name, p.name, got, p.c)
+			}
+			if got := s.tok.PinnedStateColor(p.c, tokens.StateFocus); got != p.c {
+				t.Errorf("%s %s: focus = %v, want the pin %v", s.name, p.name, got, p.c)
+			}
+			want := color.NRGBA{p.c.R, p.c.G, p.c.B, 0x61}
+			if got := s.tok.PinnedStateColor(p.c, tokens.StateDisabled); got != want {
+				t.Errorf("%s %s: disabled = %v, want the pin at 38%% alpha %v", s.name, p.name, got, want)
+			}
+			if got, wantDrag := s.tok.PinnedStateColor(p.c, tokens.StateDragged), s.tok.PinnedStateColor(p.c, tokens.StatePressed); got != wantDrag {
+				t.Errorf("%s %s: dragged %v != pressed %v", s.name, p.name, got, wantDrag)
+			}
+
+			hover := s.tok.PinnedStateColor(p.c, tokens.StateHover)
+			pressed := s.tok.PinnedStateColor(p.c, tokens.StatePressed)
+			for state, c := range map[string]color.NRGBA{"hover": hover, "pressed": pressed} {
+				if c.A != 0xff {
+					t.Errorf("%s %s: %s = %v, want an opaque colour", s.name, p.name, state, c)
+				}
+			}
+			// A pin already at or past the 900 rung has nowhere to walk: the
+			// ladder clamps there, so the walk holds at that depth instead of
+			// running off the end of the scale.
+			lPin, _, _ := speccolor.LabFromNRGBA(p.c)
+			lHover, _, _ := speccolor.LabFromNRGBA(hover)
+			lPressed, _, _ := speccolor.LabFromNRGBA(pressed)
+			lEnd, _, _ := speccolor.LabFromNRGBA(s.tok.Ramps.Neutral.Step(900))
+			const tol = 1.5 // L*, absorbs the 8-bit quantization of pin and rung
+			room := lPin - lEnd // how much depth is left before the rung
+			if !s.descending {
+				room = lEnd - lPin
+			}
+			switch {
+			case room <= tol:
+				if math.Abs(lPressed-lEnd) > tol {
+					t.Errorf("%s %s: pin past the 900 rung pressed to L* %.2f, want it held at the rung %.2f ± %.1f",
+						s.name, p.name, lPressed, lEnd, tol)
+				}
+			case s.descending:
+				if !(lPin > lHover && lHover > lPressed) {
+					t.Errorf("%s %s: L* walk not monotonic toward 900: pin %.2f, hover %.2f, pressed %.2f",
+						s.name, p.name, lPin, lHover, lPressed)
+				}
+			default:
+				if !(lPin < lHover && lHover < lPressed) {
+					t.Errorf("%s %s: L* walk not monotonic toward 900: pin %.2f, hover %.2f, pressed %.2f",
+						s.name, p.name, lPin, lHover, lPressed)
+				}
+			}
+		}
+	}
+}
+
+// TestPinnedStateColorReproducesTheRoleWalk is the claim that the two solid
+// entry points are one rule seen twice: hand a role's own pin to the
+// caller's-pin walk and it lands where the role walk put it, the two ladders
+// being the same lightness scale at different chromas. Within a rung's worth
+// of quantization, not exactly — which is why the role walk keeps its own
+// ramp rather than being reimplemented on this one.
+func TestPinnedStateColorReproducesTheRoleWalk(t *testing.T) {
+	const tol = 2.0 // L*
+	for _, s := range stateSchemes {
+		for _, r := range accentRoles {
+			pin := pinForRole(s.tok, r.role)
+			for _, state := range []tokens.State{tokens.StateHover, tokens.StatePressed} {
+				lRole, _, _ := speccolor.LabFromNRGBA(s.tok.SolidStateColor(r.role, state))
+				lPinned, _, _ := speccolor.LabFromNRGBA(s.tok.PinnedStateColor(pin, state))
+				if math.Abs(lRole-lPinned) > tol {
+					t.Errorf("%s %s state %d: role walk L* %.2f, pinned walk L* %.2f, differ by more than %.1f",
+						s.name, r.name, state, lRole, lPinned, tol)
+				}
+			}
+		}
+	}
+}
+
 // TestDisabledIsOpacity verifies disabled never walks the ramp: it is the
 // normal colour at DisabledOpacity — MD3's 38%, alpha 0x61 for an opaque
 // input, the value components already renders.
@@ -300,4 +432,5 @@ func TestStateResolverPanics(t *testing.T) {
 	mustPanic("solid unknown state", func() { tok.SolidStateColor(tokens.RolePrimary, tokens.State(99)) })
 	mustPanic("solid neutral", func() { tok.SolidStateColor(tokens.RoleNeutral, tokens.StateHover) })
 	mustPanic("solid unknown role", func() { tok.SolidStateColor(tokens.Role(99), tokens.StateHover) })
+	mustPanic("pinned unknown state", func() { tok.PinnedStateColor(tokens.White, tokens.State(99)) })
 }

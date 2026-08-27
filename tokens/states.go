@@ -30,6 +30,14 @@
 //     toward the 900 end of the paired scale: darker in light mode, lighter
 //     in dark mode.
 //
+//   - A pin the scheme does not carry at all — a colour a caller pins on one
+//     control, for which no role and no ramp exists — walks by the very same
+//     rule (PinnedStateColor). Having no role ramp to ladder on, it ladders
+//     on the neutral one: every ramp in a scheme sweeps the same lightness
+//     scale and only the neutral sweeps it at zero chroma, so the neutral
+//     ramp is that scale itself rather than one role's tinted copy of it.
+//
+
 // Clamping: a walk past the ramp end clamps to the 900 stop — ground 800
 // pressed resolves to step 900, ground 900 hover stays at 900, and a solid
 // walk never passes the 900 rung's depth. Clamping is friendlier than
@@ -143,6 +151,40 @@ func (t ColorTokens) SolidStateColor(role Role, state State) stdcolor.NRGBA {
 		return Disabled(pin)
 	}
 	return solidWalk(pin, t.rampFor(role), stateWalk(state))
+}
+
+// PinnedStateColor resolves a solid fill from a pin the scheme does not
+// carry: a colour the caller fixes on one control — a status the palette has
+// no role for, a shade a platform prescribes and expects to survive a scheme
+// change — under the given state. The walk is SolidStateColor's: normal and
+// focus return the pin itself, disabled returns it at DisabledOpacity, and
+// hover and press move it one rung and two toward the 900 end at its own hue
+// and chroma.
+//
+// What differs is only the ladder those rungs are counted on. A role's pin
+// ladders on its role's ramp; a caller's pin belongs to no role, so it
+// ladders on the neutral ramp — the scheme's shared lightness scale carried
+// at zero chroma, which every coloured ramp is a tinted sweep of. The
+// substitution is small by construction: across a seed sweep the role
+// ladders sit within an L* of the neutral one (TestRoleLaddersTrackTheNeutral
+// Ladder), all of them being the same scale realized at different chromas.
+//
+// The pin is expected opaque, as the scheme's own pins are: the walked
+// states are realized opaque whatever alpha the pin carried, and only
+// disabled scales alpha.
+//
+// The walk inherits the scale's own coarseness, which is a feature of the
+// ladder rather than of the pin: where two rungs sit far apart — the light
+// scale's 28 and 6, say — a press from between them lands far away, exactly
+// as the scheme's own primary pin does there.
+func (t ColorTokens) PinnedStateColor(pin stdcolor.NRGBA, state State) stdcolor.NRGBA {
+	switch state {
+	case StateNormal, StateFocus:
+		return pin
+	case StateDisabled:
+		return Disabled(pin)
+	}
+	return solidWalk(pin, t.Ramps.Neutral, stateWalk(state))
 }
 
 // stateWalk returns how many ramp steps past the ground a state sits:
