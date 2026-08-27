@@ -364,7 +364,8 @@ func TestRoundTripMotion(t *testing.T) {
 
 // TestRoundTripButtonClasses asserts the G1.2 class layer cannot drift from
 // components/button's resolution: the walked solid-fill stops equal
-// SolidStateColor's per mode, the focus ring is FocusRing by reference, the
+// SolidStateColor's per mode, the focus ring and the checkbox's edge are the
+// rungs their own ramps measure against the grounds they lie on, the
 // disabled fraction is DisabledOpacity, and every register/state rule picks
 // exactly the ramp rungs button.go's constants pick (tonalGround 200 /
 // tonalText 900, ghostGround 200 / ghostText 700 / ghostTextOnWash 900) —
@@ -386,17 +387,22 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		if got, want := mode.vars["--color-accent-pressed"], wantHex(mode.tok.SolidStateColor(tokens.RolePrimary, tokens.StatePressed)); got != want {
 			t.Errorf("--color-accent-pressed (mode %d) = %q, want SolidStateColor pressed %q", i, got, want)
 		}
-		// The ring reference's target must resolve to FocusRing per mode.
-		hex, ok := mode.vars["--color-neutral-500"]
-		if !ok {
-			hex = root["--color-neutral-500"]
+		// The ring is the primary ramp's own measured answer per mode, for
+		// each of the two grounds the class layer's rings lie on. Written
+		// against MarkOn directly rather than through pinRoles, so the
+		// emitter cannot drift with its own table.
+		if got, want := mode.vars["--color-focus-ring"], wantHex(mode.tok.MarkOn(tokens.RolePrimary, mode.tok.Surface, 3.0)); got != want {
+			t.Errorf("--color-focus-ring (mode %d) = %q, want the primary rung that reads on Surface %q", i, got, want)
 		}
-		if want := wantHex(mode.tok.FocusRing()); hex != want {
-			t.Errorf("--color-focus-ring (mode %d) resolves to %q, want FocusRing %q", i, hex, want)
+		onAccent := mode.tok.MarkOn(tokens.RolePrimary, mode.tok.SolidStateColor(tokens.RolePrimary, tokens.StateFocus), 3.0)
+		if got, want := mode.vars["--color-focus-ring-on-accent"], wantHex(onAccent); got != want {
+			t.Errorf("--color-focus-ring-on-accent (mode %d) = %q, want the primary rung that reads on the filled button's own fill %q", i, got, want)
 		}
-	}
-	if got := root["--color-focus-ring"]; got != "var(--color-neutral-500)" {
-		t.Errorf("--color-focus-ring = %q, want the neutral-500 reference", got)
+		// The unchecked checkbox's edge, likewise: components/input's
+		// checkboxBorder is MarkOn against the level-0 ground.
+		if got, want := mode.vars["--color-checkbox-border"], wantHex(mode.tok.MarkOn(tokens.RoleNeutral, mode.tok.SurfaceAt(tokens.Level0), 3.0)); got != want {
+			t.Errorf("--color-checkbox-border (mode %d) = %q, want the neutral rung that reads on the window ground %q", i, got, want)
+		}
 	}
 	if got := wantPx(t, "--focus-ring-width", root["--focus-ring-width"]); got != 2 {
 		t.Errorf("--focus-ring-width = %v, want the 2 dp stroke components/button draws", got)
@@ -427,12 +433,16 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		".btn:hover, .btn.is-hover { background: var(--color-accent-hover); }",
 		".btn.selected { background: var(--color-accent-pressed); }",
 		".btn:active, .btn.is-active { background: var(--color-accent-pressed); }",
-		// The ring, identical in every register — and its forcing twins
-		// (G2.1): a static page shows a state through a class grouped into
-		// the same rule as the live pseudo-class, never through duplicated
-		// declarations.
+		// The ring: one width and one hue everywhere, the rung chosen by the
+		// ground it circles — the filled button's own fill is the one ground
+		// that answers differently. And its forcing twins (G2.1): a static
+		// page shows a state through a class grouped into the same rule as
+		// the live pseudo-class, never through duplicated declarations.
 		"outline: var(--focus-ring-width) solid var(--color-focus-ring);",
-		".btn:focus-visible, .btn.is-focus,",
+		"outline: var(--focus-ring-width) solid var(--color-focus-ring-on-accent);",
+		".btn:focus-visible, .btn.is-focus {",
+		".btn.tonal:focus-visible, .btn.tonal.is-focus,",
+		".btn.ghost:focus-visible, .btn.ghost.is-focus,",
 		".checkbox:focus-visible, .checkbox.is-focus,",
 		".radio:focus-visible, .radio.is-focus {",
 		// Disabled fades to the disabled fraction of each colour's alpha.
@@ -499,10 +509,18 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"color-mix(in srgb, var(--color-neutral-500) var(--state-disabled-opacity), transparent)",
 		// Dropdown chevron: neutral 700, the low-contrast glyph step.
 		"border-top: 8px solid var(--color-neutral-700);",
-		// Checkbox/radio: 2 dp neutral 500 border over Surface; checked is
-		// the accent fill (checkbox) / the 10 dp accent dot (radio).
+		// Checkbox/radio: a 2 dp border over Surface — the radio's is the
+		// named neutral 500 its own source draws, the checkbox's the rung
+		// its ramp measured (AP1.1). Checked is the accent fill under the
+		// icon-grid check mark (checkbox) / the 10 dp accent dot (radio),
+		// both drawn out of gradients rather than encoded as an image, so
+		// the no-literal guard above still holds over the whole layer.
 		"border: 2px solid var(--color-neutral-500);",
+		"border-color: var(--color-checkbox-border);",
 		".checkbox:checked, .checkbox.is-checked {",
+		"background-position: 3.161px 9.411px, 6.911px 4.411px;",
+		"background-size: 4.929px 4.929px, 9.929px 9.929px;",
+		"linear-gradient(45deg, transparent calc(50% - 0.833px), var(--color-on-accent) calc(50% - 0.833px), var(--color-on-accent) calc(50% + 0.833px), transparent calc(50% + 0.833px)),",
 		"radial-gradient(circle, var(--color-accent) 5px, var(--color-surface) 5px)",
 		// Card (G2.2): patterns/card — level-1 fill under a 1 dp neutral 500
 		// stroke, .elevated one storey deeper with no stroke and no shadow;

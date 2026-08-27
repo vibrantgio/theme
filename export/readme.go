@@ -64,7 +64,7 @@ func readmeMD(s Snapshot) string {
 	for i, pin := range pinRoles {
 		pinNames[i] = "`--color-" + pin.name + "`"
 	}
-	fmt.Fprintf(&b, "| pins & semantic layer | %s | pinned bases, their on-colours, the ramp-resolved surface/divider, and the inverse pair the counterpart scheme's ramp resolves |\n", strings.Join(pinNames, ", "))
+	fmt.Fprintf(&b, "| pins & semantic layer | %s | pinned bases, their on-colours, the ramp-resolved surface/divider, the inverse pair the counterpart scheme's ramp resolves, and the control marks each ramp measures for itself — the checkbox's edge and the two focus-ring grounds |\n", strings.Join(pinNames, ", "))
 	b.WriteString("| `--font-family` | `--font-family` | the typeface every prose role uses |\n")
 	b.WriteString("| `--font-family-code` | `--font-family-code` | the monospace typeface the code role uses |\n")
 	typeNames := make([]string, len(typeRoles))
@@ -79,7 +79,7 @@ func readmeMD(s Snapshot) string {
 	fmt.Fprintf(&b, "| `--shadow-<level>` | %s | dp box-shadows — the OPT-IN cue for floating transients (menus, dialogs, tooltips) layered over the tonal fill; resting surfaces use the fill alone |\n", joinTokens("--shadow-", elevationNames()))
 	fmt.Fprintf(&b, "| `--ease-<name>` | %s | MD3 easing presets as `cubic-bezier()`; emphasized is the documented single-bezier stand-in for MD3's two-segment path |\n", joinTokens("--ease-", easeNames()))
 	fmt.Fprintf(&b, "| `--duration-<stop>` | %s | MD3-pinned duration stops, ms; the reduce-motion variant zeroes them |\n", joinTokens("--duration-", durationNames()))
-	b.WriteString("| interaction states | `--color-focus-ring`, `--focus-ring-width`, `--state-disabled-opacity` | the focus ring (neutral 500 by reference, so it flips with `.dark`; 2 px stroke) and the disabled fade fraction for `color-mix()` |\n")
+	b.WriteString("| interaction states | `--focus-ring-width`, `--state-disabled-opacity` | the ring's 2 px stroke and the disabled fade fraction for `color-mix()` — both mode-invariant, unlike the ring's colour, which is measured against a ground that flips and so sits with the colours above |\n")
 	b.WriteString("| scrim | `--color-scrim` | the modal backdrop dimmer: translucent black, identical in both modes — a scrim dims by reducing luminance, so it never flips with `.dark`. The alpha is the sRGB-compositing equivalent of the Gio pattern's 50% linear-space black |\n\n")
 
 	b.WriteString("## Step purposes\n\n" +
@@ -112,8 +112,11 @@ func readmeMD(s Snapshot) string {
 		"and selected two (`:active`, `.selected`); a filled button's solid fill\n" +
 		"walks via the emitted `--color-accent-hover` / `--color-accent-pressed`\n" +
 		"stops. Keyboard focus (`:focus-visible`) keeps the resting fill and draws\n" +
-		"the ring — `--focus-ring-width` of `--color-focus-ring`, identical in every\n" +
-		"register. Disabled (`:disabled`) fades each colour to\n" +
+		"the ring: `--focus-ring-width` of the rung its ramp measures against the\n" +
+		"ground the ring circles — `--color-focus-ring-on-accent` over a filled\n" +
+		"button's own fill, `--color-focus-ring` everywhere else. Same ring, same\n" +
+		"width, same 3:1 floor in every register; only the ground moves.\n" +
+		"Disabled (`:disabled`) fades each colour to\n" +
 		"`--state-disabled-opacity` of its alpha. A ghost has no selected\n" +
 		"treatment: it stays quiet. `.btn.icon` is the icon-only form: a square\n" +
 		"the density's control height on a side, the glyph (an inline SVG on\n" +
@@ -130,11 +133,17 @@ func readmeMD(s Snapshot) string {
 		"`.select-wrap` for the chevron), `.checkbox` and `.radio` on their native\n" +
 		"input types with `appearance: none`. They resolve exactly as\n" +
 		"`components/input` does: Surface ground under `body-large` text, neutral\n" +
-		"500 strong border, neutral 700 placeholder and chevron, focus promoting\n" +
-		"the border to the accent pin (2 dp on the text field, the shared ring on\n" +
-		"checkbox/radio), disabled fading every colour via `color-mix()`. The\n" +
-		"checkbox's checked state is the solid accent fill (the Gio side draws no\n" +
-		"checkmark); the radio's is the accent ring and 10 dp dot around a Surface\n" +
+		"500 strong border on the text field and the radio, neutral 700 placeholder\n" +
+		"and chevron, focus promoting the border to the accent pin (2 dp on the\n" +
+		"text field, the shared ring on checkbox/radio), disabled fading every\n" +
+		"colour via `color-mix()`. The checkbox edges itself with\n" +
+		"`--color-checkbox-border` instead — the neutral rung its own ramp measures\n" +
+		"as reaching 3:1 against the window ground, which is 600 in the light\n" +
+		"scheme and 500 in the dark; one named rung would read below the floor in\n" +
+		"one of them. Checked, the box is the accent fill under a check mark in the\n" +
+		"on-accent pin, drawn from the icon set's grid as two gradient bands — a\n" +
+		"fill says a colour was applied and only the mark says what it means. The\n" +
+		"radio's selected state is the accent ring and 10 dp dot around a Surface\n" +
 		"gap.\n\n")
 
 	b.WriteString("## Elevation: default vs opt-in\n\n" +

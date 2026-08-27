@@ -138,6 +138,48 @@ var pinRoles = []struct {
 	{"info-on-inverse", func(t tokens.ColorTokens) stdcolor.NRGBA {
 		return t.MarkOn(tokens.RoleInfo, t.InverseSurface, onFloor)
 	}},
+	// The two marks a control draws on itself, each the rung its own ramp's
+	// MarkOn walk answers with at the graphic floor. Both are per-scheme
+	// tokens rather than one named rung, because a named rung is a pairing
+	// and not a colour: the light and dark neutral ramps are realized at the
+	// same perceptual depths from opposite ends, so one rung means two
+	// different contrasts against two grounds that moved the whole way.
+	//
+	// checkbox-border is the unchecked box's edge (components/input
+	// checkboxBorder): the neutral rung nearest step 500 that reaches 3:1
+	// against the level-0 ground the box is guaranteed against. Naming step
+	// 500 in both schemes — which this sheet did — measured 6.63:1 in the
+	// dark and 2.67:1 in the light, under the floor in the scheme most
+	// people read in. The walk answers 600 in the light scheme and 500 in
+	// the dark and needs to know nothing about either.
+	//
+	// focus-ring is components/internal/focus's Ring: the primary rung
+	// nearest step 500 that reaches the same floor against the ground the
+	// ring lies on. The Surface storey, the app background, the level-1
+	// storey and a tonal button's tinted fill all answer with one rung per
+	// scheme, which is why one token serves every control here — and it is
+	// the ground components/input hands Ring for the checkbox, the radio,
+	// the text field and the dropdown, whatever they have been put on.
+	//
+	// One ground does not answer with it: the accent fill a FILLED button's
+	// ring lies on. No rung that reads against the page reads against that
+	// fill, so it takes its own token. Two more do not either, and are
+	// recorded rather than fixed here: a ghost button's ring inside a
+	// level-2 or level-3 host circles that storey, where the surface rung
+	// measures 2.92:1 and 2.14:1 in the light scheme (5.06 and 3.46 in the
+	// dark) — under the floor, though far above the 1.42:1 the single
+	// neutral-500 ring this replaces measured there. Closing that needs the
+	// per-storey ring tokens the ghost's contextual wash overrides already
+	// have a shape for.
+	{"checkbox-border", func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.MarkOn(tokens.RoleNeutral, t.SurfaceAt(tokens.Level0), graphicFloor)
+	}},
+	{"focus-ring", func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.MarkOn(tokens.RolePrimary, t.Surface, graphicFloor)
+	}},
+	{"focus-ring-on-accent", func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.MarkOn(tokens.RolePrimary, t.SolidStateColor(tokens.RolePrimary, tokens.StateFocus), graphicFloor)
+	}},
 }
 
 // onFloor is WCAG AA for body text, the floor a mark on the inverse surface
@@ -146,6 +188,13 @@ var pinRoles = []struct {
 // the 3:1 a non-text graphic owes its ground. The floor does not bind — over
 // the seed sweep, 3.0 picks the same rungs — it states what the mark owes.
 const onFloor = 4.5
+
+// graphicFloor is WCAG 1.4.11's floor for a graphic that carries meaning
+// without being text — 3:1 — the floor components/input measures a
+// checkbox's edge to and components/internal/focus measures every focus
+// ring to. A control's edge and its ring are the whole of what says which
+// control it is and where the keyboard is, so neither is decoration.
+const graphicFloor = 3.0
 
 // typeRoles orders the fifteen MD3 type roles under their CSS names, plus
 // code — the sixteenth style outside the MD3 grid, the mono face at
@@ -350,14 +399,14 @@ func scaleVars(s Snapshot) []cssVar {
 	for _, stop := range durationStops {
 		vars = append(vars, cssVar{"--duration-" + stop.name, ms(stop.pick(s.Motion))})
 	}
-	// The interaction-state base the class layer builds on (G1.2). The focus
-	// ring is Neutral step 500 (tokens.FocusRing) — a var() reference, like
-	// the elevation surfaces, so .dark flips it with the ramp — at the 2 dp
-	// stroke width components/button pins; the disabled fraction is
-	// tokens.DisabledOpacity as a color-mix() percentage, because disabled is
-	// an opacity, not a ramp step.
+	// The interaction-state base the class layer builds on (G1.2): the ring's
+	// 2 dp stroke width components/button pins, and the disabled fraction as
+	// tokens.DisabledOpacity in color-mix() percent, because disabled is an
+	// opacity and not a ramp step. Both are mode-invariant, which is why they
+	// are here and the ring's COLOUR is not: --color-focus-ring is a measured
+	// walk against a ground that flips with the scheme, so it lives with the
+	// colours (see pinRoles).
 	vars = append(vars,
-		cssVar{"--color-focus-ring", "var(--color-neutral-500)"},
 		cssVar{"--focus-ring-width", px(focusRingWidthDp)},
 		cssVar{"--state-disabled-opacity", fnum(tokens.DisabledOpacity*100) + "%"},
 	)
@@ -482,9 +531,13 @@ func stylesCSS(s Snapshot) string {
 // resolutions are per-register for the same reason. Selected resolves as
 // tokens.StateColor resolves StateSelected — the two-step walk pressed
 // takes. The form controls resolve as components/input does: Surface ground
-// under body text, neutral 500 strong border, neutral 700 placeholder and
-// glyph, focus promoting the border to the accent pin, disabled fading each
-// colour to the disabled fraction of its alpha.
+// under body text, neutral 500 strong border on the text field and the
+// radio, the ramp's own measured answer (--color-checkbox-border) on the
+// checkbox, neutral 700 placeholder and glyph, focus promoting the border
+// to the accent pin, disabled fading each colour to the disabled fraction
+// of its alpha. The checked checkbox carries the check mark the Gio side
+// strokes, drawn out of the icon set's grid as two gradient bands rather
+// than encoded as an image, so the layer stays literal-free.
 //
 // Every pointer/keyboard state rule also carries a forcing twin class
 // (.is-hover, .is-active, .is-focus, .is-checked) grouped into the same
@@ -504,8 +557,9 @@ const componentClasses = `/* ---- Component classes ----
    patterns/card surface, .table the patterns/table grid, the navigation
    family — .navbar, .tabs, .sidebar, .crumbs — the four patterns of the same
    names, and the overlay family — .scrim/.dialog (patterns/modal), .popover,
-   .tooltip, .toast — the transient surfaces. The focus ring is
-   identical in every register: keyboard visibility is not an emphasis
+   .tooltip, .toast — the transient surfaces. The focus ring is the same
+   ring in every register — one width, one hue, one measured floor against
+   whatever ground it circles: keyboard visibility is not an emphasis
    property. Each state rule carries a forcing twin class (.is-hover,
    .is-active, .is-focus, .is-checked) so a static page can show the state
    with the very declarations the live pseudo-class applies. */
@@ -542,8 +596,23 @@ const componentClasses = `/* ---- Component classes ----
 .btn:active, .btn.is-active { background: var(--color-accent-pressed); }
 
 /* Keyboard focus keeps the resting fill and adds the ring — a stroke
-   centred on the control's edge, as the Gio side draws it. */
-.btn:focus-visible, .btn.is-focus,
+   centred on the control's edge, as the Gio side draws it. One width, one
+   hue, one measured floor: the ring is the rung of the primary ramp
+   nearest its mid-value step that still reaches 3:1 against the ground it
+   circles. Every ground in this layer answers with the one rung named by
+   var(--color-focus-ring), except the accent fill a filled button's ring
+   lies on: no rung that reads against the page reads against that fill, so
+   that one ground takes var(--color-focus-ring-on-accent), and it is the
+   same ring in the same place at the same width. A ghost's ring in a raised
+   host circles that storey and would walk one rung deeper again; the sheet
+   does not yet carry per-storey ring tokens, and the generator's comment
+   records what it measures there. */
+.btn:focus-visible, .btn.is-focus {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring-on-accent);
+  outline-offset: calc(var(--focus-ring-width) / -2);
+}
+.btn.tonal:focus-visible, .btn.tonal.is-focus,
+.btn.ghost:focus-visible, .btn.ghost.is-focus,
 .checkbox:focus-visible, .checkbox.is-focus,
 .radio:focus-visible, .radio.is-focus {
   outline: var(--focus-ring-width) solid var(--color-focus-ring);
@@ -776,9 +845,34 @@ const componentClasses = `/* ---- Component classes ----
 }
 
 /* Checkbox (components/input checkbox.go): a 20 dp glyph (checkboxBoxSize
-   — a component constant, not a token; it does not follow density) with a
-   2 dp neutral 500 border over Surface when unchecked, a solid accent fill
-   when checked — no checkmark glyph: the Gio side draws none. The focus
+   — a component constant, not a token; it does not follow density) over
+   Surface. Unchecked, its 2 dp edge is --color-checkbox-border, the
+   neutral rung the ramp answers with for a 3:1 graphic on the window
+   ground (600 in the light scheme, 500 in the dark) — the radio keeps the
+   named neutral 500 its own source still draws. Checked, the box is the
+   accent fill under a check mark in the on-accent pin, because a fill says
+   a colour was applied and only the mark says what that means: a column of
+   fills carries completion in hue alone, which is the one channel a reader
+   may not have.
+
+   The mark is drawn, not encoded. Gio strokes the icon set's centre line —
+   (4.5,12) → (9,16.5) → (19.5,6) on the set's 24-unit grid, a 2-unit
+   DIAGONAL band, round caps and joins — and at the 20 px glyph one grid
+   unit is 5/6 px, so the band is 1.667 px wide (±0.833 either side of the
+   centre) and the arms run from (3.75,10) to (7.5,13.75) to (16.25,5).
+   Each arm is one background layer: a linear-gradient banding its own box
+   perpendicular to the arm, 45deg for the short "\" arm and 135deg for the
+   long "/" one. Every stop is written from 50% because each box is sized
+   to its arm — the segment grown by half a band along its own axis, which
+   makes the arm the box's diagonal and the box's corners the round caps'
+   own tips:
+     short arm: 4.929 px square at 3.161,9.411   (3.75,10)→(7.5,13.75)
+     long arm:  9.929 px square at 6.911,4.411   (7.5,13.75)→(16.25,5)
+   CSS has no line cap, so the caps come out cut square inside those tips
+   rather than rounded — the same trade the icon set's own SVG files make
+   when they draw their caps as an explicit contour, and a sub-pixel one at
+   this size. background-origin is the border box so the grid is the 20 px
+   glyph the Gio side scales on, not the 16 px inside the edge. The focus
    ring is the shared rule above. */
 .checkbox, .radio {
   box-sizing: border-box;
@@ -791,19 +885,36 @@ const componentClasses = `/* ---- Component classes ----
   background: var(--color-surface);
   cursor: pointer;
 }
-.checkbox { border-radius: var(--radius-sm); }
+.checkbox {
+  border-radius: var(--radius-sm);
+  border-color: var(--color-checkbox-border);
+}
 .checkbox:checked, .checkbox.is-checked {
   border-color: var(--color-accent);
-  background: var(--color-accent);
+  background-color: var(--color-accent);
+  background-image:
+    linear-gradient(45deg, transparent calc(50% - 0.833px), var(--color-on-accent) calc(50% - 0.833px), var(--color-on-accent) calc(50% + 0.833px), transparent calc(50% + 0.833px)),
+    linear-gradient(135deg, transparent calc(50% - 0.833px), var(--color-on-accent) calc(50% - 0.833px), var(--color-on-accent) calc(50% + 0.833px), transparent calc(50% + 0.833px));
+  background-origin: border-box;
+  background-repeat: no-repeat;
+  background-position: 3.161px 9.411px, 6.911px 4.411px;
+  background-size: 4.929px 4.929px, 9.929px 9.929px;
 }
+/* Disabled fades the box and its mark together, so the check stays the
+   on-colour of the fill it is drawn on. background-color rather than the
+   background shorthand: the shorthand would reset the checked rule's
+   layer geometry and the disabled-checked box would lose its mark. */
 .checkbox:disabled {
   cursor: default;
-  border-color: color-mix(in srgb, var(--color-neutral-500) var(--state-disabled-opacity), transparent);
-  background: color-mix(in srgb, var(--color-surface) var(--state-disabled-opacity), transparent);
+  border-color: color-mix(in srgb, var(--color-checkbox-border) var(--state-disabled-opacity), transparent);
+  background-color: color-mix(in srgb, var(--color-surface) var(--state-disabled-opacity), transparent);
 }
 .checkbox:checked:disabled, .checkbox.is-checked:disabled {
   border-color: color-mix(in srgb, var(--color-accent) var(--state-disabled-opacity), transparent);
-  background: color-mix(in srgb, var(--color-accent) var(--state-disabled-opacity), transparent);
+  background-color: color-mix(in srgb, var(--color-accent) var(--state-disabled-opacity), transparent);
+  background-image:
+    linear-gradient(45deg, transparent calc(50% - 0.833px), color-mix(in srgb, var(--color-on-accent) var(--state-disabled-opacity), transparent) calc(50% - 0.833px), color-mix(in srgb, var(--color-on-accent) var(--state-disabled-opacity), transparent) calc(50% + 0.833px), transparent calc(50% + 0.833px)),
+    linear-gradient(135deg, transparent calc(50% - 0.833px), color-mix(in srgb, var(--color-on-accent) var(--state-disabled-opacity), transparent) calc(50% - 0.833px), color-mix(in srgb, var(--color-on-accent) var(--state-disabled-opacity), transparent) calc(50% + 0.833px), transparent calc(50% + 0.833px));
 }
 
 /* Radio (components/input radio.go): the same 20 dp glyph as a circle;
