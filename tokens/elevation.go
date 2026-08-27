@@ -72,6 +72,35 @@ const (
 	Level3
 )
 
+// Raised is the rung one step above level: the fill of something that
+// stands on a surface at level rather than on the ground of the window.
+//
+// Rungs are walked from the surface a thing is lying on, never from an
+// absolute step (ADR-021 R4). So a thing raised over a level-0 plane fills
+// at level 1 and the same thing over a level-1 plane fills at level 2, and
+// a caller that names its own ground gets the separation the grammar asks
+// for wherever it is placed. Reaching for a fixed step instead holds only
+// while every ground in a window happens to be the one that step was
+// chosen against; move the ground one rung and the raised thing sits two
+// rungs off it, which the grammar calls a mistake in either direction.
+//
+// Level3 is the ceiling. The ladder is four storeys and ends there, so
+// raising Level3 returns Level3 rather than naming a storey the scale does
+// not have: a caller already at the top asked for "as raised as it gets"
+// and is given it, and the clamp is the one place this walk stops instead
+// of stepping. A level the ladder has no rung for — a negative one, or the
+// MD3 levels 4 and 5 that were deleted when the ladder settled at four —
+// panics, matching [ElevationScale.SurfaceStep] and [Ramp.Step].
+func (level ElevationLevel) Raised() ElevationLevel {
+	switch level {
+	case Level0, Level1, Level2:
+		return level + 1
+	case Level3:
+		return Level3
+	}
+	panic(fmt.Sprintf("tokens: unknown ElevationLevel %d", level))
+}
+
 // Dp returns level's shadow depth in device-independent pixels. An
 // out-of-vocabulary level panics, matching [Ramp.Step].
 func (e ElevationScale) Dp(level ElevationLevel) float32 {

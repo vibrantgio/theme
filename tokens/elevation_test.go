@@ -61,6 +61,54 @@ func TestSurfaceAt(t *testing.T) {
 	}
 }
 
+// TestRaisedWalksOneRungFromTheLocalGround asserts the step is taken from
+// the level it is asked of and not from an absolute rung: every level below
+// the ceiling raises to the next one, so the same call answers differently
+// for a thing on the window's paper and the same thing on furniture.
+func TestRaisedWalksOneRungFromTheLocalGround(t *testing.T) {
+	want := map[ElevationLevel]ElevationLevel{
+		Level0: Level1,
+		Level1: Level2,
+		Level2: Level3,
+	}
+	for ground, raised := range want {
+		if got := ground.Raised(); got != raised {
+			t.Errorf("Level%d.Raised() = %d, want %d", ground, got, raised)
+		}
+	}
+	// The fill a walked rung resolves to is the next step of the neutral
+	// ramp, so what a raised thing paints is a rung off its own ground
+	// rather than off the window's.
+	for _, mode := range []struct {
+		name string
+		tok  ColorTokens
+	}{{"light", DefaultLight}, {"dark", DefaultDark}} {
+		for ground := range want {
+			got := mode.tok.SurfaceAt(ground.Raised())
+			if bg := mode.tok.SurfaceAt(ground); got == bg {
+				t.Errorf("%s: a level-%d ground and its raised rung both fill %v; a raised thing owes its ground one rung", mode.name, ground, got)
+			}
+			if step := mode.tok.Ramps.Neutral.Step(Elevation.SurfaceStep(ground.Raised())); got != step {
+				t.Errorf("%s: SurfaceAt(Level%d.Raised()) = %v, want %v", mode.name, ground, got, step)
+			}
+		}
+	}
+}
+
+// TestRaisedClampsAtTheCeiling pins the documented behaviour at the top of
+// the ladder: four storeys is all there is, so the walk stops rather than
+// naming a fifth. Levels 4 and 5 were deleted when the ladder settled, and
+// stepping past 3 here would hand every other accessor a level it panics
+// on.
+func TestRaisedClampsAtTheCeiling(t *testing.T) {
+	if got := Level3.Raised(); got != Level3 {
+		t.Errorf("Level3.Raised() = %d, want Level3 (%d): the ladder ends at 3", got, Level3)
+	}
+	if got, want := DefaultLight.SurfaceAt(Level3.Raised()), DefaultLight.SurfaceAt(Level3); got != want {
+		t.Errorf("SurfaceAt(Level3.Raised()) = %v, want %v", got, want)
+	}
+}
+
 // TestSurfaceStateComposition asserts D2.3's state walks compose on top of
 // the elevation mapping: a state on an elevated surface uses the level's
 // step as its ground, so hover on a level-1 surface is step 300 and
@@ -84,7 +132,8 @@ func TestSurfaceStateComposition(t *testing.T) {
 // matching Ramp.Step. 4 and 5 are in the list deliberately: through v0.1.x
 // they were clamps onto level 3, and F3.3's sweep deleted them, so the
 // ladder ends at 3 and asking for a fifth storey is now the error it always
-// described.
+// described. Raised answers to the same rule; its clamp at the ceiling is
+// the one deliberate exception, and TestRaisedClampsAtTheCeiling pins it.
 func TestElevationLevelPanics(t *testing.T) {
 	for _, level := range []ElevationLevel{-1, 4, 5, 6} {
 		func() {
@@ -110,6 +159,14 @@ func TestElevationLevelPanics(t *testing.T) {
 				}
 			}()
 			DefaultLight.SurfaceAt(level)
+		}()
+		func() {
+			defer func() {
+				if recover() == nil {
+					t.Errorf("ElevationLevel(%d).Raised() did not panic", level)
+				}
+			}()
+			level.Raised()
 		}()
 	}
 }
