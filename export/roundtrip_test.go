@@ -160,7 +160,9 @@ func TestRoundTripColors(t *testing.T) {
 			t.Errorf(".dark declares non-scheme variable %s", name)
 		}
 	}
-	if want := len(rampRoles)*9 + len(pinRoles) + len(elevationLevels); len(dark) != want {
+	// Three families per storey: the fill, and the hover and press walks
+	// taken from it. All three resolve per scheme for the same reason.
+	if want := len(rampRoles)*9 + len(pinRoles) + 3*len(elevationLevels); len(dark) != want {
 		t.Errorf(".dark declares %d variables, want %d", len(dark), want)
 	}
 }
@@ -497,23 +499,31 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		// Icon-only: a control-height square, glyph inset by PaddingY.
 		"width: var(--density-control-height);",
 		"padding: var(--density-padding-y);",
-		// Ghost: nothing at rest under 700 text; wash 300/400 under 900.
+		// Ghost: nothing at rest under 700 text; under the pointer, the
+		// paper's own walk under 900. Since ADR-022 the wash is a state
+		// taken FROM a storey rather than a step named on the ramp.
 		"color: var(--color-neutral-700);",
-		"background: var(--color-neutral-300);",
-		"background: var(--color-neutral-400);",
+		"background: var(--elevation-0-hover);",
+		"background: var(--elevation-0-active);",
 		"color: var(--color-neutral-900);",
 		// Ghost in a raised host (I3.1): the wash re-derives from the host
-		// surface's own storey — the level-2 dialog and elevated card walk
-		// 400/500, the level-3 popover 500/600 — token references all the
-		// way, exactly buttonColors' ghostGroundStep walk.
+		// surface's own storey — the plain card at level 1, the dialog and
+		// elevated card at level 2, the popover at level 3 — token
+		// references all the way, exactly buttonColors' ghostWash walk.
+		".card .btn.ghost:hover, .card .btn.ghost.is-hover {",
+		".card .btn.ghost:active, .card .btn.ghost.is-active {",
 		".dialog .btn.ghost:hover, .dialog .btn.ghost.is-hover,",
 		".card.elevated .btn.ghost:hover, .card.elevated .btn.ghost.is-hover {",
 		".dialog .btn.ghost:active, .dialog .btn.ghost.is-active,",
 		".card.elevated .btn.ghost:active, .card.elevated .btn.ghost.is-active {",
 		".popover .btn.ghost:hover, .popover .btn.ghost.is-hover {",
 		".popover .btn.ghost:active, .popover .btn.ghost.is-active {",
-		"background: var(--color-neutral-500);",
-		"background: var(--color-neutral-600);",
+		"background: var(--elevation-1-hover);",
+		"background: var(--elevation-1-active);",
+		"background: var(--elevation-2-hover);",
+		"background: var(--elevation-2-active);",
+		"background: var(--elevation-3-hover);",
+		"background: var(--elevation-3-active);",
 		// Tag (G2.1): the patterns' chip — Full-radius pill, S2 either side
 		// and the S1 stop spent once across both vertical edges,
 		// label-small text; filled accent/on-accent, tonal primary-200
@@ -537,14 +547,15 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"background: var(--color-warning-container);",
 		"border: 1px solid var(--color-error);",
 		"background: var(--color-error-container);",
-		// Forms (G2.1): components/input's resolution — Surface under body
-		// text, the ramp's measured edge, neutral 700 placeholder/glyph,
-		// focus promoting the border to the ring, disabled fading via
-		// color-mix. Every edge and every ring names the storey-local with
-		// the ground floor's token as its fallback, which is how a raised
-		// host re-derives the controls inside it (AQ1.3).
+		// Forms (G2.1): components/input's resolution — the raised storey
+		// under body text, the ramp's measured edge, neutral 700
+		// placeholder/glyph, focus promoting the border to the ring,
+		// disabled fading via color-mix. Every edge, every ring AND every
+		// fill names the storey-local with the ground floor's token as its
+		// fallback, which is how a raised host re-derives the controls
+		// inside it (AQ1.3, extended to the fill by AU1.4).
 		"border: 1px solid var(--ground-border, var(--color-control-border));",
-		"background: var(--color-surface);",
+		"background: var(--ground-raised, var(--elevation-1));",
 		"font-size: var(--font-body-large-size);",
 		".input::placeholder { color: var(--color-neutral-700); opacity: 1; }",
 		"border-color: var(--ground-focus-ring, var(--color-focus-ring));",
@@ -564,7 +575,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"background-position: 3.161px 9.411px, 6.911px 4.411px;",
 		"background-size: 4.929px 4.929px, 9.929px 9.929px;",
 		"linear-gradient(45deg, transparent calc(50% - 0.833px), var(--color-on-accent) calc(50% - 0.833px), var(--color-on-accent) calc(50% + 0.833px), transparent calc(50% + 0.833px)),",
-		"radial-gradient(circle, var(--color-accent) 5px, var(--color-surface) 5px)",
+		"radial-gradient(circle, var(--color-accent) 5px, var(--ground-raised, var(--elevation-1)) 5px)",
 		// Card (G2.2): patterns/card — level-1 fill under a 1 dp stroke in
 		// the rung the ramp measures against that fill,
 		// .elevated one storey deeper with no stroke and no shadow;

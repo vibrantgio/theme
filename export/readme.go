@@ -77,6 +77,7 @@ func readmeMD(s Snapshot) string {
 	fmt.Fprintf(&b, "| `--space-<key>` | %s | the 4-pt spacing grid, px |\n", joinTokens("--space-", spaceNames()))
 	fmt.Fprintf(&b, "| `--radius-<key>` | %s | corner radii, Tailwind naming, px |\n", joinTokens("--radius-", radiusNames()))
 	fmt.Fprintf(&b, "| `--elevation-<storey>` | %s | tonal surface fills — the DEFAULT elevation cue; ordered away from the desk and toward the reader, and resolved per scheme, so both blocks state their own five |\n", joinTokens("--elevation-", elevationNames()))
+	fmt.Fprintf(&b, "| `--elevation-<storey>-<state>` | %s | each storey's own interaction walk — what a control with no ground of its own washes the surface under it to when hovered or pressed. Taken FROM the storey's fill rather than named as a ramp step, because a storey is not a ramp step in both schemes |\n", joinTokens("--elevation-", elevationStateNames()))
 	fmt.Fprintf(&b, "| `--shadow-<storey>` | %s | dp box-shadows — the OPT-IN cue for floating transients (menus, dialogs, tooltips) layered over the tonal fill; resting surfaces use the fill alone |\n", joinTokens("--shadow-", elevationNames()))
 	fmt.Fprintf(&b, "| `--ease-<name>` | %s | MD3 easing presets as `cubic-bezier()`; emphasized is the documented single-bezier stand-in for MD3's two-segment path |\n", joinTokens("--ease-", easeNames()))
 	fmt.Fprintf(&b, "| `--duration-<stop>` | %s | MD3-pinned duration stops, ms; the reduce-motion variant zeroes them |\n", joinTokens("--duration-", durationNames()))
@@ -238,6 +239,18 @@ func elevationNames() []string {
 	names := make([]string, len(elevationLevels))
 	for i, k := range elevationLevels {
 		names[i] = k.name
+	}
+	return names
+}
+
+// elevationStateNames lists each storey's interaction walk in sheet order —
+// floor-hover, floor-active, 0-hover, and so on. The walk is a family of its
+// own because since ADR-022 a storey is not a ramp step in both schemes, so a
+// state taken from a storey cannot be spelled as that step's neighbour.
+func elevationStateNames() []string {
+	names := make([]string, 0, 2*len(elevationLevels))
+	for _, k := range elevationLevels {
+		names = append(names, k.name+"-hover", k.name+"-active")
 	}
 	return names
 }

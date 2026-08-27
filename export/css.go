@@ -424,6 +424,28 @@ func colorVars(t tokens.ColorTokens) []cssVar {
 	for _, level := range elevationLevels {
 		vars = append(vars, cssVar{"--elevation-" + level.name, hexRGB(t.SurfaceAt(level.level))})
 	}
+	// And each storey's own interaction walk, for the same reason and one
+	// step further: a ghost button paints no ground at rest and washes the
+	// surface it stands on under the pointer, so the wash is a state taken
+	// FROM that storey's fill (tokens.ColorTokens.StateAt, which is what
+	// components/button's ghostWash performs). While a storey was a ramp
+	// step the sheet could name the step's neighbour and be done; a storey
+	// off the ramp has no neighbour to name, so the walk is written out per
+	// scheme like the fill it starts from.
+	for _, level := range elevationLevels {
+		for _, st := range []struct {
+			suffix string
+			state  tokens.State
+		}{
+			{"-hover", tokens.StateHover},
+			{"-active", tokens.StatePressed},
+		} {
+			vars = append(vars, cssVar{
+				name:  "--elevation-" + level.name + st.suffix,
+				value: hexRGB(t.StateAt(level.level, st.state)),
+			})
+		}
+	}
 	return vars
 }
 
@@ -594,10 +616,11 @@ func stylesCSS(s Snapshot) string {
 // later register blocks never bleed a state from an earlier one; :disabled
 // resolutions are per-register for the same reason. Selected resolves as
 // tokens.StateColor resolves StateSelected — the two-step walk pressed
-// takes. The form controls resolve as components/input does: Surface ground
-// under body text, the ramp's own measured answer on the text field, the
-// radio and the checkbox alike — taken against the storey the control stands
-// on, which is what --ground-border and --ground-focus-ring carry down from
+// takes. The form controls resolve as components/input does: the raised
+// storey under body text, the ramp's own measured answer on the text field,
+// the radio and the checkbox alike — all of it taken against the storey the
+// control stands on, which is what --ground-border, --ground-focus-ring and
+// --ground-raised carry down from
 // a raised host — neutral 700 placeholder and glyph, focus promoting the
 // border to that storey's ring, disabled fading each colour to the disabled
 // fraction of its alpha. The checked checkbox carries the check mark the Gio side
@@ -684,28 +707,43 @@ const componentClasses = `/* ---- Component classes ----
   outline-offset: calc(var(--focus-ring-width) / -2);
 }
 
-/* --ground-focus-ring and --ground-border are the storey-local pair, and the
-   whole of how a raised host reaches the controls inside it. --ground-border
-   is the neutral rung that reads on this storey and --ground-focus-ring the
-   primary one; both inherit, so a surface declares them once — in its own
-   rule, beside the --elevation-N it fills with — and every control below it
-   re-derives, with no descendant selector anywhere in this sheet. It is the
-   sheet's spelling of RenderState.Ground on the Gio side, which is why the
-   two carry the same word.
+/* --ground-border, --ground-focus-ring and --ground-raised are the
+   storey-local set, and the whole of how a raised host reaches the controls
+   inside it. --ground-border is the neutral rung that reads on this
+   storey, --ground-focus-ring the primary one, and --ground-raised the
+   storey a control that fills a box of its own is raised TO from here —
+   the rung above the host's own.
+   All three inherit, so a surface declares them once — in its
+   own rule, beside the --elevation-N it fills with — and every control below
+   it re-derives, with no descendant selector anywhere in this sheet. It is
+   the sheet's spelling of RenderState.Ground on the Gio side, which is why
+   the three carry the same word.
 
-   Nothing declares the pair at the root. A control that no raised host
-   contains stands on the ground floor, and the fallback inside each var() IS
-   the ground floor's answer — so the default is written once, at the point of
+   Nothing declares them at the root. A control that no raised host contains
+   stands on the ground floor, and the fallback inside each var() IS the
+   ground floor's answer — so the default is written once, at the point of
    use, and cannot drift from the tokens the rules already name.
 
-   The two halves are the same walk against the same fill, which is why a
+   The first two are the same walk against the same fill, which is why a
    checkbox in a dialog wears the edge the dialog's own outline wears. The
    ground floor's rungs do not carry that far: in the light scheme the page's
    edge measures 2.94:1 over a level-2 fill and 2.15:1 over a level-3 one, and
    its ring 2.92:1 and 2.14:1, all under the 3:1 a graphic owes its ground. A
    dark scheme's ladder is shallower and its ground-floor rungs already clear
    every storey, so the raised tokens repeat there and nothing moves — the
-   derivation reporting that nothing needs to. */
+   derivation reporting that nothing needs to.
+
+   The third joins them under a different rule, and the difference is
+   worth stating. The other two are MEASUREMENTS, so a host only declares them
+   where the ground floor's answer stops clearing — which is why an outlined
+   .card, at level 1, declares neither. --ground-raised is a STOREY, and a
+   storey differs by construction: a control filling at its host's own rung is
+   invisible against it whatever the contrast table says. So all four
+   container surfaces a control can be put inside declare it — .card,
+   .card.elevated, .dialog and .popover — the outlined card included. The
+   popover declares the ladder's ceiling: level 3 raises to level 3, the one
+   place this walk stops instead of stepping (tokens.ElevationLevel.Raised),
+   so a control in a popover fills flush with it and is read by its border. */
 
 /* Disabled is an opacity, not a ramp step: each colour keeps its hue and
    fades to the disabled fraction of its alpha. */
@@ -731,18 +769,27 @@ const componentClasses = `/* ---- Component classes ----
 
 /* Ghost: no ground at rest — the neutral ramp's low-contrast text over
    whatever surface it sits on; under the pointer it performs that
-   surface's own hover (300) and press (400), the text walking to 900 with
-   the ground. No selected treatment: a ghost stays quiet. */
+   surface's own hover and press walk, the text walking to 900 with the
+   ground. No selected treatment: a ghost stays quiet.
+
+   The walk is named as a storey's own state rather than as a ramp step,
+   because since ADR-022 a storey is not a ramp step: the fills above the
+   pin are off the ramp in the light scheme and the floor is off it in the
+   dark one, so there is no index left to walk from. Each storey's own
+   -hover and -active pair is that walk taken
+   from each storey's own fill (components/button ghostWash, which is
+   tokens.ColorTokens.StateAt). A ghost told nothing stands on the paper,
+   so the base rule is level 0's. */
 .btn.ghost {
   background: transparent;
   color: var(--color-neutral-700);
 }
 .btn.ghost:hover, .btn.ghost.is-hover {
-  background: var(--color-neutral-300);
+  background: var(--elevation-0-hover);
   color: var(--color-neutral-900);
 }
 .btn.ghost:active, .btn.ghost.is-active {
-  background: var(--color-neutral-400);
+  background: var(--elevation-0-active);
   color: var(--color-neutral-900);
 }
 .btn.ghost:disabled {
@@ -751,27 +798,37 @@ const componentClasses = `/* ---- Component classes ----
 }
 
 /* A ghost's wash derives from the local ground it sits on, not the window
-   ground: inside a raised host the hover and press washes re-derive as the
-   host surface's own ramp walk (components/button buttonColors, walking
-   from RenderState.Ground's storey). The dialog and the elevated card sit
-   at level 2 — ground 300, hover 400, press 500 — and the popover at the
-   deepest level 3 — ground 400, hover 500, press 600. The text stays the
-   ramp's 900 end, where the walk itself clamps. The level-1 hosts (card,
-   the Surface panes) need no rule: their step is the walk the base ghost
-   already performs. */
+   ground: inside a host that is not the paper the hover and press washes
+   re-derive as that host surface's own walk (components/button
+   buttonColors, walking from RenderState.Ground's storey). The card sits
+   at level 1, the dialog and the elevated card at level 2, the popover at
+   the deepest level 3; the text stays the ramp's 900 end, where the walk
+   itself clamps.
+
+   The level-1 rule is new with ADR-022 and the plain card is why. While a
+   storey was a ramp step, level 0 and level 1 walked from the same index
+   and one rule covered both; now level 0 walks from the Background pin and
+   level 1 from the storey above it, which are two different fills and, in
+   the dark scheme, two different washes. */
+.card .btn.ghost:hover, .card .btn.ghost.is-hover {
+  background: var(--elevation-1-hover);
+}
+.card .btn.ghost:active, .card .btn.ghost.is-active {
+  background: var(--elevation-1-active);
+}
 .dialog .btn.ghost:hover, .dialog .btn.ghost.is-hover,
 .card.elevated .btn.ghost:hover, .card.elevated .btn.ghost.is-hover {
-  background: var(--color-neutral-400);
+  background: var(--elevation-2-hover);
 }
 .dialog .btn.ghost:active, .dialog .btn.ghost.is-active,
 .card.elevated .btn.ghost:active, .card.elevated .btn.ghost.is-active {
-  background: var(--color-neutral-500);
+  background: var(--elevation-2-active);
 }
 .popover .btn.ghost:hover, .popover .btn.ghost.is-hover {
-  background: var(--color-neutral-500);
+  background: var(--elevation-3-hover);
 }
 .popover .btn.ghost:active, .popover .btn.ghost.is-active {
-  background: var(--color-neutral-600);
+  background: var(--elevation-3-active);
 }
 
 /* Icon-only form (components/button drawIconButton): a square the
@@ -859,10 +916,24 @@ const componentClasses = `/* ---- Component classes ----
 }
 
 /* ---- Form controls ----
-   Native elements wearing components/input's resolution: Surface ground
-   under body-large text, neutral 500 strong border, neutral 700
-   placeholder, focus promoting the border to the accent pin, disabled
-   fading every colour to the disabled fraction of its alpha. */
+   Native elements wearing components/input's resolution: the raised storey
+   under body-large text, the neutral rung that reads on the ground the
+   control stands on for the border, neutral 700 placeholder, focus promoting
+   the border to that ground's ring, disabled fading every colour to the
+   disabled fraction of its alpha.
+
+   Every fill below names var(--ground-raised, var(--elevation-1)) rather than
+   a ramp step, and that is components/input's controlFill: a control that
+   paints a box of its own is raised on whatever hosts it, so it fills one
+   rung nearer the viewer than its host. It used to be --color-surface, the
+   neutral ramp's step 200, which lands on the raised storey in the dark
+   scheme by coincidence and on no storey at all in the light one — a light
+   field filled a whole band step BELOW the page it lies on. Since ADR-022 a
+   surface nearer the viewer is lighter in both schemes, and on a desktop a
+   text field is the lightest thing in the window, not the darkest. In the
+   light scheme the step above the page is a whisper, so the 1 px border and
+   the corner radius carry the visible edge; that is the trade the ladder
+   makes and states. */
 
 /* Text field (components/input textfield.go). Height = ControlHeight as a
    floor, vertical inset PaddingY, horizontal inset S3 (12 dp — static, it
@@ -879,7 +950,7 @@ const componentClasses = `/* ---- Component classes ----
   padding: calc(var(--density-padding-y) - 1px) calc(var(--space-3) - 1px);
   border: 1px solid var(--ground-border, var(--color-control-border));
   border-radius: var(--radius-md);
-  background: var(--color-surface);
+  background: var(--ground-raised, var(--elevation-1));
   color: var(--color-text);
   font-family: var(--font-family);
   font-size: var(--font-body-large-size);
@@ -905,7 +976,7 @@ const componentClasses = `/* ---- Component classes ----
   box-shadow: inset 0 0 0 1px var(--ground-focus-ring, var(--color-focus-ring));
 }
 .input:disabled {
-  background: color-mix(in srgb, var(--color-surface) var(--state-disabled-opacity), transparent);
+  background: color-mix(in srgb, var(--ground-raised, var(--elevation-1)) var(--state-disabled-opacity), transparent);
   color: color-mix(in srgb, var(--color-text) var(--state-disabled-opacity), transparent);
   border-color: color-mix(in srgb, var(--ground-border, var(--color-control-border)) var(--state-disabled-opacity), transparent);
 }
@@ -939,8 +1010,8 @@ const componentClasses = `/* ---- Component classes ----
 }
 
 /* Checkbox (components/input checkbox.go): a 20 dp glyph (checkboxBoxSize
-   — a component constant, not a token; it does not follow density) over
-   Surface. Unchecked, its 2 dp edge is the neutral rung the ramp answers
+   — a component constant, not a token; it does not follow density) over its
+   own raised fill. Unchecked, its 2 dp edge is the neutral rung the ramp answers
    with for a 3:1 graphic on the storey the box stands on — the ground
    floor's --color-control-border (600 in the light scheme, 500 in the dark)
    unless a raised host has re-pointed --ground-border. The radio, the text
@@ -979,7 +1050,7 @@ const componentClasses = `/* ---- Component classes ----
   height: 20px;
   margin: 0;
   border: 2px solid var(--ground-border, var(--color-control-border));
-  background: var(--color-surface);
+  background: var(--ground-raised, var(--elevation-1));
   cursor: pointer;
 }
 .checkbox {
@@ -1003,7 +1074,7 @@ const componentClasses = `/* ---- Component classes ----
 .checkbox:disabled {
   cursor: default;
   border-color: color-mix(in srgb, var(--ground-border, var(--color-control-border)) var(--state-disabled-opacity), transparent);
-  background-color: color-mix(in srgb, var(--color-surface) var(--state-disabled-opacity), transparent);
+  background-color: color-mix(in srgb, var(--ground-raised, var(--elevation-1)) var(--state-disabled-opacity), transparent);
 }
 .checkbox:checked:disabled, .checkbox.is-checked:disabled {
   border-color: color-mix(in srgb, var(--color-accent) var(--state-disabled-opacity), transparent);
@@ -1014,22 +1085,24 @@ const componentClasses = `/* ---- Component classes ----
 }
 
 /* Radio (components/input radio.go): the same 20 dp glyph as a circle;
-   selected keeps the Surface gap ring and fills a 10 dp accent dot
-   (radioDotSize) — outer accent ring, surface, dot, exactly the Gio
-   nested fills. */
+   selected keeps the gap ring and fills a 10 dp accent dot (radioDotSize) —
+   outer accent ring, the glyph's own raised fill, dot, exactly the Gio nested
+   fills. The gap is the glyph's interior, so it takes --ground-raised in the
+   chosen state as much as the resting one: the dot is drawn on the radio's
+   own surface, not on the host's. */
 .radio { border-radius: var(--radius-full); }
 .radio:checked, .radio.is-checked {
   border-color: var(--color-accent);
-  background: radial-gradient(circle, var(--color-accent) 5px, var(--color-surface) 5px); /* 10 dp dot */
+  background: radial-gradient(circle, var(--color-accent) 5px, var(--ground-raised, var(--elevation-1)) 5px); /* 10 dp dot */
 }
 .radio:disabled {
   cursor: default;
   border-color: color-mix(in srgb, var(--ground-border, var(--color-control-border)) var(--state-disabled-opacity), transparent);
-  background: color-mix(in srgb, var(--color-surface) var(--state-disabled-opacity), transparent);
+  background: color-mix(in srgb, var(--ground-raised, var(--elevation-1)) var(--state-disabled-opacity), transparent);
 }
 .radio:checked:disabled, .radio.is-checked:disabled {
   border-color: color-mix(in srgb, var(--color-accent) var(--state-disabled-opacity), transparent);
-  background: radial-gradient(circle, color-mix(in srgb, var(--color-accent) var(--state-disabled-opacity), transparent) 5px, color-mix(in srgb, var(--color-surface) var(--state-disabled-opacity), transparent) 5px);
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-accent) var(--state-disabled-opacity), transparent) 5px, color-mix(in srgb, var(--ground-raised, var(--elevation-1)) var(--state-disabled-opacity), transparent) 5px);
 }
 
 /* ---- Card ----
@@ -1057,6 +1130,7 @@ const componentClasses = `/* ---- Component classes ----
   border-radius: var(--radius-lg);
   background: var(--elevation-1);
   color: var(--color-text);
+  --ground-raised: var(--elevation-2);
 }
 .card.elevated {
   padding: var(--space-4);
@@ -1064,6 +1138,7 @@ const componentClasses = `/* ---- Component classes ----
   background: var(--elevation-2);
   --ground-border: var(--color-dialog-border);
   --ground-focus-ring: var(--color-dialog-focus-ring);
+  --ground-raised: var(--elevation-3);
 }
 
 /* ---- Table ----
@@ -1156,7 +1231,7 @@ const componentClasses = `/* ---- Component classes ----
   align-items: center;
   min-height: calc(var(--density-control-height) + 2 * var(--density-padding-y));
   padding: var(--density-padding-y) var(--space-4);
-  background: var(--color-surface);
+  background: var(--elevation-floor);
   color: var(--color-text);
 }
 .navbar-links {
@@ -1235,7 +1310,7 @@ const componentClasses = `/* ---- Component classes ----
   display: flex;
   flex-direction: column;
   width: 192px;  /* expandedDp */
-  background: var(--color-surface);
+  background: var(--elevation-floor);
   color: var(--color-text);
   overflow: hidden;
 }
@@ -1403,6 +1478,7 @@ const componentClasses = `/* ---- Component classes ----
   color: var(--color-text);
   --ground-border: var(--color-dialog-border);
   --ground-focus-ring: var(--color-dialog-focus-ring);
+  --ground-raised: var(--elevation-3);
 }
 
 /* The header row (modal.go headerWidget): the title-medium title on the
@@ -1449,6 +1525,7 @@ const componentClasses = `/* ---- Component classes ----
   color: var(--color-text);
   --ground-border: var(--color-popover-border);
   --ground-focus-ring: var(--color-popover-focus-ring);
+  --ground-raised: var(--elevation-3);
 }
 
 /* The tail (popover.go drawTail): a triangle 12 dp across the base and
