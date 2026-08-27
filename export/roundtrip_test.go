@@ -398,11 +398,29 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		if got, want := mode.vars["--color-focus-ring-on-accent"], wantHex(onAccent); got != want {
 			t.Errorf("--color-focus-ring-on-accent (mode %d) = %q, want the primary rung that reads on the filled button's own fill %q", i, got, want)
 		}
+		// The same walk two and three storeys up, which is where the ground
+		// floor's rung stops carrying: the primary counterparts of
+		// --color-dialog-border and --color-popover-border, taken against the
+		// very fills patterns/modal and patterns/popover paint.
+		for _, ring := range []struct {
+			name  string
+			level tokens.ElevationLevel
+			what  string
+		}{
+			{"--color-dialog-focus-ring", tokens.Level2, "the dialog's level-2 fill"},
+			{"--color-popover-focus-ring", tokens.Level3, "the popover's level-3 fill"},
+		} {
+			want := wantHex(mode.tok.MarkOn(tokens.RolePrimary, mode.tok.SurfaceAt(ring.level), 3.0))
+			if got := mode.vars[ring.name]; got != want {
+				t.Errorf("%s (mode %d) = %q, want the primary rung that reads on %s %q", ring.name, i, got, ring.what, want)
+			}
+		}
 		// The control row's resting edge, likewise: components/input's
 		// controlBorder is MarkOn against the level-0 ground, and the three
 		// outline tokens are the same walk one, two and three storeys up —
 		// the fills patterns/card, patterns/modal and patterns/popover paint
-		// and measure their own edges against.
+		// and measure their own edges against, and the edge any control
+		// standing on those storeys wears.
 		if got, want := mode.vars["--color-control-border"], wantHex(mode.tok.MarkOn(tokens.RoleNeutral, mode.tok.SurfaceAt(tokens.Level0), 3.0)); got != want {
 			t.Errorf("--color-control-border (mode %d) = %q, want the neutral rung that reads on the window ground %q", i, got, want)
 		}
@@ -455,7 +473,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		// that answers differently. And its forcing twins (G2.1): a static
 		// page shows a state through a class grouped into the same rule as
 		// the live pseudo-class, never through duplicated declarations.
-		"outline: var(--focus-ring-width) solid var(--color-focus-ring);",
+		"outline: var(--focus-ring-width) solid var(--ground-focus-ring, var(--color-focus-ring));",
 		"outline: var(--focus-ring-width) solid var(--color-focus-ring-on-accent);",
 		".btn:focus-visible, .btn.is-focus {",
 		".btn.tonal:focus-visible, .btn.tonal.is-focus,",
@@ -514,16 +532,18 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"border: 1px solid var(--color-error);",
 		"background: var(--color-error-container);",
 		// Forms (G2.1): components/input's resolution — Surface under body
-		// text, neutral 500 strong border, neutral 700 placeholder/glyph,
-		// focus promoting the border to the accent pin, disabled fading via
-		// color-mix.
-		"border: 1px solid var(--color-control-border);",
+		// text, the ramp's measured edge, neutral 700 placeholder/glyph,
+		// focus promoting the border to the ring, disabled fading via
+		// color-mix. Every edge and every ring names the storey-local with
+		// the ground floor's token as its fallback, which is how a raised
+		// host re-derives the controls inside it (AQ1.3).
+		"border: 1px solid var(--ground-border, var(--color-control-border));",
 		"background: var(--color-surface);",
 		"font-size: var(--font-body-large-size);",
 		".input::placeholder { color: var(--color-neutral-700); opacity: 1; }",
-		"border-color: var(--color-accent);",
-		"box-shadow: inset 0 0 0 1px var(--color-accent);",
-		"color-mix(in srgb, var(--color-control-border) var(--state-disabled-opacity), transparent)",
+		"border-color: var(--ground-focus-ring, var(--color-focus-ring));",
+		"box-shadow: inset 0 0 0 1px var(--ground-focus-ring, var(--color-focus-ring));",
+		"color-mix(in srgb, var(--ground-border, var(--color-control-border)) var(--state-disabled-opacity), transparent)",
 		// Dropdown chevron: neutral 700, the low-contrast glyph step.
 		"border-top: 8px solid var(--color-neutral-700);",
 		// Checkbox/radio: a 2 dp border over Surface, both wearing the one
@@ -533,7 +553,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		// 10 dp accent dot (radio), both drawn out of gradients rather than
 		// encoded as an image, so the no-literal guard above still holds over
 		// the whole layer.
-		"border: 2px solid var(--color-control-border);",
+		"border: 2px solid var(--ground-border, var(--color-control-border));",
 		".checkbox:checked, .checkbox.is-checked {",
 		"background-position: 3.161px 9.411px, 6.911px 4.411px;",
 		"background-size: 4.929px 4.929px, 9.929px 9.929px;",

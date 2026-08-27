@@ -64,7 +64,7 @@ func readmeMD(s Snapshot) string {
 	for i, pin := range pinRoles {
 		pinNames[i] = "`--color-" + pin.name + "`"
 	}
-	fmt.Fprintf(&b, "| pins & semantic layer | %s | pinned bases, their on-colours, the ramp-resolved surface/divider, the inverse pair the counterpart scheme's ramp resolves, and the edges each ramp measures for itself — a control's resting border, the outlined card's, the dialog's and the popover's, and the two focus-ring grounds |\n", strings.Join(pinNames, ", "))
+	fmt.Fprintf(&b, "| pins & semantic layer | %s | pinned bases, their on-colours, the ramp-resolved surface/divider, the inverse pair the counterpart scheme's ramp resolves, and the edges and rings each ramp measures for itself against the storey they are drawn on — a resting border for the page, the outlined card, the dialog and the popover, a focus ring for the page and for the two storeys whose ground the page's ring cannot carry to, and the accent fill a filled button's ring lies on, which belongs to no storey at all |\n", strings.Join(pinNames, ", "))
 	b.WriteString("| `--font-family` | `--font-family` | the typeface every prose role uses |\n")
 	b.WriteString("| `--font-family-code` | `--font-family-code` | the monospace typeface the code role uses |\n")
 	typeNames := make([]string, len(typeRoles))
@@ -114,7 +114,10 @@ func readmeMD(s Snapshot) string {
 		"stops. Keyboard focus (`:focus-visible`) keeps the resting fill and draws\n" +
 		"the ring: `--focus-ring-width` of the rung its ramp measures against the\n" +
 		"ground the ring circles — `--color-focus-ring-on-accent` over a filled\n" +
-		"button's own fill, `--color-focus-ring` everywhere else. Same ring, same\n" +
+		"button's own fill, and otherwise the storey the control stands on:\n" +
+		"`--color-focus-ring` on the ground floor, `--color-dialog-focus-ring`\n" +
+		"inside a dialog or an elevated card, `--color-popover-focus-ring` inside\n" +
+		"a popover. Same ring, same\n" +
 		"width, same 3:1 floor in every register; only the ground moves.\n" +
 		"Disabled (`:disabled`) fades each colour to\n" +
 		"`--state-disabled-opacity` of its alpha. A ghost has no selected\n" +
@@ -135,12 +138,20 @@ func readmeMD(s Snapshot) string {
 		"`components/input` does: Surface ground under `body-large` text,\n" +
 		"`--color-control-border` on the resting edge of all four controls,\n" +
 		"neutral 700 placeholder and chevron, focus promoting the border to the\n" +
-		"accent pin (2 dp on the text field, the shared ring on checkbox/radio),\n" +
+		"ring (2 dp on the text field, the shared outline on checkbox/radio),\n" +
 		"disabled fading every colour via `color-mix()`. That border is the\n" +
 		"neutral rung the ramp measures as reaching 3:1 against the window\n" +
 		"ground, which is 600 in the light scheme and 500 in the dark; the named\n" +
 		"rung it replaced read below the floor in one of them, at 2.67:1 in the\n" +
-		"scheme most people read in.\n" +
+		"scheme most people read in. Both the edge and the ring follow the\n" +
+		"control into a raised host: a surface that fills a deeper storey\n" +
+		"declares `--ground-border` and `--ground-focus-ring` beside its own\n" +
+		"fill, the rules name those with the ground floor's tokens as their\n" +
+		"fallback, and every control inside re-derives — the same walk against\n" +
+		"the same fill the host measures its own outline against, which is why a\n" +
+		"checkbox in a dialog wears the dialog's edge. On the ground floor the\n" +
+		"page's own rungs read 2.94:1 and 2.92:1 over a level-2 fill and 2.15:1\n" +
+		"and 2.14:1 over a level-3 one, all under the floor.\n" +
 		"Checked, the box is the accent fill under a check mark in the\n" +
 		"on-accent pin, drawn from the icon set's grid as two gradient bands — a\n" +
 		"fill says a colour was applied and only the mark says what it means. The\n" +

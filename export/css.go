@@ -146,7 +146,15 @@ var pinRoles = []struct {
 	// means two different contrasts against two grounds that moved the whole
 	// way.
 	//
-	// control-border is the resting edge of every control in the row that
+	// Both families answer the same question of the same ladder, once per
+	// ramp: which rung of this ramp reads on the storey the thing stands on.
+	// The neutral ramp answers for a resting edge, the primary ramp for a
+	// focus ring, and each storey names its own pair — so a control put in a
+	// dialog takes dialog-border at rest and dialog-focus-ring focused, and
+	// the sheet's two sides are one design rather than two tables that happen
+	// to agree.
+	//
+	// control-border is the ground-floor answer for the row of controls that
 	// says what it is with a line — the unchecked box, the unselected radio,
 	// the text field, the dropdown trigger (components/input controlBorder):
 	// the neutral rung nearest step 500 that reaches 3:1 against the level-0
@@ -157,32 +165,43 @@ var pinRoles = []struct {
 	// scheme and 500 in the dark and needs to know nothing about either.
 	//
 	// card-border, dialog-border and popover-border are the same walk taken
-	// against a deeper storey: an outlined card's edge circles its level-1
-	// fill, a dialog's its level 2, a popover's its level 3, and each pattern
-	// paints the fill it is measured against. They are three tokens rather
-	// than one because the walk answers a deeper rung as the ground deepens —
-	// the light scheme's dialog and popover edges land a rung past the card's
-	// — and one token could only be right for one of them. The single rung
-	// they replaced measured 2.35 / 1.95 / 1.42:1 in the light scheme.
+	// against a deeper storey, and each serves both readings of "edge on that
+	// storey": the surface's own outline — an outlined card's edge circles
+	// its level-1 fill, a dialog's its level 2, a popover's its level 3, each
+	// pattern painting the fill it is measured against — and the resting edge
+	// of any control standing on it, which is the same line over the same
+	// ground and cannot sensibly be a second colour. A checkbox in a dialog
+	// therefore takes dialog-border, not control-border: the ground-floor rung
+	// measures 2.94:1 over a level-2 fill and 2.15:1 over a level-3 one in the
+	// light scheme, and the storey's own rung reads 4.51:1 and 3.30:1. They
+	// are three tokens rather than one because the walk answers a deeper rung
+	// as the ground deepens — the light scheme's dialog and popover edges land
+	// a rung past the card's — and one token could only be right for one of
+	// them. The single rung they replaced measured 2.35 / 1.95 / 1.42:1 in the
+	// light scheme.
 	//
 	// focus-ring is components/internal/focus's Ring: the primary rung
 	// nearest step 500 that reaches the same floor against the ground the
 	// ring lies on. The Surface storey, the app background, the level-1
 	// storey and a tonal button's tinted fill all answer with one rung per
-	// scheme, which is why one token serves every control here — and it is
-	// the ground components/input hands Ring for the checkbox, the radio,
-	// the text field and the dropdown, whatever they have been put on.
+	// scheme, which is why one token serves the whole ground floor — and it
+	// is what components/input hands Ring for the checkbox, the radio, the
+	// text field and the dropdown when nothing has told them otherwise.
 	//
-	// One ground does not answer with it: the accent fill a FILLED button's
-	// ring lies on. No rung that reads against the page reads against that
-	// fill, so it takes its own token. Two more do not either, and are
-	// recorded rather than fixed here: a ghost button's ring inside a
-	// level-2 or level-3 host circles that storey, where the surface rung
-	// measures 2.92:1 and 2.14:1 in the light scheme (5.06 and 3.46 in the
-	// dark) — under the floor, though far above the 1.42:1 the single
-	// neutral-500 ring this replaces measured there. Closing that needs the
-	// per-storey ring tokens the ghost's contextual wash overrides already
-	// have a shape for.
+	// dialog-focus-ring and popover-focus-ring are that walk one and two
+	// storeys further up, the primary counterparts of dialog-border and
+	// popover-border. They exist because the ground floor's rung does not
+	// carry: a control focused inside a level-2 or level-3 host circles that
+	// storey, where the page's ring measures 2.92:1 and 2.14:1 in the light
+	// scheme, and the storey's own answer reads 4.53:1 and 3.31:1. A dark
+	// scheme's ladder is shallower and its page rung already clears every
+	// storey (5.06 and 3.46:1), so the dark tokens repeat focus-ring's value
+	// — the derivation reporting that nothing needs to move there, which is
+	// the whole reason the sheet asks the ramp instead of naming a rung.
+	//
+	// One ground belongs to no storey: the accent fill a FILLED button's ring
+	// lies on. No rung that reads against the page reads against that fill, so
+	// it takes its own token whatever the button is standing on.
 	{"control-border", func(t tokens.ColorTokens) stdcolor.NRGBA {
 		return t.MarkOn(tokens.RoleNeutral, t.SurfaceAt(tokens.Level0), graphicFloor)
 	}},
@@ -197,6 +216,12 @@ var pinRoles = []struct {
 	}},
 	{"focus-ring", func(t tokens.ColorTokens) stdcolor.NRGBA {
 		return t.MarkOn(tokens.RolePrimary, t.Surface, graphicFloor)
+	}},
+	{"dialog-focus-ring", func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.MarkOn(tokens.RolePrimary, t.SurfaceAt(tokens.Level2), graphicFloor)
+	}},
+	{"popover-focus-ring", func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.MarkOn(tokens.RolePrimary, t.SurfaceAt(tokens.Level3), graphicFloor)
 	}},
 	{"focus-ring-on-accent", func(t tokens.ColorTokens) stdcolor.NRGBA {
 		return t.MarkOn(tokens.RolePrimary, t.SolidStateColor(tokens.RolePrimary, tokens.StateFocus), graphicFloor)
@@ -552,11 +577,12 @@ func stylesCSS(s Snapshot) string {
 // resolutions are per-register for the same reason. Selected resolves as
 // tokens.StateColor resolves StateSelected — the two-step walk pressed
 // takes. The form controls resolve as components/input does: Surface ground
-// under body text, the ramp's own measured answer (--color-control-border)
-// on the text field, the radio and the checkbox alike, neutral 700
-// placeholder and glyph, focus promoting the border
-// to the accent pin, disabled fading each colour to the disabled fraction
-// of its alpha. The checked checkbox carries the check mark the Gio side
+// under body text, the ramp's own measured answer on the text field, the
+// radio and the checkbox alike — taken against the storey the control stands
+// on, which is what --ground-border and --ground-focus-ring carry down from
+// a raised host — neutral 700 placeholder and glyph, focus promoting the
+// border to that storey's ring, disabled fading each colour to the disabled
+// fraction of its alpha. The checked checkbox carries the check mark the Gio side
 // strokes, drawn out of the icon set's grid as two gradient bands rather
 // than encoded as an image, so the layer stays literal-free.
 //
@@ -620,14 +646,14 @@ const componentClasses = `/* ---- Component classes ----
    centred on the control's edge, as the Gio side draws it. One width, one
    hue, one measured floor: the ring is the rung of the primary ramp
    nearest its mid-value step that still reaches 3:1 against the ground it
-   circles. Every ground in this layer answers with the one rung named by
-   var(--color-focus-ring), except the accent fill a filled button's ring
-   lies on: no rung that reads against the page reads against that fill, so
-   that one ground takes var(--color-focus-ring-on-accent), and it is the
-   same ring in the same place at the same width. A ghost's ring in a raised
-   host circles that storey and would walk one rung deeper again; the sheet
-   does not yet carry per-storey ring tokens, and the generator's comment
-   records what it measures there. */
+   circles. Which ground that is depends on where the control was put, so the
+   rules name var(--ground-focus-ring) — the storey-local pair declared below
+   — and fall back to var(--color-focus-ring), the ground floor's answer, for
+   a control nothing has raised. The one ground that belongs to no storey is
+   the accent fill a filled button's ring lies on: no rung that reads against
+   the page reads against that fill, so that one takes
+   var(--color-focus-ring-on-accent) wherever the button stands, and it is
+   the same ring in the same place at the same width. */
 .btn:focus-visible, .btn.is-focus {
   outline: var(--focus-ring-width) solid var(--color-focus-ring-on-accent);
   outline-offset: calc(var(--focus-ring-width) / -2);
@@ -636,9 +662,32 @@ const componentClasses = `/* ---- Component classes ----
 .btn.ghost:focus-visible, .btn.ghost.is-focus,
 .checkbox:focus-visible, .checkbox.is-focus,
 .radio:focus-visible, .radio.is-focus {
-  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline: var(--focus-ring-width) solid var(--ground-focus-ring, var(--color-focus-ring));
   outline-offset: calc(var(--focus-ring-width) / -2);
 }
+
+/* --ground-focus-ring and --ground-border are the storey-local pair, and the
+   whole of how a raised host reaches the controls inside it. --ground-border
+   is the neutral rung that reads on this storey and --ground-focus-ring the
+   primary one; both inherit, so a surface declares them once — in its own
+   rule, beside the --elevation-N it fills with — and every control below it
+   re-derives, with no descendant selector anywhere in this sheet. It is the
+   sheet's spelling of RenderState.Ground on the Gio side, which is why the
+   two carry the same word.
+
+   Nothing declares the pair at the root. A control that no raised host
+   contains stands on the ground floor, and the fallback inside each var() IS
+   the ground floor's answer — so the default is written once, at the point of
+   use, and cannot drift from the tokens the rules already name.
+
+   The two halves are the same walk against the same fill, which is why a
+   checkbox in a dialog wears the edge the dialog's own outline wears. The
+   ground floor's rungs do not carry that far: in the light scheme the page's
+   edge measures 2.94:1 over a level-2 fill and 2.15:1 over a level-3 one, and
+   its ring 2.92:1 and 2.14:1, all under the 3:1 a graphic owes its ground. A
+   dark scheme's ladder is shallower and its ground-floor rungs already clear
+   every storey, so the raised tokens repeat there and nothing moves — the
+   derivation reporting that nothing needs to. */
 
 /* Disabled is an opacity, not a ramp step: each colour keeps its hue and
    fades to the disabled fraction of its alpha. */
@@ -810,7 +859,7 @@ const componentClasses = `/* ---- Component classes ----
   appearance: none;
   min-height: var(--density-control-height);
   padding: calc(var(--density-padding-y) - 1px) calc(var(--space-3) - 1px);
-  border: 1px solid var(--color-control-border);
+  border: 1px solid var(--ground-border, var(--color-control-border));
   border-radius: var(--radius-md);
   background: var(--color-surface);
   color: var(--color-text);
@@ -822,19 +871,25 @@ const componentClasses = `/* ---- Component classes ----
 }
 .input::placeholder { color: var(--color-neutral-700); opacity: 1; }
 
-/* Focus promotes the border to the accent pin and doubles it to the 2 dp
-   the Gio side draws — the second pixel as an inset shadow, so the field's
-   outer geometry and text position do not move (Gio thickens the border
-   inward the same way). */
+/* Focus promotes the border to the ring and doubles it to the 2 dp the Gio
+   side draws — the second pixel as an inset shadow, so the field's outer
+   geometry and text position do not move (Gio thickens the border inward the
+   same way). The colour is the ring rule above, not the accent pin: a
+   promoted border IS the ring, and the accent pin is the seed a caller chose,
+   which measures as low as 1.00:1 against the surface it would be drawn on.
+   So the field takes the storey's measured rung like every other control —
+   and it is the storey rather than the field's own fill because that band has
+   the fill inside it and the host outside, and the storey is the harder of
+   the two. */
 .input:focus-visible, .input.is-focus {
   outline: none;
-  border-color: var(--color-accent);
-  box-shadow: inset 0 0 0 1px var(--color-accent);
+  border-color: var(--ground-focus-ring, var(--color-focus-ring));
+  box-shadow: inset 0 0 0 1px var(--ground-focus-ring, var(--color-focus-ring));
 }
 .input:disabled {
   background: color-mix(in srgb, var(--color-surface) var(--state-disabled-opacity), transparent);
   color: color-mix(in srgb, var(--color-text) var(--state-disabled-opacity), transparent);
-  border-color: color-mix(in srgb, var(--color-control-border) var(--state-disabled-opacity), transparent);
+  border-color: color-mix(in srgb, var(--ground-border, var(--color-control-border)) var(--state-disabled-opacity), transparent);
 }
 .input:disabled::placeholder {
   color: color-mix(in srgb, var(--color-neutral-700) var(--state-disabled-opacity), transparent);
@@ -867,10 +922,11 @@ const componentClasses = `/* ---- Component classes ----
 
 /* Checkbox (components/input checkbox.go): a 20 dp glyph (checkboxBoxSize
    — a component constant, not a token; it does not follow density) over
-   Surface. Unchecked, its 2 dp edge is --color-control-border, the
-   neutral rung the ramp answers with for a 3:1 graphic on the window
-   ground (600 in the light scheme, 500 in the dark) — the same edge the
-   radio, the text field and the dropdown trigger wear, all four asking the
+   Surface. Unchecked, its 2 dp edge is the neutral rung the ramp answers
+   with for a 3:1 graphic on the storey the box stands on — the ground
+   floor's --color-control-border (600 in the light scheme, 500 in the dark)
+   unless a raised host has re-pointed --ground-border. The radio, the text
+   field and the dropdown trigger wear that same edge, all four asking the
    ramp the one question rather than naming a rung between them.
    Checked, the box is the
    accent fill under a check mark in the on-accent pin, because a fill says
@@ -904,7 +960,7 @@ const componentClasses = `/* ---- Component classes ----
   width: 20px;  /* checkboxBoxSize / radioCircleSize: 20 dp */
   height: 20px;
   margin: 0;
-  border: 2px solid var(--color-control-border);
+  border: 2px solid var(--ground-border, var(--color-control-border));
   background: var(--color-surface);
   cursor: pointer;
 }
@@ -928,7 +984,7 @@ const componentClasses = `/* ---- Component classes ----
    layer geometry and the disabled-checked box would lose its mark. */
 .checkbox:disabled {
   cursor: default;
-  border-color: color-mix(in srgb, var(--color-control-border) var(--state-disabled-opacity), transparent);
+  border-color: color-mix(in srgb, var(--ground-border, var(--color-control-border)) var(--state-disabled-opacity), transparent);
   background-color: color-mix(in srgb, var(--color-surface) var(--state-disabled-opacity), transparent);
 }
 .checkbox:checked:disabled, .checkbox.is-checked:disabled {
@@ -950,7 +1006,7 @@ const componentClasses = `/* ---- Component classes ----
 }
 .radio:disabled {
   cursor: default;
-  border-color: color-mix(in srgb, var(--color-control-border) var(--state-disabled-opacity), transparent);
+  border-color: color-mix(in srgb, var(--ground-border, var(--color-control-border)) var(--state-disabled-opacity), transparent);
   background: color-mix(in srgb, var(--color-surface) var(--state-disabled-opacity), transparent);
 }
 .radio:checked:disabled, .radio.is-checked:disabled {
@@ -986,6 +1042,8 @@ const componentClasses = `/* ---- Component classes ----
   padding: var(--space-4);
   border: none;
   background: var(--elevation-2);
+  --ground-border: var(--color-dialog-border);
+  --ground-focus-ring: var(--color-dialog-focus-ring);
 }
 
 /* ---- Table ----
@@ -1263,7 +1321,7 @@ const componentClasses = `/* ---- Component classes ----
 .tab:focus-visible, .tab.is-focus,
 .crumb:focus-visible, .crumb.is-focus,
 .sidebar:focus-visible, .sidebar.is-focus {
-  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline: var(--focus-ring-width) solid var(--ground-focus-ring, var(--color-focus-ring));
   outline-offset: calc(var(--focus-ring-width) / -2);
 }
 
@@ -1319,6 +1377,8 @@ const componentClasses = `/* ---- Component classes ----
   border-radius: var(--radius-lg);
   background: var(--elevation-2);
   color: var(--color-text);
+  --ground-border: var(--color-dialog-border);
+  --ground-focus-ring: var(--color-dialog-focus-ring);
 }
 
 /* The header row (modal.go headerWidget): the title-medium title on the
@@ -1363,6 +1423,8 @@ const componentClasses = `/* ---- Component classes ----
   border-radius: var(--radius-md);
   background: var(--elevation-3);
   color: var(--color-text);
+  --ground-border: var(--color-popover-border);
+  --ground-focus-ring: var(--color-popover-focus-ring);
 }
 
 /* The tail (popover.go drawTail): a triangle 12 dp across the base and
