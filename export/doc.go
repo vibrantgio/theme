@@ -56,17 +56,23 @@
 //   - --radius-<key> from tokens.RadiusScale in Tailwind naming (none, sm,
 //     base, md, lg, xl, 2xl, 3xl, full), in px; Base is also theme.json's
 //     base radius parameter.
-//   - --elevation-<level> (0–3): the tonal surface fills, the DEFAULT
-//     elevation cue (E2.1). Each level is emitted as a var() reference —
-//     var(--color-bg) for level 0's bg-pin sentinel, var(--color-neutral-N)
-//     for the ramp steps — so the surfaces flip with .dark through the
-//     colour overrides and the sheet itself states that an elevation level
-//     is a neutral-ramp step.
-//   - --shadow-<level> (0–3): CSS box-shadow approximations of the dp
-//     depths, the OPT-IN cue floating transients (menus, dialogs, tooltips)
-//     layer over their tonal fill (E2.2). Each level's dp depth d becomes
+//   - --elevation-<storey> (floor, 0, 1, 2, 3): the tonal surface fills,
+//     the DEFAULT elevation cue (E2.1), ordered away from the desk and
+//     toward the reader per ADR-022 — the floor a window's chrome
+//     furniture wears, the paper at 0, then raised and floating. Read the
+//     five down and the fill gets lighter, in :root and in .dark alike.
+//     They are emitted as resolved hex in BOTH blocks, unlike the v0.1–v1.1
+//     sheets, where each was one var(--color-neutral-N) reference the .dark
+//     block flipped underneath: a storey is now placed against the
+//     Background pin in CIELAB L*, so the light scheme's storeys above the
+//     paper and the dark scheme's floor are not ramp steps at all and no
+//     var() chain over the ramp reaches them.
+//   - --shadow-<storey> (floor, 0, 1, 2, 3): CSS box-shadow approximations
+//     of the dp depths, the OPT-IN cue floating transients (menus, dialogs,
+//     tooltips) layer over their tonal fill (E2.2). The floor and level 0
+//     cast nothing. Each storey's dp depth d becomes
 //     "0 <d>px <2d>px 0 rgba(0, 0, 0, 0.2)" — y-offset the depth, blur
-//     twice it, no spread, black at 20% — and level 0 is "none".
+//     twice it, no spread, black at 20% — and a zero depth is "none".
 //   - --ease-<name> from tokens.MotionScale: the six MD3 easing presets as
 //     cubic-bezier() strings (standard and emphasized families, each plain
 //     / -accelerate / -decelerate).

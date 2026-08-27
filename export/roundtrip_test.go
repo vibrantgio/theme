@@ -145,18 +145,22 @@ func TestRoundTripColors(t *testing.T) {
 		}
 	}
 
-	// The dark block carries exactly the colour overrides — every variable
-	// it declares must exist in :root, and nothing but colours may differ
-	// per mode.
+	// The dark block carries exactly the overrides that resolve against a
+	// scheme — every variable it declares must exist in :root, and nothing
+	// but a colour or an elevation storey may differ per mode. The storeys
+	// joined the list in AU1.2: since ADR-022 a storey is placed against
+	// the Background pin rather than named as a ramp step, so it resolves
+	// per scheme like the walked pins do and cannot be a var() reference
+	// the .dark block flips underneath.
 	for name := range dark {
 		if _, ok := root[name]; !ok {
 			t.Errorf(".dark declares %s which :root does not", name)
 		}
-		if !strings.HasPrefix(name, "--color-") {
-			t.Errorf(".dark declares non-colour variable %s", name)
+		if !strings.HasPrefix(name, "--color-") && !strings.HasPrefix(name, "--elevation-") {
+			t.Errorf(".dark declares non-scheme variable %s", name)
 		}
 	}
-	if want := len(rampRoles)*9 + len(pinRoles); len(dark) != want {
+	if want := len(rampRoles)*9 + len(pinRoles) + len(elevationLevels); len(dark) != want {
 		t.Errorf(".dark declares %d variables, want %d", len(dark), want)
 	}
 }
@@ -234,44 +238,46 @@ func TestRoundTripScales(t *testing.T) {
 	}
 }
 
-// TestRoundTripElevationSurfaces asserts the tonal --elevation-* variables
-// are var() references that resolve, per mode, to exactly the colour
-// SurfaceAt returns — the sheet's default elevation cue cannot drift from
-// the Go resolver.
+// TestRoundTripElevationSurfaces asserts every --elevation-* variable is a
+// literal that equals, in its own block, exactly the colour SurfaceAt
+// returns for that scheme — the sheet's default elevation cue cannot drift
+// from the Go resolver.
+//
+// They were var() references into the neutral ramp through v1.1, one
+// declaration in :root that the .dark block flipped by overriding the
+// ramp underneath it. ADR-022 took that away: a storey is placed against
+// the Background pin in CIELAB L*, so the light scheme's storeys above the
+// paper and the dark scheme's floor are not ramp steps at all and no
+// var() chain reaches them. Each block states its own five.
+//
+// The ladder is also asserted here in the direction ADR-022 orders it:
+// read down the storeys and the fill gets lighter, in the :root block and
+// in the .dark one, with no mirror clause between them.
 func TestRoundTripElevationSurfaces(t *testing.T) {
 	snap, sheet, _ := writeDefault(t)
 	root, dark := sheet[":root"], sheet[".dark"]
 
-	for _, level := range elevationLevels {
-		name := "--elevation-" + level.name
-
-		// Structurally: the reference the model dictates.
-		want := fmt.Sprintf("var(--color-neutral-%d)", snap.Elevation.SurfaceStep(level.level))
-		if snap.Elevation.SurfaceStep(level.level) == 0 {
-			want = "var(--color-bg)"
-		}
-		if got := root[name]; got != want {
-			t.Errorf("%s = %q, want %q", name, got, want)
-		}
-
-		// Resolved: chase the reference in each mode's variables and compare
-		// with SurfaceAt. Dark falls back to :root for anything .dark does
-		// not override, mirroring the cascade.
-		ref := strings.TrimSuffix(strings.TrimPrefix(root[name], "var("), ")")
-		if _, ok := root[ref]; !ok {
-			t.Fatalf("%s references %s, which :root does not declare", name, ref)
-		}
-		modes := []struct {
-			scheme tokens.ColorTokens
-			vars   map[string]string
-		}{{snap.Light, root}, {snap.Dark, dark}}
-		for i, mode := range modes {
-			hex, ok := mode.vars[ref]
+	for _, mode := range []struct {
+		name   string
+		scheme tokens.ColorTokens
+		vars   map[string]string
+	}{{":root", snap.Light, root}, {".dark", snap.Dark, dark}} {
+		var last float64 = -1
+		for _, level := range elevationLevels {
+			name := "--elevation-" + level.name
+			got, ok := mode.vars[name]
 			if !ok {
-				hex = root[ref]
+				t.Fatalf("%s does not declare %s; every scheme states its own ladder", mode.name, name)
 			}
-			if want := wantHex(mode.scheme.SurfaceAt(level.level)); hex != want {
-				t.Errorf("%s (mode %d) resolves to %q, want SurfaceAt = %q", name, i, hex, want)
+			fill := mode.scheme.SurfaceAt(level.level)
+			if want := wantHex(fill); got != want {
+				t.Errorf("%s %s = %q, want SurfaceAt = %q", mode.name, name, got, want)
+			}
+			if l, _, _ := color.LabFromNRGBA(fill); l <= last {
+				t.Errorf("%s %s is L*%.2f, not lighter than the storey below it (L*%.2f)",
+					mode.name, name, l, last)
+			} else {
+				last = l
 			}
 		}
 	}
@@ -752,11 +758,14 @@ func TestThemeJSONReproduces(t *testing.T) {
 		t.Errorf("density.minHitTarget = %v, want %v", p.Density.MinHitTarget, tokens.MinHitTarget)
 	}
 
-	// Elevation: surface step and shadow dp per level, off the captured
-	// scale through the same accessors SurfaceAt uses.
+	// Elevation: the storey fill per scheme and the shadow dp per storey,
+	// off the captured snapshot through the same resolver the sheet uses.
 	for i, level := range elevationLevels {
-		if got, want := p.Elevation.SurfaceSteps[i], snap.Elevation.SurfaceStep(level.level); got != want {
-			t.Errorf("elevation.surfaceSteps[%d] = %d, want %d", i, got, want)
+		if got, want := p.Elevation.Surfaces.Light[i], hexRGB(snap.Light.SurfaceAt(level.level)); got != want {
+			t.Errorf("elevation.surfaces.light[%d] = %q, want %q", i, got, want)
+		}
+		if got, want := p.Elevation.Surfaces.Dark[i], hexRGB(snap.Dark.SurfaceAt(level.level)); got != want {
+			t.Errorf("elevation.surfaces.dark[%d] = %q, want %q", i, got, want)
 		}
 		if got, want := p.Elevation.ShadowDp[i], float64(snap.Elevation.Dp(level.level)); got != want {
 			t.Errorf("elevation.shadowDp[%d] = %v, want %v", i, got, want)

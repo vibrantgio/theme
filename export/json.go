@@ -76,13 +76,27 @@ type DensityMetrics struct {
 	PaddingY      float64 `json:"paddingY"`
 }
 
-// ElevationParams pairs, indexed by level 0–3, the neutral-ramp surface
-// step (0 = the bg pin sentinel) with the dp shadow depth. The arrays were
-// six long through v0.1.x, when MD3 levels 4 and 5 survived as clamps onto
-// level 3; F3.3 deleted them and the ladder is four storeys.
+// ElevationParams records the ladder, indexed the way ADR-022 orders it —
+// the floor first, then levels 0 through 3, away from the desk and toward
+// the reader. Surfaces carries each storey's realized fill per scheme and
+// ShadowDp the storey's shadow depth, which is mode-invariant.
+//
+// The arrays were six long through v0.1.x, when MD3 levels 4 and 5
+// survived as clamps onto level 3; F3.3 deleted them, and AU1.2 added the
+// floor storey underneath the paper, so the ladder is five. Surfaces
+// replaced a surfaceSteps array of neutral-ramp step numbers in the same
+// task: a storey is no longer a ramp step in both schemes, so the step
+// number could not name it and the resolved colour is what a consumer
+// actually needs.
 type ElevationParams struct {
-	SurfaceSteps [4]int     `json:"surfaceSteps"`
-	ShadowDp     [4]float64 `json:"shadowDp"`
+	Surfaces ModeSurfaces `json:"surfaces"`
+	ShadowDp [5]float64   `json:"shadowDp"`
+}
+
+// ModeSurfaces carries the ladder's five storey fills, as hex, per scheme.
+type ModeSurfaces struct {
+	Light [5]string `json:"light"`
+	Dark  [5]string `json:"dark"`
 }
 
 // MotionParams records the motion set.
@@ -235,7 +249,8 @@ func parameters(s Snapshot) Parameters {
 	setting, _ := densitySetting(s.Density) // Capture already validated it
 	var elev ElevationParams
 	for i, level := range elevationLevels {
-		elev.SurfaceSteps[i] = s.Elevation.SurfaceStep(level.level)
+		elev.Surfaces.Light[i] = hexRGB(s.Light.SurfaceAt(level.level))
+		elev.Surfaces.Dark[i] = hexRGB(s.Dark.SurfaceAt(level.level))
 		elev.ShadowDp[i] = f64(s.Elevation.Dp(level.level))
 	}
 	return Parameters{

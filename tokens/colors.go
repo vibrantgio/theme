@@ -154,7 +154,13 @@ type ColorTokens struct {
 	// and Divider resolve from Neutral ramp steps at construction.
 	Background color.NRGBA // pinned app background
 	Text       color.NRGBA // pinned body text over Background
-	Surface    color.NRGBA // card / raised surface — Ramps.Neutral.Step(200)
+	// Surface is the neutral ramp's step 200 — the rung one step off the
+	// app ground. It is a RAMP ALIAS, not a storey: since ADR-022 the
+	// elevation ladder is anchored on the Background pin and placed in
+	// CIELAB L*, so which storey this rung happens to carry depends on the
+	// scheme (light furniture wears it; dark raised surfaces do). Ask
+	// [ColorTokens.SurfaceAt] for a storey.
+	Surface color.NRGBA
 	// Divider is the subtle border / separator — Ramps.Neutral.Step(300),
 	// except in the high-contrast variant, which resolves it from the
 	// strong-border step 500 (see FromSeedHighContrast).

@@ -29,9 +29,10 @@ func readmeMD(s Snapshot) string {
 		"it by hand — regenerate it.\n\n")
 
 	b.WriteString("## Files\n\n" +
-		"- `styles.css` — the token sheet: one `:root` block (light colours plus every\n" +
-		"  mode-invariant scale, comfortable density), one `.dark` class override block\n" +
-		"  (the paired dark colours only) and one `.compact` class override block (the\n" +
+		"- `styles.css` — the token sheet: one `:root` block (light colours and\n" +
+		"  elevation storeys plus every mode-invariant scale, comfortable density),\n" +
+		"  one `.dark` class override block (the paired dark colours and storeys)\n" +
+		"  and one `.compact` class override block (the\n" +
 		"  compact density metrics only). Add `class=\"dark\"` to the root element to\n" +
 		"  switch modes, `class=\"compact\"` to any subtree to densify it; the two\n" +
 		"  switches are orthogonal. Below the token blocks sits the component class\n" +
@@ -75,8 +76,8 @@ func readmeMD(s Snapshot) string {
 	fmt.Fprintf(&b, "| `--density-<metric>` | %s, `--density-min-hit-target` | control metrics, px; `:root` is comfortable, `.compact` overrides all but the hit-target floor |\n", joinTokens("--density-", densityNames()))
 	fmt.Fprintf(&b, "| `--space-<key>` | %s | the 4-pt spacing grid, px |\n", joinTokens("--space-", spaceNames()))
 	fmt.Fprintf(&b, "| `--radius-<key>` | %s | corner radii, Tailwind naming, px |\n", joinTokens("--radius-", radiusNames()))
-	fmt.Fprintf(&b, "| `--elevation-<level>` | %s | tonal surface fills — the DEFAULT elevation cue; `var()` references into the neutral ramp (level 0 is the bg pin), so they flip with `.dark` |\n", joinTokens("--elevation-", elevationNames()))
-	fmt.Fprintf(&b, "| `--shadow-<level>` | %s | dp box-shadows — the OPT-IN cue for floating transients (menus, dialogs, tooltips) layered over the tonal fill; resting surfaces use the fill alone |\n", joinTokens("--shadow-", elevationNames()))
+	fmt.Fprintf(&b, "| `--elevation-<storey>` | %s | tonal surface fills — the DEFAULT elevation cue; ordered away from the desk and toward the reader, and resolved per scheme, so both blocks state their own five |\n", joinTokens("--elevation-", elevationNames()))
+	fmt.Fprintf(&b, "| `--shadow-<storey>` | %s | dp box-shadows — the OPT-IN cue for floating transients (menus, dialogs, tooltips) layered over the tonal fill; resting surfaces use the fill alone |\n", joinTokens("--shadow-", elevationNames()))
 	fmt.Fprintf(&b, "| `--ease-<name>` | %s | MD3 easing presets as `cubic-bezier()`; emphasized is the documented single-bezier stand-in for MD3's two-segment path |\n", joinTokens("--ease-", easeNames()))
 	fmt.Fprintf(&b, "| `--duration-<stop>` | %s | MD3-pinned duration stops, ms; the reduce-motion variant zeroes them |\n", joinTokens("--duration-", durationNames()))
 	b.WriteString("| interaction states | `--focus-ring-width`, `--state-disabled-opacity` | the ring's 2 px stroke and the disabled fade fraction for `color-mix()` — both mode-invariant, unlike the ring's colour, which is measured against a ground that flips and so sits with the colours above |\n")
@@ -85,7 +86,7 @@ func readmeMD(s Snapshot) string {
 	b.WriteString("## Step purposes\n\n" +
 		"| Step | Job |\n| --- | --- |\n" +
 		"| 100 | tinted fill · app ground |\n" +
-		"| 200 | tinted fill · card / raised surface |\n" +
+		"| 200 | tinted fill · one step off the app ground |\n" +
 		"| 300 | hover · subtle border, separator |\n" +
 		"| 400 / 600 / 800 | intermediate steps; interaction states walk through them |\n" +
 		"| 500 | mid-value reference · strong border |\n" +
@@ -159,15 +160,28 @@ func readmeMD(s Snapshot) string {
 		"gap.\n\n")
 
 	b.WriteString("## Elevation: default vs opt-in\n\n" +
-		"Elevation is tonal: a raised surface separates from its ground by\n" +
-		"colour, one neutral-ramp step per storey — level 0 is the bg pin over the\n" +
-		"step-100 ground and levels 1–3 fill with neutral 200/300/400. The ladder\n" +
-		"stops at 3: desktop has no six-storey stack. `--elevation-N`\n" +
-		"is that surface fill and the **default** cue; because the light and dark\n" +
-		"ramps are paired scales, the same level reads as raised in both modes with\n" +
-		"no mode-specific rule. The dp shadow is the **opt-in** secondary cue,\n" +
-		"reserved for floating transients — menus, dialogs, tooltips — which layer\n" +
-		"`--shadow-N` over their tonal fill. Resting surfaces never cast one.\n\n")
+		"Elevation is tonal, and it climbs toward the light: **in both schemes, a\n" +
+		"surface nearer the viewer is lighter.** One perceptual rule, no second\n" +
+		"rule for dark mode and no mirror — a surface nearer the viewer catches\n" +
+		"more light, and reflectance does not invert when the room goes dark.\n" +
+		"Five storeys, ordered away from the desk and toward the reader:\n\n" +
+		"| Storey | What wears it |\n| --- | --- |\n" +
+		"| `--elevation-floor` | chrome furniture — sidebars, rails, toolbars, inspectors; the window's darkest region |\n" +
+		"| `--elevation-0` | the paper: the content ground, the bg pin |\n" +
+		"| `--elevation-1` | raised insets on the paper — cards, code fences, text fields |\n" +
+		"| `--elevation-2` | floating — dialogs, toasts |\n" +
+		"| `--elevation-3` | floating, nearest the scheme's light extreme — menus, popovers |\n\n" +
+		"Read that down and the fill gets lighter, in `:root` and in `.dark`\n" +
+		"alike. The ladder stops at 3: desktop has no six-storey stack. Note the\n" +
+		"sizes — a light scheme has spent almost all of the tonal axis on its\n" +
+		"paper, so its storeys above the paper are separated by a fraction of an\n" +
+		"L\\* and the derived hairline (`--card-border`, `--dialog-border`,\n" +
+		"`--popover-border`) is what says where a surface is. That is what the\n" +
+		"desktop applications this system is judged against measure too.\n\n" +
+		"The surface fill is the **default** cue. The dp shadow is the **opt-in**\n" +
+		"secondary cue, reserved for floating transients — menus, dialogs,\n" +
+		"tooltips — which layer `--shadow-N` over their tonal fill. Resting\n" +
+		"surfaces never cast one.\n\n")
 
 	b.WriteString("## Density\n\n" +
 		"Two published settings, one variable family: comfortable (36 dp controls,\n" +

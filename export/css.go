@@ -171,33 +171,45 @@ var pinRoles = []struct {
 	// pattern painting the fill it is measured against — and the resting edge
 	// of any control standing on it, which is the same line over the same
 	// ground and cannot sensibly be a second colour. A checkbox in a dialog
-	// therefore takes dialog-border, not control-border: the ground-floor rung
-	// measures 2.94:1 over a level-2 fill and 2.15:1 over a level-3 one in the
-	// light scheme, and the storey's own rung reads 4.51:1 and 3.30:1. They
-	// are three tokens rather than one because the walk answers a deeper rung
-	// as the ground deepens — the light scheme's dialog and popover edges land
-	// a rung past the card's — and one token could only be right for one of
-	// them. The single rung they replaced measured 2.35 / 1.95 / 1.42:1 in the
-	// light scheme.
+	// therefore takes dialog-border, not control-border, and asks its own
+	// question rather than inheriting an answer.
+	//
+	// Since ADR-022 the four answers agree, and the agreement is worth
+	// reading rather than collapsing. While the ladder mirrored, the light
+	// scheme DEEPENED as it climbed, so each storey demanded a deeper rung
+	// than the storey below it and the tokens genuinely parted — the
+	// ground-floor rung measured 2.94:1 over the old level-2 fill and
+	// 2.15:1 over the old level-3 one, under the floor at both. Now that
+	// the ladder lightens toward the viewer in both schemes, a light
+	// window's hardest ground is its FLOOR and a dark window's is its TOP
+	// storey, and the rung that clears the hardest clears every other by
+	// more. One neutral rung therefore serves a whole window: 600 in the
+	// light scheme (3.55:1 on the floor, rising to 4.35:1 on a popover) and
+	// 500 in the dark (3.47:1 on a popover, rising to 7.30:1 on the floor).
+	// Four tokens still ask four questions and the sheet still states four
+	// answers; that they come back equal today is the derivation reporting
+	// that this window needs one edge colour, not a licence to name one.
 	//
 	// focus-ring is components/internal/focus's Ring: the primary rung
 	// nearest step 500 that reaches the same floor against the ground the
-	// ring lies on. The Surface storey, the app background, the level-1
-	// storey and a tonal button's tinted fill all answer with one rung per
-	// scheme, which is why one token serves the whole ground floor — and it
-	// is what components/input hands Ring for the checkbox, the radio, the
-	// text field and the dropdown when nothing has told them otherwise.
+	// ring lies on. The Surface rung, the app background, the raised storey
+	// and a tonal button's tinted fill all answer with one rung per scheme,
+	// which is why one token serves the ground floor — and it is what
+	// components/input hands Ring for the checkbox, the radio, the text
+	// field and the dropdown when nothing has told them otherwise.
 	//
 	// dialog-focus-ring and popover-focus-ring are that walk one and two
 	// storeys further up, the primary counterparts of dialog-border and
-	// popover-border. They exist because the ground floor's rung does not
-	// carry: a control focused inside a level-2 or level-3 host circles that
-	// storey, where the page's ring measures 2.92:1 and 2.14:1 in the light
-	// scheme, and the storey's own answer reads 4.53:1 and 3.31:1. A dark
-	// scheme's ladder is shallower and its page rung already clears every
-	// storey (5.06 and 3.46:1), so the dark tokens repeat focus-ring's value
-	// — the derivation reporting that nothing needs to move there, which is
-	// the whole reason the sheet asks the ramp instead of naming a rung.
+	// popover-border. They were minted while a light dialog was DARKER than
+	// its page and the page's ring could not carry onto it (2.92:1 and
+	// 2.14:1 there, against the storey's own 4.53:1 and 3.31:1). Under the
+	// linchpin a dialog is lighter than its page, so the page's rung clears
+	// it with room to spare and all three tokens repeat one value per
+	// scheme — 4.18:1 and 4.33:1 in the light, 5.06:1 and 3.46:1 in the
+	// dark. They stay as tokens for the reason they were separate to begin
+	// with: the sheet asks the ramp per storey rather than naming a rung,
+	// so a re-seeding or a variant that does part them is answered without
+	// a second edit here.
 	//
 	// One ground belongs to no storey: the accent fill a FILLED button's ring
 	// lies on. No rung that reads against the page reads against that fill, so
@@ -304,13 +316,22 @@ var radiusKeys = []struct {
 	{"full", func(r tokens.RadiusScale) float32 { return r.Full }},
 }
 
-// elevationLevels orders the elevation levels under their level numbers;
-// each level's surface step and shadow dp are read off the snapshot's
-// ElevationScale through its accessors.
+// elevationLevels orders the ladder's storeys away from the desk and
+// toward the reader (ADR-022): the floor under its own name, then the four
+// numbered storeys. Each storey's fill is resolved per scheme through
+// [tokens.ColorTokens.SurfaceAt] and its shadow dp read off the snapshot's
+// ElevationScale.
+//
+// The floor is spelled out rather than numbered because the numbering
+// counts storeys from the paper and the floor is below it: naming it
+// "-1" in a CSS variable would read as an arithmetic accident, and
+// renumbering the four above it would rename every token in every sheet
+// already published to say the same thing.
 var elevationLevels = []struct {
 	name  string
 	level tokens.ElevationLevel
 }{
+	{"floor", tokens.LevelFloor},
 	{"0", tokens.Level0},
 	{"1", tokens.Level1},
 	{"2", tokens.Level2},
@@ -364,20 +385,6 @@ func boxShadow(dp float32) string {
 	return fmt.Sprintf("0 %s %s 0 rgba(0, 0, 0, 0.2)", px(dp), px(2*dp))
 }
 
-// surfaceVarRef renders an elevation level's surface fill as a reference
-// into the colour families — var(--color-bg) for the step-0 sentinel (the
-// Background pin), var(--color-neutral-<step>) otherwise. Emitting a
-// reference rather than a resolved hex keeps --elevation-* mode-invariant:
-// the .dark block overrides the colour variables and every elevation
-// surface flips with them, which is exactly the tonal model (an elevation
-// level IS a neutral-ramp step).
-func surfaceVarRef(step int) string {
-	if step == 0 {
-		return "var(--color-bg)"
-	}
-	return fmt.Sprintf("var(--color-neutral-%d)", step)
-}
-
 // cubicBezier renders a Bezier as the CSS cubic-bezier() function.
 func cubicBezier(bz tokens.Bezier) string {
 	return fmt.Sprintf("cubic-bezier(%s, %s, %s, %s)",
@@ -404,13 +411,27 @@ func colorVars(t tokens.ColorTokens) []cssVar {
 	for _, pin := range pinRoles {
 		vars = append(vars, cssVar{"--color-" + pin.name, hexRGB(pin.pick(t))})
 	}
+	// The elevation ladder's surface fills. They live with the colours
+	// rather than with the mode-invariant scales because since ADR-022 a
+	// storey is not a ramp step in both schemes: the ladder is anchored on
+	// the Background pin and placed in CIELAB L*, so the light scheme's
+	// storeys above the paper are off the ramp and the dark scheme's floor
+	// is off it below. Through v1.1 these were emitted once as
+	// var(--color-neutral-N) references that flipped with the .dark block;
+	// there is no var() arithmetic over the ramp steps that could reach the
+	// new values, so each scheme states its own, exactly as the walked pins
+	// and the derived borders beside them do.
+	for _, level := range elevationLevels {
+		vars = append(vars, cssVar{"--elevation-" + level.name, hexRGB(t.SurfaceAt(level.level))})
+	}
 	return vars
 }
 
 // scaleVars renders the mode-invariant families: fonts, density
-// (comfortable — the :root setting), spacing, radius, the tonal elevation
-// surfaces (the default cue), the dp shadows (the opt-in cue for floating
-// transients, per E2.2), and the motion set.
+// (comfortable — the :root setting), spacing, radius, the dp shadows (the
+// opt-in cue for floating transients, per E2.2), and the motion set. The
+// tonal surface fills the shadows layer over are NOT here: since ADR-022 a
+// storey resolves per scheme, so --elevation-* sits with the colours.
 func scaleVars(s Snapshot) []cssVar {
 	vars := []cssVar{
 		{"--font-family", strconv.Quote(s.Typography.BodyLarge.Typeface)},
@@ -432,9 +453,6 @@ func scaleVars(s Snapshot) []cssVar {
 	}
 	for _, key := range radiusKeys {
 		vars = append(vars, cssVar{"--radius-" + key.name, px(key.pick(s.Radius))})
-	}
-	for _, level := range elevationLevels {
-		vars = append(vars, cssVar{"--elevation-" + level.name, surfaceVarRef(s.Elevation.SurfaceStep(level.level))})
 	}
 	for _, level := range elevationLevels {
 		vars = append(vars, cssVar{"--shadow-" + level.name, boxShadow(s.Elevation.Dp(level.level))})
@@ -1019,9 +1037,11 @@ const componentClasses = `/* ---- Component classes ----
    — no cast shadow in either variant, because a
    card is raised, not floating; the dp shadows stay reserved for surfaces
    that can leave (menus, dialogs, toasts). The default outlined card fills
-   at level 1 (--elevation-1, the neutral-200 storey) under a 1 dp neutral
-   500 strong stroke; .elevated trades the stroke for one storey deeper
-   (--elevation-2, neutral 300). Radius Lg, an S4 inset, S3 gaps between the
+   at level 1 (--elevation-1, the raised storey) under a 1 dp neutral
+   500 strong stroke; .elevated trades the stroke for one storey nearer the
+   viewer (--elevation-2). Since ADR-022 a storey is lighter than the one
+   below it in both schemes, so in the light scheme the card is a whisper
+   above the page and the stroke says most of where it is. Radius Lg, an S4 inset, S3 gaps between the
    slots — exactly drawCard's rad.Lg / sp.S4 / sp.S3. The Gio stroke is
    centred on the card's edge while the CSS border lies inside it, so the
    outlined padding gives back the border's 1px and the slots land where the
@@ -1047,9 +1067,13 @@ const componentClasses = `/* ---- Component classes ----
 }
 
 /* ---- Table ----
-   patterns/table: the whole grid grounds on the Surface pin (drawTable);
-   the header band fills neutral 300 under neutral 700 label-large text
-   (drawHeaderRow / drawHeaderCell). Header and body rows are each exactly
+   patterns/table: the whole grid grounds on the raised storey (drawTable
+   fills Props.Ground, which defaults to level 1) and the header band on
+   the storey above it (drawHeaderRow walks Ground.Raised(), never an
+   absolute step), under neutral 700 label-large text (drawHeaderCell).
+   Both name --elevation-N rather than a ramp step, because since ADR-022 a
+   storey is not a ramp step in both schemes and a table that named one
+   would read as a mirror of itself between the two. Header and body rows are each exactly
    one control height tall — the row-height rule (list.RowHeight), so .compact
    re-pitches the whole grid — and every row closes with a 1 dp Divider rule
    drawn inside its height. Cells inset horizontally by S3 (cellPadDp,
@@ -1064,7 +1088,7 @@ const componentClasses = `/* ---- Component classes ----
   border-spacing: 0;
   table-layout: fixed;
   width: 100%;
-  background: var(--color-surface);
+  background: var(--elevation-1);
   color: var(--color-text);
   font-family: var(--font-family);
   font-size: var(--font-body-medium-size);
@@ -1084,7 +1108,7 @@ const componentClasses = `/* ---- Component classes ----
 }
 .table th {
   position: relative;
-  background: var(--color-neutral-300);
+  background: var(--elevation-2);
   color: var(--color-neutral-700);
   font-size: var(--font-label-large-size);
   line-height: var(--font-label-large-line-height);
@@ -1178,7 +1202,7 @@ const componentClasses = `/* ---- Component classes ----
   border-bottom-color: var(--color-accent);
 }
 
-/* Tabs (patterns/tabs tabs.go): the strip is a Surface row of tab cells
+/* Tabs (patterns/tabs tabs.go): the strip is a raised row of tab cells
    exactly ControlHeight tall (drawTabs pins stripH to the density), each
    cell its label plus 2*S3 horizontal padding with the label centred in the
    height that remains above the 2 dp underline slot — which border-box
@@ -1189,7 +1213,7 @@ const componentClasses = `/* ---- Component classes ----
   display: flex;
   align-items: stretch;
   height: var(--density-control-height);
-  background: var(--color-surface);
+  background: var(--elevation-1);
 }
 .tab {
   height: 100%;

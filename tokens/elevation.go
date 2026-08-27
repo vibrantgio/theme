@@ -1,46 +1,140 @@
-// Tonal elevation (goal G-E2, task E2.1): elevation is a surface step.
+// Tonal elevation (goal G-E2, task E2.1; re-founded by ADR-022, AU1.2):
+// elevation is a surface step, and the step goes toward the light.
 //
-// Per ADR-007, a raised surface separates from its ground primarily by
-// colour — each elevation level fills with a step of the neutral ramp, one
-// step deeper per storey — and only secondarily by a cast shadow. Because
-// the light and dark ramps are paired scales (same step, same job), the
-// same level reads as "raised" in both modes: a level-1 card is a light
-// card on a lighter ground in light mode and a dark card on a darker
-// ground in dark mode, with no mode-specific rule. The dp shadow survives
-// as the secondary cue and is what effects/depth still renders.
+// Per ADR-007 a raised surface separates from its ground primarily by
+// colour and only secondarily by a cast shadow. ADR-022 fixes which way
+// that colour moves: IN BOTH SCHEMES, A SURFACE NEARER THE VIEWER IS
+// LIGHTER. Elevation reads as elevation because a surface nearer the
+// viewer catches more light, and reflectance does not invert when the room
+// goes dark; what a dark scheme inverts is the ink, which the paired ramps
+// already handle. There is no second rule for dark mode and no mirror.
+//
+// The consequence that reorganises the ladder: chrome furniture is the
+// window's FLOOR, not a storey above the paper. A sidebar is the desk the
+// document lies on, so it is darker than the document in both schemes.
+// Five storeys, ordered away from the desk and toward the reader:
+//
+//	LevelFloor   chrome furniture — sidebars, rails, toolbars, inspectors
+//	Level0       the paper: the content ground, the Background pin
+//	Level1       raised: filled insets on the paper — cards, fences, fields
+//	Level2       floating: dialogs and toasts
+//	Level3       floating, the top of the ladder: menus and popovers
+//
+// Read that down and lightness increases, in the light scheme and in the
+// dark one. The dp shadow survives as the secondary cue and is what
+// effects/depth still renders — opt-in vibrancy marking what floats and
+// can leave, never a substitute for a storey.
+//
+// # Where the storeys land, and why they are no longer ramp steps
+//
+// Through v1.1 a storey WAS a neutral-ramp step: level 1 filled at
+// neutral 200, level 2 at 300, level 3 at 400. That worked only because
+// the ladder was allowed to mirror — walking the ramp upward darkens in
+// the light scheme and lightens in the dark one, which is precisely the
+// rule ADR-022 abolishes. Under one direction the ramp can only express
+// half the ladder: the light ramp descends in lightness from its 100 stop,
+// so a light scheme's rungs ABOVE the paper are off it entirely, and the
+// dark ramp ascends, so a dark scheme's floor is off it below.
+//
+// So the ladder is anchored on the Background pin and measured in CIELAB
+// L\*, not in ramp indices — but its shape is still read off the ramp
+// rather than invented, which is what keeps it generative:
+//
+//   - THE FLOOR is one band step below the pin, toward the scheme's dark
+//     extreme, where the band step is the ramp's own first surface
+//     interval |L*(200) − L*(100)|. In the light scheme that lands exactly
+//     on neutral 200 (#E8E8E8 under the #F6F6F6 paper) — the arrangement
+//     the stored macOS references already measure, and the reason this
+//     re-founding costs the light scheme nothing at rest. In the dark
+//     scheme it lands below neutral 100, at a value the ramp does not
+//     carry, which is where dark furniture belongs and where the platform
+//     puts its own (a Settings sidebar sits 3.8 L\* under its content
+//     ground).
+//
+//   - THE RUNGS ABOVE THE PIN take the surface band's own shape — the
+//     relative spacing of neutral 100/200/300/400 — scaled into whatever
+//     headroom the scheme has above its pin. The ceiling is the lightest
+//     tone the band itself reaches; where the band offers none because the
+//     pin IS its lightest tone, the ceiling is the tonal axis, L\* 100.
+//     In the dark scheme the band's own top is the ceiling, so the three
+//     rungs land back exactly on neutral 200, 300 and 400 — the values
+//     that scheme already carried, now worn by what is raised instead of
+//     by the furniture. In the light scheme the pin has spent almost all
+//     of the axis already, so the same shape compresses into the 3.1 L\*
+//     that remain: the storeys above the paper are whispers.
+//
+// # The light scheme's headroom, and what the whisper costs
+//
+// Three strategies were on the table (ADR-022, "The light scheme's
+// headroom"). This file takes the first: WHISPER STEPS TOWARD WHITE, WITH
+// THE DERIVED HAIRLINES CARRYING THE VISIBLE EDGE.
+//
+// The trade, stated plainly. What it costs: a light-scheme card, fence,
+// field or dialog has almost no fill signal — 0.7, 1.6 and 3.1 L\* above
+// the paper — so what says where it is, is its MarkOn-derived border and
+// its corner radius. Any construct that takes a storey without taking a
+// hairline (an inline code chip, say) has to find its separation elsewhere
+// — a tint, a border of its own, or the mono face — and that is a real
+// obligation this strategy hands the libraries. What it buys: no
+// light-mode surface is ever darker than what it lies on, which is the
+// defect five independent reviews reported in their own words; every light
+// resting arrangement keeps its pixels; and the strategy has a working
+// example behind it — the reference application measures 0.4 L\* between
+// its page and its fence and 0.4 and 1.1 L\* across sidebar, content and
+// composer, with hairlines doing the separating.
+//
+// The two it declines. A FLOATER-ONLY SHADOW REVIVAL would make the light
+// scheme read elevation from shadows while the dark scheme reads it from
+// fills — a per-scheme rule, which is the mirror wearing different
+// clothes — and it says nothing at all about the raised-in-place surfaces
+// that cast no shadow by ADR-015's ruling, which is most of them.
+// RE-PINNING THE PAPER downward to make room repaints every light window
+// at rest, contradicts the one thing ADR-022 promises the light scheme
+// (chrome under paper keeps its pixels), and moves our content ground away
+// from the near-white the platform's own windows measure at.
 package tokens
 
 import (
 	"fmt"
 	"image/color"
+	"math"
+
+	vgcolor "github.com/vibrantgio/theme/color"
 )
 
-// ElevationScale pairs, per level, the neutral-ramp step of the level's
-// surface fill (the primary cue) with its shadow depth in dp (the
-// secondary cue).
+// ElevationScale carries each storey's shadow depth in dp — the secondary
+// cue, and since ADR-022 the only thing a scale holds.
 //
-// The ladder is four storeys, 0 through 3. MD3 levels 4 and 5 survived
-// through v0.1.x as clamps onto level 3's step, so that call sites written
-// against the MD3 numbering kept compiling; v0.2.0 deleted them, since a
-// desktop surface has no six-storey stack to describe. A call site that
-// named Level4 or Level5 meant "as raised as it gets" and should name
-// Level3.
+// The ladder is five storeys, LevelFloor through Level3. MD3 levels 4 and
+// 5 survived through v0.1.x as clamps onto level 3's step, so that call
+// sites written against the MD3 numbering kept compiling; v0.2.0 deleted
+// them, since a desktop surface has no six-storey stack to describe. A
+// call site that named Level4 or Level5 meant "as raised as it gets" and
+// should name Level3.
 //
-// The LevelN fields carry the dp depths — effects/depth's lookup and
-// theme/export's --shadow-* table read them — and the StepN fields the
-// paired surface steps. Prefer the Dp and SurfaceStep accessors over field
-// access in new code.
+// The StepN fields are what is left of the ladder's ramp-index era and
+// carry the values they always did. They describe the DARK scheme's
+// coincidence — where the storeys above the pin do land on neutral 200,
+// 300 and 400 — and they cannot describe the light scheme, whose storeys
+// above the pin are off the ramp entirely. Ask a palette for a storey:
+// [ColorTokens.SurfaceAt] for the fill and [ColorTokens.StateAt] for a
+// state walked from it. Prefer the Dp accessor over field access in new
+// code.
 type ElevationScale struct {
 	// Shadow depths in device-independent pixels, following Material
-	// Design 3 elevation levels 0–3. The secondary cue.
+	// Design 3 elevation levels 0–3, with the floor casting nothing: the
+	// window's desk is behind everything and has nothing to cast onto.
+	Floor  float32 // 0 dp
 	Level0 float32 // 0 dp
 	Level1 float32 // 1 dp
 	Level2 float32 // 3 dp
 	Level3 float32 // 6 dp
 
-	// Surface-fill steps on the neutral ramp. Step0 is not a ramp step:
-	// its zero value marks the Background pin — a level-0 surface is the
-	// app's bg pin sitting over the step-100 ground.
+	// Legacy surface steps on the neutral ramp; see SurfaceStep. Step0 is
+	// not a ramp step: its zero value marks the Background pin. The floor
+	// has no field at all — it is off the ramp in the dark scheme and on
+	// it in the light one, which is the whole reason this table is being
+	// retired.
 	Step0 int // 0 — sentinel: the Background pin, not a ramp step
 	Step1 int // 200
 	Step2 int // 300
@@ -49,6 +143,7 @@ type ElevationScale struct {
 
 // Elevation is the default scale instance.
 var Elevation = ElevationScale{
+	Floor:  0,
 	Level0: 0,
 	Level1: 1,
 	Level2: 3,
@@ -60,40 +155,64 @@ var Elevation = ElevationScale{
 	Step3: 400,
 }
 
-// ElevationLevel selects an entry on the [ElevationScale] by name.
-// The dp and step values for a given level are read from the [Elevation]
-// instance.
-type ElevationLevel int
-
+// ElevationLevel names a storey of the ladder. The fill and the dp for a
+// given storey are read from a palette and from the [Elevation] instance
+// respectively.
+//
+// The numbering counts storeys from the paper, which is why the floor is
+// −1 rather than a renumbering of everything above it: the paper was
+// always level 0 and every call site that says so is still right. What
+// changed is that the ladder gained a rung underneath, where it had always
+// been one short — ADR-021 put furniture one rung UP only because the
+// ladder counted upward from zero and had nowhere else to put it.
 const (
-	Level0 ElevationLevel = iota
+	// LevelFloor is chrome furniture: the window's floor, one step under
+	// the paper, in both schemes.
+	LevelFloor ElevationLevel = iota - 1
+	// Level0 is the paper: the content ground, filled with the Background
+	// pin.
+	Level0
+	// Level1 is a raised inset on the paper — a card, a code fence, a
+	// text field, a band's own controls.
 	Level1
+	// Level2 is a floating surface — a dialog, a toast.
 	Level2
+	// Level3 is the top of the ladder, nearest the scheme's light
+	// extreme — a menu, a popover.
 	Level3
 )
 
-// Raised is the rung one step above level: the fill of something that
-// stands on a surface at level rather than on the ground of the window.
+// ElevationLevel selects a storey of the ladder by name.
+type ElevationLevel int
+
+// Raised is the rung one storey nearer the viewer than level: the fill of
+// something that stands on a surface at level rather than on the ground of
+// the window. Since ADR-022 "one step up" means one step toward the
+// scheme's LIGHT extreme, in the light scheme and the dark one alike — the
+// walk's direction no longer depends on which scheme is on, only its
+// destination does.
 //
 // Rungs are walked from the surface a thing is lying on, never from an
-// absolute step (ADR-021 R4). So a thing raised over a level-0 plane fills
-// at level 1 and the same thing over a level-1 plane fills at level 2, and
-// a caller that names its own ground gets the separation the grammar asks
-// for wherever it is placed. Reaching for a fixed step instead holds only
-// while every ground in a window happens to be the one that step was
-// chosen against; move the ground one rung and the raised thing sits two
-// rungs off it, which the grammar calls a mistake in either direction.
+// absolute step (ADR-021 R4, restated as ADR-022 V3). So a thing raised
+// over a level-0 plane fills at level 1 and the same thing over a level-1
+// plane fills at level 2, a control on furniture fills at the paper's
+// storey, and a caller that names its own ground gets the separation the
+// grammar asks for wherever it is placed. Reaching for a fixed step
+// instead holds only while every ground in a window happens to be the one
+// that step was chosen against; move the ground one rung and the raised
+// thing sits two rungs off it, which the grammar calls a mistake in either
+// direction.
 //
-// Level3 is the ceiling. The ladder is four storeys and ends there, so
-// raising Level3 returns Level3 rather than naming a storey the scale does
-// not have: a caller already at the top asked for "as raised as it gets"
-// and is given it, and the clamp is the one place this walk stops instead
-// of stepping. A level the ladder has no rung for — a negative one, or the
-// MD3 levels 4 and 5 that were deleted when the ladder settled at four —
-// panics, matching [ElevationScale.SurfaceStep] and [Ramp.Step].
+// Level3 is the ceiling. The ladder ends there, so raising Level3 returns
+// Level3 rather than naming a storey the scale does not have: a caller
+// already at the top asked for "as raised as it gets" and is given it, and
+// the clamp is the one place this walk stops instead of stepping. A level
+// the ladder has no rung for — anything under LevelFloor, or the MD3
+// levels 4 and 5 that were deleted when the ladder settled — panics,
+// matching [ElevationScale.Dp] and [Ramp.Step].
 func (level ElevationLevel) Raised() ElevationLevel {
 	switch level {
-	case Level0, Level1, Level2:
+	case LevelFloor, Level0, Level1, Level2:
 		return level + 1
 	case Level3:
 		return Level3
@@ -105,6 +224,8 @@ func (level ElevationLevel) Raised() ElevationLevel {
 // out-of-vocabulary level panics, matching [Ramp.Step].
 func (e ElevationScale) Dp(level ElevationLevel) float32 {
 	switch level {
+	case LevelFloor:
+		return e.Floor
 	case Level0:
 		return e.Level0
 	case Level1:
@@ -117,12 +238,33 @@ func (e ElevationScale) Dp(level ElevationLevel) float32 {
 	panic(fmt.Sprintf("tokens: unknown ElevationLevel %d", level))
 }
 
-// SurfaceStep returns the neutral-ramp step of level's surface fill, or 0
-// for a level whose fill is the Background pin rather than a ramp step
-// (level 0 on the default scale). An out-of-vocabulary level panics,
-// matching [Ramp.Step].
+// SurfaceStep returns the neutral-ramp step a storey's state walk grounds
+// on, or 0 for a storey whose fill is not a ramp step at all.
+//
+// It is the ladder's ramp-index era surviving as a compatibility shim, and
+// it is only half true. Until ADR-022 a storey WAS a ramp step in both
+// schemes, because the ladder was allowed to mirror; now it is a depth
+// against the Background pin, and the three storeys above the pin land
+// back on neutral 200, 300 and 400 in the DARK scheme alone. In the light
+// scheme they are off the ramp, and so is the floor in the dark scheme.
+// One scheme-blind integer cannot say that, and this one does not try: it
+// keeps answering what it always answered, which is right where the dark
+// scheme is concerned and stale everywhere else.
+//
+// The floor answers 0 — the sentinel this accessor has always used for
+// "not a ramp step" — because it is off the ramp in the dark scheme and
+// on it in the light one, and callers already handle 0 by falling back.
+//
+// A caller feeding this into a state walk wants [ColorTokens.StateAt],
+// which walks from the storey's own fill and needs no ramp index; a caller
+// that wanted the fill wants [ColorTokens.SurfaceAt]. An
+// out-of-vocabulary level panics, matching [Ramp.Step].
+//
+// Deprecated: ask a palette, not a scale — the ladder left the ramp.
 func (e ElevationScale) SurfaceStep(level ElevationLevel) int {
 	switch level {
+	case LevelFloor:
+		return 0
 	case Level0:
 		return e.Step0
 	case Level1:
@@ -135,20 +277,149 @@ func (e ElevationScale) SurfaceStep(level ElevationLevel) int {
 	panic(fmt.Sprintf("tokens: unknown ElevationLevel %d", level))
 }
 
+// validate panics on a level the ladder has no rung for, which is what
+// every accessor here does with one and what [Ramp.Step] does with a step
+// number the ramp does not carry.
+func (level ElevationLevel) validate() {
+	if level < LevelFloor || level > Level3 {
+		panic(fmt.Sprintf("tokens: unknown ElevationLevel %d", level))
+	}
+}
+
 // SurfaceAt resolves the surface colour of an elevated component: the fill
-// of the given elevation level on t, per the default [Elevation] scale's
-// step mapping. Level 0 is the Background pin over the step-100 ground;
-// levels 1–3 fill with Neutral steps 200, 300 and 400.
+// of the given storey on t.
 //
-// D2.3's state walks compose on top with the level's step as the ground:
-// hover on a level-1 surface is StateColor(RoleNeutral, 200, StateHover),
-// i.e. Neutral step 300 in both modes, courtesy of the paired scales. A
-// level-0 surface is the app background, which has no ramp ground; treat
-// interactive regions on it as level-1 surfaces instead.
+// Level0 is the Background pin exactly, as it has always been — the paper
+// is the pin and the pin is off the ramp. Every other storey is realized
+// at the pin's own hue and chroma, at the CIELAB depth the ladder places
+// it: LevelFloor one band step below the pin, Level1 through Level3 the
+// surface band's own shape scaled into the headroom the scheme has above
+// it. The file header derives both halves and records what the light
+// scheme's headroom costs.
+//
+// In the dark scheme the three storeys above the paper land byte-for-byte
+// on Neutral 200, 300 and 400 — the values that scheme already carried,
+// now worn by what is raised — and in the light scheme the floor lands
+// byte-for-byte on Neutral 200, the value light furniture already wore. A
+// storey whose depth coincides with a band rung answers with that rung's
+// own colour rather than a re-realization of it, so those identities are
+// exact and not approximate.
+//
+// A state walked from a storey is [ColorTokens.StateAt]: the fills above
+// the pin are off-ramp in one scheme or the other, so there is no ramp
+// index to walk from and the walk is taken on the neutral ladder from the
+// storey's own colour.
 func (t ColorTokens) SurfaceAt(level ElevationLevel) color.NRGBA {
-	step := Elevation.SurfaceStep(level) // validates level
-	if step == 0 {
+	if level == Level0 {
 		return t.Background
 	}
-	return t.Ramps.Neutral.Step(step)
+	level.validate()
+	band, tone := t.surfaceBand()
+	pin, _, _ := vgcolor.LabFromNRGBA(t.Background)
+	var target float64
+	if level == LevelFloor {
+		// One band step down, toward the scheme's dark extreme.
+		target = pin - math.Abs(tone[1]-tone[0])
+		if target < 0 {
+			target = 0
+		}
+	} else {
+		target = pin + t.headroom(pin, tone)*bandShare(level, tone)
+	}
+	return t.realizeSurface(target, band, tone)
+}
+
+// StateAt resolves a storey's fill under an interaction state: the walk
+// D2.3 defines, taken from the storey's own colour.
+//
+// It is [ColorTokens.PinnedStateColor] applied to [ColorTokens.SurfaceAt],
+// and that is the whole of it — a storey above the paper is off the ramp
+// in one scheme or the other, so it is exactly the case PinnedStateColor
+// exists for: a fill the scheme's ramps do not carry, laddered on the
+// neutral ramp because every ramp in a scheme sweeps the same lightness
+// scale and only the neutral sweeps it at zero chroma.
+//
+// The walk's direction is unchanged by ADR-022 and deliberately so. A
+// state walk heads toward the ramp's 900 end — darker in a light scheme,
+// lighter in a dark one — because it says SOMETHING HAPPENED HERE, which
+// is feedback rather than depth. The ladder says how near a surface is;
+// only the ladder answers to the linchpin.
+func (t ColorTokens) StateAt(level ElevationLevel, state State) color.NRGBA {
+	return t.PinnedStateColor(t.SurfaceAt(level), state)
+}
+
+// surfaceBand returns the neutral ramp's four surface rungs — steps 100
+// through 400, ADR-007's tinted-fill half — and their measured CIELAB
+// depths. Everything the ladder knows about a scheme it reads here: which
+// way the scheme's lightness runs, how big one step of it is, and how far
+// the band reaches.
+func (t ColorTokens) surfaceBand() (band [4]color.NRGBA, tone [4]float64) {
+	for i := range band {
+		band[i] = t.Ramps.Neutral.Step((i + 1) * 100)
+		tone[i], _, _ = vgcolor.LabFromNRGBA(band[i])
+	}
+	return band, tone
+}
+
+// headroom is how much CIELAB lightness the scheme has above its pin for
+// the ladder to spend: the band's own lightest tone where the band reaches
+// past the pin, and the tonal axis where it does not.
+//
+// The two cases are the two schemes, and neither is named. A dark scheme's
+// band climbs away from its 100 stop, so the band's top IS the ceiling and
+// the rungs land back on the band's own rungs. A light scheme's band
+// descends from its 100 stop, so the pin is already the lightest surface
+// the ramp carries and the only room left is what remains to white.
+func (t ColorTokens) headroom(pin float64, tone [4]float64) float64 {
+	ceiling := tone[0]
+	for _, l := range tone {
+		if l > ceiling {
+			ceiling = l
+		}
+	}
+	if ceiling <= pin {
+		ceiling = 100 // the band offers no room above the pin; the axis does
+	}
+	if ceiling <= pin {
+		return 0
+	}
+	return ceiling - pin
+}
+
+// bandShare is the storey's position on the ladder as a share of the
+// headroom: the surface band's own spacing, normalized against its full
+// reach, so the ladder above the pin keeps the ramp's proportions whatever
+// room the scheme has for them.
+func bandShare(level ElevationLevel, tone [4]float64) float64 {
+	span := math.Abs(tone[3] - tone[0])
+	if span == 0 {
+		return 0 // a band with no reach places every storey on the pin
+	}
+	switch level {
+	case Level1:
+		return math.Abs(tone[1]-tone[0]) / span
+	case Level2:
+		return math.Abs(tone[2]-tone[0]) / span
+	}
+	return 1 // Level3 takes the whole headroom
+}
+
+// realizeSurface renders a storey's depth as a colour at the Background
+// pin's own hue and chroma — the ladder is the pin, lightened or darkened,
+// so it carries whatever tint the pin carries and none of its own.
+//
+// A depth that coincides with one of the band's own rungs answers with
+// that rung verbatim rather than re-realizing it. The realization would
+// agree to the byte for a neutral palette, since both ask the same solver
+// for the same depth at the same chroma; answering with the rung makes
+// that an identity instead of a coincidence, and saves the solver a run on
+// the storeys a window paints most.
+func (t ColorTokens) realizeSurface(target float64, band [4]color.NRGBA, tone [4]float64) color.NRGBA {
+	for i, l := range tone {
+		if math.Abs(target-l) < 1e-6 {
+			return band[i]
+		}
+	}
+	_, chroma, hue := vgcolor.OKLChFromNRGBA(t.Background)
+	return vgcolor.NRGBAFromToneChromaHue(target, chroma, hue)
 }
