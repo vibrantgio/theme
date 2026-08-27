@@ -398,10 +398,27 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		if got, want := mode.vars["--color-focus-ring-on-accent"], wantHex(onAccent); got != want {
 			t.Errorf("--color-focus-ring-on-accent (mode %d) = %q, want the primary rung that reads on the filled button's own fill %q", i, got, want)
 		}
-		// The unchecked checkbox's edge, likewise: components/input's
-		// checkboxBorder is MarkOn against the level-0 ground.
-		if got, want := mode.vars["--color-checkbox-border"], wantHex(mode.tok.MarkOn(tokens.RoleNeutral, mode.tok.SurfaceAt(tokens.Level0), 3.0)); got != want {
-			t.Errorf("--color-checkbox-border (mode %d) = %q, want the neutral rung that reads on the window ground %q", i, got, want)
+		// The control row's resting edge, likewise: components/input's
+		// controlBorder is MarkOn against the level-0 ground, and the three
+		// outline tokens are the same walk one, two and three storeys up —
+		// the fills patterns/card, patterns/modal and patterns/popover paint
+		// and measure their own edges against.
+		if got, want := mode.vars["--color-control-border"], wantHex(mode.tok.MarkOn(tokens.RoleNeutral, mode.tok.SurfaceAt(tokens.Level0), 3.0)); got != want {
+			t.Errorf("--color-control-border (mode %d) = %q, want the neutral rung that reads on the window ground %q", i, got, want)
+		}
+		for _, edge := range []struct {
+			name  string
+			level tokens.ElevationLevel
+			what  string
+		}{
+			{"--color-card-border", tokens.Level1, "the outlined card's level-1 fill"},
+			{"--color-dialog-border", tokens.Level2, "the dialog's level-2 fill"},
+			{"--color-popover-border", tokens.Level3, "the popover's level-3 fill"},
+		} {
+			want := wantHex(mode.tok.MarkOn(tokens.RoleNeutral, mode.tok.SurfaceAt(edge.level), 3.0))
+			if got := mode.vars[edge.name]; got != want {
+				t.Errorf("%s (mode %d) = %q, want the neutral rung that reads on %s %q", edge.name, i, got, edge.what, want)
+			}
 		}
 	}
 	if got := wantPx(t, "--focus-ring-width", root["--focus-ring-width"]); got != 2 {
@@ -500,30 +517,31 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		// text, neutral 500 strong border, neutral 700 placeholder/glyph,
 		// focus promoting the border to the accent pin, disabled fading via
 		// color-mix.
-		"border: 1px solid var(--color-neutral-500);",
+		"border: 1px solid var(--color-control-border);",
 		"background: var(--color-surface);",
 		"font-size: var(--font-body-large-size);",
 		".input::placeholder { color: var(--color-neutral-700); opacity: 1; }",
 		"border-color: var(--color-accent);",
 		"box-shadow: inset 0 0 0 1px var(--color-accent);",
-		"color-mix(in srgb, var(--color-neutral-500) var(--state-disabled-opacity), transparent)",
+		"color-mix(in srgb, var(--color-control-border) var(--state-disabled-opacity), transparent)",
 		// Dropdown chevron: neutral 700, the low-contrast glyph step.
 		"border-top: 8px solid var(--color-neutral-700);",
-		// Checkbox/radio: a 2 dp border over Surface — the radio's is the
-		// named neutral 500 its own source draws, the checkbox's the rung
-		// its ramp measured (AP1.1). Checked is the accent fill under the
-		// icon-grid check mark (checkbox) / the 10 dp accent dot (radio),
-		// both drawn out of gradients rather than encoded as an image, so
-		// the no-literal guard above still holds over the whole layer.
-		"border: 2px solid var(--color-neutral-500);",
-		"border-color: var(--color-checkbox-border);",
+		// Checkbox/radio: a 2 dp border over Surface, both wearing the one
+		// rung the neutral ramp measures for a control's resting edge — the
+		// same token the text field and the dropdown trigger take. Checked is
+		// the accent fill under the icon-grid check mark (checkbox) / the
+		// 10 dp accent dot (radio), both drawn out of gradients rather than
+		// encoded as an image, so the no-literal guard above still holds over
+		// the whole layer.
+		"border: 2px solid var(--color-control-border);",
 		".checkbox:checked, .checkbox.is-checked {",
 		"background-position: 3.161px 9.411px, 6.911px 4.411px;",
 		"background-size: 4.929px 4.929px, 9.929px 9.929px;",
 		"linear-gradient(45deg, transparent calc(50% - 0.833px), var(--color-on-accent) calc(50% - 0.833px), var(--color-on-accent) calc(50% + 0.833px), transparent calc(50% + 0.833px)),",
 		"radial-gradient(circle, var(--color-accent) 5px, var(--color-surface) 5px)",
-		// Card (G2.2): patterns/card — level-1 fill under a 1 dp neutral 500
-		// stroke, .elevated one storey deeper with no stroke and no shadow;
+		// Card (G2.2): patterns/card — level-1 fill under a 1 dp stroke in
+		// the rung the ramp measures against that fill,
+		// .elevated one storey deeper with no stroke and no shadow;
 		// radius Lg, S4 inset (the outlined padding gives back the border's
 		// 1px), S3 slot gaps.
 		"padding: calc(var(--space-4) - 1px);",

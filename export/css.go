@@ -138,20 +138,32 @@ var pinRoles = []struct {
 	{"info-on-inverse", func(t tokens.ColorTokens) stdcolor.NRGBA {
 		return t.MarkOn(tokens.RoleInfo, t.InverseSurface, onFloor)
 	}},
-	// The two marks a control draws on itself, each the rung its own ramp's
-	// MarkOn walk answers with at the graphic floor. Both are per-scheme
-	// tokens rather than one named rung, because a named rung is a pairing
-	// and not a colour: the light and dark neutral ramps are realized at the
-	// same perceptual depths from opposite ends, so one rung means two
-	// different contrasts against two grounds that moved the whole way.
+	// The marks a control and a raised surface draw on themselves, each the
+	// rung its own ramp's MarkOn walk answers with at the graphic floor. All
+	// are per-scheme tokens rather than named rungs, because a named rung is
+	// a pairing and not a colour: the light and dark neutral ramps are
+	// realized at the same perceptual depths from opposite ends, so one rung
+	// means two different contrasts against two grounds that moved the whole
+	// way.
 	//
-	// checkbox-border is the unchecked box's edge (components/input
-	// checkboxBorder): the neutral rung nearest step 500 that reaches 3:1
-	// against the level-0 ground the box is guaranteed against. Naming step
-	// 500 in both schemes — which this sheet did — measured 6.63:1 in the
-	// dark and 2.67:1 in the light, under the floor in the scheme most
-	// people read in. The walk answers 600 in the light scheme and 500 in
-	// the dark and needs to know nothing about either.
+	// control-border is the resting edge of every control in the row that
+	// says what it is with a line — the unchecked box, the unselected radio,
+	// the text field, the dropdown trigger (components/input controlBorder):
+	// the neutral rung nearest step 500 that reaches 3:1 against the level-0
+	// ground a control on the page is guaranteed against. Naming step 500 in
+	// both schemes — which this sheet did, at every one of those four sites —
+	// measured 6.63:1 in the dark and 2.67:1 in the light, under the floor in
+	// the scheme most people read in. The walk answers 600 in the light
+	// scheme and 500 in the dark and needs to know nothing about either.
+	//
+	// card-border, dialog-border and popover-border are the same walk taken
+	// against a deeper storey: an outlined card's edge circles its level-1
+	// fill, a dialog's its level 2, a popover's its level 3, and each pattern
+	// paints the fill it is measured against. They are three tokens rather
+	// than one because the walk answers a deeper rung as the ground deepens —
+	// the light scheme's dialog and popover edges land a rung past the card's
+	// — and one token could only be right for one of them. The single rung
+	// they replaced measured 2.35 / 1.95 / 1.42:1 in the light scheme.
 	//
 	// focus-ring is components/internal/focus's Ring: the primary rung
 	// nearest step 500 that reaches the same floor against the ground the
@@ -171,8 +183,17 @@ var pinRoles = []struct {
 	// neutral-500 ring this replaces measured there. Closing that needs the
 	// per-storey ring tokens the ghost's contextual wash overrides already
 	// have a shape for.
-	{"checkbox-border", func(t tokens.ColorTokens) stdcolor.NRGBA {
+	{"control-border", func(t tokens.ColorTokens) stdcolor.NRGBA {
 		return t.MarkOn(tokens.RoleNeutral, t.SurfaceAt(tokens.Level0), graphicFloor)
+	}},
+	{"card-border", func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.MarkOn(tokens.RoleNeutral, t.SurfaceAt(tokens.Level1), graphicFloor)
+	}},
+	{"dialog-border", func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.MarkOn(tokens.RoleNeutral, t.SurfaceAt(tokens.Level2), graphicFloor)
+	}},
+	{"popover-border", func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.MarkOn(tokens.RoleNeutral, t.SurfaceAt(tokens.Level3), graphicFloor)
 	}},
 	{"focus-ring", func(t tokens.ColorTokens) stdcolor.NRGBA {
 		return t.MarkOn(tokens.RolePrimary, t.Surface, graphicFloor)
@@ -531,9 +552,9 @@ func stylesCSS(s Snapshot) string {
 // resolutions are per-register for the same reason. Selected resolves as
 // tokens.StateColor resolves StateSelected — the two-step walk pressed
 // takes. The form controls resolve as components/input does: Surface ground
-// under body text, neutral 500 strong border on the text field and the
-// radio, the ramp's own measured answer (--color-checkbox-border) on the
-// checkbox, neutral 700 placeholder and glyph, focus promoting the border
+// under body text, the ramp's own measured answer (--color-control-border)
+// on the text field, the radio and the checkbox alike, neutral 700
+// placeholder and glyph, focus promoting the border
 // to the accent pin, disabled fading each colour to the disabled fraction
 // of its alpha. The checked checkbox carries the check mark the Gio side
 // strokes, drawn out of the icon set's grid as two gradient bands rather
@@ -789,7 +810,7 @@ const componentClasses = `/* ---- Component classes ----
   appearance: none;
   min-height: var(--density-control-height);
   padding: calc(var(--density-padding-y) - 1px) calc(var(--space-3) - 1px);
-  border: 1px solid var(--color-neutral-500);
+  border: 1px solid var(--color-control-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
   color: var(--color-text);
@@ -813,7 +834,7 @@ const componentClasses = `/* ---- Component classes ----
 .input:disabled {
   background: color-mix(in srgb, var(--color-surface) var(--state-disabled-opacity), transparent);
   color: color-mix(in srgb, var(--color-text) var(--state-disabled-opacity), transparent);
-  border-color: color-mix(in srgb, var(--color-neutral-500) var(--state-disabled-opacity), transparent);
+  border-color: color-mix(in srgb, var(--color-control-border) var(--state-disabled-opacity), transparent);
 }
 .input:disabled::placeholder {
   color: color-mix(in srgb, var(--color-neutral-700) var(--state-disabled-opacity), transparent);
@@ -846,10 +867,12 @@ const componentClasses = `/* ---- Component classes ----
 
 /* Checkbox (components/input checkbox.go): a 20 dp glyph (checkboxBoxSize
    — a component constant, not a token; it does not follow density) over
-   Surface. Unchecked, its 2 dp edge is --color-checkbox-border, the
+   Surface. Unchecked, its 2 dp edge is --color-control-border, the
    neutral rung the ramp answers with for a 3:1 graphic on the window
-   ground (600 in the light scheme, 500 in the dark) — the radio keeps the
-   named neutral 500 its own source still draws. Checked, the box is the
+   ground (600 in the light scheme, 500 in the dark) — the same edge the
+   radio, the text field and the dropdown trigger wear, all four asking the
+   ramp the one question rather than naming a rung between them.
+   Checked, the box is the
    accent fill under a check mark in the on-accent pin, because a fill says
    a colour was applied and only the mark says what that means: a column of
    fills carries completion in hue alone, which is the one channel a reader
@@ -881,13 +904,12 @@ const componentClasses = `/* ---- Component classes ----
   width: 20px;  /* checkboxBoxSize / radioCircleSize: 20 dp */
   height: 20px;
   margin: 0;
-  border: 2px solid var(--color-neutral-500);
+  border: 2px solid var(--color-control-border);
   background: var(--color-surface);
   cursor: pointer;
 }
 .checkbox {
   border-radius: var(--radius-sm);
-  border-color: var(--color-checkbox-border);
 }
 .checkbox:checked, .checkbox.is-checked {
   border-color: var(--color-accent);
@@ -906,7 +928,7 @@ const componentClasses = `/* ---- Component classes ----
    layer geometry and the disabled-checked box would lose its mark. */
 .checkbox:disabled {
   cursor: default;
-  border-color: color-mix(in srgb, var(--color-checkbox-border) var(--state-disabled-opacity), transparent);
+  border-color: color-mix(in srgb, var(--color-control-border) var(--state-disabled-opacity), transparent);
   background-color: color-mix(in srgb, var(--color-surface) var(--state-disabled-opacity), transparent);
 }
 .checkbox:checked:disabled, .checkbox.is-checked:disabled {
@@ -928,7 +950,7 @@ const componentClasses = `/* ---- Component classes ----
 }
 .radio:disabled {
   cursor: default;
-  border-color: color-mix(in srgb, var(--color-neutral-500) var(--state-disabled-opacity), transparent);
+  border-color: color-mix(in srgb, var(--color-control-border) var(--state-disabled-opacity), transparent);
   background: color-mix(in srgb, var(--color-surface) var(--state-disabled-opacity), transparent);
 }
 .radio:checked:disabled, .radio.is-checked:disabled {
@@ -955,7 +977,7 @@ const componentClasses = `/* ---- Component classes ----
   flex-direction: column;
   gap: var(--space-3);
   padding: calc(var(--space-4) - 1px);
-  border: 1px solid var(--color-neutral-500);
+  border: 1px solid var(--color-card-border);
   border-radius: var(--radius-lg);
   background: var(--elevation-1);
   color: var(--color-text);
@@ -1293,7 +1315,7 @@ const componentClasses = `/* ---- Component classes ----
   max-height: min(75%, 560px);
   overflow: hidden;
   padding: calc(var(--space-5) - 1px);
-  border: 1px solid var(--color-neutral-500);
+  border: 1px solid var(--color-dialog-border);
   border-radius: var(--radius-lg);
   background: var(--elevation-2);
   color: var(--color-text);
@@ -1337,7 +1359,7 @@ const componentClasses = `/* ---- Component classes ----
   min-width: 48px;
   min-height: 24px;
   padding: calc(var(--space-3) - 1px);
-  border: 1px solid var(--color-neutral-500);
+  border: 1px solid var(--color-popover-border);
   border-radius: var(--radius-md);
   background: var(--elevation-3);
   color: var(--color-text);

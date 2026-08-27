@@ -64,7 +64,7 @@ func readmeMD(s Snapshot) string {
 	for i, pin := range pinRoles {
 		pinNames[i] = "`--color-" + pin.name + "`"
 	}
-	fmt.Fprintf(&b, "| pins & semantic layer | %s | pinned bases, their on-colours, the ramp-resolved surface/divider, the inverse pair the counterpart scheme's ramp resolves, and the control marks each ramp measures for itself — the checkbox's edge and the two focus-ring grounds |\n", strings.Join(pinNames, ", "))
+	fmt.Fprintf(&b, "| pins & semantic layer | %s | pinned bases, their on-colours, the ramp-resolved surface/divider, the inverse pair the counterpart scheme's ramp resolves, and the edges each ramp measures for itself — a control's resting border, the outlined card's, the dialog's and the popover's, and the two focus-ring grounds |\n", strings.Join(pinNames, ", "))
 	b.WriteString("| `--font-family` | `--font-family` | the typeface every prose role uses |\n")
 	b.WriteString("| `--font-family-code` | `--font-family-code` | the monospace typeface the code role uses |\n")
 	typeNames := make([]string, len(typeRoles))
@@ -132,15 +132,16 @@ func readmeMD(s Snapshot) string {
 		"`.input` (text `<input>`, and `<select class=\"input select\">` inside a\n" +
 		"`.select-wrap` for the chevron), `.checkbox` and `.radio` on their native\n" +
 		"input types with `appearance: none`. They resolve exactly as\n" +
-		"`components/input` does: Surface ground under `body-large` text, neutral\n" +
-		"500 strong border on the text field and the radio, neutral 700 placeholder\n" +
-		"and chevron, focus promoting the border to the accent pin (2 dp on the\n" +
-		"text field, the shared ring on checkbox/radio), disabled fading every\n" +
-		"colour via `color-mix()`. The checkbox edges itself with\n" +
-		"`--color-checkbox-border` instead — the neutral rung its own ramp measures\n" +
-		"as reaching 3:1 against the window ground, which is 600 in the light\n" +
-		"scheme and 500 in the dark; one named rung would read below the floor in\n" +
-		"one of them. Checked, the box is the accent fill under a check mark in the\n" +
+		"`components/input` does: Surface ground under `body-large` text,\n" +
+		"`--color-control-border` on the resting edge of all four controls,\n" +
+		"neutral 700 placeholder and chevron, focus promoting the border to the\n" +
+		"accent pin (2 dp on the text field, the shared ring on checkbox/radio),\n" +
+		"disabled fading every colour via `color-mix()`. That border is the\n" +
+		"neutral rung the ramp measures as reaching 3:1 against the window\n" +
+		"ground, which is 600 in the light scheme and 500 in the dark; the named\n" +
+		"rung it replaced read below the floor in one of them, at 2.67:1 in the\n" +
+		"scheme most people read in.\n" +
+		"Checked, the box is the accent fill under a check mark in the\n" +
 		"on-accent pin, drawn from the icon set's grid as two gradient bands — a\n" +
 		"fill says a colour was applied and only the mark says what it means. The\n" +
 		"radio's selected state is the accent ring and 10 dp dot around a Surface\n" +
