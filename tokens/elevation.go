@@ -40,16 +40,11 @@
 // L\*, not in ramp indices — but its shape is still read off the ramp
 // rather than invented, which is what keeps it generative:
 //
-//   - THE FLOOR is one band step below the pin, toward the scheme's dark
-//     extreme, where the band step is the ramp's own first surface
-//     interval |L*(200) − L*(100)|. In the light scheme that lands exactly
-//     on neutral 200 (#E8E8E8 under the #F6F6F6 paper) — the arrangement
-//     the stored macOS references already measure, and the reason this
-//     re-founding costs the light scheme nothing at rest. In the dark
-//     scheme it lands below neutral 100, at a value the ramp does not
-//     carry, which is where dark furniture belongs and where the platform
-//     puts its own (a Settings sidebar sits 3.8 L\* under its content
-//     ground).
+//   - THE FLOOR sits below the pin, toward the scheme's dark extreme, by a
+//     step that is MEASURED off the platform rather than derived from the
+//     ramp — one measurement per scheme, because the platform itself takes
+//     a different step in each. Both numbers, and the captures they came
+//     off, are in "The floor's two measurements" below.
 //
 //   - THE RUNGS ABOVE THE PIN take the surface band's own shape — the
 //     relative spacing of neutral 100/200/300/400 — scaled into whatever
@@ -62,6 +57,45 @@
 //     by the furniture. In the light scheme the pin has spent almost all
 //     of the axis already, so the same shape compresses into the 3.1 L\*
 //     that remain: the storeys above the paper are whispers.
+//
+// # The floor's two measurements
+//
+// The floor is the one storey the ramp does not get to place. Everything
+// above the pin takes the band's own shape, because the band is what the
+// scheme has above its paper; below the pin the ramp has nothing to say in
+// one scheme and says too much in the other, so the step is read off the
+// platform instead. Two schemes, two captures, two numbers — and the code
+// tells them apart the way headroom does, off the direction of the band,
+// never off a mode flag.
+//
+// THE LIGHT MEASUREMENT AND THE BAND STEP ARE THE SAME NUMBER. macOS light
+// panes sit about 4.9 L\* under their paper, and the ramp's own first
+// surface interval |L*(200) − L*(100)| is 4.89, so the floor lands
+// byte-for-byte on neutral 200 (#E8E8E8 under the #F6F6F6 paper) — the
+// arrangement the stored macOS references already measure, and the reason
+// this re-founding costs the light scheme nothing at rest. That half is
+// written as the interval because the derivation and the measurement
+// agree, not because the derivation outranks the measurement.
+//
+// THE DARK MEASUREMENT IS 1.48 L\*, AND THE BAND STEP OVERSHOOTS IT BY
+// MORE THAN THREE TIMES. A full band step in the dark scheme is 4.98 L\*
+// and realizes #0C0C0C under the #181818 paper — 4.93 L\* of separation,
+// which reads as pure black where the platform reads dark grey. Three dark
+// references, measured 2026-08-28, each the step from a window's content
+// down to its furniture:
+//
+//	Voice Memos, sidebar panel under content   1.50 L*   #1B1B1B under #1E1E1E
+//	the reference chat application             1.71 L*
+//	macOS Settings, sidebar under content      3.81 L*   #1C2123 under #23292C
+//	                                                     (wallpaper tint on)
+//
+// So the dark step is darkFloorStep, 1.48 L\*, the Voice Memos reading
+// almost exactly; on the default dark palette it realizes #151515, 1.47
+// L\* under the paper once eight bits have had their say. The asymmetry
+// between 4.89 and 1.48 is the platform's own and not a hand-pick: a light
+// window separates its furniture with a step the ramp happens to carry, a
+// dark window with a whisper, and this file records both rather than
+// picking one and mirroring it — which is the move ADR-022 abolished.
 //
 // # The light scheme's headroom, and what the whisper costs
 //
@@ -166,8 +200,18 @@ var Elevation = ElevationScale{
 // been one short — ADR-021 put furniture one rung UP only because the
 // ladder counted upward from zero and had nowhere else to put it.
 const (
-	// LevelFloor is chrome furniture: the window's floor, one step under
-	// the paper, in both schemes.
+	// LevelFloor is chrome furniture: the window's floor, one measured
+	// step under the paper, in both schemes.
+	//
+	// A chrome pane that FLOATS — a sidebar a button slides out of the
+	// window, an inspector that detaches — is still chrome and still
+	// fills here. Its depth is semantic, not geometric: what says it is a
+	// floating object is its own hairline edge and its shadow, never a
+	// lighter fill. The platform paints even the floating panel darker
+	// than the content it sits beside — Voice Memos outlines its panel at
+	// #3A3A3A on a #1B1B1B fill, a 1.51:1 whisper of a seam, while the
+	// content beside it stays #1E1E1E — so a pane that leaves the wall
+	// does not leave the floor.
 	LevelFloor ElevationLevel = iota - 1
 	// Level0 is the paper: the content ground, filled with the Background
 	// pin.
@@ -292,10 +336,11 @@ func (level ElevationLevel) validate() {
 // Level0 is the Background pin exactly, as it has always been — the paper
 // is the pin and the pin is off the ramp. Every other storey is realized
 // at the pin's own hue and chroma, at the CIELAB depth the ladder places
-// it: LevelFloor one band step below the pin, Level1 through Level3 the
-// surface band's own shape scaled into the headroom the scheme has above
-// it. The file header derives both halves and records what the light
-// scheme's headroom costs.
+// it: LevelFloor the platform's own measured step below the pin, Level1
+// through Level3 the surface band's own shape scaled into the headroom the
+// scheme has above it. The file header carries both halves — the floor's
+// two measurements and their captures, and what the light scheme's
+// headroom costs above the paper.
 //
 // In the dark scheme the three storeys above the paper land byte-for-byte
 // on Neutral 200, 300 and 400 — the values that scheme already carried,
@@ -303,7 +348,9 @@ func (level ElevationLevel) validate() {
 // byte-for-byte on Neutral 200, the value light furniture already wore. A
 // storey whose depth coincides with a band rung answers with that rung's
 // own colour rather than a re-realization of it, so those identities are
-// exact and not approximate.
+// exact and not approximate. The dark floor coincides with nothing: its
+// step is measured, not read off the ramp, and on the default palette it
+// realizes #151515.
 //
 // A state walked from a storey is [ColorTokens.StateAt]: the fills above
 // the pin are off-ramp in one scheme or the other, so there is no ramp
@@ -318,8 +365,8 @@ func (t ColorTokens) SurfaceAt(level ElevationLevel) color.NRGBA {
 	pin, _, _ := vgcolor.LabFromNRGBA(t.Background)
 	var target float64
 	if level == LevelFloor {
-		// One band step down, toward the scheme's dark extreme.
-		target = pin - math.Abs(tone[1]-tone[0])
+		// The measured step down, toward the scheme's dark extreme.
+		target = pin - floorStep(pin, tone)
 		if target < 0 {
 			target = 0
 		}
@@ -361,6 +408,50 @@ func (t ColorTokens) surfaceBand() (band [4]color.NRGBA, tone [4]float64) {
 	return band, tone
 }
 
+// darkFloorStep is how far under the paper the floor sits where the pin is
+// the darkest surface the ramp carries, in CIELAB L\*. It is a
+// MEASUREMENT, not a derivation: 1.48 L\*, the step three dark platform
+// references measure between a window's furniture and its content, and on
+// the default dark palette it realizes #151515 under the #181818 paper.
+// The file header quotes the three captures and says why the ramp's own
+// band step — which is the measurement in the other scheme — overshoots
+// here.
+const darkFloorStep = 1.48
+
+// floorStep is how far below the pin the floor is drawn, in CIELAB L\*.
+// Both answers are measurements of the platform, one per scheme, and the
+// scheme is never named: which one applies is read off the band, the way
+// headroom reads it.
+//
+// Where the band reaches above the pin, the pin is the darkest surface the
+// ramp carries and the platform's measured step is darkFloorStep. Where it
+// does not, the pin is the lightest surface the ramp carries and the
+// platform's measured step and the ramp's own first surface interval are
+// the same number — which is why that half is written as the interval and
+// lands the floor byte-for-byte on the band's own 200 rung.
+func floorStep(pin float64, tone [4]float64) float64 {
+	if bandTop(tone) > pin {
+		return darkFloorStep
+	}
+	return math.Abs(tone[1] - tone[0])
+}
+
+// bandTop is the lightest tone the surface band reaches. Whether it lies
+// above the pin is the one fact that tells the two schemes apart in this
+// file — a scheme whose band climbs away from its 100 stop has ramp
+// headroom above its paper and a pin that is its darkest surface; one
+// whose band descends has neither — and it is read off the band rather
+// than carried as a mode flag.
+func bandTop(tone [4]float64) float64 {
+	top := tone[0]
+	for _, l := range tone {
+		if l > top {
+			top = l
+		}
+	}
+	return top
+}
+
 // headroom is how much CIELAB lightness the scheme has above its pin for
 // the ladder to spend: the band's own lightest tone where the band reaches
 // past the pin, and the tonal axis where it does not.
@@ -371,12 +462,7 @@ func (t ColorTokens) surfaceBand() (band [4]color.NRGBA, tone [4]float64) {
 // descends from its 100 stop, so the pin is already the lightest surface
 // the ramp carries and the only room left is what remains to white.
 func (t ColorTokens) headroom(pin float64, tone [4]float64) float64 {
-	ceiling := tone[0]
-	for _, l := range tone {
-		if l > ceiling {
-			ceiling = l
-		}
-	}
+	ceiling := bandTop(tone)
 	if ceiling <= pin {
 		ceiling = 100 // the band offers no room above the pin; the axis does
 	}

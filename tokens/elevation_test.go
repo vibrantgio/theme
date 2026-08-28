@@ -123,7 +123,7 @@ func TestTheLadderKeepsTheRestingPixels(t *testing.T) {
 			{0xFB, 0xFB, 0xFB, 0xff}, {0xFF, 0xFF, 0xFF, 0xff},
 		},
 		"dark": {
-			{0x0C, 0x0C, 0x0C, 0xff}, {0x18, 0x18, 0x18, 0xff}, {0x22, 0x22, 0x22, 0xff},
+			{0x15, 0x15, 0x15, 0xff}, {0x18, 0x18, 0x18, 0xff}, {0x22, 0x22, 0x22, 0xff},
 			{0x2E, 0x2E, 0x2E, 0xff}, {0x47, 0x47, 0x47, 0xff},
 		},
 	}
@@ -137,6 +137,68 @@ func TestTheLadderKeepsTheRestingPixels(t *testing.T) {
 			}
 		}
 	}
+}
+
+// TestTheFloorTakesTheMeasuredStep pins the one storey the ramp does not
+// place. The floor's step under the paper is a MEASUREMENT of the platform
+// taken per scheme, and the two measurements differ by more than three
+// times: about 4.9 L\* where the pin is the lightest surface the ramp
+// carries — which is also the ramp's own first surface interval, so that
+// half lands byte-for-byte on neutral 200 — and 1.48 L\* where the pin is
+// the darkest, which is what Voice Memos (1.50), the reference chat
+// application (1.71) and macOS Settings (3.81) measure and what a full
+// band step of 4.98 overshot into pure black.
+//
+// The asymmetry is asserted rather than tolerated, because the temptation
+// it guards against is exactly the one ADR-022 abolished: deriving one
+// number and mirroring it into the other scheme.
+func TestTheFloorTakesTheMeasuredStep(t *testing.T) {
+	// One 8-bit level near either pin is well under a quarter of an L\*,
+	// so the realized step cannot wander far from the measurement.
+	const tolerance = 0.5
+	deepest, deepestAt := 0.0, ""
+	for _, seed := range sweepSeeds() {
+		light, dark := tokens.FromSeed(seed)
+		hcLight, hcDark := tokens.FromSeedHighContrast(seed)
+		for _, scheme := range []struct {
+			name string
+			tok  tokens.ColorTokens
+			want float64 // the measured step for this scheme, in L*
+		}{
+			{"light", light, 0}, {"light-hc", hcLight, 0},
+			{"dark", dark, 1.48}, {"dark-hc", hcDark, 1.48},
+		} {
+			pin := lstar(scheme.tok.Background)
+			step := pin - lstar(scheme.tok.SurfaceAt(tokens.LevelFloor))
+			want := scheme.want
+			if want == 0 {
+				// The light measurement IS the band's first surface
+				// interval, so it is read off the band rather than named.
+				band := scheme.tok.Ramps.Neutral
+				want = lstar(band.Step(100)) - lstar(band.Step(200))
+			}
+			if step < want-tolerance || step > want+tolerance {
+				t.Errorf("seed %v %s: floor sits %.2f L* under the paper, want the measured %.2f",
+					seed, scheme.name, step, want)
+			}
+			if step > deepest {
+				deepest, deepestAt = step, scheme.name
+			}
+		}
+	}
+	// The default dark floor, spelled out: the measured step realizes
+	// #151515 under the #181818 paper, and it is on no rung of the ramp.
+	floor := tokens.DefaultDark.SurfaceAt(tokens.LevelFloor)
+	if want := (color.NRGBA{0x15, 0x15, 0x15, 0xff}); floor != want {
+		t.Errorf("default dark floor = %v, want the measured %v", floor, want)
+	}
+	for step := 100; step <= 900; step += 100 {
+		if rung := tokens.DefaultDark.Ramps.Neutral.Step(step); rung == floor {
+			t.Errorf("dark floor %v landed on Neutral %d; the dark floor is measured, not a rung", floor, step)
+		}
+	}
+	t.Logf("over %d seeds × 4 schemes: deepest floor step %.2f L* (%s)",
+		len(sweepSeeds()), deepest, deepestAt)
 }
 
 // TestTheHairlineCarriesTheWhisperStep is the light scheme's headroom
