@@ -761,7 +761,7 @@ const componentClasses = `/* ---- Component classes ----
    ground. No selected treatment: a ghost stays quiet.
 
    The walk is named as a storey's own state rather than as a ramp step,
-   because since ADR-022 a storey is not a ramp step: the fills above the
+   because a storey is not a ramp step: the fills above the
    pin are off the ramp in the light scheme and the floor is off it in the
    dark one, so there is no index left to walk from. Each storey's own
    -hover and -active pair is that walk taken
@@ -793,11 +793,9 @@ const componentClasses = `/* ---- Component classes ----
    the deepest level 3; the text stays the ramp's 900 end, where the walk
    itself clamps.
 
-   The level-1 rule is new with ADR-022 and the plain card is why. While a
-   storey was a ramp step, level 0 and level 1 walked from the same index
-   and one rule covered both; now level 0 walks from the Background pin and
-   level 1 from the storey above it, which are two different fills and, in
-   the dark scheme, two different washes. */
+   Level 1 carries its own rule and the plain card is why: level 0 walks
+   from the Background pin and level 1 from the storey above it, which are
+   two different fills and, in the dark scheme, two different washes. */
 .card .btn.ghost:hover, .card .btn.ghost.is-hover {
   background: var(--elevation-1-hover);
 }
@@ -916,7 +914,7 @@ const componentClasses = `/* ---- Component classes ----
    rung nearer the viewer than its host. It used to be --color-surface, the
    neutral ramp's step 200, which lands on the raised storey in the dark
    scheme by coincidence and on no storey at all in the light one — a light
-   field filled a whole band step BELOW the page it lies on. Since ADR-022 a
+   field filled a whole band step BELOW the page it lies on. A
    surface nearer the viewer is lighter in both schemes, and on a desktop a
    text field is the lightest thing in the window, not the darkest. In the
    light scheme the step above the page is a whisper, so the 1 px border and
@@ -1100,7 +1098,7 @@ const componentClasses = `/* ---- Component classes ----
    that can leave (menus, dialogs, toasts). The default outlined card fills
    at level 1 (--elevation-1, the raised storey) under a 1 dp neutral
    500 strong stroke; .elevated trades the stroke for one storey nearer the
-   viewer (--elevation-2). Since ADR-022 a storey is lighter than the one
+   viewer (--elevation-2). A storey is lighter than the one
    below it in both schemes, so in the light scheme the card is a whisper
    above the page and the stroke says most of where it is. Radius Lg, an S4 inset, S3 gaps between the
    slots — exactly drawCard's rad.Lg / sp.S4 / sp.S3. The Gio stroke is
@@ -1134,7 +1132,7 @@ const componentClasses = `/* ---- Component classes ----
    fills Props.Ground, which defaults to level 1) and the header band on
    the storey above it (drawHeaderRow walks Ground.Raised(), never an
    absolute step), under neutral 700 label-large text (drawHeaderCell).
-   Both name --elevation-N rather than a ramp step, because since ADR-022 a
+   Both name --elevation-N rather than a ramp step, because a
    storey is not a ramp step in both schemes and a table that named one
    would read as a mirror of itself between the two. Header and body rows are each exactly
    one control height tall — the row-height rule (list.RowHeight), so .compact
