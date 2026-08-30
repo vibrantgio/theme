@@ -1,11 +1,11 @@
 package system_test
 
-// FX.5's poller-count proof, in the shape A3.5 used to measure the defect:
-// a counting Source whose completed reads are the observable fact, driven
-// at one and at three subscribers. Before the fix every subscription ran
-// its own poll loop (A3.5 measured 4 reads for one subscriber against 222
-// for three); after it, the read counts at both subscriber counts match
-// exactly, because there is exactly one loop.
+// The poller-count proof: a counting Source whose completed reads are the
+// observable fact, driven at one and at three subscribers. The read counts
+// at both subscriber counts match exactly, because there is exactly one
+// loop however many subscribers attach. A stream that ran a poll loop per
+// subscription would show them diverging (4 reads for one subscriber
+// against 222 for three, measured).
 //
 // The sources are gated: Read blocks until the test feeds a value, so a
 // "read" happens exactly when the test allows one and the counts are

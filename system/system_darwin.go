@@ -9,17 +9,17 @@ import (
 	"time"
 )
 
-// darwinSource reads OS appearance via `defaults read -g`. We deliberately
-// use os/exec rather than Cgo + NSUserDefaults: NSUserDefaults caches keys
+// darwinSource reads OS appearance via `defaults read -g`. os/exec rather
+// than Cgo + NSUserDefaults, deliberately: NSUserDefaults caches keys
 // in-process, which would require an explicit CFPreferencesAppSynchronize
 // before every poll to see external `defaults write` updates. Spawning the
-// `defaults` binary always reflects fresh state via cfprefsd, which is what
-// the G2.2 acceptance test requires. (This is the asymmetry with theme/a11y,
-// where NSWorkspace flags do not have the same staleness problem.)
+// `defaults` binary always reflects fresh state via cfprefsd. (The a11y
+// package can use NSWorkspace flags directly — they do not have the same
+// staleness problem.)
 //
-// Cost split (GX.11): each `defaults` call is a fork+exec — measured ~5.5 ms
-// each, so the original two-exec Read() was ~11 ms, i.e. ~1.1% CPU at a 1 s
-// poll. Dark mode (AppleInterfaceStyle) is the signal a UI must track promptly,
+// Cost split: each `defaults` call is a fork+exec — measured ~5.5 ms each,
+// so a two-exec Read() is ~11 ms, i.e. ~1.1% CPU at a 1 s poll. Dark mode
+// (AppleInterfaceStyle) is the signal a UI must track promptly,
 // so it execs on every Read(). The accent (AppleAccentColor) changes rarely, so
 // it is re-read at most once per accentInterval and otherwise served from
 // cache — halving steady-state exec cost without a CGO notification bridge.
@@ -86,9 +86,8 @@ func readDark() bool {
 // readAccent reads the AppleAccentColor key and maps it onto the Accent
 // enum. A missing key means the user never chose an accent — macOS's
 // multicolour default — and folds to AccentDefault, as does a parse
-// failure. (An earlier revision returned the raw integer with zero for
-// "absent", which conflated "absent" with red; the enum's zero value now
-// carries the "no accent" meaning unambiguously.)
+// failure. The enum's zero value carries the "no accent" meaning: a raw
+// integer would conflate "absent" with red.
 func readAccent() Accent {
 	out, err := exec.Command("defaults", "read", "-g", "AppleAccentColor").Output()
 	if err != nil {

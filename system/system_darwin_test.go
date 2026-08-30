@@ -11,15 +11,14 @@ import (
 	"github.com/vibrantgio/theme/system"
 )
 
-// TestDarkModeFlipEmitsWithinOneSecond is the G2.2 acceptance test.
-// It exercises the real macOS source against a real `defaults write`,
-// asserting that the Live() observable surfaces the change within the
-// 1-second budget named in PLAN.md G2.2 Measurable.
+// TestDarkModeFlipEmitsWithinOneSecond exercises the real macOS source
+// against a real `defaults write`, asserting that the Live() observable
+// surfaces the change within the one-second budget.
 //
-// The test mutates the user's actual NSGlobalDomain — there is no way to
-// satisfy the Measurable verbatim ("defaults write -g AppleInterfaceStyle
-// Dark") with a sandboxed domain. The user's prior setting is captured up
-// front and restored via t.Cleanup, even on failure.
+// The test mutates the user's actual NSGlobalDomain — `defaults write -g
+// AppleInterfaceStyle Dark` cannot be aimed at a sandboxed domain. The
+// user's prior setting is captured up front and restored via t.Cleanup,
+// even on failure.
 func TestDarkModeFlipEmitsWithinOneSecond(t *testing.T) {
 	if _, err := exec.LookPath("defaults"); err != nil {
 		t.Skipf("defaults binary unavailable: %v", err)

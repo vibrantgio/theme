@@ -32,7 +32,7 @@ const (
 // Apple's published System Colors (HIG "System Colors", macOS light
 // appearance, sRGB). Graphite uses systemGray. The light primary base pins
 // this seed at its own hue and depth with the palette's accent chroma on it
-// (ADR-007 pins bases to the seed), which for a system colour already
+// (the palette pins bases to the seed), which for a system colour already
 // carrying that chroma — or for graphite, which carries none — is the seed
 // exactly, so an accented button matches the OS accent; the dark base is
 // the seed's dark re-tone per tokens.FromSeed.

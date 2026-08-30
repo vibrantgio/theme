@@ -188,8 +188,8 @@ func TestFromSourceThemeWithSeedEmitsSeededLight(t *testing.T) {
 	if len(colors) != 1 || colors[0] != wantLight {
 		t.Fatalf("seeded light palette mismatch")
 	}
-	// ADR-007: the light primary base pins the seed, which for a brand
-	// colour already carrying the palette's accent chroma is byte-exact.
+	// The light primary base pins the seed, which for a brand colour
+	// already carrying the palette's accent chroma is byte-exact.
 	if colors[0].Primary != customSeed {
 		t.Errorf("light Primary must pin the seed byte-exact: got %+v, want %+v", colors[0].Primary, customSeed)
 	}
@@ -366,8 +366,8 @@ func TestFromSourceThemeAccentSurvivesDarkMode(t *testing.T) {
 	if len(colors) != 1 || colors[0] != wantDark {
 		t.Fatalf("dark accent palette is not the accent seed's dark set")
 	}
-	// The dark Primary is the accent's dark re-tone (ADR-007's dark pin),
-	// not the default dark and not the raw seed.
+	// The dark Primary is the accent's dark re-tone, not the default dark
+	// and not the raw seed.
 	if colors[0].Primary != wantDark.Primary {
 		t.Errorf("dark Primary = %+v, want the accent's dark pin %+v", colors[0].Primary, wantDark.Primary)
 	}
@@ -398,8 +398,8 @@ func TestFromSourceThemeFollowsAccentSeed(t *testing.T) {
 	if len(colors) != 1 || colors[0] != wantLight {
 		t.Fatalf("light palette is not FromSeed of the raw accent seed")
 	}
-	// ADR-007: the light primary base pins the seed, byte-exact for a
-	// desktop accent that already carries the palette's accent chroma, so
+	// The light primary base pins the seed, byte-exact for a desktop
+	// accent that already carries the palette's accent chroma, so
 	// an accented button matches the OS accent colour.
 	if colors[0].Primary != rawAccent {
 		t.Errorf("light Primary = %+v, want the raw seed %+v", colors[0].Primary, rawAccent)
@@ -584,7 +584,7 @@ func TestFromSourceThemeWithoutTypographyIsTheDefault(t *testing.T) {
 	}
 }
 
-// --- E3.2: accessibility preferences composed into the theme ---
+// --- accessibility preferences composed into the theme ---
 
 // fakeA11ySource returns successive values from vals on each Read call,
 // repeating the last value once the slice is exhausted — the a11y twin of
@@ -602,11 +602,11 @@ func (f *fakeA11ySource) Read() (a11y.A11yPrefs, error) {
 	return v, nil
 }
 
-// TestFromSourceThemeReduceMotionSnaps is E3.2's snap test: under an OS
+// TestFromSourceThemeReduceMotionSnaps is the snap test: under an OS
 // reduce-motion preference the emitted motion scale has every duration at
 // zero, so an animated component that derives its frame count from the
-// scale — effects/motion's FramesAt(d, fps) = round(d·fps) = 0 frames for
-// every stop — is at its target on the first frame it draws.
+// scale — round(d·fps) = 0 frames for every stop — is at its target on the
+// first frame it draws.
 func TestFromSourceThemeReduceMotionSnaps(t *testing.T) {
 	appearance := &fakeSource{vals: []system.Appearance{{}}}
 	prefs := &fakeA11ySource{vals: []a11y.A11yPrefs{{ReduceMotion: true}}}
@@ -739,7 +739,7 @@ func TestFromSourceThemeReduceMotionComposesOnSeededPalette(t *testing.T) {
 }
 
 func TestFromSourceThemeHighContrastDefaultDerivesVariant(t *testing.T) {
-	// E3.3's default hook: high contrast on with the default palette emits
+	// The default hook: high contrast on with the default palette emits
 	// tokens.FromSeedHighContrast of the resolved pair's light Primary
 	// base, and deriving from that base reproduces the seed's own variant.
 	appearance := &fakeSource{vals: []system.Appearance{{}}}
@@ -784,7 +784,7 @@ func TestHighContrastVariantDerivesFromPrimaryPin(t *testing.T) {
 }
 
 func TestFromSourceThemeHighContrastSelectsVariantOfChosenPalette(t *testing.T) {
-	// The E3.3 hook: HighContrastVariant receives the pair that palette
+	// The hook: HighContrastVariant receives the pair that palette
 	// precedence resolved — here WithSeed's pair, not the defaults — and
 	// its result is what Color emits, on the dark side under Dark.
 	appearance := &fakeSource{vals: []system.Appearance{{Dark: true}}}

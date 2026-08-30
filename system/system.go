@@ -4,8 +4,8 @@
 // [Source]; [FromSource] turns a Source plus a poll interval into an
 // rx.Observable that emits only when the value changes; [Live] wires the
 // current platform's shim, and [LiveTheme] maps that stream to
-// [theme.Theme] values whose Color matches the OS setting. Since E3.2
-// LiveTheme also composes the OS accessibility preferences (theme/a11y):
+// [theme.Theme] values whose Color matches the OS setting. LiveTheme also
+// composes the OS accessibility preferences (theme/a11y):
 // reduce motion zeroes the emitted motion scale's durations so animated
 // components snap, and high contrast routes the resolved palette pair
 // through [HighContrastVariant].
@@ -44,7 +44,7 @@
 // arbitrary colours, carried raw in Appearance.AccentSeed. Both feed the
 // same tokens.FromSeed derivation.
 //
-// The streams are shared (FX.5). One [FromSource]/[Live]/[LiveTheme] value
+// The streams are shared. One [FromSource]/[Live]/[LiveTheme] value
 // runs one poll loop no matter how many subscribers attach: the loop starts
 // with the first subscriber, later subscribers immediately replay the
 // latest value and then track changes, and the loop stops when the
@@ -141,9 +141,9 @@ func FromSource(src Source, interval time.Duration) rx.Observable[Appearance] {
 // [FromSource] it is shared: n subscribers to one Live value cost one poll
 // loop, not n.
 //
-// Recommended interval: 100–250 ms. The G2.2 acceptance budget allows up
-// to one second between an external `defaults write` and the corresponding
-// emission, but most desktop UIs prefer to feel snappier than that.
+// Recommended interval: 100–250 ms. One second between an external
+// `defaults write` and the corresponding emission is the outer budget, but
+// most desktop UIs prefer to feel snappier than that.
 func Live(interval time.Duration) rx.Observable[Appearance] {
 	return FromSource(defaultSource(), interval)
 }
@@ -220,7 +220,7 @@ type colorPair struct {
 // WithSeed derives the light/dark pair from one brand colour via
 // tokens.FromSeed (derived once, up front — not per emission). The light
 // primary is that colour at its own hue and depth with the palette's accent
-// chroma on it; everything else is generated per ADR-007. The pair is
+// chroma on it; everything else is generated. The pair is
 // pinned: a stream given WithSeed ignores the OS accent colour.
 func WithSeed(seed color.NRGBA) Option {
 	return func(c *config) {
@@ -269,7 +269,7 @@ func WithTypography(t tokens.Typography) Option {
 // chosen palette, whether that came from WithSeed, WithPalette, the OS
 // accent, or the defaults.
 //
-// The default (E3.3) re-derives from the resolved pair's own brand base:
+// The default re-derives from the resolved pair's own brand base:
 // tokens.FromSeedHighContrast of light.Primary. For every seed-derived pair
 // — the defaults, WithSeed, an OS accent — that base is what the seed
 // derived, and the derivation reproduces itself from it, so the result is
@@ -316,14 +316,14 @@ var (
 // the OS accent is ignored. With no palette option the stream follows the
 // OS accent live: a raw Appearance.AccentSeed (Windows, Linux) or a
 // non-default [Accent] (macOS) emits tokens.FromSeed of that seed colour
-// (the light primary pins that colour per ADR-007), the raw seed
-// beating the enum if a source ever sets both. No accent at all —
+// (the light primary pins that colour), the raw seed beating the enum if a
+// source ever sets both. No accent at all —
 // AccentDefault with no AccentSeed: multicolour on macOS, an unsupported
 // desktop, or a failed read — emits tokens.DefaultLight/DefaultDark. An
 // accent change re-emits the theme with the new pair; each pair is derived
 // once per seed colour and cached.
 //
-// Since E3.2 the stream also composes the OS accessibility preferences
+// The stream also composes the OS accessibility preferences
 // ([a11y.Live] at the same interval, or [WithA11ySource]'s source), and
 // they modulate the emissions on top of the palette precedence above:
 // while ReduceMotion is on, Motion emits tokens.Motion.Reduced() — every
