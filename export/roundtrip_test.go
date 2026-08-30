@@ -147,11 +147,10 @@ func TestRoundTripColors(t *testing.T) {
 
 	// The dark block carries exactly the overrides that resolve against a
 	// scheme — every variable it declares must exist in :root, and nothing
-	// but a colour or an elevation storey may differ per mode. The storeys
-	// joined the list in AU1.2: since ADR-022 a storey is placed against
-	// the Background pin rather than named as a ramp step, so it resolves
-	// per scheme like the walked pins do and cannot be a var() reference
-	// the .dark block flips underneath.
+	// but a colour or an elevation storey may differ per mode. A storey is
+	// placed against the Background pin rather than named as a ramp step,
+	// so it resolves per scheme like the walked pins do and cannot be a
+	// var() reference the .dark block flips underneath.
 	for name := range dark {
 		if _, ok := root[name]; !ok {
 			t.Errorf(".dark declares %s which :root does not", name)
@@ -245,16 +244,14 @@ func TestRoundTripScales(t *testing.T) {
 // returns for that scheme — the sheet's default elevation cue cannot drift
 // from the Go resolver.
 //
-// They were var() references into the neutral ramp through v1.1, one
-// declaration in :root that the .dark block flipped by overriding the
-// ramp underneath it. ADR-022 took that away: a storey is placed against
-// the Background pin in CIELAB L*, so the light scheme's storeys above the
-// paper and the dark scheme's floor are not ramp steps at all and no
-// var() chain reaches them. Each block states its own five.
+// They cannot be var() references into the neutral ramp: a storey is placed
+// against the Background pin in CIELAB L*, so the light scheme's storeys
+// above the paper and the dark scheme's floor are not ramp steps at all and
+// no var() chain reaches them. Each block states its own five.
 //
-// The ladder is also asserted here in the direction ADR-022 orders it:
-// read down the storeys and the fill gets lighter, in the :root block and
-// in the .dark one, with no mirror clause between them.
+// The ladder's direction is asserted here too: read down the storeys and
+// the fill gets lighter, in the :root block and in the .dark one, with no
+// mirror clause between them.
 func TestRoundTripElevationSurfaces(t *testing.T) {
 	snap, sheet, _ := writeDefault(t)
 	root, dark := sheet[":root"], sheet[".dark"]
@@ -370,8 +367,8 @@ func TestRoundTripMotion(t *testing.T) {
 	}
 }
 
-// TestRoundTripButtonClasses asserts the G1.2 class layer cannot drift from
-// components/button's resolution: the walked solid-fill stops equal
+// TestRoundTripButtonClasses asserts the class layer cannot drift from the
+// button component's resolution: the walked solid-fill stops equal
 // SolidStateColor's per mode, the focus ring and the checkbox's edge are the
 // rungs their own ramps measure against the grounds they lie on, the
 // disabled fraction is DisabledOpacity, and every register/state rule picks
@@ -478,7 +475,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		".btn:active, .btn.is-active { background: var(--color-accent-pressed); }",
 		// The ring: one width and one hue everywhere, the rung chosen by the
 		// ground it circles — the filled button's own fill is the one ground
-		// that answers differently. And its forcing twins (G2.1): a static
+		// that answers differently. And its forcing twins: a static
 		// page shows a state through a class grouped into the same rule as
 		// the live pseudo-class, never through duplicated declarations.
 		"outline: var(--focus-ring-width) solid var(--ground-focus-ring, var(--color-focus-ring));",
@@ -500,13 +497,13 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"width: var(--density-control-height);",
 		"padding: var(--density-padding-y);",
 		// Ghost: nothing at rest under 700 text; under the pointer, the
-		// paper's own walk under 900. Since ADR-022 the wash is a state
-		// taken FROM a storey rather than a step named on the ramp.
+		// paper's own walk under 900. The wash is a state taken FROM a
+		// storey rather than a step named on the ramp.
 		"color: var(--color-neutral-700);",
 		"background: var(--elevation-0-hover);",
 		"background: var(--elevation-0-active);",
 		"color: var(--color-neutral-900);",
-		// Ghost in a raised host (I3.1): the wash re-derives from the host
+		// Ghost in a raised host: the wash re-derives from the host
 		// surface's own storey — the plain card at level 1, the dialog and
 		// elevated card at level 2, the popover at level 3 — token
 		// references all the way, exactly buttonColors' ghostWash walk.
@@ -524,7 +521,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"background: var(--elevation-2-active);",
 		"background: var(--elevation-3-hover);",
 		"background: var(--elevation-3-active);",
-		// Tag (G2.1): the patterns' chip — Full-radius pill, S2 either side
+		// Tag: the chip — Full-radius pill, S2 either side
 		// and the S1 stop spent once across both vertical edges,
 		// label-small text; filled accent/on-accent, tonal primary-200
 		// under the accent pin and ringed in it, because a tint and its
@@ -535,7 +532,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		".tag.tonal {",
 		"border: 1px solid var(--color-accent);",
 		"background: var(--color-primary-200);",
-		// Status tags (I2.1): the level's realized tonal container, the
+		// Status tags: the level's realized tonal container, the
 		// 1 dp level outline (padding giving its 1px back), the Text pin on
 		// top. The container is a token and not a mix: compositing a pin
 		// over the neutral Surface holds neither the hue nor the chroma.
@@ -547,13 +544,13 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"background: var(--color-warning-container);",
 		"border: 1px solid var(--color-error);",
 		"background: var(--color-error-container);",
-		// Forms (G2.1): components/input's resolution — the raised storey
+		// Forms: the input component's resolution — the raised storey
 		// under body text, the ramp's measured edge, neutral 700
 		// placeholder/glyph, focus promoting the border to the ring,
 		// disabled fading via color-mix. Every edge, every ring AND every
 		// fill names the storey-local with the ground floor's token as its
 		// fallback, which is how a raised host re-derives the controls
-		// inside it (AQ1.3, extended to the fill by AU1.4).
+		// inside it.
 		"border: 1px solid var(--ground-border, var(--color-control-border));",
 		"background: var(--ground-raised, var(--elevation-1));",
 		"font-size: var(--font-body-large-size);",
@@ -576,7 +573,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"background-size: 4.929px 4.929px, 9.929px 9.929px;",
 		"linear-gradient(45deg, transparent calc(50% - 0.833px), var(--color-on-accent) calc(50% - 0.833px), var(--color-on-accent) calc(50% + 0.833px), transparent calc(50% + 0.833px)),",
 		"radial-gradient(circle, var(--color-accent) 5px, var(--ground-raised, var(--elevation-1)) 5px)",
-		// Card (G2.2): patterns/card — level-1 fill under a 1 dp stroke in
+		// Card: level-1 fill under a 1 dp stroke in
 		// the rung the ramp measures against that fill,
 		// .elevated one storey deeper with no stroke and no shadow;
 		// radius Lg, S4 inset (the outlined padding gives back the border's
@@ -586,7 +583,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"background: var(--elevation-1);",
 		"background: var(--elevation-2);",
 		"gap: var(--space-3);",
-		// Table (G2.2): patterns/table — Surface ground, neutral-300 header
+		// Table: Surface ground, neutral-300 header
 		// band under neutral-700 label-large, control-height row pitch,
 		// Divider rules inside the rows, S3 cell inset, and the 10x5 dp
 		// neutral-700 sort chevron on the active column only.
@@ -596,7 +593,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"padding: 0 var(--space-3);",
 		".table th.sort-asc::after { border-bottom: 5px solid var(--color-neutral-700); }",
 		".table th.sort-desc::after { border-top: 5px solid var(--color-neutral-700); }",
-		// Navigation (G2.3): the four patterns. The navbar bar is the shell's
+		// Navigation: the four patterns. The navbar bar is the shell's
 		// density pin over the Surface ground; link/tab cells carry the 2 dp
 		// underline slot the Active/selected cell fills with the accent pin;
 		// hover is the Surface storey's one-rung walk to neutral 300.
@@ -621,7 +618,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		".crumb:hover, .crumb.is-hover { color: var(--color-neutral-900); }",
 		".crumbs .crumb:last-child, .crumb.current { color: var(--color-text); }",
 		"border-left: 6px solid var(--color-neutral-700);",
-		// Overlays (G2.4). The scrim is the --color-scrim token — the class
+		// Overlays. The scrim is the --color-scrim token — the class
 		// layer stays literal-free; the pattern's fixed black lives in :root
 		// beside the shadows' (asserted below this loop).
 		"background: var(--color-scrim);",
@@ -667,7 +664,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		}
 	}
 
-	// The scrim token (G2.4): modal.go scrimColor's black at alpha 0x80 in
+	// The scrim token: the modal scrim's black at alpha 0x80 in
 	// the alpha that reproduces it under sRGB compositing (Gio composites in
 	// linear RGB — see scrimRGBA's derivation), mode-invariant like the
 	// shadows' fixed black, so it lives in :root and .dark never overrides

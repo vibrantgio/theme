@@ -11,12 +11,12 @@
 // styles.css carries one :root block (the light scheme plus every
 // mode-invariant scale, comfortable density), one .dark override block (the
 // paired dark colours only) and one .compact override block (the compact
-// density metrics only). ADR-007 records the reference project's token
-// families but not its dark-mode selector, so the sheet uses class
-// overrides — chosen here, not ADR-recorded — and .compact follows the same
-// pattern; the two switches are orthogonal.
+// density metrics only). The reference project's token families are
+// recorded but not its dark-mode selector, so the sheet uses class
+// overrides and .compact follows the same pattern; the two switches are
+// orthogonal.
 //
-// Colour variables follow ADR-007's families exactly:
+// Colour variables follow the token families exactly:
 //
 //   - --color-<role>-100 … --color-<role>-900 — the nine-step functional
 //     ramps, roles neutral, primary, secondary, tertiary, error, success,
@@ -24,8 +24,8 @@
 //     fixed semantic hues rather than seed-derived, so a re-brand tints
 //     them by a few degrees and never rotates them out of their families.
 //   - Pinned bases and the semantic layer: --color-accent is the Primary
-//     pin (the reference project's .btn-primary consumes --color-accent, per
-//     ADR-007), with --color-on-accent its on-colour; --color-secondary,
+//     pin (the reference project's .btn-primary consumes --color-accent),
+//     with --color-on-accent its on-colour; --color-secondary,
 //     --color-tertiary, --color-error, --color-success, --color-warning and
 //     --color-info are the other role pins with their --color-on-*
 //     companions; --color-<status>-container and
@@ -57,19 +57,18 @@
 //     base, md, lg, xl, 2xl, 3xl, full), in px; Base is also theme.json's
 //     base radius parameter.
 //   - --elevation-<storey> (floor, 0, 1, 2, 3): the tonal surface fills,
-//     the DEFAULT elevation cue (E2.1), ordered away from the desk and
-//     toward the reader per ADR-022 — the floor a window's chrome
-//     furniture wears, the paper at 0, then raised and floating. Read the
-//     five down and the fill gets lighter, in :root and in .dark alike.
-//     They are emitted as resolved hex in BOTH blocks, unlike the v0.1–v1.1
-//     sheets, where each was one var(--color-neutral-N) reference the .dark
-//     block flipped underneath: a storey is now placed against the
+//     the DEFAULT elevation cue, ordered away from the desk and toward the
+//     reader — the floor a window's chrome furniture wears, the paper at 0,
+//     then raised and floating. Read the five down and the fill gets
+//     lighter, in :root and in .dark alike. They are emitted as resolved
+//     hex in BOTH blocks rather than as var(--color-neutral-N) references
+//     the .dark block flips underneath: a storey is placed against the
 //     Background pin in CIELAB L*, so the light scheme's storeys above the
 //     paper and the dark scheme's floor are not ramp steps at all and no
 //     var() chain over the ramp reaches them.
 //   - --shadow-<storey> (floor, 0, 1, 2, 3): CSS box-shadow approximations
 //     of the dp depths, the OPT-IN cue floating transients (menus, dialogs,
-//     tooltips) layer over their tonal fill (E2.2). The floor and level 0
+//     tooltips) layer over their tonal fill. The floor and level 0
 //     cast nothing. Each storey's dp depth d becomes
 //     "0 <d>px <2d>px 0 rgba(0, 0, 0, 0.2)" — y-offset the depth, blur
 //     twice it, no spread, black at 20% — and a zero depth is "none".
@@ -106,7 +105,6 @@
 // model (surface step and shadow dp per level) and the motion set
 // (durations in ms, easing control points, spring presets).
 // tokens.FromSeed(seed) regenerates the full palette from the seed alone —
-// the round-trip test asserts it. The per-role --font-*-size tokens come from
-// Typography, which is the theme's only type source since v0.3.0 dropped the
-// size-only Theme.Type stream.
+// the round-trip test asserts it. The per-role --font-*-size tokens come
+// from Typography, the theme's only type source.
 package export

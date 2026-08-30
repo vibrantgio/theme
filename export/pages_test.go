@@ -268,7 +268,7 @@ func TestReadmeNamesFamilies(t *testing.T) {
 	}
 }
 
-// TestLayoutPageDensityAndElevation asserts E5.1's layout-page contract:
+// TestLayoutPageDensityAndElevation asserts the layout page's contract:
 // the control metrics render at BOTH density settings — the compact column
 // is the same markup inside a .compact wrapper, exercising the sheet's
 // override block — and the elevation section's cards fill tonally through

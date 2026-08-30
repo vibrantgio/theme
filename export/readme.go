@@ -7,8 +7,8 @@ import (
 
 // readmeMD renders readme.md, the project's front door: what the system is,
 // every token family the sheet emits (enumerated from the same tables the
-// CSS emitter renders from, so the two cannot drift), ADR-007's step
-// purposes, pointers to the foundation pages, and the reproducibility
+// CSS emitter renders from, so the two cannot drift), the step purposes,
+// pointers to the foundation pages, and the reproducibility
 // contract theme.json carries.
 func readmeMD(s Snapshot) string {
 	var b strings.Builder
@@ -253,8 +253,8 @@ func elevationNames() []string {
 
 // elevationStateNames lists each storey's interaction walk in sheet order —
 // floor-hover, floor-active, 0-hover, and so on. The walk is a family of its
-// own because since ADR-022 a storey is not a ramp step in both schemes, so a
-// state taken from a storey cannot be spelled as that step's neighbour.
+// own because a storey is not a ramp step in both schemes, so a state taken
+// from a storey cannot be spelled as that step's neighbour.
 func elevationStateNames() []string {
 	names := make([]string, 0, 2*len(elevationLevels))
 	for _, k := range elevationLevels {

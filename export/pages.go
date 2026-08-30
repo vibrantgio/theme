@@ -142,7 +142,7 @@ func wcagStr(a, b stdcolor.NRGBA) string {
 	return fmt.Sprintf("%.2f:1", color.ContrastRatio(a, b))
 }
 
-// stepPurpose is ADR-007's job per ramp step: the step number carries the
+// stepPurpose is the job per ramp step: the step number carries the
 // meaning, identically in both modes.
 func stepPurpose(step int) string {
 	switch step {
@@ -170,8 +170,8 @@ func modeHex(light, dark stdcolor.NRGBA) string {
 }
 
 // contrastRow renders one measured text pair as a table row: APCA Lc and the
-// WCAG 2 ratio, in both modes. Per ADR-007 the Lc numbers gate the palette
-// and the ratios are reported alongside.
+// WCAG 2 ratio, in both modes. The Lc numbers gate the palette and the
+// ratios are reported alongside.
 func contrastRow(b *strings.Builder, label string, lightText, lightGround, darkText, darkGround stdcolor.NRGBA) {
 	fmt.Fprintf(b, "<tr><th scope=\"row\">%s</th><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n",
 		html.EscapeString(label),
@@ -251,7 +251,7 @@ type pinChip struct {
 }
 
 // colorHTML renders foundations/color.html: eight roles, each with its full
-// nine-step ramp, its pinned base(s), ADR-007's step purposes, and the
+// nine-step ramp, its pinned base(s), the step purposes, and the
 // measured APCA Lc (WCAG 2 ratio alongside) of each text pair in both modes.
 func colorHTML(s Snapshot) string {
 	roles := []colorRole{
@@ -379,7 +379,7 @@ func colorHTML(s Snapshot) string {
 		}
 		b.WriteString("</div>\n")
 
-		// The measured text pairs: ADR-007's gates, both modes, Lc first and
+		// The measured text pairs: the gates, both modes, Lc first and
 		// the WCAG ratio reported alongside.
 		b.WriteString("<h3>Measured contrast</h3>\n<table class=\"contrast\">\n<thead>\n")
 		b.WriteString("<tr><th scope=\"col\">text pair</th><th scope=\"col\">light Lc</th><th scope=\"col\">light WCAG</th><th scope=\"col\">dark Lc</th><th scope=\"col\">dark WCAG</th></tr>\n")

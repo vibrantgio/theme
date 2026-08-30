@@ -37,7 +37,7 @@ type Parameters struct {
 
 	// Scale is the shared CIELAB L* lightness scale per mode, steps
 	// 100–900, measured back from the emitted neutral ramps. It documents
-	// the generator's fixed scale (ADR-007); it is not itself an input —
+	// the generator's fixed scale; it is not itself an input —
 	// FromSeed carries it.
 	Scale ModeScale `json:"scale"`
 
@@ -76,18 +76,14 @@ type DensityMetrics struct {
 	PaddingY      float64 `json:"paddingY"`
 }
 
-// ElevationParams records the ladder, indexed the way ADR-022 orders it —
-// the floor first, then levels 0 through 3, away from the desk and toward
+// ElevationParams records the ladder, indexed the way the ladder is ordered
+// — the floor first, then levels 0 through 3, away from the desk and toward
 // the reader. Surfaces carries each storey's realized fill per scheme and
 // ShadowDp the storey's shadow depth, which is mode-invariant.
 //
-// The arrays were six long through v0.1.x, when MD3 levels 4 and 5
-// survived as clamps onto level 3; F3.3 deleted them, and AU1.2 added the
-// floor storey underneath the paper, so the ladder is five. Surfaces
-// replaced a surfaceSteps array of neutral-ramp step numbers in the same
-// task: a storey is no longer a ramp step in both schemes, so the step
-// number could not name it and the resolved colour is what a consumer
-// actually needs.
+// Surfaces carries resolved colours rather than neutral-ramp step numbers
+// because a storey is not a ramp step in both schemes, so a step number
+// cannot name it.
 type ElevationParams struct {
 	Surfaces ModeSurfaces `json:"surfaces"`
 	ShadowDp [5]float64   `json:"shadowDp"`

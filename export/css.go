@@ -32,7 +32,7 @@ func px(v float32) string {
 	return fnum(v) + "px"
 }
 
-// rampRoles orders ADR-007's colour roles under their CSS names.
+// rampRoles orders the colour roles under their CSS names.
 var rampRoles = []struct {
 	name string
 	ramp func(tokens.RampSet) tokens.Ramp
@@ -65,12 +65,12 @@ var pinRoles = []struct {
 	{"on-inverse-surface", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.OnInverseSurface }},
 	{"accent", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Primary }},
 	{"on-accent", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.OnPrimary }},
-	// The solid-fill state walk (ADR-007 / D2.3): hover one rung from the pin
-	// toward the ramp's 900 end, pressed two — SolidStateColor, the exact
-	// resolution components/button's filled register draws. They are emitted
-	// as first-class tokens because a walked pin is off-ramp: no var()
-	// arithmetic over the ramp steps could reproduce it, and ADR-007's whole
-	// point is that states are real, addressable colours a sheet can emit.
+	// The solid-fill state walk: hover one rung from the pin toward the
+	// ramp's 900 end, pressed two — SolidStateColor, the exact resolution a
+	// filled button draws. They are emitted as first-class tokens because a
+	// walked pin is off-ramp: no var() arithmetic over the ramp steps could
+	// reproduce it, and a state is a real, addressable colour a sheet can
+	// emit.
 	{"accent-hover", func(t tokens.ColorTokens) stdcolor.NRGBA {
 		return t.SolidStateColor(tokens.RolePrimary, tokens.StateHover)
 	}},
@@ -174,16 +174,12 @@ var pinRoles = []struct {
 	// therefore takes dialog-border, not control-border, and asks its own
 	// question rather than inheriting an answer.
 	//
-	// Since ADR-022 the four answers agree, and the agreement is worth
-	// reading rather than collapsing. While the ladder mirrored, the light
-	// scheme DEEPENED as it climbed, so each storey demanded a deeper rung
-	// than the storey below it and the tokens genuinely parted — the
-	// ground-floor rung measured 2.94:1 over the old level-2 fill and
-	// 2.15:1 over the old level-3 one, under the floor at both. Now that
-	// the ladder lightens toward the viewer in both schemes, a light
-	// window's hardest ground is its FLOOR and a dark window's is its TOP
-	// storey, and the rung that clears the hardest clears every other by
-	// more. One neutral rung therefore serves a whole window: 600 in the
+	// The four answers agree today, and the agreement is worth reading
+	// rather than collapsing. Because the ladder lightens toward the viewer
+	// in both schemes, a light window's hardest ground is its FLOOR and a
+	// dark window's is its TOP storey, and the rung that clears the hardest
+	// clears every other by more. One neutral rung therefore serves a whole
+	// window: 600 in the
 	// light scheme (3.55:1 on the floor, rising to 4.35:1 on a popover) and
 	// 500 in the dark (3.47:1 on a popover, rising to 7.30:1 on the floor).
 	// Four tokens still ask four questions and the sheet still states four
@@ -200,16 +196,12 @@ var pinRoles = []struct {
 	//
 	// dialog-focus-ring and popover-focus-ring are that walk one and two
 	// storeys further up, the primary counterparts of dialog-border and
-	// popover-border. They were minted while a light dialog was DARKER than
-	// its page and the page's ring could not carry onto it (2.92:1 and
-	// 2.14:1 there, against the storey's own 4.53:1 and 3.31:1). Under the
-	// linchpin a dialog is lighter than its page, so the page's rung clears
-	// it with room to spare and all three tokens repeat one value per
-	// scheme — 4.18:1 and 4.33:1 in the light, 5.06:1 and 3.46:1 in the
-	// dark. They stay as tokens for the reason they were separate to begin
-	// with: the sheet asks the ramp per storey rather than naming a rung,
-	// so a re-seeding or a variant that does part them is answered without
-	// a second edit here.
+	// popover-border. A dialog is lighter than its page, so the page's rung
+	// clears it with room to spare and all three tokens repeat one value
+	// per scheme — 4.18:1 and 4.33:1 in the light, 5.06:1 and 3.46:1 in the
+	// dark. They stay separate tokens because the sheet asks the ramp per
+	// storey rather than naming a rung, so a re-seeding or a variant that
+	// does part them is answered without a second edit here.
 	//
 	// One ground belongs to no storey: the accent fill a FILLED button's ring
 	// lies on. No rung that reads against the page reads against that fill, so
@@ -317,16 +309,15 @@ var radiusKeys = []struct {
 }
 
 // elevationLevels orders the ladder's storeys away from the desk and
-// toward the reader (ADR-022): the floor under its own name, then the four
+// toward the reader: the floor under its own name, then the four
 // numbered storeys. Each storey's fill is resolved per scheme through
 // [tokens.ColorTokens.SurfaceAt] and its shadow dp read off the snapshot's
 // ElevationScale.
 //
 // The floor is spelled out rather than numbered because the numbering
-// counts storeys from the paper and the floor is below it: naming it
-// "-1" in a CSS variable would read as an arithmetic accident, and
-// renumbering the four above it would rename every token in every sheet
-// already published to say the same thing.
+// counts storeys from the paper and the floor is below it: naming it "-1"
+// in a CSS variable would read as an arithmetic accident, and renumbering
+// the four above it would rename every token to say the same thing.
 var elevationLevels = []struct {
 	name  string
 	level tokens.ElevationLevel
@@ -412,15 +403,13 @@ func colorVars(t tokens.ColorTokens) []cssVar {
 		vars = append(vars, cssVar{"--color-" + pin.name, hexRGB(pin.pick(t))})
 	}
 	// The elevation ladder's surface fills. They live with the colours
-	// rather than with the mode-invariant scales because since ADR-022 a
-	// storey is not a ramp step in both schemes: the ladder is anchored on
-	// the Background pin and placed in CIELAB L*, so the light scheme's
-	// storeys above the paper are off the ramp and the dark scheme's floor
-	// is off it below. Through v1.1 these were emitted once as
-	// var(--color-neutral-N) references that flipped with the .dark block;
-	// there is no var() arithmetic over the ramp steps that could reach the
-	// new values, so each scheme states its own, exactly as the walked pins
-	// and the derived borders beside them do.
+	// rather than with the mode-invariant scales because a storey is not a
+	// ramp step in both schemes: the ladder is anchored on the Background
+	// pin and placed in CIELAB L*, so the light scheme's storeys above the
+	// paper are off the ramp and the dark scheme's floor is off it below.
+	// No var() arithmetic over the ramp steps reaches those values, so each
+	// scheme states its own, exactly as the walked pins and the derived
+	// borders beside them do.
 	for _, level := range elevationLevels {
 		vars = append(vars, cssVar{"--elevation-" + level.name, hexRGB(t.SurfaceAt(level.level))})
 	}
@@ -451,9 +440,9 @@ func colorVars(t tokens.ColorTokens) []cssVar {
 
 // scaleVars renders the mode-invariant families: fonts, density
 // (comfortable — the :root setting), spacing, radius, the dp shadows (the
-// opt-in cue for floating transients, per E2.2), and the motion set. The
-// tonal surface fills the shadows layer over are NOT here: since ADR-022 a
-// storey resolves per scheme, so --elevation-* sits with the colours.
+// opt-in cue for floating transients), and the motion set. The tonal
+// surface fills the shadows layer over are NOT here: a storey resolves per
+// scheme, so --elevation-* sits with the colours.
 func scaleVars(s Snapshot) []cssVar {
 	vars := []cssVar{
 		{"--font-family", strconv.Quote(s.Typography.BodyLarge.Typeface)},
@@ -485,8 +474,8 @@ func scaleVars(s Snapshot) []cssVar {
 	for _, stop := range durationStops {
 		vars = append(vars, cssVar{"--duration-" + stop.name, ms(stop.pick(s.Motion))})
 	}
-	// The interaction-state base the class layer builds on (G1.2): the ring's
-	// 2 dp stroke width components/button pins, and the disabled fraction as
+	// The interaction-state base the class layer builds on: the ring's 2 dp
+	// stroke width, and the disabled fraction as
 	// tokens.DisabledOpacity in color-mix() percent, because disabled is an
 	// opacity and not a ramp step. Both are mode-invariant, which is why they
 	// are here and the ring's COLOUR is not: --color-focus-ring is a measured
@@ -496,8 +485,8 @@ func scaleVars(s Snapshot) []cssVar {
 		cssVar{"--focus-ring-width", px(focusRingWidthDp)},
 		cssVar{"--state-disabled-opacity", fnum(tokens.DisabledOpacity*100) + "%"},
 	)
-	// The scrim (G2.4): patterns/modal's full-canvas dimmer — black at alpha
-	// 0x80 (modal.go scrimColor), deliberately the same in both modes because
+	// The scrim: a modal's full-canvas dimmer — black at alpha 0x80,
+	// deliberately the same in both modes because
 	// a scrim dims by reducing luminance, so it lives with the mode-invariant
 	// scales rather than in the colour schemes. Like the shadows' fixed black,
 	// it is a constant of the pattern, not a ramp resolution; emitting it as a
@@ -506,12 +495,12 @@ func scaleVars(s Snapshot) []cssVar {
 	return vars
 }
 
-// scrimRGBA is modal.go's scrimColor — color.NRGBA{0, 0, 0, 0x80} — as the
-// CSS colour that REPRODUCES it, which is not rgba(0,0,0,0.502): Gio
+// scrimRGBA is the scrim colour — color.NRGBA{0, 0, 0, 0x80} — as the CSS
+// colour that REPRODUCES it, which is not rgba(0,0,0,0.502): Gio
 // composites the translucent black in linear RGB while a browser composites
 // plain-alpha backgrounds in the sRGB space the pixels are stored in, so the
 // literal alpha would dim roughly twice as hard as the pattern does
-// (measured on the G2.4 mirror: 123 vs Gio's 181 over the light bg pin).
+// (measured: 123 vs Gio's 181 over the light bg pin).
 // The sRGB-equivalent alpha — the a solving srgb(bg)·(1−a) =
 // srgb(linear(bg)·0.5) — is 0.267 over the light grounds (bg ≈ 247), 0.28 at
 // mid-grey and 0.30 near black: 0.28 is the compromise, within ±0.013 of
@@ -593,8 +582,7 @@ func stylesCSS(s Snapshot) string {
 	return b.String()
 }
 
-// componentClasses is the class layer (G1.2, extended by G2.1–G2.4): the
-// component vocabulary the design surface composes screens from, defined
+// componentClasses is the class layer: the component vocabulary the design surface composes screens from, defined
 // over the token variables above — not one literal colour, so a re-branded
 // sheet re-brands the components with it, and .dark/.compact flip them like
 // everything else. The only literal lengths are the same component
@@ -602,9 +590,9 @@ func stylesCSS(s Snapshot) string {
 // (checkbox/radio's 20 dp glyph and 10 dp dot, the dropdown's 16 dp
 // chevron, the 1/2 dp input borders); each is commented at its source.
 //
-// It mirrors components/button and components/input, the sources of truth:
-// .btn is the filled register by default, .tonal and .ghost the G0A.1
-// emphasis modifiers, and every state resolves as ADR-007's ramp walks from
+// It mirrors the button and input components, the sources of truth: .btn is
+// the filled register by default, .tonal and .ghost the emphasis
+// modifiers, and every state resolves as the ramp walks from
 // exactly the rungs buttonColors picks (button.go: tonalGround 200 /
 // tonalText 900, ghostGround 200 / ghostText 700 / ghostTextOnWash 900; the
 // filled fill walks via SolidStateColor into --color-accent-hover/
