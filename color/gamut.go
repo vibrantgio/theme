@@ -1,12 +1,11 @@
 // Gamut mapping: chroma reduction at constant tone (CIELAB L*) and
-// constant OKLCh hue. New code, not part of the reactivego/luminance lift,
-// so like oklab.go it uses the org's XFromY naming.
+// constant OKLCh hue.
 //
 // The problem it solves: a tonal palette holds OKLCh hue (and nominally
 // chroma) constant while sweeping CIELAB L*. Near the tone extremes the
 // requested (L*, C, h) lies outside sRGB, and clamping R, G and B
-// independently — what the lifted RGB used to do — shifts hue and chroma
-// badly. Real gamut mapping instead walks chroma toward the neutral axis,
+// independently shifts hue and chroma badly. Real gamut mapping instead
+// walks chroma toward the neutral axis,
 // keeping tone and hue exact, until the colour fits.
 //
 // The algorithm (the same framing Google's HCT solver uses, implemented

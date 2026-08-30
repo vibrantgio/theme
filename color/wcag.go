@@ -1,10 +1,8 @@
 // WCAG 2.x relative luminance and contrast ratio, after the definitions
 // published in the WCAG 2 specification (w3.org/TR/WCAG21, "relative
-// luminance" and "contrast ratio"). Per ADR-007 these are the
-// reported-but-not-gating contrast metric in the design system: contrast
-// gating uses APCA (arriving with the contrast engine, D2.4), while WCAG 2
-// ratios are computed for reporting and for tooling that still speaks
-// them. New code, not part of the reactivego/luminance lift.
+// luminance" and "contrast ratio"). These are the reported-but-not-gating
+// contrast metric: gating uses APCA (apca.go), while WCAG 2 ratios are
+// computed for reporting and for tooling that still speaks them.
 package color
 
 import (
@@ -42,8 +40,8 @@ func RelativeLuminance(c stdcolor.NRGBA) float64 {
 // ContrastRatio returns the WCAG 2.x contrast ratio between two
 // image/color NRGBA values: (L1 + 0.05) / (L2 + 0.05) with L1 the lighter
 // of the two relative luminances, so the result is order-independent and
-// ranges from 1 (identical luminance) to 21 (white on black). Per ADR-007
-// this ratio is reported, not gated on — APCA is the gating metric.
+// ranges from 1 (identical luminance) to 21 (white on black). This ratio is
+// reported, not gated on — APCA is the gating metric.
 func ContrastRatio(a, b stdcolor.NRGBA) float64 {
 	la, lb := RelativeLuminance(a), RelativeLuminance(b)
 	if la < lb {

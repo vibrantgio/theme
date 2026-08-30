@@ -1,10 +1,9 @@
-// APCA (Accessible Perceptual Contrast Algorithm), the contrast metric
-// ADR-007 gates the palette on. This implements the published APCA-W3
-// version 0.0.98G-4g formula — the version documented in the apca-w3
-// reference implementation (github.com/Myndex/apca-w3) and used by WCAG 3
-// drafts — with its standard constants, verbatim. Per ADR-007, APCA is the
-// gating metric and WCAG 2 ratios (wcag.go) are reported alongside.
-// New code, not part of the reactivego/luminance lift.
+// APCA (Accessible Perceptual Contrast Algorithm), the contrast metric the
+// palette is gated on. This implements the published APCA-W3 version
+// 0.0.98G-4g formula — the version documented in the apca-w3 reference
+// implementation (github.com/Myndex/apca-w3) and used by WCAG 3 drafts —
+// with its standard constants, verbatim. WCAG 2 ratios (wcag.go) are
+// reported alongside.
 package color
 
 import (
@@ -69,7 +68,7 @@ func apcaClamp(y float64) float64 {
 // large/secondary text |Lc| ≥ 60. Alpha is ignored (NRGBA channels are
 // non-premultiplied); pairs too close to distinguish return 0.
 //
-// Per ADR-007 this is the palette's gating metric: step 900 must reach
+// This is the palette's gating metric: step 900 must reach
 // |Lc| 90 and step 700 |Lc| 60 over the step-100/200 grounds, and each
 // pinned base's on-colour |Lc| 60 over the base.
 func APCA(text, background stdcolor.NRGBA) float64 {

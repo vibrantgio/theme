@@ -1,7 +1,6 @@
 // Tone: the palette-facing tonal entry point. A thin, ergonomic wrapper
 // over gamut.go's solver for the common case — integer MD3 tone stops at a
-// fixed hue and chroma. New code, not part of the reactivego/luminance
-// lift, so like oklab.go it uses ordinary Go names.
+// fixed hue and chroma.
 package color
 
 import stdcolor "image/color"

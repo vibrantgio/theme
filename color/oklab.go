@@ -1,9 +1,5 @@
 // OKLab and OKLCh, after Björn Ottosson's "A perceptual color space for
-// image processing" (bottosson.github.io/posts/oklab). Unlike the CIELAB
-// chain in lab.go this file is new code, not part of the reactivego/luminance
-// lift, so it uses ordinary Go names in lab.go's XFromY adapter style
-// (LabFromNRGBA); lab.go keeps its underscored spec-style names
-// (RGB_to_XYZ_D65) so the lifted code stays recognisably the lift.
+// image processing" (bottosson.github.io/posts/oklab).
 //
 // The chain is sRGB ↔ linear sRGB ↔ LMS ↔ OKLab ↔ OKLCh. All matrix
 // coefficients are Ottosson's published values at full precision, including

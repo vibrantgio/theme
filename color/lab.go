@@ -1,11 +1,11 @@
 // The conversions in this file are lifted from reactivego/luminance
-// (luminance.go), an MD2-era tone package whose Lighten/Darken API was a
-// chroma.js port tuned to reproduce the retired material.io Color Tool.
-// Only the sRGB ↔ XYZ(D65) ↔ CIELAB chain, the D65 white point and the
-// CIE ϵ/κ constants were taken; Lighten, Darken, LightenRGBA, DarkenRGBA
-// and Kn were left behind. The functions came out of MD2-era tone work —
-// do not go looking for MD3 semantics in them; MD3 enters only through
-// what this package derives with them (tone is CIELAB L*).
+// (luminance.go): the sRGB ↔ XYZ(D65) ↔ CIELAB chain, the D65 white point
+// and the CIE ϵ/κ constants. They keep their source's underscored
+// spec-style names (RGB_to_XYZ_D65) so lifted code stays recognisable
+// against its origin; the rest of the package uses ordinary Go names.
+//
+// They carry no MD3 semantics of their own — MD3 enters only through what
+// this package derives with them (tone is CIELAB L*).
 package color
 
 import (
@@ -131,8 +131,8 @@ func Lab(R, G, B uint8) (L float64, a float64, b float64) {
 // CIELAB L* in range [0,100] and a,b value in range [-100,100]
 // Any L* values outside the valid [0,100] range are clamped.
 //
-// Out-of-gamut a,b are gamut mapped (this part is not the lift — the
-// original clamped R, G and B independently, which shifts hue and chroma):
+// Out-of-gamut a,b are gamut mapped rather than channel-clamped, since
+// clamping R, G and B independently shifts hue and chroma:
 // the colour's OKLCh chroma is reduced toward 0 at constant L* and
 // constant OKLCh hue until it fits sRGB, per gamut.go. In-gamut input is
 // returned untouched.
@@ -166,14 +166,13 @@ func RGB(L, a, b float64) (R uint8, G uint8, B uint8) {
 
 // LabFromNRGBA returns the CIELAB L*, a, b for an image/color NRGBA value.
 // The alpha channel is ignored: NRGBA is non-premultiplied, so the colour
-// channels are the colour regardless of coverage. Not part of the lift.
+// channels are the colour regardless of coverage.
 func LabFromNRGBA(c stdcolor.NRGBA) (L, a, b float64) {
 	return Lab(c.R, c.G, c.B)
 }
 
 // NRGBAFromLab returns the fully opaque image/color NRGBA value for the
-// CIELAB L*, a, b, with the same gamut mapping as RGB. Not part of the
-// lift.
+// CIELAB L*, a, b, with the same gamut mapping as RGB.
 func NRGBAFromLab(L, a, b float64) stdcolor.NRGBA {
 	R, G, B := RGB(L, a, b)
 	return stdcolor.NRGBA{R: R, G: G, B: B, A: 0xff}
