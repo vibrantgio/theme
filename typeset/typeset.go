@@ -18,7 +18,7 @@
 // design-surface mirror to consume. Without this package the Gio rendering and
 // the CSS it exports disagree about the same token.
 //
-// [Layout] is the fix, and it is a wrapper rather than a replacement: it lays
+// [Layout] is a wrapper rather than a replacement: it lays
 // the label out exactly as widget.Label would, then pads the result up to the
 // line box and reports that. Callers keep MaxLines, Alignment, WrapPolicy and
 // every other widget.Label field.
@@ -127,8 +127,8 @@ func Label(style tokens.TextStyle, maxLines int) widget.Label {
 // child of a vertical layout.Flex — would report more than its slot. Layout
 // therefore lays out under a relaxed Min.Y, corrects, and constrains the
 // corrected size once with the caller's own constraints. The result fits the
-// constraints it was given, which is what every other Gio widget promises, and
-// callers no longer have to zero Constraints.Min to be told the truth.
+// constraints it was given, which is what every other Gio widget promises, so
+// a caller does not have to zero Constraints.Min to be told the truth.
 //
 // # A floor above the line box centres the ink too
 //
@@ -147,8 +147,8 @@ func Label(style tokens.TextStyle, maxLines int) widget.Label {
 // corrected one does. A Max.Y below the corrected height, by contrast, keeps
 // the ink anchored to the top and moves the baseline with the bottom edge.
 //
-// The half-above is rounded down in both splits, so a layout the floor never
-// exceeded stays pixel-identical to what it was.
+// The half-above is rounded down in both splits, which keeps a layout the
+// floor never exceeded pixel-identical to the uncorrected one.
 func Layout(gtx layout.Context, sh *text.Shaper, lbl widget.Label, f font.Font, size unit.Sp, txt string, material op.CallOp) layout.Dimensions {
 	if gtx.Sp(lbl.LineHeight) < 0 {
 		// widget.Label installs any non-zero LineHeight; this function's

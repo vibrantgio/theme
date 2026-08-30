@@ -380,10 +380,10 @@ func TestFloorCentresOnTheUncorrectedPathsToo(t *testing.T) {
 
 // TestNegativeLineHeightNeverReachesTheShaper covers the mismatch between the
 // two guards. widget.Label installs any LineHeight that is != 0 where Layout
-// bails at <= 0, so a negative one used to pass straight through with
-// LineHeightScale 1 — and gioui.org/text then baselines each line above the one
-// before it, stacking a wrapped label's lines on top of each other and
-// reporting the height of one.
+// bails at <= 0, so a negative one must be dropped before it reaches the
+// shaper: gioui.org/text baselines each line above the one before it,
+// stacking a wrapped label's lines on top of each other and reporting the
+// height of one.
 func TestNegativeLineHeightNeverReachesTheShaper(t *testing.T) {
 	if lbl := typeset.Label(styleAt(-20), 1); lbl.LineHeight != 0 || lbl.LineHeightScale != 0 {
 		t.Errorf("Label at line height -20 installed %v scale %v, want both unset", lbl.LineHeight, lbl.LineHeightScale)

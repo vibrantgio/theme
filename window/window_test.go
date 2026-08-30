@@ -53,7 +53,7 @@ func darkTheme() theme.Theme {
 	}
 }
 
-// TestPerWindowThemeIsolation discharges G2.4 Measurable: two windows
+// TestPerWindowThemeIsolation: two windows
 // constructed with different themes maintain isolated theme streams. The
 // build callback handed to each [window.Window] sees only that window's
 // theme; the colour tokens consumed by window A's layers are exactly

@@ -133,8 +133,8 @@ func Save(appName string, p Preferences) error {
 
 // Observe returns an Observable that emits the persisted preferences on
 // subscription and then re-emits on every [Save] to the same app name from
-// this process (FX.5: it used to complete after the one read; now Save and
-// Observe agree). Consecutive duplicate values are collapsed. The stream
+// this process, so Save and Observe agree. Consecutive duplicate values are
+// collapsed. The stream
 // never completes — unsubscribe (or Take) when done — and it does not
 // watch the file: a write from another process or editor is not observed.
 //
@@ -192,13 +192,11 @@ func streamFor(path string) (pathStream, error) {
 	if err != nil {
 		return pathStream{}, err
 	}
-	// A current-value stream, seeded with what is on disk. It was a bare
-	// rx.Subject until G0C.5, and it was the organization's last one in
-	// library code: this registry is process-global and never pruned, so
-	// every shell that opened and closed over a process's life spent one of
-	// rx.Subject's 32 subscription slots permanently and left a frozen
-	// cursor behind that would eventually pin the saver. ADR-008 destination
-	// 3 — a genuine stream, but never a bare Subject.
+	// A current-value stream, seeded with what is on disk. Never a bare
+	// rx.Subject: this registry is process-global and never pruned, so every
+	// shell that opened and closed over a process's life would permanently
+	// spend one of a Subject's 32 subscription slots and leave a frozen
+	// cursor behind that eventually pins the saver.
 	send, obs := stream.Value(p)
 	s := pathStream{send: send, obs: obs}
 	if streams.byPath == nil {

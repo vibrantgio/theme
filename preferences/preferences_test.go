@@ -22,7 +22,7 @@ func collect[T any](obs rx.Observable[T]) ([]T, error) {
 	return out, err
 }
 
-// TestPreferencesSurviveRestart is the G2.1 acceptance test: a value saved
+// TestPreferencesSurviveRestart: a value saved
 // in one "session" is observable in a fresh session that shares no in-memory
 // state — only the file on disk. The two LoadFrom calls operate on
 // independent Preferences values; nothing crosses the simulated restart
@@ -65,9 +65,9 @@ func TestPreferencesSurviveRestart(t *testing.T) {
 
 // TestPreferencesSurviveRestartViaObserve covers the same acceptance via the
 // rx.Observable seam used at app launch — that is, the value emitted by
-// Observe on a fresh subscription matches what was previously saved. Since
-// FX.5 the stream is live and never completes, so the launch value is the
-// first emission (Take(1)) rather than the whole stream.
+// Observe on a fresh subscription matches what was saved. The stream is live
+// and never completes, so the launch value is the first emission (Take(1))
+// rather than the whole stream.
 func TestPreferencesSurviveRestartViaObserve(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "preferences.json")
 
@@ -306,10 +306,10 @@ func TestObserveSurvivesShellChurn(t *testing.T) {
 }
 
 // TestSaveIsNotBlockedByAStalledObserver is the harsher half of the same
-// defect, and the half prism/coordination's wrapper did not fix: a live
-// observer that stops draining used to pin the ring buffer's window, so once
-// SaveTo had written bufCap more values it blocked forever — on the goroutine
-// that called Save, which in an application is the one laying out the frame.
+// defect: a live observer that stops draining must not pin the ring buffer's
+// window. If it did, SaveTo would block forever once it had written bufCap
+// more values — on the goroutine that called Save, which in an application
+// is the one laying out the frame.
 func TestSaveIsNotBlockedByAStalledObserver(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "preferences.json")
 

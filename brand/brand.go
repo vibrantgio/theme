@@ -232,13 +232,12 @@ func (b Brand) Typography() tokens.Typography {
 // stream constructor adopts a brand when there is one and changes nothing
 // when there is not.
 //
-// The seed option pins the palette pair, which means the OS accent colour
-// no longer overrides it: a deliberately chosen brand outranks the
-// desktop's. Light and dark still follow the OS. A
-// [system.WithTypography] option always rides along so the stream wears
-// the same value [Brand.Typography] snapshots — CodeFace of Mono, then
-// WithEmoji, including when Mono is empty. Every application that
-// already does LiveTheme(..., brand.Kept().Options()...) picks both up.
+// The seed option pins the palette pair, so the OS accent colour does not
+// override it: a deliberately chosen brand outranks the desktop's. Light
+// and dark still follow the OS. A [system.WithTypography] option always
+// rides along so the stream wears the same value [Brand.Typography]
+// snapshots — CodeFace of Mono, then WithEmoji, including when Mono is
+// empty.
 func (b Brand) Options() []system.Option {
 	if !b.Chosen() {
 		return nil

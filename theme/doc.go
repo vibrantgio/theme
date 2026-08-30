@@ -16,8 +16,6 @@
 // light and the rest dark. For real OS appearance and accent tracking use
 // theme's system.LiveTheme instead.
 //
-// This package is the home of the theme contract since it moved down from
-// github.com/vibrantgio/components, so that the theme runtime sits beneath the
-// components it themes; aliases keep the old import path working. See the
-// repository README.
+// This package is the home of the theme contract: the theme runtime sits
+// beneath the components it themes. See the repository README.
 package theme
