@@ -73,7 +73,7 @@ func pinForRole(t tokens.ColorTokens, role tokens.Role) color.NRGBA {
 }
 
 // TestTintedStatesStayOnRamp verifies the tinted regime resolves every
-// state to an exact ramp step — never a blend or overlay — at the ADR-007
+// state to an exact ramp step — never a blend or overlay — at the defined
 // walk: normal and focus on the ground, hover one step past, pressed,
 // selected and dragged two, in both modes with the same index (the
 // paired-scale invariant: same step, same job).
@@ -187,8 +187,7 @@ func TestSolidWalkMonotonicTowardNine(t *testing.T) {
 
 // TestDarkSolidWalkLandsOnPairedDepths verifies "same step, same job" for
 // the solid regime: FromSeed pins every dark base at the dark scale's
-// step-700 depth (D2.4 — the spike's step-500 depth failed the APCA
-// on-colour gate), so its hover must land at step-800 depth and its
+// step-700 depth, so its hover must land at step-800 depth and its
 // pressed must clamp at step-900 depth — the exact rungs a tinted walk
 // from 700 would visit.
 func TestDarkSolidWalkLandsOnPairedDepths(t *testing.T) {
@@ -298,7 +297,7 @@ func TestPinnedStateColorWalksLikeARolePin(t *testing.T) {
 			lHover, _, _ := speccolor.LabFromNRGBA(hover)
 			lPressed, _, _ := speccolor.LabFromNRGBA(pressed)
 			lEnd, _, _ := speccolor.LabFromNRGBA(s.tok.Ramps.Neutral.Step(900))
-			const tol = 1.5 // L*, absorbs the 8-bit quantization of pin and rung
+			const tol = 1.5     // L*, absorbs the 8-bit quantization of pin and rung
 			room := lPin - lEnd // how much depth is left before the rung
 			if !s.descending {
 				room = lEnd - lPin
@@ -372,9 +371,8 @@ func TestDisabledIsOpacity(t *testing.T) {
 }
 
 // TestFocusIsTheRing verifies focus keeps the surface colour unchanged and
-// the ring colour is Neutral 500 — ADR-007's "strong border, focusable
-// edge", which is what the Outline alias resolved to before v0.2.0 deleted
-// it. FocusRing() is the name for it now.
+// the ring colour is Neutral 500, the strong-border focusable edge that
+// FocusRing() names.
 func TestFocusIsTheRing(t *testing.T) {
 	for _, s := range stateSchemes {
 		if got, want := s.tok.FocusRing(), s.tok.Ramps.Neutral.Step(500); got != want {

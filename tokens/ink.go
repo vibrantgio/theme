@@ -1,8 +1,8 @@
 // Brand ink: the colour a role reads in when it is drawn ON a surface
 // rather than filling one.
 //
-// A pinned base and an ink are two jobs, and the derivation only ever
-// solved the first. FromSeed pins each role's solid fill and then chooses
+// A pinned base and an ink are two jobs, and the derivation solves only the
+// first. FromSeed pins each role's solid fill and then chooses
 // the ink that reads over that fill (see onColour), so every pin carries a
 // measured guarantee about text laid on TOP of it — and none at all about
 // itself laid on the page. For six of the seven pinned roles that gap
@@ -20,12 +20,11 @@
 // an ink. Over the seed sweep 280 of 414 light schemes put that pin under
 // the 4.5:1 text floor against their own paper, bottoming out at 1.01:1,
 // and 208 of 414 put it under the 3:1 graphic floor. The canonical seed
-// #6750A4 sits at L* 51 and measures 5.94:1, which is why every stored
-// image in this design system shows the defect solved; a pastel accent of
-// the kind a dark-scheme palette publishes sits near L* 73 and puts a
-// 1.95:1 link on a near-white page.
+// #6750A4 sits at L* 51 and measures 5.94:1; a pastel accent of the kind a
+// dark-scheme palette publishes sits near L* 73 and puts a 1.95:1 link on a
+// near-white page.
 //
-// # Why the repair is here and not in the derivation
+// # Why the gate is here and not in the derivation
 //
 // Deepening a pale seed on the way in would fix the ink and break the
 // palette. liftSeed is a projection — every colour it returns is a colour
@@ -41,12 +40,11 @@
 // [ColorTokens.InkOn] answers the pin while the pin clears its floor and
 // walks the role's ramp only when it does not. Always walking would be the
 // simpler rule and it is the wrong one twice over: a brand that reads is
-// entitled to be its own colour — the same reasoning onColour applies to
-// the ink over a base — and a rule that moved a pairing already clearing
-// its floor would move every downstream golden in the design system for
-// nothing. Nothing does move: the canonical seed clears in both schemes and
-// both derivations, so this gate is a no-op on the palette every stored
-// image is rendered from.
+// entitled to be its own colour — the same reasoning onColour applies to the
+// ink over a base — and a rule that moved a pairing already clearing its
+// floor would move every downstream golden for nothing. The canonical seed
+// clears in both schemes and both derivations, so this gate is a no-op on
+// the palette every stored image is rendered from.
 //
 // What a walk answers is [ColorTokens.MarkOn]'s rung — the ramp step
 // nearest the mid-value 500 that clears the floor over the ground. The

@@ -18,9 +18,7 @@ type contrastPair struct {
 
 // tokenPairs returns the foreground/background pairs every scheme must
 // carry at WCAG AA. The pinned roles pair with their "On" colours; the
-// surface pairs are named by the ramp steps they resolve from, which is
-// what the five MD3 aliases deleted in v0.2.0 resolved to — the coverage
-// outlived the field names.
+// surface pairs are named by the ramp steps they resolve from.
 func tokenPairs(t tokens.ColorTokens) []contrastPair {
 	n := t.Ramps.Neutral
 	return []contrastPair{
@@ -125,10 +123,8 @@ func TestRampStepAddressing(t *testing.T) {
 }
 
 // TestSemanticLayerResolvesFromRamps verifies the semantic layer resolves
-// per ADR-007's surface mapping in both default schemes. Through v0.1.x
-// this also pinned the five MD3 aliases to their ramp steps; F3.3 deleted
-// them, leaving Surface, Divider and the inverse pair as the resolved
-// fields. The inverse pair is the one resolution that reads across the
+// from ramp steps in both default schemes: Surface, Divider and the inverse
+// pair. The inverse pair is the one resolution that reads across the
 // scheme boundary: it is the counterpart scheme's own Surface and Text, so
 // each scheme's inverse chip is built out of the other one.
 func TestSemanticLayerResolvesFromRamps(t *testing.T) {
@@ -295,17 +291,16 @@ func TestFromSeedReproducesItselfFromItsBase(t *testing.T) {
 // byte. It is the regression anchor for the whole colour engine — any
 // change to the derivation (scales, chromas, hues, pins) must show up here
 // as an explicit, reviewed palette change. Landmarks that tie the recording
-// to ADR-007's evidence table: the dark Neutral steps hold the ADR's
-// measured dark column at its measured depths with the seed's tint taken
-// out (#181818, #222222, #2e2e2e, #474747, #9e9e9e, #cccccc, #eeeeee — the
-// ADR read #18171c, #222126, #2e2e33, #47464c, #9e9da4, #cccbd2, #eeedf4
-// off a source whose neutrals carried the brand). Two D2.4 retunings moved recorded
-// values off the spike's measurements: the light 900 stops deepened from
-// L* 18 to L* 6 (with Text following the neutral 900) to clear the
-// Lc ≥ 90 gate over the step-200 grounds, and the dark pins rose from
-// L* 65 (step-500 depth) to L* 82 (step-700 depth, byte-identical to the
-// ramp's 700 stop) because no on-colour reaches Lc 60 over an L* 65
-// mid-tone.
+// to the measured evidence: the dark Neutral steps hold the measured dark
+// column at its measured depths with the seed's tint taken out (#181818,
+// #222222, #2e2e2e, #474747, #9e9e9e, #cccccc, #eeeeee — the source read
+// #18171c, #222126, #2e2e33, #47464c, #9e9da4, #cccbd2, #eeedf4, its
+// neutrals carrying the brand). Two recorded values sit off the raw
+// measurements: the light 900 stops are at L* 6 rather than the measured
+// L* 18 (with Text following the neutral 900) to clear the Lc ≥ 90 gate
+// over the step-200 grounds, and the dark pins are at L* 82 (step-700
+// depth, byte-identical to the ramp's 700 stop) rather than L* 65, because
+// no on-colour reaches Lc 60 over an L* 65 mid-tone.
 func defaultGolden() (light, dark tokens.ColorTokens) {
 	hex := func(r, g, b uint8) color.NRGBA { return color.NRGBA{r, g, b, 0xff} }
 	light = tokens.ColorTokens{
@@ -540,7 +535,7 @@ func defaultGolden() (light, dark tokens.ColorTokens) {
 }
 
 // hcGolden returns the recorded palette FromSeedHighContrast derives from
-// DefaultSeed: the E3.3 high-contrast variant, byte for byte. Landmarks
+// DefaultSeed: the high-contrast variant, byte for byte. Landmarks
 // that tie the recording to the variant's three widenings: steps 100–600 of
 // every ramp are byte-identical to defaultGolden's (the grounds stay), the
 // 700 stops sit at the default scale's 900 depth (light #131313 neutral 700

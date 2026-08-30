@@ -1,8 +1,8 @@
-// Interaction states as step walks (ADR-007, task D2.3).
+// Interaction states as step walks.
 //
-// ADR-007 retires MD3's alpha state layers — the translucent 8%/12%/16%
-// overlays of the role colour — in favour of states that are real,
-// addressable colours a token sheet can emit. Two regimes:
+// There are no MD3 alpha state layers — no translucent 8%/12%/16% overlays of
+// the role colour. A state is a real, addressable colour a token sheet can
+// emit. Two regimes:
 //
 //   - Tinted (ground) surfaces walk the ramp by index: hover is one step
 //     past the component's ground, pressed and selected two (a card on 200
@@ -11,19 +11,18 @@
 //     in both modes: past 200 lies 300, a darker hover on a light ground
 //     and a lighter one on a dark ground, with no mode-specific rule.
 //
-//   - Solid fills — the pinned role bases — walk "one / two steps from the
-//     pin toward 900" (ADR-007's surface mapping). Pins are off-ramp by
-//     design ("the seed sits deep, so bases are pins"), so a pin cannot
-//     walk by ramp index. The rule implemented here, chosen to keep "same
-//     step, same job" across modes: the pin's CIELAB L* is located on its
+//   - Solid fills — the pinned role bases — walk one or two steps from the
+//     pin toward 900. Pins are off-ramp by design (the seed sits deep, so
+//     bases are pins), so a pin cannot walk by ramp index. The rule, chosen
+//     to keep "same step, same job" across modes: the pin's CIELAB L* is
+//     located on its
 //     role ramp's own measured L* ladder as a fractional step index; each
 //     state moves that index toward the 900 end by the tinted regime's walk
 //     (hover one rung, pressed and selected two), the target L* is read off
 //     the ladder by linear interpolation, and the colour is realized at the
 //     pin's own OKLCh hue and chroma by the tonal solver. The dark pin sits
-//     at the dark scale's step-700 depth by construction (D2.4 raised it
-//     from the spike's step-500 depth so its on-colour clears the APCA
-//     gate), so its hover lands at step-800 depth and its pressed clamps at
+//     at the dark scale's step-700 depth by construction, so its hover lands
+//     at step-800 depth and its pressed clamps at
 //     the step-900 depth — exactly the walk a tinted surface performs —
 //     while the light seed pin (≈ step-700 depth for the default seed)
 //     darkens toward the 800/900 depths. In both modes the walk heads
@@ -46,8 +45,8 @@
 // The remaining states are not walks: disabled is an opacity
 // (DisabledOpacity, MD3's 38%) applied to the state's normal colour; focus
 // keeps the surface colour and adds the focus ring (FocusRing, Neutral
-// step 500 — ADR-007's "strong border, focusable edge"); dragged resolves
-// exactly as pressed.
+// step 500, the strong-border focusable edge); dragged resolves exactly as
+// pressed.
 package tokens
 
 import (
@@ -93,9 +92,8 @@ const (
 )
 
 // DisabledOpacity is the fraction of full alpha a disabled element keeps —
-// MD3's 38% disabled-content opacity, the exact value components already
-// renders (alpha 0x61 of 0xff). Disabled is an opacity, not a ramp step: a
-// disabled surface keeps its colour and fades, per D2.3.
+// MD3's 38% disabled-content opacity (alpha 0x61 of 0xff). Disabled is an
+// opacity, not a ramp step: a disabled surface keeps its colour and fades.
 const DisabledOpacity = 0.38
 
 // Disabled returns c with its alpha scaled by DisabledOpacity. Colours are
@@ -106,10 +104,8 @@ func Disabled(c stdcolor.NRGBA) stdcolor.NRGBA {
 	return c
 }
 
-// FocusRing returns the focus-ring colour: Neutral step 500, ADR-007's
-// "strong border, focusable edge". It is the colour the Outline alias
-// carried before v0.2.0 deleted it, and the one components' button already
-// strokes its ring with.
+// FocusRing returns the focus-ring colour: Neutral step 500, the
+// strong-border focusable edge.
 func (t ColorTokens) FocusRing() stdcolor.NRGBA {
 	return t.Ramps.Neutral.Step(500)
 }

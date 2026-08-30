@@ -10,22 +10,20 @@ import (
 	"github.com/vibrantgio/theme/tokens"
 )
 
-// TestAPCAContrastGate is ADR-007's contrast gate over the default palette,
+// TestAPCAContrastGate is the contrast gate over the default palette,
 // in both modes: in every role ramp, step 900 must reach |Lc| ≥ 90 and step
 // 700 |Lc| ≥ 60 over the step-100 and step-200 grounds, and each pinned
 // base's on-colour |Lc| ≥ 60 over the base.
 //
-// Reading: ADR-007's sentence — "in both ramps, step 900 must reach Lc 90
-// and step 700 Lc 60 over the step-100 and step-200 grounds" — is read with
-// the grounds taken from the SAME role's ramp, because the ADR assigns
-// 700–900 the job "text over tinted fills and pressed states" and the
+// Reading: the grounds are taken from the SAME role's ramp, because steps
+// 700–900 carry the job "text over tinted fills and pressed states" and the
 // tinted fills 100–300 come from the ramp being read. Since every ramp
 // shares one lightness scale, the neutral-grounds reading differs only by
 // hue-induced luminance wiggle; the same-role reading covers neutral anyway
 // (neutral is one of the seven gated ramps).
 //
 // WCAG 2 ratios for the same pairs are logged alongside — conformance
-// claims cite them per ADR-007 — but they do not gate: only APCA failures
+// claims cite them — but they do not gate: only APCA failures
 // fail this test, so a WCAG regression shows up in the log, never as a
 // verdict.
 func TestAPCAContrastGate(t *testing.T) {
@@ -92,20 +90,18 @@ func wcagVerdict(ratio float64) string {
 	return "fail"
 }
 
-// TestAPCAContrastGateHighContrast is the E3.3 gate over the high-contrast
+// TestAPCAContrastGateHighContrast is the gate over the high-contrast
 // variant of the default seed, with the variant's floors above the
 // defaults': in every role ramp, step 900 must reach |Lc| ≥ 90 as before
 // AND step 700 must now also reach |Lc| ≥ 90 (the default gate asks 60)
 // over the step-100 and step-200 grounds, and each pinned base's on-colour
-// |Lc| ≥ 75 (the default asks 60). Per ADR-007's arrangement WCAG ratios
-// are reported alongside — here against AAA (7:1), the level a
+// |Lc| ≥ 75 (the default asks 60). WCAG ratios are reported alongside — here against AAA (7:1), the level a
 // high-contrast conformance claim would cite — but never gated on: only
 // APCA failures fail this test.
 //
 // Measured margins at recording time: light min 700 Lc 90.7, 900 Lc 92.3,
-// pins Lc 85.7; dark min 700 Lc 93.1, 900 Lc 104.4, pins Lc 76.3. F4.6's
-// Success and Warning ramps join the gate without moving any of those
-// minima — each clears its floor above the worst case already recorded.
+// pins Lc 85.7; dark min 700 Lc 93.1, 900 Lc 104.4, pins Lc 76.3. The
+// Success and Warning ramps clear their floors above those minima.
 func TestAPCAContrastGateHighContrast(t *testing.T) {
 	hcLight, hcDark := tokens.FromSeedHighContrast(tokens.DefaultSeed)
 	for _, s := range []struct {
@@ -226,10 +222,10 @@ func accentPairs(t tokens.ColorTokens) []struct {
 //
 // It is the property the rule exists for. The bases are pinned to depths
 // their usual ink clears — except the light primary base, which is the brand
-// colour itself and can land anywhere on the axis, which is how a light
-// brand colour used to come back under white text at 2.1:1. The ink is
-// chosen by measurement now, and because the two candidates are the ends of
-// the tonal axis, the better of them clears 4.5:1 over any colour whatever:
+// colour itself and can land anywhere on the axis, so a light brand colour
+// under an assumed white ink measures as little as 2.1:1. The ink is chosen
+// by measurement, and because the two candidates are the ends of the tonal
+// axis, the better of them clears 4.5:1 over any colour whatever:
 // no seed can produce a pairing this gate has to fail.
 //
 // Three further properties are asserted alongside the number, because a
@@ -239,9 +235,9 @@ func accentPairs(t tokens.ColorTokens) []struct {
 //     preferred one falls short the chosen one reads at least as well. A
 //     rule that flipped an ink into a worse pairing would still clear the
 //     floor most of the time.
-//   - Nothing moves for a base whose usual ink already clears the floor.
-//     This is what keeps every downstream golden in the design system on
-//     the canonical seed exactly where it was.
+//   - Nothing moves for a base whose usual ink already clears the floor,
+//     which is what keeps every downstream golden on the canonical seed
+//     where it is.
 //   - The increased-contrast variant never reads below the default's, which
 //     is what its stricter floor is worth on a pairing whose two candidates
 //     are already the ends of the axis.
@@ -515,8 +511,8 @@ const (
 // and warningErrorSeparation is the floor for the one pair the warning
 // family's bend deliberately closes.
 //
-// 45° is the old floor and still the floor for the five pairs the bend does
-// not touch. Warning and error are the sixth: bounding the bend at 30° puts
+// 45° is the floor for the five pairs the bend does not touch. Warning and
+// error are the sixth: bounding the bend at 30° puts
 // the deepest warning at 54.9° against an error anchored at 28.7°, and a
 // seed lying between the two anchors tints them toward each other — the
 // error to 31.7°, the warning's anchor to 81.9° and thence to 51.9° — so
@@ -530,8 +526,9 @@ const (
 // against #f96c54. A bend of 35° measures #9a4100 against #b0250f, where the
 // two begin to read as one family; the bend stops short of that. Measured
 // over the sweep the pair closes to 19.6°, and the five unbent pairs to
-// 53.0° — wider than the 50.2° they used to hold, because the bend takes
-// warning away from green and blue as fast as it takes it toward red.
+// 53.0° — wider than the 50.2° the tint bound alone guarantees, because the
+// bend takes warning away from green and blue as fast as it takes it toward
+// red.
 const (
 	statusSeparation       = 45.0
 	warningErrorSeparation = 18.0
@@ -749,13 +746,12 @@ func TestStatusContainersKeepTheirParentsHue(t *testing.T) {
 		len(sweepSeeds()), worstChroma, dial, worstHue, containerSlack, worstText, worstMark)
 }
 
-// TestStatusPinsAreTheirRampsSeventhStep holds the one rule the status roles
-// were left without: a status role's pinned base and its ramp's step 700 are
-// one colour, in both schemes, for every seed. They used to be realized at
-// two depths a single tone apart — the pin at MD3's tone 40 and the rung at
-// the scale's 39 — so five of six light role fills came back 3/255 per
-// channel beside the rung they claimed to be, and a palette effectively
-// shipped two Errors that differed by one percent.
+// TestStatusPinsAreTheirRampsSeventhStep holds the status roles' pin rule: a
+// status role's pinned base and its ramp's step 700 are one colour, in both
+// schemes, for every seed. Realizing them at two depths a single tone apart
+// — the pin at MD3's tone 40 and the rung at the scale's 39 — puts five of
+// six light role fills 3/255 per channel beside the rung they claim to be,
+// which is a palette shipping two Errors that differ by one percent.
 //
 // It is asserted of FromSeed only. The increased-contrast variant deepens
 // its text steps and leaves its fills where they are, exactly as it leaves

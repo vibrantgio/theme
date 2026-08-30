@@ -8,7 +8,7 @@ import (
 	"github.com/vibrantgio/theme/tokens"
 )
 
-// ladder is the storey order ADR-022 fixes, from the desk toward the
+// ladder is the storey order, from the desk toward the
 // reader. Every test below reads it in this direction and no other.
 var ladder = []struct {
 	name  string
@@ -26,9 +26,9 @@ func lstar(c color.NRGBA) float64 {
 	return l
 }
 
-// TestElevationDpPreserved pins the dp shadow depths: the secondary cue
-// E2.1 keeps byte-for-byte, and what effects/depth and theme/export read.
-// The floor is new and casts nothing — the window's desk is behind
+// TestElevationDpPreserved pins the dp shadow depths: the secondary cue,
+// and what a depth effect and the token export read. The floor casts
+// nothing — the window's desk is behind
 // everything and has nothing to cast onto.
 func TestElevationDpPreserved(t *testing.T) {
 	want := map[tokens.ElevationLevel]float32{
@@ -55,12 +55,11 @@ func TestElevationDpPreserved(t *testing.T) {
 	}
 }
 
-// TestLightnessClimbsTowardTheViewer is ADR-022's V6 check, taken over the
-// whole seed sweep in both schemes and both contrast variants: WALKING
-// TOWARD THE VIEWER NEVER GETS DARKER. It is the one property the
-// re-founding exists to establish, so it is asserted over the population
-// rather than over one palette, and it is asserted with no mirror clause —
-// the same sentence, the same direction, in every scheme.
+// TestLightnessClimbsTowardTheViewer takes the ladder's central invariant
+// over the whole seed sweep in both schemes and both contrast variants:
+// WALKING TOWARD THE VIEWER NEVER GETS DARKER. It is asserted over the
+// population rather than over one palette, and with no mirror clause — the
+// same sentence, the same direction, in every scheme.
 func TestLightnessClimbsTowardTheViewer(t *testing.T) {
 	var narrowest = 999.0
 	var narrowestAt string
@@ -88,13 +87,10 @@ func TestLightnessClimbsTowardTheViewer(t *testing.T) {
 		len(sweepSeeds()), narrowest, narrowestAt)
 }
 
-// TestTheLadderKeepsTheRestingPixels pins what ADR-022 promises costs
-// nothing: the light scheme's resting arrangement — chrome under paper —
-// keeps its exact pixels, and the dark scheme's raised and floating
-// storeys land byte-for-byte on the neutral rungs that scheme already
-// carried. Those are the identities the re-founding is built on: light
-// furniture stays at Neutral 200, and the #222222/#2E2E2E family the DARK
-// furniture used to wear is now worn by what is raised.
+// TestTheLadderKeepsTheRestingPixels pins the ladder's two byte-for-byte
+// identities: light furniture is Neutral 200 exactly, and the dark scheme's
+// raised and floating storeys land byte-for-byte on Neutral 200, 300 and
+// 400 (the #222222/#2E2E2E family).
 func TestTheLadderKeepsTheRestingPixels(t *testing.T) {
 	for _, seed := range sweepSeeds() {
 		light, dark := tokens.FromSeed(seed)
@@ -150,8 +146,8 @@ func TestTheLadderKeepsTheRestingPixels(t *testing.T) {
 // band step of 4.98 overshot into pure black.
 //
 // The asymmetry is asserted rather than tolerated, because the temptation
-// it guards against is exactly the one ADR-022 abolished: deriving one
-// number and mirroring it into the other scheme.
+// it guards against is deriving one number and mirroring it into the other
+// scheme.
 func TestTheFloorTakesTheMeasuredStep(t *testing.T) {
 	// One 8-bit level near either pin is well under a quarter of an L\*,
 	// so the realized step cannot wander far from the measurement.
@@ -244,8 +240,8 @@ func TestTheHairlineCarriesTheWhisperStep(t *testing.T) {
 // the storey it is asked of and not from an absolute rung: every storey
 // below the ceiling raises to the next one, so the same call answers
 // differently for a thing on the window's paper and the same thing on
-// furniture. And since ADR-022 the walk is one-signed — the rung it lands
-// on is lighter in both schemes.
+// furniture. The walk is one-signed — the rung it lands on is lighter in
+// both schemes.
 func TestRaisedWalksOneRungFromTheLocalGround(t *testing.T) {
 	want := map[tokens.ElevationLevel]tokens.ElevationLevel{
 		tokens.LevelFloor: tokens.Level0,
@@ -279,9 +275,8 @@ func TestRaisedWalksOneRungFromTheLocalGround(t *testing.T) {
 
 // TestRaisedClampsAtTheCeiling pins the documented behaviour at the top of
 // the ladder: the walk stops rather than naming a storey the scale does
-// not have. Levels 4 and 5 were deleted when the ladder settled, and
-// stepping past 3 here would hand every other accessor a level it panics
-// on.
+// not have. The ladder has no level 4, so stepping past 3 here would hand
+// every other accessor a level it panics on.
 func TestRaisedClampsAtTheCeiling(t *testing.T) {
 	if got := tokens.Level3.Raised(); got != tokens.Level3 {
 		t.Errorf("Level3.Raised() = %d, want Level3 (%d): the ladder ends at 3", got, tokens.Level3)
@@ -291,12 +286,11 @@ func TestRaisedClampsAtTheCeiling(t *testing.T) {
 	}
 }
 
-// TestStateAtWalksFromTheStorey asserts D2.3's state walks compose on top
-// of the ladder from the storey's OWN fill rather than from a ramp index
-// the storey no longer has. The walk keeps its direction — toward the
-// ramp's 900 end, darker in a light scheme and lighter in a dark one —
-// because a state says something happened here, which is feedback and not
-// depth; only the ladder answers to the linchpin.
+// TestStateAtWalksFromTheStorey asserts the state walks compose on top of
+// the ladder from the storey's OWN fill rather than from a ramp index the
+// storey does not have. The walk's direction is its own — toward the ramp's
+// 900 end, darker in a light scheme and lighter in a dark one — because a
+// state says something happened here, which is feedback and not depth.
 func TestStateAtWalksFromTheStorey(t *testing.T) {
 	for _, scheme := range []struct {
 		name string
@@ -325,17 +319,14 @@ func TestStateAtWalksFromTheStorey(t *testing.T) {
 	}
 }
 
-// TestSurfaceStepIsHalfTrue pins the deprecated accessor: it keeps
-// answering the ramp-index ladder it always answered, which is exactly the
-// dark scheme's arrangement and stale in the light one, and it answers the
-// new floor storey with the "not a ramp step" sentinel it has always used
-// for the Background pin.
+// TestSurfaceStepIsHalfTrue pins the deprecated accessor: it answers the
+// ramp-index ladder, which is exactly the dark scheme's arrangement and
+// stale in the light one, and it answers the floor storey with the "not a
+// ramp step" sentinel it uses for the Background pin.
 //
 // The staleness is asserted rather than tolerated. A shim that is right in
 // one scheme and wrong in the other is a thing to be moved off, and the
-// assertion below says which half is which so that the move — AU1.3's,
-// where every call site takes StateAt instead — cannot happen by accident
-// and cannot be forgotten.
+// assertion below says which half is which.
 func TestSurfaceStepIsHalfTrue(t *testing.T) {
 	want := map[tokens.ElevationLevel]int{
 		tokens.LevelFloor: 0, tokens.Level0: 0,
@@ -361,10 +352,9 @@ func TestSurfaceStepIsHalfTrue(t *testing.T) {
 }
 
 // TestElevationLevelPanics asserts out-of-vocabulary levels panic,
-// matching Ramp.Step. 4 and 5 are in the list deliberately: through v0.1.x
-// they were clamps onto level 3, and F3.3's sweep deleted them, so the
-// ladder ends at 3 and asking for a fifth storey is now the error it
-// always described. −2 is the floor's counterpart at the other end: the
+// matching Ramp.Step. 4 and 5 are in the list deliberately: the ladder ends
+// at 3, so asking for a fifth storey is an error. −2 is the floor's
+// counterpart at the other end: the
 // ladder gained a storey below the paper, not an open-ended basement.
 // Raised answers to the same rule; its clamp at the ceiling is the one
 // deliberate exception, and TestRaisedClampsAtTheCeiling pins it.

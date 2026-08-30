@@ -262,7 +262,7 @@ func idsEqual(a, b []text.GlyphID) bool {
 // normal and bold, upright and italic. System fonts are off, so glyphs coming
 // back at all proves the collection resolved the
 // request; a mono advance differing from proportional Roboto's for the same
-// string proves "Roboto Mono" did not fall back to Roboto (C1.2 precedent);
+// string proves "Roboto Mono" did not fall back to Roboto;
 // and pairwise-distinct glyph-ID sequences prove the four requests resolve to
 // four distinct faces — a mono italic keeps the upright's fixed pitch, so
 // advances alone could not tell them apart.
@@ -350,10 +350,9 @@ func resolvedGlyph(t *testing.T, shaper *text.Shaper, r rune) (gid uint32, faceI
 }
 
 // TestShapersAreCachedApart asserts the two configurations do not hand back
-// each other's shaper. The cache was a single field before F4.2, so this is
-// the assertion that keeps a second configuration from quietly aliasing the
-// first — a golden test would then inherit the system fallback it exists to
-// avoid, and pass everywhere until the machine changed.
+// each other's shaper. It keeps a second configuration from quietly aliasing
+// the first — a golden test would then inherit the system fallback it exists
+// to avoid, and pass everywhere until the machine changed.
 func TestShapersAreCachedApart(t *testing.T) {
 	// WithFaces() with nothing to add is the copy whose caches are known
 	// empty; a plain copy of the package variable may already carry shapers
@@ -392,27 +391,23 @@ func TestShapersAreCachedApart(t *testing.T) {
 	}
 }
 
-// TestShaperCacheSurvivesCopying is the F5.1 regression. It reproduces what an
-// rx emission does to a Typography and asserts the cache survives it.
+// TestShaperCacheSurvivesCopying reproduces what an observable emission does
+// to a Typography and asserts the cache survives it.
 //
-// Every component in this organization reaches the theme's shaper the same
-// way: the theme emits a tokens.Typography, the component's map function pulls
-// it out of the tuple into a local — `typ := n.Second` — and calls
-// typ.Shaper(). Both accessors take pointer receivers and cache into the
-// receiver, so before F5.1 that cache was written into a local that died at
-// the end of the map function and was rebuilt, from sixteen embedded faces
-// plus the platform's font list, on the very next emission. The pre-F5.1 tests
-// missed it because they all held their Typography in a variable and called
-// twice, which is the one shape production never has.
-//
-// The copies below are made from one source, exactly as rx.Of(…) hands the
-// same value to every subscriber, and every one of them must name the same
-// shaper.
+// A consumer reaches the theme's shaper by pulling a tokens.Typography out of
+// an emission into a local and calling typ.Shaper(). Both accessors take
+// pointer receivers and cache into the receiver, so a cache held in the
+// struct itself would be written into a local that dies at the end of the map
+// function and rebuilt, from sixteen embedded faces plus the platform's font
+// list, on the very next emission. Holding the Typography in a variable and
+// calling twice does not exercise that, which is why the copies below are
+// made from one source, the way a broadcast hands the same value to every
+// subscriber. Every one of them must name the same shaper.
 func TestShaperCacheSurvivesCopying(t *testing.T) {
 	source := tokens.DefaultTypography.WithFaces()
 
-	// Copies taken before the first shaper call: nothing is built yet, so
-	// this is the emission ordering that used to produce N shapers for N
+	// Copies taken before the first shaper call: nothing is built yet, which
+	// is the emission ordering that would otherwise produce N shapers for N
 	// subscribers.
 	copies := make([]tokens.Typography, 4)
 	for i := range copies {
@@ -455,9 +450,9 @@ func TestShaperCacheSurvivesCopying(t *testing.T) {
 		t.Error("the source did not see the pinned shaper its copy built")
 	}
 
-	// F4.2's separation must survive the shared cache: one holder, still two
-	// distinct shapers. Collapsing them would make every golden in the
-	// organization inherit the system fallback it exists to avoid.
+	// The two configurations must stay separate under the shared cache: one
+	// holder, still two distinct shapers. Collapsing them would make every
+	// golden inherit the system fallback it exists to avoid.
 	if want == wantPinned {
 		t.Fatal("Shaper() and DeterministicShaper() collapsed to one shaper across copies")
 	}

@@ -1,15 +1,12 @@
 // Tonal containers: the ground a status role fills, and the mark read on it.
 //
 // A container is a role's own hue held at one measured chroma and realized
-// at one measured depth — never a blend. Blending was how the tinted banner
-// used to get its ground: the pinned base composited over the neutral
-// Surface at 12% alpha, in non-linear sRGB. That is neither hue-preserving
-// nor chroma-preserving, and it showed. The four status grounds came out at
-// chroma 0.0155–0.0212 — within a rounding error of the grey they were
-// mixed into, so no two of them could be told apart — and the red one's hue
-// slid from 28.7° to 21.6° on the way, seven degrees toward magenta. A red
-// that has given up seven-eighths of its chroma and seven degrees of its
-// hue is what a container reported as dirty pink actually was.
+// at one measured depth — never a blend. Compositing the pinned base over
+// the neutral Surface at 12% alpha interpolates in non-linear sRGB, which is
+// neither hue-preserving nor chroma-preserving: the four status grounds come
+// out at chroma 0.0155–0.0212, within a rounding error of the grey they are
+// mixed into, and the red one's hue slides from 28.7° to 21.6°, seven degrees
+// toward magenta — a dirty pink.
 //
 // Realizing the container instead fixes both halves at once. The tonal
 // solver holds hue exactly by construction (it reduces chroma toward the
@@ -96,8 +93,8 @@ func (t ColorTokens) OnStatusContainer(role Role) stdcolor.NRGBA {
 // role's own ramp nearest the ramp's mid-value step 500 that reaches floor
 // against ground.
 //
-// Step 500 is where a role is most itself — ADR-007 gives it the job of
-// being the ramp's mid-value reference — so the rule is "be that rung, or
+// Step 500 is where a role is most itself — it is the ramp's mid-value
+// reference — so the rule is "be that rung, or
 // the nearest one to it that still reads". Walking outward from the middle
 // rather than naming a rung is what keeps four hues in step. sRGB holds a
 // saturated red only at mid depths and a saturated amber only at high ones,
@@ -106,13 +103,12 @@ func (t ColorTokens) OnStatusContainer(role Role) stdcolor.NRGBA {
 // four, so every mark on one ground lands at one depth and reads at one
 // weight, which is what makes a set of status marks a set.
 //
-// Reaching for the most chromatic rung instead was tried and does not hold
-// that. Chroma peaks at a different depth for every hue — amber's peaks two
-// rungs deeper on the dark scale than its siblings' do — so the amber mark
-// came back at 8.44:1 beside three siblings at 5.03:1 and pulled the eye
-// across an alert stack for a reason no one reading it could infer. What a
-// mark owes its ground is legibility, and past that, agreement with the
-// other marks; being the most colourful it could have been is neither.
+// Reaching for the most chromatic rung instead does not hold that. Chroma
+// peaks at a different depth for every hue — amber's peaks two rungs deeper
+// on the dark scale than its siblings' do — so the amber mark comes back at
+// 8.44:1 beside three siblings at 5.03:1 and pulls the eye across an alert
+// stack for a reason no one reading it could infer. What a mark owes its
+// ground is legibility, and past that, agreement with the other marks.
 //
 // A ground no rung can clear yields the rung that reads best rather than
 // nothing, so a caller always has a colour: a mark too weak to meet its

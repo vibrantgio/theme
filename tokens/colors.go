@@ -12,10 +12,10 @@ type ColorScale struct {
 
 // Optional named palettes, taken verbatim from the Tailwind CSS v3 default
 // config. They are exactly that — palettes an application may reach for by
-// name — and no part of the semantic layer resolves from them: since D2.2
-// every role ramp, pin and semantic colour derives from a seed (see
-// FromSeed). Per ADR-002 the Tailwind values may survive only in this
-// arrangement, never behind a role name.
+// name — and no part of the semantic layer resolves from them: every role
+// ramp, pin and semantic colour derives from a seed (see FromSeed). The
+// Tailwind values may survive only in this arrangement, never behind a role
+// name.
 var (
 	Slate = ColorScale{
 		C50:  color.NRGBA{0xf8, 0xfa, 0xfc, 0xff},
@@ -69,7 +69,7 @@ var (
 	Black = color.NRGBA{0x00, 0x00, 0x00, 0xff}
 )
 
-// Ramp is one colour role's nine-step functional ramp per ADR-007. Steps run
+// Ramp is one colour role's nine-step functional ramp. Steps run
 // 100–900 in hundreds and the step number carries the meaning: 100–300 are
 // tinted fills, hovers and subtle borders, 500 is the mid-value reference,
 // 700–900 are text over tinted fills and pressed states. Index i holds step
@@ -89,7 +89,7 @@ func (r Ramp) Step(n int) color.NRGBA {
 	return r[n/100-1]
 }
 
-// RampSet holds the colour-role ramps ADR-007 defines. Neutral carries
+// RampSet holds the colour-role ramps. Neutral carries
 // every surface, border and text shade; the accent ramps carry each role's
 // tints and text shades, while the role's base colour is pinned separately
 // on ColorTokens (see ColorTokens.Primary).
@@ -111,29 +111,26 @@ type RampSet struct {
 	Info      Ramp
 }
 
-// ColorTokens holds the colour vocabulary consumed by every Components component:
-// ADR-007's nine-step functional ramps, the pinned role bases, and a thin
-// semantic layer resolved from ramp steps. Each "On" field is the recommended
-// text/icon colour rendered on top of its companion pinned base.
+// ColorTokens holds a scheme's whole colour vocabulary: the nine-step
+// functional ramps, the pinned role bases, and a thin semantic layer resolved
+// from ramp steps. Each "On" field is the recommended text/icon colour
+// rendered on top of its companion pinned base.
 //
 // The pinned bases exist because a brand seed rarely sits on the shared
 // lightness scale: the pin reproduces the role's base colour exactly instead
 // of reading a lightened approximation off a ramp step. Dark mode pins a
 // dark-appropriate base rather than reusing the light pin.
 //
-// The MD3-only field names — OnBackground, OnSurface, SurfaceVariant,
-// OnSurfaceVariant and Outline — were deprecated aliases through v0.1.x and
-// are gone as of v0.2.0. Each was a fixed resolution off the neutral ramp,
-// so each is still reachable by asking the ramp directly: OnBackground was
+// There are no MD3-only alias fields. Each was a fixed resolution off the
+// neutral ramp and is reachable by asking the ramp directly: OnBackground is
 // Text, OnSurface Ramps.Neutral.Step(900), SurfaceVariant Step(300),
-// OnSurfaceVariant Step(700), Outline Step(500) — or FocusRing(), which is
-// what Outline was actually used for.
+// OnSurfaceVariant Step(700), Outline Step(500) — or FocusRing().
 type ColorTokens struct {
 	// Ramps holds the functional ramps, fully populated: nine steps per
 	// role, generated on the shared lightness scale by FromSeed.
 	Ramps RampSet
 
-	// Pinned accent bases and their on-colours (ADR-007 "solid fill").
+	// Pinned accent bases and their on-colours: the solid fills.
 	Primary     color.NRGBA // pinned primary base — in a light scheme, the lifted seed
 	OnPrimary   color.NRGBA // text/icon over Primary
 	Secondary   color.NRGBA // pinned secondary base
@@ -149,14 +146,13 @@ type ColorTokens struct {
 	Info        color.NRGBA // pinned info base
 	OnInfo      color.NRGBA // text/icon over Info
 
-	// The thin semantic layer (ADR-007's surface mapping). Background and
-	// Text are pins — the "bg" and "text" bases E0.1 emits — while Surface
-	// and Divider resolve from Neutral ramp steps at construction.
+	// The thin semantic layer. Background and Text are pins; Surface and
+	// Divider resolve from Neutral ramp steps at construction.
 	Background color.NRGBA // pinned app background
 	Text       color.NRGBA // pinned body text over Background
 	// Surface is the neutral ramp's step 200 — the rung one step off the
-	// app ground. It is a RAMP ALIAS, not a storey: since ADR-022 the
-	// elevation ladder is anchored on the Background pin and placed in
+	// app ground. It is a RAMP ALIAS, not a storey: the elevation ladder is
+	// anchored on the Background pin and placed in
 	// CIELAB L*, so which storey this rung happens to carry depends on the
 	// scheme (light furniture wears it; dark raised surfaces do). Ask
 	// [ColorTokens.SurfaceAt] for a storey.
@@ -184,10 +180,9 @@ type ColorTokens struct {
 	OnInverseSurface color.NRGBA // text/icon over it — counterpart Neutral.Step(900)
 }
 
-// resolveAliases fills every field defined as a resolution of a ramp step —
+// resolveAliases fills every field defined as a resolution of a ramp step:
 // Surface and Divider off this scheme's own neutral ramp, and the inverse
-// pair off the counterpart scheme's; the five MD3 aliases it also filled
-// were deleted with the deprecation window. dividerStep is the Neutral step
+// pair off the counterpart scheme's. dividerStep is the Neutral step
 // Divider resolves from: 300 in the default derivation, 500 in the
 // high-contrast variant. counterpart is the other scheme's neutral ramp —
 // the dark one while building the light scheme and the light one while

@@ -28,10 +28,9 @@ func CriticalDamping(stiffness, mass float32) float32 {
 	return 2 * float32(math.Sqrt(float64(stiffness)*float64(mass)))
 }
 
-// MD3 motion semantics on a desktop scale, mapped 2026-08-05 (E3.1,
-// per ADR-005: MD3's system, not MD3's look). This table is the
-// justification for every value below it; argue with the sources here
-// rather than with the consumer diffs.
+// MD3 motion semantics on a desktop scale, mapped 2026-08-05: MD3's system,
+// not MD3's look. This table is the justification for every value below it;
+// argue with the sources here rather than with the consumer diffs.
 //
 // Easing. MD3 defines two easing families: standard for utilitarian
 // transitions and emphasized for expressive, attention-drawing ones, each
@@ -58,44 +57,32 @@ func CriticalDamping(stiffness, mass float32) float32 {
 //
 // Durations. MD3 publishes sixteen duration roles — short1-4 (50-200 ms),
 // medium1-4 (250-400), long1-4 (450-600), extra-long1-4 (700-1000), same
-// source as above. Desktop keeps the five existing stops rather than
-// adopting all sixteen: a pointer-driven desktop app wants fewer, faster
-// stops (ADR-005's reading), and five is what every consumer already
-// works from. Each stop is defined as exactly one MD3 role:
+// source as above. Desktop keeps five stops rather than adopting all
+// sixteen: a pointer-driven desktop app wants fewer, faster stops. Each stop
+// is defined as exactly one MD3 role:
 //
-//	stop       was     MD3 role   now     used for
-//	----       ---     --------   ---     --------
-//	DurXFast   75 ms   short1     50 ms   state layers, hover feedback
-//	DurFast    150 ms  short3     150 ms  small component transitions
-//	DurNormal  250 ms  medium1    250 ms  standard enter/transition
-//	DurSlow    400 ms  medium4    400 ms  emphasized/large transitions, fades
-//	DurXSlow   500 ms  long2      500 ms  the slowest desktop motion; delays
+//	stop       MD3 role   value   used for
+//	----       --------   -----   --------
+//	DurXFast   short1      50 ms  state layers, hover feedback
+//	DurFast    short3     150 ms  small component transitions
+//	DurNormal  medium1    250 ms  standard enter/transition
+//	DurSlow    medium4    400 ms  emphasized/large transitions, fades
+//	DurXSlow   long2      500 ms  the slowest desktop motion; delays
 //
-// The reasoning: the three middle stops already sat on MD3 role values and
-// do not move. DurXFast drops 75 → 50 (short1) because instant-feeling
-// pointer feedback is the faster lean the desktop cut exists for. DurXSlow
-// drops 700 → 500 (long2): the extra-long family (700-1000 ms) is
-// full-screen, touch-scale choreography that a desktop window never needs,
-// so the scale's ceiling is long2 — which is also exactly the 500 ms
-// tooltip delay and the 30-frame (500 ms at 60 Hz) effects/motion default
-// already shipping, so the ceiling change costs no consumer a behaviour
-// change.
+// DurXFast takes short1 rather than a slower role because instant-feeling
+// pointer feedback is the lean the desktop cut exists for. The ceiling is
+// long2: the extra-long family (700-1000 ms) is full-screen, touch-scale
+// choreography a desktop window never needs, and 500 ms is also the tooltip
+// delay and the 30-frame (500 ms at 60 Hz) motion default.
 //
-// Springs. The effects physics path animates with damped springs rather than
-// beziers, so the scale carries spring presets alongside the curves. FX.2
-// (the effects/spring defaults fix) is not landed as of 2026-08-05 and owns
-// the decision of what a usable default is; per that coordination these
-// presets encode effects' CURRENT working values rather than pre-empting
-// FX.2 — it may retune them when it lands:
+// Springs. The physics path animates with damped springs rather than beziers,
+// so the scale carries spring presets alongside the curves:
 //
-//	preset         mass  stiffness  damping        source
-//	------         ----  ---------  -------        ------
-//	SpringDefault  1     80         2·√80  ≈17.9   effects/motion DefaultSpring (critical)
-//	SpringSnappy   1     300        22     ζ≈0.64  effects/springbutton defaults (slight overshoot, "pop")
-//	SpringGentle   1     20         2·√20  ≈8.94   effects/spring doc example (critical, soft)
-//
-// effects/spring's own zero-Options fallback (k=0.4, c=0.7 — the ~873-frame
-// settle FX.2 exists to fix) is deliberately NOT a preset.
+//	preset         mass  stiffness  damping
+//	------         ----  ---------  -------
+//	SpringDefault  1     80         2·√80  ≈17.9   critical, brisk
+//	SpringSnappy   1     300        22     ζ≈0.64  slight overshoot, "pop"
+//	SpringGentle   1     20         2·√20  ≈8.94   critical, soft
 
 // MotionScale holds duration stops, MD3 easing presets, and spring presets
 // for animation tokens. See the mapping table above for where every value
@@ -122,8 +109,7 @@ type MotionScale struct {
 	EaseEmphasizedAccelerate Bezier
 	EaseEmphasizedDecelerate Bezier
 
-	// Spring presets for the effects physics path. Values track effects'
-	// current working springs until FX.2 retunes them (see above).
+	// Spring presets for the physics path.
 	SpringDefault Spring // critically damped, brisk: enter/exit scale
 	SpringSnappy  Spring // slightly underdamped: button-press "pop"
 	SpringGentle  Spring // critically damped, soft: large soft reveals
@@ -132,21 +118,21 @@ type MotionScale struct {
 // Reduced returns the reduce-motion variant of the scale: every duration
 // stop is zero, everything else — easings and spring presets — is carried
 // unchanged. It is what the theme's Motion field emits while the OS
-// "Reduce Motion" preference is on (E3.2).
+// "Reduce Motion" preference is on.
 //
 // Zero durations are the whole contract. A duration-driven animation of
-// zero duration is complete the moment it starts — effects/motion's
-// FramesAt(0, fps) is 0 frames — so a component that derives its frame
-// count from the scale reaches its target on the first frame it draws:
-// it snaps. (Watch one pulse edge: effects/motion's Options treats a zero
-// Frames as "use the default", so a caller that snaps must skip the
-// primitive on a zero duration rather than construct one with Frames 0.)
+// zero duration is complete the moment it starts — zero frames — so a
+// component that derives its frame count from the scale reaches its target on
+// the first frame it draws: it snaps. Watch one edge: a frame count of zero
+// is commonly read as "use the default", so a caller that snaps must skip the
+// animation primitive on a zero duration rather than construct one with zero
+// frames.
 //
 // The spring presets are deliberately NOT retuned. No finite spring
 // completes in one frame, and a stiffness large enough to fake it
-// (ω ≈ 600 rad/s for a 16 ms settle) is far outside the stability range
-// of effects/spring's explicit integrator at 60 Hz — it would oscillate or
-// diverge, the opposite of reduced motion. A spring-driven component
+// (ω ≈ 600 rad/s for a 16 ms settle) is far outside the stability range of an
+// explicit integrator at 60 Hz — it would oscillate or diverge, the opposite
+// of reduced motion. A spring-driven component
 // honours reduce-motion the same way a duration-driven one does: it reads
 // the zero durations as the signal and jumps to its target instead of
 // animating.

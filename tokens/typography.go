@@ -172,7 +172,7 @@ type Typography struct {
 	Faces []font.FontFace
 
 	// shapers is the cache behind Shaper and DeterministicShaper. It is a
-	// pointer on purpose, and that is the whole of F5.1.
+	// pointer on purpose.
 	//
 	// A Typography travels by value: every component in this organization
 	// pulls one out of an rx tuple — `typ := n.Second` — before asking it for
@@ -237,11 +237,7 @@ func (t *Typography) cache() *shaperCache {
 //
 // The shaper handed back is shared, and it is not safe for concurrent use.
 // gioui.org/text says so itself: the same Shaper must not be used from
-// different goroutines, and it panics on its internal map when it is. An
-// earlier version of this comment promised the exact opposite — "safe for
-// concurrent use from any number of goroutines" — and the per-copy cache that
-// promise was written to justify is what stopped the cache from ever being
-// read back.
+// different goroutines, and it panics on its internal map when it is.
 //
 // Sharing one shaper is nevertheless right, because Gio renders on a single
 // goroutine. The rx observables in this organization paint nothing: they
@@ -318,9 +314,8 @@ func (t *Typography) DeterministicShaper() *text.Shaper {
 // default family: text naming no typeface still resolves to Faces[0]'s.
 //
 // WithFaces is also the only supported way to get a second shaper out of this
-// type. Copying a Typography no longer detaches its cache — that is the point
-// of F5.1 — so a copy that must shape from a different collection has to say
-// so here.
+// type. Copying a Typography does not detach its cache, so a copy that must
+// shape from a different collection has to say so here.
 //
 // Call it while wiring, before shaping starts, on the goroutine that will do
 // the shaping.
@@ -466,9 +461,10 @@ func jetbrainsEmojiTypography() Typography {
 }
 
 // DefaultTypography is the canonical MD3 typography: Roboto throughout, the
-// Material Design 3 sizes, and the official MD3 line heights and tracking. Display, Headline, Title Large and Body roles are regular weight;
+// Material Design 3 sizes, and the official MD3 line heights and tracking.
+// Display, Headline, Title Large and Body roles are regular weight;
 // Title Medium/Small and the Label roles are medium. Code is BodyMedium's
-// metrics on Roboto Mono, Roboto's companion mono face (G-F0); Faces carries
+// metrics on Roboto Mono, Roboto's companion mono face; Faces carries
 // the twelve Roboto faces first — the default family for text that names no
 // typeface — then the four Roboto Mono faces Code resolves against.
 // DocumentHeadings is the seventeenth style, six bold stops stepped off

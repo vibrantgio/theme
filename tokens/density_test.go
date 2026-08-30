@@ -5,7 +5,7 @@ import "testing"
 // TestDensityPicksWithinTableBounds pins the picked control heights to the
 // measured table in density.go: Compact is denser than Comfortable, and both
 // stay within [28, 44] — at or above macOS's large control (the densest
-// desktop reference) and below the touch-target floor 44 dp was rejected for.
+// desktop reference) and below the 44 dp touch-target floor.
 func TestDensityPicksWithinTableBounds(t *testing.T) {
 	if CompactControlHeight >= ComfortableControlHeight {
 		t.Errorf("CompactControlHeight (%v) must be < ComfortableControlHeight (%v)",
@@ -28,7 +28,7 @@ func TestDensityPicksWithinTableBounds(t *testing.T) {
 	}
 }
 
-// TestDensityHitTargetFloor discharges E1.2's independence checkbox: both
+// TestDensityHitTargetFloor asserts that both
 // density settings satisfy the WCAG 2.5.5 pointer-target floor, and the floor
 // is identical across settings — Compact shrinks the drawn control, never the
 // clickable area.
@@ -48,7 +48,7 @@ func TestDensityHitTargetFloor(t *testing.T) {
 }
 
 // TestStackedRowsClearTheAAMinimumTarget makes density.go's pointer-target
-// section checkable instead of merely readable. The claim it pins is F4.7's:
+// section checkable instead of merely readable. The claim it pins:
 // stacked rows — list rows, table rows and header cells, sidebar items — are
 // not extended to MinHitTarget, because adjacent rows would steal each other's
 // slop. So the narrowest pointer target in the system is a Compact row at
@@ -78,8 +78,8 @@ func TestStackedRowsClearTheAAMinimumTarget(t *testing.T) {
 	}
 }
 
-// TestDensitySettingsMatchTable pins the two settings to E1.1's measured
-// table: control heights are exactly the picked consts (so within the table's
+// TestDensitySettingsMatchTable pins the two settings to the measured
+// table in density.go: control heights are exactly the picked consts (so within the table's
 // [28, 44] bounds already asserted above), Compact is strictly denser than
 // Comfortable on every visual axis, and the paddings are the shadcn-derived
 // pairs documented on the vars.
