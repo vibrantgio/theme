@@ -32,6 +32,13 @@
 // Body text on a container is a different pairing and does not use MarkOn.
 // It reads in the neutral Text token, which measures 11.6:1 or better over
 // every container this file derives.
+//
+// Two members answer the depth question, and only the depth question:
+// StatusContainer at the fixed step the family was designed around, for a
+// component whose container IS the elevation it claims, and StatusContainerOn
+// against a named ground, for one placed at an arbitrary storey. Same
+// construction, same chroma, same hue; the second only declines to land the
+// fill on the surface it is filling.
 package tokens
 
 import (
@@ -39,6 +46,31 @@ import (
 
 	"github.com/vibrantgio/theme/color"
 )
+
+// ContainerFloor is the least contrast a tonal container owes the ground it
+// is placed on: enough that a reader sees a filled region there at all.
+//
+// A container's fill is the quietest a hue is spoken at — tinted toward the
+// ground until it is a field rather than a mark — so its floor is a floor on
+// being a field at all, and the ceiling is left to whatever draws it.
+//
+// It is not a WCAG criterion, because WCAG has none for this. 1.4.11's 3:1
+// governs a mark that has to be resolved as a shape; a container carries no
+// shape and no information of its own — it is a place, and what it owes is
+// only that its edge be findable. Gating a container at 3:1 would make every
+// tonal fill in the system as loud as the marks on it.
+//
+// 1.25:1 is measured rather than picked. Over the seed sweep — ten seeds,
+// both schemes, both contrast variants, five roles, every storey — the fixed
+// step-300 container's separation from the ground falls in bands with air
+// between them: 1.00–1.01 where the container IS the surface, 1.16–1.21 where
+// it is a shade the eye reads as the same surface, then 1.30–1.40 and 1.42
+// upward, which is where the design's own pairings sit. The threshold goes in
+// the empty stretch between 1.21 and 1.30, so it accepts every depth the
+// design already ships and rejects only the collisions, and no seed sits near
+// enough to it to flip on a rounding. Nothing about the number is a standard;
+// it is where this palette's own answers separate.
+const ContainerFloor = 1.25
 
 // StatusContainer returns the role's tonal container: its ramp's
 // containerStep rung with the chroma pulled down to containerChroma.
@@ -69,8 +101,72 @@ import (
 //
 // RoleNeutral is accepted and yields the neutral ramp's own step, chroma 0.
 func (t ColorTokens) StatusContainer(role Role) stdcolor.NRGBA {
+	return t.containerAt(role, containerStep)
+}
+
+// StatusContainerOn returns the role's tonal container for a component that
+// stands on a named ground: [StatusContainer]'s rung while that rung is
+// visibly a different surface from the ground, and otherwise the first
+// deeper rung that is.
+//
+// Depth is the one thing StatusContainer cannot answer alone. It is realized
+// at a fixed step, which is right for a component that fills the page it is
+// on — the depth then IS the elevation the container is claiming — and wrong
+// for a small one placed at an arbitrary storey, because the elevation ladder
+// walks through that fixed step. A dark scheme's level-2 surface and its
+// step-300 container land within 1.01:1 of each other; a container drawn
+// there is not subtle, it is absent, and the component wearing it silently
+// loses whatever channel the fill was carrying.
+//
+// The walk deepens and never turns around: the first step at or past the
+// reference one that clears [ContainerFloor]. It needs no direction because
+// the ramps are paired scales — 100–300 are the tinted fills of whichever
+// scheme is running and 700–900 the text over them — so a higher step is
+// further from that scheme's own ground in the light ramp and in the dark
+// one alike. A container therefore moves only as far as the ground forces it
+// to, and every role on one ground moves together, which is what keeps four
+// status fills reading as one set.
+//
+// Unlike [MarkOn]'s nearest-to-the-reference rule, which suits a mark that
+// must land at one depth whichever side of the reference it comes from.
+// Nearest-first here picks a fill from the wrong end: where a dark scheme's
+// own surfaces occupy steps 200–400, the closest rung that clears the floor
+// is step 900, and a caller that asked for a tint gets a white block.
+//
+// ContainerFloor, not GraphicFloor: a container is a region and not a mark
+// on one, and 3:1 against the ground would make the four statuses read as
+// four filled controls. What a fill owes is to be a different surface from
+// the surface, which is a threshold about seeing a seam and not about
+// resolving a shape.
+//
+// A ground no rung separates from yields the rung that separates most, so a
+// caller always has a fill — an unseparated container is a defect the gates
+// report, not a reason to paint nothing.
+//
+// Over the seed sweep the answer stays in a narrow band: worst 1.30:1,
+// loudest 1.72:1. A container is never invisible and never a solid.
+func (t ColorTokens) StatusContainerOn(role Role, ground stdcolor.NRGBA) stdcolor.NRGBA {
+	best, bestAt := -1.0, containerStep
+	for step := containerStep; step <= 900; step += 100 {
+		fill := t.containerAt(role, step)
+		got := color.ContrastRatio(fill, ground)
+		if got >= ContainerFloor {
+			return fill
+		}
+		if got > best {
+			best, bestAt = got, step
+		}
+	}
+	return t.containerAt(role, bestAt)
+}
+
+// containerAt realizes the role's container at one ramp step: the step's own
+// tone and hue, at the chroma read off the ramp's mid-value step 500 and
+// clamped to containerChroma. See [StatusContainer] for why the two readings
+// come off two different rungs.
+func (t ColorTokens) containerAt(role Role, step int) stdcolor.NRGBA {
 	r := t.rampFor(role) // validates role
-	rung := r.Step(containerStep)
+	rung := r.Step(step)
 	tone, _, _ := color.LabFromNRGBA(rung)
 	_, _, hue := color.OKLChFromNRGBA(rung)
 	_, chroma, _ := color.OKLChFromNRGBA(r.Step(500))

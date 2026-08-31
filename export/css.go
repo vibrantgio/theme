@@ -138,31 +138,36 @@ var pinRoles = []struct {
 	{"info-on-inverse", func(t tokens.ColorTokens) stdcolor.NRGBA {
 		return t.MarkOn(tokens.RoleInfo, t.InverseSurface, onFloor)
 	}},
-	// The five inks a badge speaks in, each derived against the ground floor
-	// the sheet's pages stand on. A badge has no fill of its own, so the
-	// ground is the only thing its colour can be measured against, and the
-	// floor is the text floor for all five: a sign is the same utterance at
-	// the same weight as a word.
+	// A badge draws one hue at two strengths, so each of the five variants
+	// emits two tokens: the container fill it wears and the foreground read
+	// on that fill. Both are resolved for the ground the sheet's pages stand
+	// on, which is the level-0 storey — a badge is small and its fill is
+	// derived against whatever it is placed on, and a sheet has one answer to
+	// give.
 	//
-	// The four hued ones take the role's pinned base while that base clears
-	// the floor and the nearest rung to the mid-value that does otherwise
-	// (InkOn). Neutral has no pinned base — the neutral ramp carries no pin —
-	// so it takes the walk directly (MarkOn), at the same floor.
-	{"badge-neutral", func(t tokens.ColorTokens) stdcolor.NRGBA {
-		return t.MarkOn(tokens.RoleNeutral, t.SurfaceAt(tokens.Level0), tokens.TextFloor)
-	}},
-	{"badge-success", func(t tokens.ColorTokens) stdcolor.NRGBA {
-		return t.InkOn(tokens.RoleSuccess, t.SurfaceAt(tokens.Level0), tokens.TextFloor)
-	}},
-	{"badge-warning", func(t tokens.ColorTokens) stdcolor.NRGBA {
-		return t.InkOn(tokens.RoleWarning, t.SurfaceAt(tokens.Level0), tokens.TextFloor)
-	}},
-	{"badge-error", func(t tokens.ColorTokens) stdcolor.NRGBA {
-		return t.InkOn(tokens.RoleError, t.SurfaceAt(tokens.Level0), tokens.TextFloor)
-	}},
-	{"badge-info", func(t tokens.ColorTokens) stdcolor.NRGBA {
-		return t.InkOn(tokens.RoleInfo, t.SurfaceAt(tokens.Level0), tokens.TextFloor)
-	}},
+	// The fill is a pale tint of the role's hue against that ground, at the
+	// container chroma, at the depth that separates it from the ground
+	// (StatusContainerOn). The foreground is then derived against the FILL
+	// rather than against the ground: the role's pinned base while that base
+	// clears the text floor over it and the nearest rung to the mid-value
+	// that does otherwise (InkOn). Neutral has no pinned base — the neutral
+	// ramp carries no pin — so it takes the walk directly (MarkOn), at the
+	// same floor, and its fill comes back as depth alone.
+	//
+	// The floor is the text floor for all five: a sign is the same utterance
+	// at the same weight as a word. Never an inverted on-colour — a white
+	// word on a saturated field is the register interaction speaks in, and a
+	// badge is read rather than used.
+	{"badge-neutral-fill", badgeFill(tokens.RoleNeutral)},
+	{"badge-neutral", badgeForeground(tokens.RoleNeutral)},
+	{"badge-success-fill", badgeFill(tokens.RoleSuccess)},
+	{"badge-success", badgeForeground(tokens.RoleSuccess)},
+	{"badge-warning-fill", badgeFill(tokens.RoleWarning)},
+	{"badge-warning", badgeForeground(tokens.RoleWarning)},
+	{"badge-error-fill", badgeFill(tokens.RoleError)},
+	{"badge-error", badgeForeground(tokens.RoleError)},
+	{"badge-info-fill", badgeFill(tokens.RoleInfo)},
+	{"badge-info", badgeForeground(tokens.RoleInfo)},
 	// The marks a control and a raised surface draw on themselves, each the
 	// rung its own ramp's MarkOn walk answers with at the graphic floor. All
 	// are per-scheme tokens rather than named rungs, because a named rung is
@@ -255,6 +260,27 @@ var pinRoles = []struct {
 	{"focus-ring-on-accent", func(t tokens.ColorTokens) stdcolor.NRGBA {
 		return t.MarkOn(tokens.RolePrimary, t.SolidStateColor(tokens.RolePrimary, tokens.StateFocus), graphicFloor)
 	}},
+}
+
+// badgeFill and badgeForeground are the badge pair, written once per role
+// rather than ten times. Splitting them is what keeps the two derivations
+// honest: the foreground's ground is the fill, so a fill that moved without
+// the foreground moving with it would emit a pairing nothing measured.
+func badgeFill(role tokens.Role) func(tokens.ColorTokens) stdcolor.NRGBA {
+	return func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.StatusContainerOn(role, t.SurfaceAt(tokens.Level0))
+	}
+}
+
+func badgeForeground(role tokens.Role) func(tokens.ColorTokens) stdcolor.NRGBA {
+	return func(t tokens.ColorTokens) stdcolor.NRGBA {
+		fill := t.StatusContainerOn(role, t.SurfaceAt(tokens.Level0))
+		if role == tokens.RoleNeutral {
+			// InkOn refuses RoleNeutral, which has no pinned base.
+			return t.MarkOn(role, fill, tokens.TextFloor)
+		}
+		return t.InkOn(role, fill, tokens.TextFloor)
+	}
 }
 
 // onFloor is WCAG AA for body text, the floor a mark on the inverse surface
@@ -863,24 +889,41 @@ const componentClasses = `/* ---- Component classes ----
 /* ---- Badge ----
    The inline annotation components/badge draws: the system's own word about
    a thing, sized to its type and coloured by the role it speaks in. It is
-   off the control ladder — no fill, no corner, no boundary and no padding
-   on any side, so its whole height is the label role's line box and its
-   whole width is the words in it. A badge beside a control is a fraction of
-   that control's height and is meant to be.
+   off the control ladder — no boundary, no minimum height, no vertical
+   padding — so its whole height is the label role's line box. A badge beside
+   a control is a fraction of that control's height and is meant to be.
+
+   It wears a tinted field, and the field is what says it is not a control.
+   One hue at two strengths: a pale fill, the role's hue tinted toward the
+   ground until it is a place rather than a mark, with the same hue at reading
+   strength on top of it. A saturated fill under knocked-out white text is the
+   register interaction speaks in — .btn's — and a badge borrowing it would be
+   claiming to do something. Never invert these; never put a status colour on
+   inline style.
+
+   Both halves are tokens because both are derived rather than named on a
+   ramp. The fill is realized at a tone at the container chroma, at the depth
+   that separates it from the ground the sheet's pages stand on, which no
+   var() arithmetic over ramp steps could reproduce; the foreground is then
+   the role's pinned base while that base clears the text floor OVER THAT
+   FILL, and the nearest rung to the mid-value that does otherwise. The pair
+   is measured together and only means anything together.
+
+   The side padding is the S2 stop and the vertical padding is none: the
+   label role's line box carries its own leading, so the field already stands
+   clear of the cap and the descender. The corner is the radius scale's Base
+   stop and deliberately not the pill — the pill is .chip's shape, and a chip
+   is the thing a badge must not be confused with.
 
    The label role is the comfortable density's, one rung quieter than a
    chip's. The sheet re-maps no type role under .compact, so the class
    states the comfortable role and a compact page sets its badges in the
    same one.
 
-   Five variants differing in hue alone: the default is the plain category
-   label, .success/.warning/.error/.info the four statuses. There is no
-   emphasis axis — emphasis belongs where interaction does, and a badge is
-   read rather than used. Each ink is a token because it is derived against
-   the ground rather than named on a ramp: the role's pinned base while that
-   base clears the text floor, and the nearest rung to the mid-value that
-   does otherwise. Compose these for status; never inline-style a status
-   colour.
+   Five variants: the default is the plain category label,
+   .success/.warning/.error/.info the four statuses. There is no emphasis
+   axis — emphasis belongs where interaction does, and a badge is read rather
+   than used.
 
    The close mark is a Gio interaction and has no class in this sheet, so a
    badge here carries no gap and no affordance — only the utterance. */
@@ -889,23 +932,30 @@ const componentClasses = `/* ---- Component classes ----
   display: inline-flex;
   align-items: center;
   white-space: nowrap;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-base);
   font-family: var(--font-family);
   font-size: var(--font-label-medium-size);
   line-height: var(--font-label-medium-line-height);
   font-weight: var(--font-label-medium-weight);
   letter-spacing: var(--font-label-medium-tracking);
+  background: var(--color-badge-neutral-fill);
   color: var(--color-badge-neutral);
 }
 .badge.success {
+  background: var(--color-badge-success-fill);
   color: var(--color-badge-success);
 }
 .badge.warning {
+  background: var(--color-badge-warning-fill);
   color: var(--color-badge-warning);
 }
 .badge.error {
+  background: var(--color-badge-error-fill);
   color: var(--color-badge-error);
 }
 .badge.info {
+  background: var(--color-badge-info-fill);
   color: var(--color-badge-info);
 }
 

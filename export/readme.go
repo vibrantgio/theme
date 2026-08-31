@@ -126,14 +126,19 @@ func readmeMD(s Snapshot) string {
 		"treatment: it stays quiet. `.btn.icon` is the icon-only form: a square\n" +
 		"the density's control height on a side, the glyph (an inline SVG on\n" +
 		"`currentColor`) inset by the density's vertical padding.\n\n" +
-		"`.badge` is the inline annotation: `label-medium` text in one derived\n" +
-		"ink, with no fill, no corner, no boundary and no padding, so its height\n" +
-		"is the role's line box and its width is the words in it. The default is\n" +
-		"the plain category label; `.badge.success` / `.badge.warning` /\n" +
+		"`.badge` is the inline annotation: `label-medium` text over a tinted\n" +
+		"field of its own hue. One hue at two strengths — a pale fill for the\n" +
+		"field and the same hue at reading strength for the word — and never the\n" +
+		"inverted pairing, which is what `.btn` uses and what a badge must not\n" +
+		"claim to be. No boundary and no vertical padding, so its height is the\n" +
+		"role's line box; the side padding is `--space-2` and the corner is\n" +
+		"`--radius-base`, deliberately not the pill `.chip` wears. The default\n" +
+		"is the plain category label; `.badge.success` / `.badge.warning` /\n" +
 		"`.badge.error` / `.badge.info` are the four statuses, differing in hue\n" +
-		"alone. Each ink is a token because it is derived against the ground\n" +
-		"rather than named on a ramp. Compose them for status; never inline-style\n" +
-		"a status colour. A badge is read, not used: no interaction states.\n\n" +
+		"alone. Both halves are tokens because both are derived against a ground\n" +
+		"rather than named on a ramp — the fill against the page, the foreground\n" +
+		"against the fill. Compose them for status; never inline-style a status\n" +
+		"colour. A badge is read, not used: no interaction states.\n\n" +
 		"The form controls dress native elements — no script anywhere:\n" +
 		"`.input` (text `<input>`, and `<select class=\"input select\">` inside a\n" +
 		"`.select-wrap` for the chevron), `.checkbox` and `.radio` on their native\n" +
