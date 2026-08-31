@@ -50,7 +50,7 @@ func readmeMD(s Snapshot) string {
 		"  specimens.\n" +
 		"- `components/*.html` — hand-authored component pages (not generated):\n" +
 		"  every class-layer component in every register and state, at both\n" +
-		"  densities, as copyable markup. `buttons.html` covers `.btn` and `.tag`,\n" +
+		"  densities, as copyable markup. `buttons.html` covers `.btn` and `.badge`,\n" +
 		"  `forms.html` the native-element form controls.\n\n" +
 		"Each page reads only from `styles.css` — every styled value is a `var(--…)`\n" +
 		"reference — and carries a light/dark toggle. Annotation numbers are printed for\n" +
@@ -126,13 +126,14 @@ func readmeMD(s Snapshot) string {
 		"treatment: it stays quiet. `.btn.icon` is the icon-only form: a square\n" +
 		"the density's control height on a side, the glyph (an inline SVG on\n" +
 		"`currentColor`) inset by the density's vertical padding.\n\n" +
-		"`.tag` is the chip the patterns draw: a Full-radius pill at `label-small`\n" +
-		"metrics with S1/S2 padding — filled (accent under on-accent) by default,\n" +
-		"`.tag.tonal` the primary-200 tinted fill under the accent pin. Status\n" +
-		"chips are `.tag.success` / `.tag.warning` / `.tag.error`: the level\n" +
-		"pin tinted 20% over the Surface ground, ringed by the 1 dp level\n" +
-		"outline, under the text pin. Compose them for status; never inline-style a\n" +
-		"status colour. Tags are labels, not controls: no interaction states.\n\n" +
+		"`.badge` is the inline annotation: `label-medium` text in one derived\n" +
+		"ink, with no fill, no corner, no boundary and no padding, so its height\n" +
+		"is the role's line box and its width is the words in it. The default is\n" +
+		"the plain category label; `.badge.success` / `.badge.warning` /\n" +
+		"`.badge.error` / `.badge.info` are the four statuses, differing in hue\n" +
+		"alone. Each ink is a token because it is derived against the ground\n" +
+		"rather than named on a ramp. Compose them for status; never inline-style\n" +
+		"a status colour. A badge is read, not used: no interaction states.\n\n" +
 		"The form controls dress native elements — no script anywhere:\n" +
 		"`.input` (text `<input>`, and `<select class=\"input select\">` inside a\n" +
 		"`.select-wrap` for the chevron), `.checkbox` and `.radio` on their native\n" +

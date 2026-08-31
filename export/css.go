@@ -138,6 +138,31 @@ var pinRoles = []struct {
 	{"info-on-inverse", func(t tokens.ColorTokens) stdcolor.NRGBA {
 		return t.MarkOn(tokens.RoleInfo, t.InverseSurface, onFloor)
 	}},
+	// The five inks a badge speaks in, each derived against the ground floor
+	// the sheet's pages stand on. A badge has no fill of its own, so the
+	// ground is the only thing its colour can be measured against, and the
+	// floor is the text floor for all five: a sign is the same utterance at
+	// the same weight as a word.
+	//
+	// The four hued ones take the role's pinned base while that base clears
+	// the floor and the nearest rung to the mid-value that does otherwise
+	// (InkOn). Neutral has no pinned base — the neutral ramp carries no pin —
+	// so it takes the walk directly (MarkOn), at the same floor.
+	{"badge-neutral", func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.MarkOn(tokens.RoleNeutral, t.SurfaceAt(tokens.Level0), tokens.TextFloor)
+	}},
+	{"badge-success", func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.InkOn(tokens.RoleSuccess, t.SurfaceAt(tokens.Level0), tokens.TextFloor)
+	}},
+	{"badge-warning", func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.InkOn(tokens.RoleWarning, t.SurfaceAt(tokens.Level0), tokens.TextFloor)
+	}},
+	{"badge-error", func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.InkOn(tokens.RoleError, t.SurfaceAt(tokens.Level0), tokens.TextFloor)
+	}},
+	{"badge-info", func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.InkOn(tokens.RoleInfo, t.SurfaceAt(tokens.Level0), tokens.TextFloor)
+	}},
 	// The marks a control and a raised surface draw on themselves, each the
 	// rung its own ramp's MarkOn walk answers with at the graphic floor. All
 	// are per-scheme tokens rather than named rungs, because a named rung is
@@ -627,9 +652,9 @@ const componentClasses = `/* ---- Component classes ----
    components/button: filled by default, .tonal and .ghost the emphasis
    modifiers, states resolved as one-rung ramp walks from the same rungs the
    Gio side draws. .input/.select/.checkbox/.radio mirror components/input,
-   .tag the pill patterns/tag draws (for pricing, hero, and the status
-   levels; the chip's dismiss affordance is a Gio interaction and has no
-   class here), .card the
+   .badge the inline annotation components/badge draws (the plain category
+   label and the four status roles; the close mark is a Gio interaction and
+   has no class here), .card the
    patterns/card surface, .table the patterns/table grid, the navigation
    family — .navbar, .tabs, .sidebar, .crumbs — the four patterns of the same
    names, and the overlay family — .scrim/.dialog (patterns/modal), .popover,
@@ -835,70 +860,53 @@ const componentClasses = `/* ---- Component classes ----
   fill: currentColor;
 }
 
-/* ---- Tag ----
-   The chip patterns/tag draws (the shared home of patterns/pricing's
-   "Popular" chip and patterns/hero's eyebrow): a Full-radius pill sized to
-   its label-small text, S2 either side and the S1 stop spent once across
-   the two vertical edges rather than once on each — so the pill is the
-   label's line box plus S1, and the type inside it is untouched. Filled by
-   default — the accent pin under its on-colour; .tonal is the eyebrow — the
-   primary 200 tinted fill under the accent pin. All call sites request
-   SemiBold, which the pinned shaper resolves to the Medium face (the
-   nearest registered weight), so the sheet says the label role's own weight
-   rather than asking the browser to synthesize a 600.
+/* ---- Badge ----
+   The inline annotation components/badge draws: the system's own word about
+   a thing, sized to its type and coloured by the role it speaks in. It is
+   off the control ladder — no fill, no corner, no boundary and no padding
+   on any side, so its whole height is the label role's line box and its
+   whole width is the words in it. A badge beside a control is a fraction of
+   that control's height and is meant to be.
 
-   Every modifier but the default rings itself, and the ring is not
-   decoration: a tint and the surface it rests on are the same lightness by
-   construction, so a tinted pill measures around 1:1 against the pane it
-   sits on and its edge would be invisible. The accent pin's fill separates
-   on its own and takes no ring. The padding gives the ring's 1px back so
-   every chip measures the same box. */
-.tag {
+   The label role is the comfortable density's, one rung quieter than a
+   chip's. The sheet re-maps no type role under .compact, so the class
+   states the comfortable role and a compact page sets its badges in the
+   same one.
+
+   Five variants differing in hue alone: the default is the plain category
+   label, .success/.warning/.error/.info the four statuses. There is no
+   emphasis axis — emphasis belongs where interaction does, and a badge is
+   read rather than used. Each ink is a token because it is derived against
+   the ground rather than named on a ramp: the role's pinned base while that
+   base clears the text floor, and the nearest rung to the mid-value that
+   does otherwise. Compose these for status; never inline-style a status
+   colour.
+
+   The close mark is a Gio interaction and has no class in this sheet, so a
+   badge here carries no gap and no affordance — only the utterance. */
+.badge {
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
-  padding: calc(var(--space-1) / 2) var(--space-2);
-  border-radius: var(--radius-full);
   white-space: nowrap;
   font-family: var(--font-family);
-  font-size: var(--font-label-small-size);
-  line-height: var(--font-label-small-line-height);
-  font-weight: var(--font-label-small-weight);
-  letter-spacing: var(--font-label-small-tracking);
-  background: var(--color-accent);
-  color: var(--color-on-accent);
+  font-size: var(--font-label-medium-size);
+  line-height: var(--font-label-medium-line-height);
+  font-weight: var(--font-label-medium-weight);
+  letter-spacing: var(--font-label-medium-tracking);
+  color: var(--color-badge-neutral);
 }
-.tag.tonal {
-  padding: calc(var(--space-1) / 2 - 1px) calc(var(--space-2) - 1px);
-  border: 1px solid var(--color-accent);
-  background: var(--color-primary-200);
-  color: var(--color-accent);
+.badge.success {
+  color: var(--color-badge-success);
 }
-
-/* Status tags (tag.go colors): the level modifiers carry the level's tonal
-   container — the role's own hue realized at one measured chroma and depth
-   by the theme, which is why the background names a token rather than
-   mixing one — ringed by the 1 dp level pin, under the Text pin. A mixed
-   ground was what these used to wear, and compositing a pinned base over
-   the neutral Surface in non-linear sRGB holds neither the hue nor the
-   chroma: the four came out near enough to grey that no two of them could
-   be told apart. Status is vocabulary: compose these, never inline-style a
-   status colour. */
-.tag.success, .tag.warning, .tag.error {
-  padding: calc(var(--space-1) / 2 - 1px) calc(var(--space-2) - 1px);
-  color: var(--color-text);
+.badge.warning {
+  color: var(--color-badge-warning);
 }
-.tag.success {
-  border: 1px solid var(--color-success);
-  background: var(--color-success-container);
+.badge.error {
+  color: var(--color-badge-error);
 }
-.tag.warning {
-  border: 1px solid var(--color-warning);
-  background: var(--color-warning-container);
-}
-.tag.error {
-  border: 1px solid var(--color-error);
-  background: var(--color-error-container);
+.badge.info {
+  color: var(--color-badge-info);
 }
 
 /* ---- Form controls ----

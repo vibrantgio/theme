@@ -521,29 +521,22 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"background: var(--elevation-2-active);",
 		"background: var(--elevation-3-hover);",
 		"background: var(--elevation-3-active);",
-		// Tag: the chip — Full-radius pill, S2 either side
-		// and the S1 stop spent once across both vertical edges,
-		// label-small text; filled accent/on-accent, tonal primary-200
-		// under the accent pin and ringed in it, because a tint and its
-		// ground are the same lightness and the edge would not read.
-		"padding: calc(var(--space-1) / 2) var(--space-2);",
-		"border-radius: var(--radius-full);",
-		"font-size: var(--font-label-small-size);",
-		".tag.tonal {",
-		"border: 1px solid var(--color-accent);",
-		"background: var(--color-primary-200);",
-		// Status tags: the level's realized tonal container, the
-		// 1 dp level outline (padding giving its 1px back), the Text pin on
-		// top. The container is a token and not a mix: compositing a pin
-		// over the neutral Surface holds neither the hue nor the chroma.
-		".tag.success, .tag.warning, .tag.error {",
-		"padding: calc(var(--space-1) / 2 - 1px) calc(var(--space-2) - 1px);",
-		"border: 1px solid var(--color-success);",
-		"background: var(--color-success-container);",
-		"border: 1px solid var(--color-warning);",
-		"background: var(--color-warning-container);",
-		"border: 1px solid var(--color-error);",
-		"background: var(--color-error-container);",
+		// Badge: the inline annotation — label-medium text in one derived
+		// ink, with no fill, no corner, no boundary and no padding, so the
+		// role's line box is the whole height. Five variants differing in
+		// hue alone, each ink a token because it is derived against the
+		// ground rather than named on a ramp.
+		".badge {",
+		"font-size: var(--font-label-medium-size);",
+		"color: var(--color-badge-neutral);",
+		".badge.success {",
+		"color: var(--color-badge-success);",
+		".badge.warning {",
+		"color: var(--color-badge-warning);",
+		".badge.error {",
+		"color: var(--color-badge-error);",
+		".badge.info {",
+		"color: var(--color-badge-info);",
 		// Forms: the input component's resolution — the raised storey
 		// under body text, the ramp's measured edge, neutral 700
 		// placeholder/glyph, focus promoting the border to the ring,
