@@ -734,7 +734,7 @@ func TestThemeJSONReproduces(t *testing.T) {
 	if want := [9]int{97, 92, 85, 74, 63, 51, 39, 28, 6}; p.Scale.Light != want {
 		t.Errorf("scale.light = %v, want ADR-007's shared scale %v", p.Scale.Light, want)
 	}
-	if want := [9]int{8, 13, 19, 30, 65, 74, 82, 88, 94}; p.Scale.Dark != want {
+	if want := [9]int{8, 13, 19, 30, 46, 64, 82, 86, 94}; p.Scale.Dark != want {
 		t.Errorf("scale.dark = %v, want the paired dark scale %v", p.Scale.Dark, want)
 	}
 

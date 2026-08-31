@@ -883,3 +883,92 @@ func TestTheGroundAwareContainerHoldsTheFixedOneWhereItAlreadyWorks(t *testing.T
 		}
 	}
 }
+
+// The four properties the tone curve is asked to hold. All four are gated
+// below over every ramp of both schemes, for every seed in the sweep;
+// the bracketing measurements are that sweep's own extremes.
+const (
+	// gapCeiling is the widest a ramp may leave two neighbouring rungs in
+	// CIELAB L*. The binding case is the light scale's own extreme, where
+	// the 900 stop drops to L* 6 to clear the Lc ≥ 90 text gate: 22.33 L*
+	// over the sweep. A dark scale read from the same curve tops out at
+	// 18.2, between its 600 and 700 rungs.
+	gapCeiling = 23.0
+	// adjacencyFloor is the least two neighbouring rungs may measure
+	// against each other, which is what makes them two rungs rather than
+	// one. The binding case is step 100 against step 200 — the window floor
+	// under the paper, 5 L* apart in both schemes by measurement — which
+	// bottoms out at 1.1062:1 over the sweep, in the dark scheme.
+	adjacencyFloor = 1.10
+	// The two bands a ramp has to put a rung in, measured against its own
+	// step-100 ground: WCAG 1.4.11's 3:1 for a mark that is not text, and
+	// WCAG 1.4.3 AA's 4.5:1 for one that is. Each band is closed at the
+	// next threshold up, so clearing it takes a rung of about the right
+	// weight rather than one loud enough to clear everything. The boundary
+	// tone is light's 600 and dark's 500, measuring 3.410:1 to 4.049:1 over
+	// the sweep; the text tone is light's 700 and dark's 600, 6.167:1 to
+	// 6.478:1.
+	boundaryBand = 3.0
+	textBand     = 4.5
+	loudBand     = 7.0
+)
+
+// TestRampsCoverTheirRange gates the tone curve itself, in every ramp of
+// both schemes and for every seed: no two rungs further apart than
+// gapCeiling, none closer than adjacencyFloor, and a rung in each of the
+// two contrast bands over the ramp's own ground. Together they say a ramp
+// is a progression covering its range rather than two clusters with a hole
+// between them — a scale with no rung in the 3:1 band has no boundary tone
+// to draw an outline in, and one with no rung in the 4.5:1 band has no text
+// tone.
+//
+// The increased-contrast variant is deliberately outside this gate: it
+// vacates the upper middle by design, deepening its 700 stop to the default
+// scale's 900 depth so 700 text clears Lc ≥ 90, which leaves both its
+// schemes a gap the default scale would fail on. What the variant owes is
+// gated in TestAPCAContrastGateHighContrast.
+func TestRampsCoverTheirRange(t *testing.T) {
+	for _, seed := range sweepSeeds() {
+		light, dark := tokens.FromSeed(seed)
+		for _, s := range []struct {
+			name string
+			tok  tokens.ColorTokens
+		}{{"light", light}, {"dark", dark}} {
+			for _, r := range namedRamps(s.tok) {
+				ground := r.ramp.Step(100)
+				var boundary, text int
+				for step := 200; step <= 900; step += 100 {
+					below, at := r.ramp.Step(step-100), r.ramp.Step(step)
+					belowL, _, _ := color.LabFromNRGBA(below)
+					atL, _, _ := color.LabFromNRGBA(at)
+					if gap := math.Abs(atL - belowL); gap > gapCeiling {
+						t.Errorf("seed %v: %s %s steps %d–%d are %.1f L* apart, over the %.0f ceiling",
+							seed, s.name, r.name, step-100, step, gap, gapCeiling)
+					}
+					if got := color.ContrastRatio(below, at); got < adjacencyFloor {
+						t.Errorf("seed %v: %s %s steps %d–%d measure %.4f:1 against each other, under the %.2f floor",
+							seed, s.name, r.name, step-100, step, got, adjacencyFloor)
+					}
+					switch got := color.ContrastRatio(at, ground); {
+					case got >= boundaryBand && got < textBand && boundary == 0:
+						boundary = step
+					case got >= textBand && got < loudBand && text == 0:
+						text = step
+					}
+				}
+				if boundary == 0 {
+					t.Errorf("seed %v: %s %s has no rung between %.1f:1 and %.1f:1 over its own ground — no boundary tone",
+						seed, s.name, r.name, boundaryBand, textBand)
+				}
+				if text == 0 {
+					t.Errorf("seed %v: %s %s has no rung between %.1f:1 and %.1f:1 over its own ground — no text tone",
+						seed, s.name, r.name, textBand, loudBand)
+				}
+				if seed == tokens.DefaultSeed {
+					t.Logf("default seed, %s %s: boundary tone step %d, text tone step %d",
+						s.name, r.name, boundary, text)
+				}
+			}
+		}
+	}
+}

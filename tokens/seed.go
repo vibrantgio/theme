@@ -5,14 +5,35 @@
 // Derivation rules and the measurements behind them:
 //
 //   - The shared lightness scale is CIELAB L* per step, light and paired
-//     dark. Light 100–900 = 97, 92, 85, 74, 63, 51, 39, 28, 6. The 900 stop
-//     is L* 6 rather than the measured 18 because APCA's soft black clamp
-//     caps even pure black near Lc 92 over the L* 92 step-200 ground, so
-//     Lc ≥ 90 needs L* 6 (min Lc 90.7 across the seven default ramps; L* 18
-//     measures Lc 85–87). Dark = 8, 13, 19, 30, 65, 74, 82, 88, 94; the 600
-//     and 800 stops are interpolated, the rest measured. Both scales are
-//     swept at constant OKLCh hue and chroma via color.Tone, which
-//     gamut-maps by chroma reduction.
+//     dark, and it is one curve read twice rather than two tables. A scheme
+//     names four depths of its own — its ground (step 100), the deepest of
+//     its window surfaces (400), its accent pin (700) and its body ink
+//     (900) — and toneCurve places the rungs between them as fractions of
+//     each run. The fractions are the light scale's own, so light realizes
+//     its measured depths exactly: 97, 92, 85, 74, 63, 51, 39, 28, 6. Read
+//     between the dark anchors 8, 30, 82 and 94 the same curve gives 8, 13,
+//     19, 30, 46, 64, 82, 86, 94, and the dark surface stack lands on its
+//     own measured greys — #222222 and #2e2e2e — without being told to.
+//
+//     The 900 stop is L* 6 rather than the measured 18 because APCA's soft
+//     black clamp caps even pure black near Lc 92 over the L* 92 step-200
+//     ground, so Lc ≥ 90 needs L* 6 (min Lc 90.7 across the seven default
+//     ramps; L* 18 measures Lc 85–87).
+//
+//     Only the anchors are read off the measured dark column; its 500 stop
+//     is not. A platform's greys are its window surfaces and its ink with
+//     nothing between them — read as a nine-step ramp they leave 35 L*
+//     between 400 and 500, and a ramp with no mid tones has neither a
+//     boundary tone nor a text tone to offer. Derived, the dark scale's
+//     worst gap is 18 L* against light's
+//     22, its closest neighbours measure 1.11:1 against each other, and its
+//     500 and 600 rungs measure 3.4:1 and 6.4:1 over the dark page — one
+//     rung in the 3:1 non-text band and one in the 4.5:1 text band, where
+//     light's 600 and 700 sit at 4.0:1 and 6.2:1 over the light page. Every
+//     one of those is gated in this package's contrast tests.
+//
+//     Both scales are swept at constant OKLCh hue and chroma via
+//     color.Tone, which gamut-maps by chroma reduction.
 //
 //   - The neutral ramps carry no hue: chroma 0.000, measured 0.0000 at every
 //     step in both modes. A surface is not where a brand belongs. Light
@@ -260,21 +281,77 @@ import (
 	"github.com/vibrantgio/theme/color"
 )
 
-// lightTones and darkTones are the shared perceptual lightness scale:
-// CIELAB L* for steps 100–900, light and paired dark. Index i holds step
-// (i+1)*100, matching Ramp.
-var (
-	lightTones = [9]int{97, 92, 85, 74, 63, 51, 39, 28, 6}
-	darkTones  = [9]int{8, 13, 19, 30, 65, 74, 82, 88, 94}
-)
+// toneAnchors are the four CIELAB depths a scheme names for itself, in
+// order: its ground (the step-100 window floor), the deepest of its window
+// surfaces (step 400), its accent pin (step 700) and its body ink (step
+// 900). They are the whole of what separates the two schemes' scales.
+type toneAnchors [4]float64
 
-// hcLightTones and hcDarkTones are the high-contrast variant's scales:
-// steps 100–600 are the default scale unchanged, 700 deepens to the default
-// 900 depth so 700 text meets the Lc ≥ 90 bar, and 800/900 slide to the
-// axis ends to keep the ladder strictly monotonic. See the file header.
+// toneCurve is the shared shape of a nine-step ramp: for each rung, which
+// of the three anchored runs it sits in and how far along that run it lies.
+// The three runs are the surface stack (100–400, the ground and the
+// storeys a tinted surface hovers and presses onto), the mark run (400–700,
+// from the deepest surface up to the accent pin, where boundary tones and
+// text tones live) and the ink run (700–900, the pin's own hover and
+// pressed rungs).
+//
+// The fractions are the light scale's, measured off the platform's own
+// window greys: read between the light anchors they return 97, 92, 85, 74,
+// 63, 51, 39, 28, 6 exactly. Stating the shape once is what makes the dark
+// scale light's counterpart rather than a second table — a rung does the
+// same job in both schemes because it sits at the same place in the same
+// run.
+var toneCurve = [9]struct {
+	run int     // which anchored run the rung sits in
+	at  float64 // how far along that run, ground end to ink end
+}{
+	{0, 0}, {0, 5.0 / 23}, {0, 12.0 / 23}, {0, 1},
+	{1, 11.0 / 35}, {1, 23.0 / 35}, {1, 1},
+	{2, 11.0 / 33}, {2, 1},
+}
+
+// scale realizes toneCurve between one scheme's anchors, to the nearest
+// L*. Index i holds step (i+1)*100, matching Ramp.
+func (a toneAnchors) scale() [9]int {
+	var s [9]int
+	for i, rung := range toneCurve {
+		from, to := a[rung.run], a[rung.run+1]
+		s[i] = int(math.Round(from + (to-from)*rung.at))
+	}
+	return s
+}
+
+// highContrast widens a scale for the increased-contrast variant: steps
+// 100–600 stand, so the grounds stay where they are; 700 deepens to the
+// scale's own ink depth, so 700 text meets the Lc ≥ 90 bar the default asks
+// only of 900; and 800 and 900 slide to the end of the tonal axis the ink
+// runs toward, in two equal steps, keeping the ladder strictly monotonic.
+// See the file header.
+func highContrast(s [9]int) [9]int {
+	axisEnd := 100
+	if s[8] < s[0] {
+		axisEnd = 0
+	}
+	s[6] = s[8]
+	s[8] = axisEnd
+	s[7] = (s[6] + s[8]) / 2
+	return s
+}
+
+// The two schemes' anchors, and the four scales they derive. The light
+// ground is the platform's paper and the dark ground its window floor; the
+// step-400 anchors are the deepest surface each scheme stacks; the step-700
+// anchors are the pin depths, so a pin and its 700 rung are one colour; the
+// step-900 anchors are the body inks.
 var (
-	hcLightTones = [9]int{97, 92, 85, 74, 63, 51, 6, 3, 0}
-	hcDarkTones  = [9]int{8, 13, 19, 30, 65, 74, 94, 97, 100}
+	lightAnchors = toneAnchors{97, 74, statusPinTone, 6}
+	darkAnchors  = toneAnchors{8, 30, darkPinTone, 94}
+
+	lightTones = lightAnchors.scale()
+	darkTones  = darkAnchors.scale()
+
+	hcLightTones = highContrast(lightTones)
+	hcDarkTones  = highContrast(darkTones)
 )
 
 // Accent-derivation constants; see the file header for provenance.
@@ -313,10 +390,12 @@ const (
 	warningBend      = 30.0
 
 	lightPinTone  = 40 // MD3's accent-base tone; the default seed's own depth
-	statusPinTone = 39 // the light scale's step-700 L*: a status pin IS its ramp's
-	// 700 stop rather than landing 3/255 beside it
-	darkPinTone = 82 // the dark scale's step-700 L*; no on-colour reaches
-	// Lc 60 over an L* 65 mid-tone
+	statusPinTone = 39 // the light scheme's pin depth, and so its step-700 anchor:
+	// a status pin IS its ramp's 700 stop rather than landing 3/255 beside it
+	darkPinTone = 82 // the dark scheme's pin depth, and so its step-700 anchor;
+	// no on-colour reaches Lc 60 over an L* 65 mid-tone, and the
+	// increased-contrast variant's Lc ≥ 75 floor allows nothing shallower
+	// (L* 80 reaches only 73.5 against pure black)
 	darkOnTone   = 8   // dark pins' on-colour depth: the dark scale's step-100 L*
 	hcDarkOnTone = 0   // high contrast pushes the dark on-colours to the axis floor
 	onFloor      = 4.5 // WCAG AA body text: the ratio an on-colour has to reach
