@@ -65,7 +65,7 @@ func readmeMD(s Snapshot) string {
 	for i, pin := range pinRoles {
 		pinNames[i] = "`--color-" + pin.name + "`"
 	}
-	fmt.Fprintf(&b, "| pins & semantic layer | %s | pinned bases, their on-colours, the ramp-resolved surface/divider, the inverse pair the counterpart scheme's ramp resolves, and the edges and rings each ramp measures for itself against the storey they are drawn on — a resting border for the page, the outlined card, the dialog and the popover, a focus ring for the page and for the two storeys whose ground the page's ring cannot carry to, and the accent fill a filled button's ring lies on, which belongs to no storey at all |\n", strings.Join(pinNames, ", "))
+	fmt.Fprintf(&b, "| pins & semantic layer | %s | pinned bases, their on-colours, the ramp-resolved surface/divider, the inverse pair the counterpart scheme's ramp resolves, and the edges and rings each ramp measures for itself — a resting border per storey, for the page, the outlined card, the dialog and the popover, and one focus ring for the whole scheme, measured against every storey at once, plus the accent fill a filled button's ring lies on, which belongs to no storey at all |\n", strings.Join(pinNames, ", "))
 	b.WriteString("| `--font-family` | `--font-family` | the typeface every prose role uses |\n")
 	b.WriteString("| `--font-family-code` | `--font-family-code` | the monospace typeface the code role uses |\n")
 	typeNames := make([]string, len(typeRoles))
@@ -114,13 +114,13 @@ func readmeMD(s Snapshot) string {
 		"and selected two (`:active`, `.selected`); a filled button's solid fill\n" +
 		"walks via the emitted `--color-accent-hover` / `--color-accent-pressed`\n" +
 		"stops. Keyboard focus (`:focus-visible`) keeps the resting fill and draws\n" +
-		"the ring: `--focus-ring-width` of the rung its ramp measures against the\n" +
-		"ground the ring circles — `--color-focus-ring-on-accent` over a filled\n" +
-		"button's own fill, and otherwise the storey the control stands on:\n" +
-		"`--color-focus-ring` on the ground floor, `--color-dialog-focus-ring`\n" +
-		"inside a dialog or an elevated card, `--color-popover-focus-ring` inside\n" +
-		"a popover. Same ring, same\n" +
-		"width, same 3:1 floor in every register; only the ground moves.\n" +
+		"the ring: `--focus-ring-width` of `--color-focus-ring`, the one ring the\n" +
+		"scheme carries — the rung of the primary ramp nearest its mid-value step\n" +
+		"that reaches 3:1 against every storey at once, so a control wears the\n" +
+		"same ring wherever it is put. `--color-focus-ring-on-accent` is the sole\n" +
+		"exception, for the ring a filled button insets in its own fill: that\n" +
+		"fill is a rung of the primary ramp too, and the scheme's ring cannot\n" +
+		"read on it. Same ring, same width, same 3:1 floor in every register.\n" +
 		"Disabled (`:disabled`) fades each colour to\n" +
 		"`--state-disabled-opacity` of its alpha. A ghost has no selected\n" +
 		"treatment: it stays quiet. `.btn.icon` is the icon-only form: a square\n" +
@@ -151,15 +151,17 @@ func readmeMD(s Snapshot) string {
 		"neutral rung the ramp measures as reaching 3:1 against the window\n" +
 		"ground, which is 600 in the light scheme and 500 in the dark; the named\n" +
 		"rung it replaced read below the floor in one of them, at 2.67:1 in the\n" +
-		"scheme most people read in. Both the edge and the ring follow the\n" +
-		"control into a raised host: a surface that fills a deeper storey\n" +
-		"declares `--ground-border` and `--ground-focus-ring` beside its own\n" +
-		"fill, the rules name those with the ground floor's tokens as their\n" +
-		"fallback, and every control inside re-derives — the same walk against\n" +
-		"the same fill the host measures its own outline against, which is why a\n" +
-		"checkbox in a dialog wears the dialog's edge. On the ground floor the\n" +
-		"page's own rungs read 2.94:1 and 2.92:1 over a level-2 fill and 2.15:1\n" +
-		"and 2.14:1 over a level-3 one, all under the floor.\n" +
+		"scheme most people read in. The edge follows the control into a raised\n" +
+		"host: a surface that fills a deeper storey declares `--ground-border`\n" +
+		"beside its own fill, the rules name it with the ground floor's token as\n" +
+		"the fallback, and every control inside re-derives — the same walk\n" +
+		"against the same fill the host measures its own outline against, which\n" +
+		"is why a checkbox in a dialog wears the dialog's edge. In the dark\n" +
+		"scheme the page's own rung reads 2.62:1 over a level-2 fill and 1.80:1\n" +
+		"over a level-3 one, both under the floor; in the light scheme it clears\n" +
+		"every storey and the handed-down token repeats. The ring does not\n" +
+		"follow, because it never left: it is measured against every storey at\n" +
+		"once and is one colour for the scheme.\n" +
 		"Checked, the box is the accent fill under a check mark in the\n" +
 		"on-accent pin, drawn from the icon set's grid as two gradient bands — a\n" +
 		"fill says a colour was applied and only the mark says what it means. The\n" +

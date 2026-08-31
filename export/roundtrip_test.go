@@ -375,6 +375,18 @@ func TestRoundTripMotion(t *testing.T) {
 // exactly the ramp rungs button.go's constants pick (tonalGround 200 /
 // tonalText 900, ghostGround 200 / ghostText 700 / ghostTextOnWash 900) —
 // with not one literal colour in the layer.
+// rungDistance is how far a ramp index sits from step 500, the mid-value
+// depth the ring's pick is aimed at. The test measures it for itself rather
+// than importing the emitter's constant, so a drift in the aim is a
+// failure here rather than a silent agreement.
+func rungDistance(i int) int {
+	const mid = 4 // steps run 100…900
+	if i < mid {
+		return mid - i
+	}
+	return i - mid
+}
+
 func TestRoundTripButtonClasses(t *testing.T) {
 	snap, sheet, _ := writeDefault(t)
 	root, dark := sheet[":root"], sheet[".dark"]
@@ -392,32 +404,57 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		if got, want := mode.vars["--color-accent-pressed"], wantHex(mode.tok.SolidStateColor(tokens.RolePrimary, tokens.StatePressed)); got != want {
 			t.Errorf("--color-accent-pressed (mode %d) = %q, want SolidStateColor pressed %q", i, got, want)
 		}
-		// The ring is the primary ramp's own measured answer per mode, for
-		// each of the two grounds the class layer's rings lie on. Written
-		// against MarkOn directly rather than through pinRoles, so the
-		// emitter cannot drift with its own table.
-		if got, want := mode.vars["--color-focus-ring"], wantHex(mode.tok.MarkOn(tokens.RolePrimary, mode.tok.Surface, 3.0)); got != want {
-			t.Errorf("--color-focus-ring (mode %d) = %q, want the primary rung that reads on Surface %q", i, got, want)
+		// The ring: one per mode, restated here from the rule rather than
+		// called out of the emitter, so the sheet and its generator cannot
+		// agree on a wrong answer. The rule is the rung of the primary ramp
+		// nearest step 500 that reaches 3:1 against EVERY storey the ladder
+		// carries — the property the Gio side derives by, and the reason no
+		// per-storey ring token exists to pin.
+		var wantRing stdcolor.NRGBA
+		wantAt, clearing := -1, 0
+		for r, rung := range mode.tok.Ramps.Primary {
+			clears := true
+			for _, level := range elevationLevels {
+				if color.ContrastRatio(rung, mode.tok.SurfaceAt(level.level)) < 3.0 {
+					clears = false
+					break
+				}
+			}
+			if !clears {
+				continue
+			}
+			clearing++
+			// Steps run 100…900, so index 4 is step 500. Nearest to it wins;
+			// walking upward, a tie keeps the lower rung, as the sheet does.
+			if wantAt < 0 || rungDistance(r) < rungDistance(wantAt) {
+				wantRing, wantAt = rung, r
+			}
 		}
-		onAccent := mode.tok.MarkOn(tokens.RolePrimary, mode.tok.SolidStateColor(tokens.RolePrimary, tokens.StateFocus), 3.0)
+		if clearing == 0 {
+			t.Fatalf("mode %d: no rung of the primary ramp clears 3:1 on all five storeys — the sheet's ring rule has nothing to pick", i)
+		}
+		if got, want := mode.vars["--color-focus-ring"], wantHex(wantRing); got != want {
+			t.Errorf("--color-focus-ring (mode %d) = %q, want the primary rung nearest step 500 that reads on every storey %q", i, got, want)
+		}
+		// The one exception, and the only ground that belongs to no storey:
+		// the fill a filled button insets its ring in. The scheme's ring
+		// serves wherever it reads on that fill; where it cannot — a solid
+		// primary fill being a rung of the ring's own ramp — the ramp is
+		// walked against the fill instead.
+		fill := mode.tok.SolidStateColor(tokens.RolePrimary, tokens.StateFocus)
+		onAccent := wantRing
+		if color.ContrastRatio(wantRing, fill) < 3.0 {
+			onAccent = mode.tok.MarkOn(tokens.RolePrimary, fill, 3.0)
+		}
 		if got, want := mode.vars["--color-focus-ring-on-accent"], wantHex(onAccent); got != want {
-			t.Errorf("--color-focus-ring-on-accent (mode %d) = %q, want the primary rung that reads on the filled button's own fill %q", i, got, want)
+			t.Errorf("--color-focus-ring-on-accent (mode %d) = %q, want the ring the filled button's own fill can carry %q", i, got, want)
 		}
-		// The same walk two and three storeys up, which is where the ground
-		// floor's rung stops carrying: the primary counterparts of
-		// --color-dialog-border and --color-popover-border, taken against the
-		// very fills patterns/modal and patterns/popover paint.
-		for _, ring := range []struct {
-			name  string
-			level tokens.ElevationLevel
-			what  string
-		}{
-			{"--color-dialog-focus-ring", tokens.Level2, "the dialog's level-2 fill"},
-			{"--color-popover-focus-ring", tokens.Level3, "the popover's level-3 fill"},
-		} {
-			want := wantHex(mode.tok.MarkOn(tokens.RolePrimary, mode.tok.SurfaceAt(ring.level), 3.0))
-			if got := mode.vars[ring.name]; got != want {
-				t.Errorf("%s (mode %d) = %q, want the primary rung that reads on %s %q", ring.name, i, got, ring.what, want)
+		// The storey-varying ring tokens are gone, and their absence is
+		// pinned: a ring that depended on the ground is the divergence this
+		// sheet exists not to reintroduce.
+		for _, gone := range []string{"--color-dialog-focus-ring", "--color-popover-focus-ring"} {
+			if got, ok := mode.vars[gone]; ok {
+				t.Errorf("%s (mode %d) = %q, want no such token: the ring does not vary with the storey", gone, i, got)
 			}
 		}
 		// The control row's resting edge, likewise: components/input's
@@ -473,12 +510,12 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		".btn:hover, .btn.is-hover { background: var(--color-accent-hover); }",
 		".btn.selected { background: var(--color-accent-pressed); }",
 		".btn:active, .btn.is-active { background: var(--color-accent-pressed); }",
-		// The ring: one width and one hue everywhere, the rung chosen by the
-		// ground it circles — the filled button's own fill is the one ground
-		// that answers differently. And its forcing twins: a static
+		// The ring: one width, one hue and one value everywhere — the filled
+		// button's own fill is the one ground that answers differently, and
+		// no rule names a storey. And its forcing twins: a static
 		// page shows a state through a class grouped into the same rule as
 		// the live pseudo-class, never through duplicated declarations.
-		"outline: var(--focus-ring-width) solid var(--ground-focus-ring, var(--color-focus-ring));",
+		"outline: var(--focus-ring-width) solid var(--color-focus-ring);",
 		"outline: var(--focus-ring-width) solid var(--color-focus-ring-on-accent);",
 		".btn:focus-visible, .btn.is-focus {",
 		".btn.tonal:focus-visible, .btn.tonal.is-focus,",
@@ -540,16 +577,16 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		// Forms: the input component's resolution — the raised storey
 		// under body text, the ramp's measured edge, neutral 700
 		// placeholder/glyph, focus promoting the border to the ring,
-		// disabled fading via color-mix. Every edge, every ring AND every
-		// fill names the storey-local with the ground floor's token as its
-		// fallback, which is how a raised host re-derives the controls
-		// inside it.
+		// disabled fading via color-mix. Every edge and every fill names the
+		// storey-local with the ground floor's token as its fallback, which
+		// is how a raised host re-derives the controls inside it; the ring
+		// names none, being one colour for the scheme.
 		"border: 1px solid var(--ground-border, var(--color-control-border));",
 		"background: var(--ground-raised, var(--elevation-1));",
 		"font-size: var(--font-body-large-size);",
 		".input::placeholder { color: var(--color-neutral-700); opacity: 1; }",
-		"border-color: var(--ground-focus-ring, var(--color-focus-ring));",
-		"box-shadow: inset 0 0 0 1px var(--ground-focus-ring, var(--color-focus-ring));",
+		"border-color: var(--color-focus-ring);",
+		"box-shadow: inset 0 0 0 1px var(--color-focus-ring);",
 		"color-mix(in srgb, var(--ground-border, var(--color-control-border)) var(--state-disabled-opacity), transparent)",
 		// Dropdown chevron: neutral 700, the low-contrast glyph step.
 		"border-top: 8px solid var(--color-neutral-700);",
