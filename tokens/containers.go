@@ -35,15 +35,15 @@
 //
 // Two members answer the depth question, and only the depth question:
 // Container at the fixed step the family was designed around, for a
-// component whose container IS the elevation it claims, and StatusContainerOn
+// component whose container IS the elevation it claims, and ContainerOn
 // against a named ground, for one placed at an arbitrary storey. Same
 // construction, same chroma, same hue; the second only declines to land the
 // fill on the surface it is filling.
 //
-// StatusContainer and OnStatusContainer are Container and OnContainer under
-// the status family's own names. Two spellings, one derivation: the walk asks
-// the role's ramp rather than a table, so it answers for the accent trio and
-// the status four alike.
+// StatusContainer, OnStatusContainer and StatusContainerOn are Container,
+// OnContainer and ContainerOn under the status family's own names. Two
+// spellings, one derivation: the walk asks the role's ramp rather than a
+// table, so it answers for the accent trio and the status four alike.
 package tokens
 
 import (
@@ -115,10 +115,10 @@ func (t ColorTokens) StatusContainer(role Role) stdcolor.NRGBA {
 	return t.Container(role)
 }
 
-// StatusContainerOn returns the role's tonal container for a component that
-// stands on a named ground: [ColorTokens.Container]'s rung while that rung is
-// visibly a different surface from the ground, and otherwise the first
-// deeper rung that is.
+// ContainerOn returns the role's tonal container for a component that stands
+// on a named ground: [ColorTokens.Container]'s rung while that rung is visibly
+// a different surface from the ground, and otherwise the first deeper rung
+// that is.
 //
 // Depth is the one thing Container cannot answer alone. It is realized
 // at a fixed step, which is right for a component that fills the page it is
@@ -156,7 +156,7 @@ func (t ColorTokens) StatusContainer(role Role) stdcolor.NRGBA {
 //
 // Over the seed sweep the answer stays in a narrow band: worst 1.30:1,
 // loudest 1.72:1. A container is never invisible and never a solid.
-func (t ColorTokens) StatusContainerOn(role Role, ground stdcolor.NRGBA) stdcolor.NRGBA {
+func (t ColorTokens) ContainerOn(role Role, ground stdcolor.NRGBA) stdcolor.NRGBA {
 	best, bestAt := -1.0, containerStep
 	for step := containerStep; step <= 900; step += 100 {
 		fill := t.containerAt(role, step)
@@ -169,6 +169,12 @@ func (t ColorTokens) StatusContainerOn(role Role, ground stdcolor.NRGBA) stdcolo
 		}
 	}
 	return t.containerAt(role, bestAt)
+}
+
+// StatusContainerOn is [ColorTokens.ContainerOn] under the status family's own
+// name; see the file header.
+func (t ColorTokens) StatusContainerOn(role Role, ground stdcolor.NRGBA) stdcolor.NRGBA {
+	return t.ContainerOn(role, ground)
 }
 
 // containerAt realizes the role's container at one ramp step: the step's own

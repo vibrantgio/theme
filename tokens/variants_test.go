@@ -171,6 +171,12 @@ func TestContainerSpellingsAgree(t *testing.T) {
 			if got, want := s.tok.OnStatusContainer(r.role), s.tok.OnContainer(r.role); got != want {
 				t.Errorf("%s %s: OnStatusContainer = %v, OnContainer = %v", s.name, r.name, got, want)
 			}
+			for _, lv := range []tokens.ElevationLevel{tokens.LevelFloor, tokens.Level0, tokens.Level1, tokens.Level2, tokens.Level3} {
+				ground := s.tok.SurfaceAt(lv)
+				if got, want := s.tok.StatusContainerOn(r.role, ground), s.tok.ContainerOn(r.role, ground); got != want {
+					t.Errorf("%s %s on %v: StatusContainerOn = %v, ContainerOn = %v", s.name, r.name, lv, got, want)
+				}
+			}
 			if got := color.ContrastRatio(s.tok.OnContainer(r.role), s.tok.Container(r.role)); got < tokens.GraphicFloor {
 				t.Errorf("%s %s: OnContainer on Container measures %.2f:1, under the %.1f:1 mark floor",
 					s.name, r.name, got, tokens.GraphicFloor)
