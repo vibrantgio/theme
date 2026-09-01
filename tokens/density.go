@@ -189,6 +189,11 @@ const (
 	// targets: which WCAG level actually governs" above for the measured
 	// per-row numbers.
 	MinHitTarget float32 = 44
+	// ChipDrop is how far under the control height the system's smallest
+	// control is drawn, in dp. See [Density.ChipHeight]: it is the whole of
+	// that relation, exported so a reader can see the two heights are one
+	// number apart rather than two picks.
+	ChipDrop float32 = 4
 )
 
 // Density is one density setting: the drawn control height and its inner
@@ -218,6 +223,17 @@ type Density struct {
 // It does not describe stacked rows. Read [MinHitTarget] before wiring this
 // into anything that tiles.
 func (Density) MinHitTarget() float32 { return MinHitTarget }
+
+// ChipHeight returns the chip height in dp: [Density.ControlHeight] less
+// [ChipDrop]. A chip is smaller than a button, and the relation says that once
+// instead of pinning a second ladder that can drift off the first —
+// Comfortable lands on 32 and Compact on 24.
+//
+// It is a method for the same reason [Density.MinHitTarget] is one: no Density
+// value can carry a chip height that has come loose from its control height.
+// The pointer target is unaffected — a chip is a standalone control and
+// extends to MinHitTarget like every other.
+func (d Density) ChipHeight() float32 { return d.ControlHeight - ChipDrop }
 
 // The padding picks come from the same measured world as the control
 // heights above:

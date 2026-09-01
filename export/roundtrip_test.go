@@ -783,6 +783,7 @@ func TestThemeJSONReproduces(t *testing.T) {
 	wantMetrics := func(label string, got DensityMetrics, d tokens.Density) {
 		want := DensityMetrics{
 			ControlHeight: float64(d.ControlHeight),
+			ChipHeight:    float64(d.ChipHeight()),
 			PaddingX:      float64(d.PaddingX),
 			PaddingY:      float64(d.PaddingY),
 		}

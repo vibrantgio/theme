@@ -121,10 +121,14 @@ type RampSet struct {
 // of reading a lightened approximation off a ramp step. Dark mode pins a
 // dark-appropriate base rather than reusing the light pin.
 //
-// There are no MD3-only alias fields. Each was a fixed resolution off the
-// neutral ramp and is reachable by asking the ramp directly: OnBackground is
-// Text, OnSurface Ramps.Neutral.Step(900), SurfaceVariant Step(300),
-// OnSurfaceVariant Step(700), Outline Step(500) — or FocusRing().
+// There are no MD3-only alias fields. Where the M3 role is a fixed resolution
+// off the neutral ramp it is reachable by asking the ramp directly:
+// OnBackground is Text, OnSurface Ramps.Neutral.Step(900), SurfaceVariant
+// Step(300), Outline Step(500) — or FocusRing(). Where naming a rung would
+// state one colour and two measurements, the token is a derivation instead:
+// [ColorTokens.OutlineVariant] and [ColorTokens.OnSurfaceVariant] choose their
+// rung against a floor, and SurfaceContainerLow is a storey, so
+// [ColorTokens.SurfaceAt] answers it.
 type ColorTokens struct {
 	// Ramps holds the functional ramps, fully populated: nine steps per
 	// role, generated on the shared lightness scale by FromSeed.

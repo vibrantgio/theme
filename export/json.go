@@ -72,6 +72,7 @@ type DensityParams struct {
 // DensityMetrics is one density setting's per-setting metrics in dp.
 type DensityMetrics struct {
 	ControlHeight float64 `json:"controlHeight"`
+	ChipHeight    float64 `json:"chipHeight"`
 	PaddingX      float64 `json:"paddingX"`
 	PaddingY      float64 `json:"paddingY"`
 }
@@ -219,6 +220,7 @@ func measuredScale(r tokens.Ramp) [9]int {
 func densityMetricsOf(d tokens.Density) DensityMetrics {
 	return DensityMetrics{
 		ControlHeight: f64(d.ControlHeight),
+		ChipHeight:    f64(d.ChipHeight()),
 		PaddingX:      f64(d.PaddingX),
 		PaddingY:      f64(d.PaddingY),
 	}

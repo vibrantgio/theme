@@ -202,9 +202,11 @@ func readmeMD(s Snapshot) string {
 
 	b.WriteString("## Density\n\n" +
 		"Two published settings, one variable family: comfortable (36 dp controls,\n" +
-		"16/8 dp padding) is the `:root` default; compact (28 dp, 12/6 dp) is the\n" +
-		"`.compact` class override, scoping to any subtree the way `.dark` scopes\n" +
-		"colours. `--density-min-hit-target` (44 dp, WCAG 2.5.5) is deliberately not\n" +
+		"32 dp chips, 16/8 dp padding) is the `:root` default; compact (28 dp\n" +
+		"controls, 24 dp chips, 12/6 dp padding) is the `.compact` class override,\n" +
+		"scoping to any subtree the way `.dark` scopes colours. The chip height is\n" +
+		"the control height less 4 dp in both settings — one relation, not a second\n" +
+		"ladder. `--density-min-hit-target` (44 dp, WCAG 2.5.5) is deliberately not\n" +
 		"overridden: compact shrinks the drawn control, never the clickable area.\n" +
 		"`theme.json` records both settings' metrics plus which one the theme runs.\n\n")
 

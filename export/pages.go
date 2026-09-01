@@ -521,6 +521,19 @@ const layoutPageCSS = `.space-row {
   font-size: var(--font-label-large-size);
   font-weight: var(--font-label-large-weight);
 }
+.chip-bar {
+  height: var(--density-chip-height);
+  padding: 0 var(--space-3);
+  margin-left: var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: thin solid var(--color-control-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-label-large-size);
+  font-weight: var(--font-label-large-weight);
+}
 .pad-box {
   display: inline-block;
   padding: var(--density-padding-y) var(--density-padding-x);
@@ -566,7 +579,7 @@ func layoutHTML(s Snapshot) string {
 
 	b.WriteString("<section>\n<h2>Density</h2>\n")
 	b.WriteString("<p class=\"intro\">Two published settings share one variable family: <code>:root</code> carries comfortable, " +
-		"and a <code>.compact</code> class block overrides <code>--density-control-height</code> and <code>--density-padding-x/-y</code> " +
+		"and a <code>.compact</code> class block overrides every per-setting metric of the <code>--density-*</code> family " +
 		"the way <code>.dark</code> overrides the colours &mdash; the right column below is the same markup inside a <code>class=\"compact\"</code> wrapper. " +
 		"The dashed outline is <code>--density-min-hit-target</code>, the WCAG 2.5.5 pointer-target floor: it is not overridden, " +
 		"so compact shrinks the drawn control but never the clickable area.</p>\n")
@@ -580,9 +593,9 @@ func layoutHTML(s Snapshot) string {
 		{"density-col compact", "compact (.compact)", tokens.Compact},
 	} {
 		fmt.Fprintf(&b, "<div class=\"%s\">\n<h3>%s</h3>\n", setting.class, html.EscapeString(setting.label))
-		b.WriteString("<div class=\"hit-target\">\n<span class=\"control-bar\">Control</span>\n</div>\n")
-		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-control-height</code> &middot; %s &middot; hit target &ge; %s</p>\n",
-			px(setting.d.ControlHeight), px(setting.d.MinHitTarget()))
+		b.WriteString("<div class=\"hit-target\">\n<span class=\"control-bar\">Control</span>\n<span class=\"chip-bar\">Chip</span>\n</div>\n")
+		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-control-height</code> &middot; %s &middot; <code>--density-chip-height</code> &middot; %s &middot; hit target &ge; %s</p>\n",
+			px(setting.d.ControlHeight), px(setting.d.ChipHeight()), px(setting.d.MinHitTarget()))
 		b.WriteString("<div class=\"pad-box\">padding</div>\n")
 		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-padding-x</code> %s &middot; <code>--density-padding-y</code> %s</p>\n",
 			px(setting.d.PaddingX), px(setting.d.PaddingY))

@@ -452,6 +452,11 @@ var densityMetrics = []struct {
 	pick func(tokens.Density) float32
 }{
 	{"control-height", func(d tokens.Density) float32 { return d.ControlHeight }},
+	// The chip height is emitted rather than left to calc() over the control
+	// height: the sheet states resolved values everywhere else, and a
+	// var() subtraction would put the system's one statement of the relation
+	// in a stylesheet instead of in the token layer.
+	{"chip-height", func(d tokens.Density) float32 { return d.ChipHeight() }},
 	{"padding-x", func(d tokens.Density) float32 { return d.PaddingX }},
 	{"padding-y", func(d tokens.Density) float32 { return d.PaddingY }},
 }

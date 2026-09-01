@@ -107,3 +107,40 @@ func TestDensitySettingsMatchTable(t *testing.T) {
 			Compact.PaddingX, Compact.PaddingY)
 	}
 }
+
+// TestChipHeightRelation pins the chip height to the relation and not to two
+// picked numbers: it is exactly ChipDrop under whatever control height the
+// setting carries, which lands Comfortable on 32 and Compact on 24. Changing
+// a control height moves the chip with it, and this test is what says so.
+//
+// The last assertion is the one that keeps the relation payable: the densest
+// chip is the shortest thing the system draws, and 24 dp is exactly WCAG
+// 2.5.8 Target Size (Minimum). A deeper drop would put the drawn control
+// under the AA criterion even though the pointer target stays at MinHitTarget.
+func TestChipHeightRelation(t *testing.T) {
+	for name, d := range map[string]Density{
+		"Comfortable": Comfortable,
+		"Compact":     Compact,
+	} {
+		if got, want := d.ChipHeight(), d.ControlHeight-ChipDrop; got != want {
+			t.Errorf("%s.ChipHeight() = %v, want ControlHeight − ChipDrop = %v", name, got, want)
+		}
+		if d.ChipHeight() >= d.ControlHeight {
+			t.Errorf("%s.ChipHeight() = %v, not under ControlHeight %v: a chip is smaller than a button",
+				name, d.ChipHeight(), d.ControlHeight)
+		}
+		if d.MinHitTarget() != MinHitTarget {
+			t.Errorf("%s.MinHitTarget() = %v, want %v: the drop is a drawn height and never a pointer target",
+				name, d.MinHitTarget(), MinHitTarget)
+		}
+	}
+	if Comfortable.ChipHeight() != 32 || Compact.ChipHeight() != 24 {
+		t.Errorf("chip heights = (%v, %v), want (32, 24)",
+			Comfortable.ChipHeight(), Compact.ChipHeight())
+	}
+	const targetSizeMinimumAA float32 = 24 // WCAG 2.5.8 Target Size (Minimum)
+	if Compact.ChipHeight() < targetSizeMinimumAA {
+		t.Errorf("Compact.ChipHeight() = %v, under WCAG 2.5.8's %v dp: the shortest drawn control in the system would fail AA",
+			Compact.ChipHeight(), targetSizeMinimumAA)
+	}
+}

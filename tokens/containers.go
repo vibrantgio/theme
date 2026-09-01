@@ -34,11 +34,16 @@
 // every container this file derives.
 //
 // Two members answer the depth question, and only the depth question:
-// StatusContainer at the fixed step the family was designed around, for a
+// Container at the fixed step the family was designed around, for a
 // component whose container IS the elevation it claims, and StatusContainerOn
 // against a named ground, for one placed at an arbitrary storey. Same
 // construction, same chroma, same hue; the second only declines to land the
 // fill on the surface it is filling.
+//
+// StatusContainer and OnStatusContainer are Container and OnContainer under
+// the status family's own names. Two spellings, one derivation: the walk asks
+// the role's ramp rather than a table, so it answers for the accent trio and
+// the status four alike.
 package tokens
 
 import (
@@ -72,7 +77,7 @@ import (
 // it is where this palette's own answers separate.
 const ContainerFloor = 1.25
 
-// StatusContainer returns the role's tonal container: its ramp's
+// Container returns the role's tonal container: its ramp's
 // containerStep rung with the chroma pulled down to containerChroma.
 //
 // It is defined for every role that has a ramp, status or accent, because
@@ -100,16 +105,22 @@ const ContainerFloor = 1.25
 // derivation changed; the eight bits landed one step over.
 //
 // RoleNeutral is accepted and yields the neutral ramp's own step, chroma 0.
-func (t ColorTokens) StatusContainer(role Role) stdcolor.NRGBA {
+func (t ColorTokens) Container(role Role) stdcolor.NRGBA {
 	return t.containerAt(role, containerStep)
 }
 
+// StatusContainer is [ColorTokens.Container] under the status family's own
+// name; see the file header.
+func (t ColorTokens) StatusContainer(role Role) stdcolor.NRGBA {
+	return t.Container(role)
+}
+
 // StatusContainerOn returns the role's tonal container for a component that
-// stands on a named ground: [StatusContainer]'s rung while that rung is
+// stands on a named ground: [ColorTokens.Container]'s rung while that rung is
 // visibly a different surface from the ground, and otherwise the first
 // deeper rung that is.
 //
-// Depth is the one thing StatusContainer cannot answer alone. It is realized
+// Depth is the one thing Container cannot answer alone. It is realized
 // at a fixed step, which is right for a component that fills the page it is
 // on — the depth then IS the elevation the container is claiming — and wrong
 // for a small one placed at an arbitrary storey, because the elevation ladder
@@ -162,8 +173,8 @@ func (t ColorTokens) StatusContainerOn(role Role, ground stdcolor.NRGBA) stdcolo
 
 // containerAt realizes the role's container at one ramp step: the step's own
 // tone and hue, at the chroma read off the ramp's mid-value step 500 and
-// clamped to containerChroma. See [StatusContainer] for why the two readings
-// come off two different rungs.
+// clamped to containerChroma. See [ColorTokens.Container] for why the two
+// readings come off two different rungs.
 func (t ColorTokens) containerAt(role Role, step int) stdcolor.NRGBA {
 	r := t.rampFor(role) // validates role
 	rung := r.Step(step)
@@ -176,13 +187,24 @@ func (t ColorTokens) containerAt(role Role, step int) stdcolor.NRGBA {
 	return color.NRGBAFromToneChromaHue(tone, chroma, hue)
 }
 
-// OnStatusContainer returns the colour of the role's mark over its own
-// container: MarkOn against StatusContainer(role) at graphicFloor, WCAG
+// OnContainer returns the colour of the role's mark over its own
+// container: MarkOn against Container(role) at graphicFloor, WCAG
 // 1.4.11's 3:1 for a non-text graphic. Every light scheme lands on step 700
 // and every dark scheme on step 500 — one depth per scheme for all four
 // roles — and the worst pairing over the whole seed sweep measures 4.47:1.
+//
+// It is the floor a mark owes, so a caller setting a run of words on a
+// container asks for the text floor instead: the role's ink derived against
+// the fill ([ColorTokens.InkOn], or [ColorTokens.MarkOn] for RoleNeutral,
+// at [TextFloor]).
+func (t ColorTokens) OnContainer(role Role) stdcolor.NRGBA {
+	return t.MarkOn(role, t.Container(role), graphicFloor)
+}
+
+// OnStatusContainer is [ColorTokens.OnContainer] under the status family's
+// own name; see the file header.
 func (t ColorTokens) OnStatusContainer(role Role) stdcolor.NRGBA {
-	return t.MarkOn(role, t.StatusContainer(role), graphicFloor)
+	return t.OnContainer(role)
 }
 
 // MarkOn returns the colour the role marks ground with: the rung of the
