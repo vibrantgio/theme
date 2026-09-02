@@ -340,14 +340,19 @@ func (t ColorTokens) SurfaceAt(level ElevationLevel) color.NRGBA {
 }
 
 // StateAt resolves a level's fill under an interaction state, taken from the
-// level's own colour.
+// level's own colour: the wash a quiet control paints on the surface it
+// stands on.
 //
-// It is [ColorTokens.PinnedStateColor] applied to [ColorTokens.SurfaceAt],
-// and that is the whole of it — a level above the paper is off the ramp
-// in one scheme or the other, so it is exactly the case PinnedStateColor
-// exists for: a fill the scheme's ramps do not carry, walked on the
+// The walk is [ColorTokens.PinnedStateColor]'s — a level above the paper is
+// off the ramp in one scheme or the other, so it is exactly the case that
+// walk exists for: a fill the scheme's ramps do not carry, walked on the
 // neutral ramp because every ramp in a scheme sweeps the same lightness
-// scale and only the neutral sweeps it at zero chroma.
+// scale and only the neutral sweeps it at zero chroma. What it adds is
+// [StateFloor]: both colours in this pairing come off that one scale, so a
+// step of it can be too small to see, and a wash nobody can see has stopped
+// being feedback. Every caller of this — a ghost button's wash, a sidebar
+// row's, a tree row's — asks the same question and owes the same minimum,
+// so the floor is carried here rather than by each of them.
 //
 // The walk's direction is deliberately independent of elevation's. A
 // state walk heads toward the ramp's 900 end — darker in a light scheme,
@@ -355,7 +360,7 @@ func (t ColorTokens) SurfaceAt(level ElevationLevel) color.NRGBA {
 // is feedback rather than depth. A level says how near a surface is; a
 // state says something happened.
 func (t ColorTokens) StateAt(level ElevationLevel, state State) color.NRGBA {
-	return t.PinnedStateColor(t.SurfaceAt(level), state)
+	return t.washOn(t.SurfaceAt(level), state)
 }
 
 // surfaceBand returns the neutral ramp's four surface steps — 100 through

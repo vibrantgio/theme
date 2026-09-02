@@ -36,6 +36,14 @@
 //     scale and only the neutral sweeps it at zero chroma, so the neutral
 //     ramp is that scale itself rather than one role's tinted copy of it.
 //
+// One of those walks carries a floor. A wash — the state a quiet control
+// paints on the surface it stands on, which is what
+// [ColorTokens.StateAt] resolves — is the only one of them whose own
+// step can be too small to see, because both colours come off the same
+// neutral scale; a solid fill's walk starts from a pin that is already
+// loud. So the wash deepens past one step until it clears StateFloor, and
+// press stays one step past where hover landed.
+//
 
 // Clamping: a walk past the ramp end clamps to the 900 stop — ground 800
 // pressed resolves to step 900, ground 900 hover stays at 900, and a solid
@@ -183,6 +191,92 @@ func (t ColorTokens) PinnedStateColor(pin stdcolor.NRGBA, state State) stdcolor.
 	return solidWalk(pin, t.Ramps.Neutral, stateWalk(state))
 }
 
+// StateFloor is the least contrast a wash owes the surface it is walked
+// from: enough that a reader sees that something happened there at all.
+//
+// A wash is the quietest a state is spoken at — the surface itself, a step
+// along the same neutral scale — so what it owes is only that its edge be
+// findable, and the ceiling is left to whatever draws it. It is not a WCAG
+// criterion, because WCAG has none for this: 1.4.11's 3:1 governs a mark
+// that has to be resolved as a shape, and a wash carries no shape.
+//
+// 1.25:1 is measured rather than picked. Over the seed sweep — both
+// derivations, both schemes, all five levels — the one-step walk's
+// separation from the surface it starts on falls in bands with air between
+// them: 1.12–1.23 where the step is a shade the eye reads as the same
+// surface, then 1.31–1.80, which is the second step everywhere and the
+// first step on the two deep levels of the dark scheme, and is where the
+// system's own visible pairings sit. The threshold goes in the empty
+// stretch between 1.23 and 1.31, so it accepts every pairing the design
+// already ships and rejects only the ones that vanish.
+//
+// It lands on the same number as [ContainerFloor], independently and for
+// the same reason — both ask when a fill stops being the surface under it,
+// on scales that share their lightness sweep. They stay two constants
+// because they answer that question for two different things and either may
+// move on its own evidence.
+const StateFloor = 1.25
+
+// washOn resolves the wash a state paints on surface: the neutral walk of
+// [PinnedStateColor], deepened until it clears [StateFloor].
+//
+// Hover is one step, or the shallowest depth past it that clears the floor,
+// whichever is deeper — a floor moves a wash only as far as being seen
+// requires, so a level whose one step already clears it does not move at
+// all. Press is one step past wherever hover landed, which keeps press
+// visibly beyond hover on every level without pinning either to a rung.
+//
+// The depth is a fractional position on the ladder, not a rung. Rungs are
+// unevenly spaced, so rounding the floor up to the next one overshoots:
+// on the dark scheme's level-1 fill the next rung is the ramp's mid-value
+// step, where no neutral label reaches the text floor over it.
+func (t ColorTokens) washOn(surface stdcolor.NRGBA, state State) stdcolor.NRGBA {
+	switch state {
+	case StateNormal, StateFocus:
+		return surface
+	case StateDisabled:
+		return Disabled(surface)
+	}
+	ladder := neutralLadder(t.Ramps.Neutral)
+	depth := floorDepth(ladder, surface, 1)
+	if n := stateWalk(state); n > 1 {
+		depth += float64(n - 1)
+	}
+	return walkOn(ladder, surface, depth)
+}
+
+// floorDepth returns the shallowest walk depth at or past from whose
+// realization clears [StateFloor] against surface. Separation grows
+// monotonically with depth — the walk only ever heads away from the surface
+// along the ladder — so the floor is crossed exactly once and bisection
+// finds it. A ladder whose far end cannot clear the floor yields that end,
+// which separates most: an unseparated wash is a defect the gates report,
+// not a reason to paint nothing.
+func floorDepth(ladder [9]float64, surface stdcolor.NRGBA, from float64) float64 {
+	const end = 8 // the ladder's last rung; walkOn clamps there
+	clears := func(d float64) bool {
+		return color.ContrastRatio(walkOn(ladder, surface, d), surface) >= StateFloor
+	}
+	if clears(from) {
+		return from
+	}
+	if !clears(end) {
+		return end
+	}
+	lo, hi := from, float64(end)
+	// 24 halvings of at most eight rungs resolve the crossing to under
+	// 1e-6 of a rung, far finer than one 8-bit step of the scale.
+	for i := 0; i < 24; i++ {
+		mid := (lo + hi) / 2
+		if clears(mid) {
+			hi = mid
+		} else {
+			lo = mid
+		}
+	}
+	return hi
+}
+
 // stateWalk returns how many ramp steps past the ground a state sits:
 // hover one, pressed, selected and dragged two, everything else zero.
 func stateWalk(state State) int {
@@ -242,19 +336,47 @@ func (t ColorTokens) pinFor(role Role) stdcolor.NRGBA {
 // solidWalk moves the pin n rungs toward the 900 end of r's measured L*
 // ladder and realizes the target depth at the pin's own hue and chroma.
 func solidWalk(pin stdcolor.NRGBA, r Ramp, n int) stdcolor.NRGBA {
+	return walkOn(neutralLadder(r), pin, float64(n))
+}
+
+// neutralLadder reads a ramp's measured CIELAB L* ladder, the scale every
+// walk counts its rungs on.
+func neutralLadder(r Ramp) [9]float64 {
 	var ladder [9]float64
 	for i, c := range r {
 		ladder[i], _, _ = color.LabFromNRGBA(c)
 	}
+	return ladder
+}
+
+// walkOn moves the pin n rungs along ladder toward its 900 end and realizes
+// the target depth at the pin's own hue and chroma. n is fractional so that
+// a walk carrying a floor can stop where the floor is crossed instead of at
+// the next rung; ladderAt interpolates between rungs.
+func walkOn(ladder [9]float64, pin stdcolor.NRGBA, n float64) stdcolor.NRGBA {
 	pinL, _, _ := color.LabFromNRGBA(pin)
-	idx := ladderIndex(ladder, pinL) + float64(n)
+	idx := ladderIndex(ladder, pinL) + n
 	if idx > 8 {
 		idx = 8 // clamp at the 900 rung
 	}
 	targetL := ladderAt(ladder, idx)
 	_, chroma, hue := color.OKLChFromNRGBA(pin)
+	if chroma < greyResidue {
+		// A walk from a grey stays grey. An exact grey round-trips through
+		// OKLCh with a chroma of about 3e-8 rather than 0, and realizing an
+		// interpolated depth at that residue moves one channel by 1/255
+		// while the others hold — a colour cast in the token sheet with no
+		// hue behind it.
+		chroma, hue = 0, 0
+	}
 	return color.NRGBAFromToneChromaHue(targetL, chroma, hue)
 }
+
+// greyResidue is the OKLCh chroma below which a colour is taken to be grey.
+// The conversion leaves an exact grey at about 3e-8; the least chroma any
+// ramp in this package realizes deliberately is three orders of magnitude
+// above this, so the gap is not close.
+const greyResidue = 1e-5
 
 // ladderIndex locates L on a monotonic (ascending or descending) ladder as
 // a fractional index in [0,8], clamping beyond either end.

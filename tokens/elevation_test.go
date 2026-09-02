@@ -310,10 +310,26 @@ func TestStateAtWalksFromTheLevel(t *testing.T) {
 				t.Errorf("%s %s: hover walks the wrong way — fill L*%.2f, hover L*%.2f",
 					scheme.name, level.name, lstar(fill), lstar(hover))
 			}
-			// The walk is PinnedStateColor's, taken from the level's fill.
-			if got, want := hover, scheme.tok.PinnedStateColor(fill, tokens.StateHover); got != want {
-				t.Errorf("%s %s: StateAt hover = %v, want PinnedStateColor of the fill %v",
-					scheme.name, level.name, got, want)
+			// The walk is PinnedStateColor's, taken from the level's own
+			// fill, and it stops at the first depth clearing StateFloor:
+			// never shallower than the one step that walk takes, and
+			// never deeper than the floor requires.
+			pinned := scheme.tok.PinnedStateColor(fill, tokens.StateHover)
+			if lstar(hover) != lstar(pinned) {
+				beyond := lstar(hover) > lstar(pinned)
+				if beyond != scheme.dark {
+					t.Errorf("%s %s: StateAt hover %v is shallower than the one-step walk %v",
+						scheme.name, level.name, hover, pinned)
+				}
+			}
+			if got := vgcolor.ContrastRatio(hover, fill); got < tokens.StateFloor {
+				t.Errorf("%s %s: hover wash %v on the fill %v measures %.3f:1, under the %.2f:1 floor",
+					scheme.name, level.name, hover, fill, got, tokens.StateFloor)
+			}
+			press := scheme.tok.StateAt(level.level, tokens.StatePressed)
+			if lstar(press) == lstar(hover) || (lstar(press) > lstar(hover)) != scheme.dark {
+				t.Errorf("%s %s: press %v does not lie beyond hover %v",
+					scheme.name, level.name, press, hover)
 			}
 		}
 	}

@@ -972,3 +972,60 @@ func TestRampsCoverTheirRange(t *testing.T) {
 		}
 	}
 }
+
+// TestWashesClearThePerceptibilityFloor gates the wash a quiet control
+// paints on the surface it stands on: over the seed sweep, both
+// derivations, both schemes and every level, hover and press each separate
+// from that surface by at least tokens.StateFloor, and press lies beyond
+// hover.
+//
+// Both colours in this pairing come off the one neutral scale, so the walk
+// is the only one in the package whose own step can be too small to see —
+// before the floor, the dark scheme's paper hovered at 1.12:1, which is a
+// signal that has stopped signalling.
+func TestWashesClearThePerceptibilityFloor(t *testing.T) {
+	worst, worstAt, loudest := 99.0, "", 0.0
+	worstStep, worstStepAt := 99.0, ""
+	for _, seed := range sweepSeeds() {
+		light, dark := tokens.FromSeed(seed)
+		hcLight, hcDark := tokens.FromSeedHighContrast(seed)
+		for _, s := range []struct {
+			name string
+			tok  tokens.ColorTokens
+		}{
+			{"FromSeed light", light}, {"FromSeed dark", dark},
+			{"FromSeedHighContrast light", hcLight}, {"FromSeedHighContrast dark", hcDark},
+		} {
+			for _, lv := range levels {
+				surface := s.tok.SurfaceAt(lv.level)
+				hover := s.tok.StateAt(lv.level, tokens.StateHover)
+				press := s.tok.StateAt(lv.level, tokens.StatePressed)
+				for _, w := range []struct {
+					name string
+					fill stdcolor.NRGBA
+				}{{"hover", hover}, {"press", press}} {
+					got := color.ContrastRatio(w.fill, surface)
+					where := fmt.Sprintf("seed %v %s %s %s", seed, s.name, lv.name, w.name)
+					if got < tokens.StateFloor {
+						t.Errorf("%s: wash %v on the surface %v measures %.3f:1, under the %.2f:1 floor",
+							where, w.fill, surface, got, tokens.StateFloor)
+					} else if got < worst {
+						worst, worstAt = got, where
+					}
+					if got > loudest {
+						loudest = got
+					}
+				}
+				step := color.ContrastRatio(press, hover)
+				if lstar(press) == lstar(hover) {
+					t.Errorf("seed %v %s %s: press %v does not lie beyond hover %v",
+						seed, s.name, lv.name, press, hover)
+				} else if step < worstStep {
+					worstStep, worstStepAt = step, fmt.Sprintf("seed %v %s %s", seed, s.name, lv.name)
+				}
+			}
+		}
+	}
+	t.Logf("over %d seeds, both derivations, both schemes, five levels: worst wash %.3f:1 (floor %.2f, %s), loudest %.3f:1; worst press-over-hover %.3f:1 (%s)",
+		len(sweepSeeds()), worst, tokens.StateFloor, worstAt, loudest, worstStep, worstStepAt)
+}
