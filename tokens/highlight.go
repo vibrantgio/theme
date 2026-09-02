@@ -18,13 +18,12 @@
 //
 // What the reservation is worth is a distance, and the distance is
 // measured: over the shared seed sweep, in both schemes of both
-// derivations, on every level, the realized wash stands at least 65.92°
-// from every status container's hue and every status pin's, and 0.0606
+// derivations, on every level, the realized wash stands at least 64.01°
+// from every status container's hue and every status pin's, and 0.0582
 // away from the nearest status container in OKLab. The two closest status
-// containers, meanwhile, come to 19.27° and 0.0183 of each other — the
-// bent warning beside the error — so the highlight is more than three
-// times further from every status colour than two status colours are from
-// each other.
+// containers, meanwhile, come to 48.33° and 0.0453 of each other, so the
+// highlight is a third further again from every status colour than two
+// status colours are from each other.
 //
 // The chroma is containerChroma: the highlight is a wash of the same
 // construction as a tonal container, so it differs from the four status

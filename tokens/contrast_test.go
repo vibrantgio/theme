@@ -436,6 +436,18 @@ const hueReadChroma = 0.045
 // derivation.
 const rungSlack = 2.0
 
+// paleTintStep is the step a container reads its hue at, restated here so
+// the gate reads it off the ramp rather than off the code under test: the
+// third rung counted from the ramp's pale end.
+func paleTintStep(r tokens.Ramp) int {
+	pale, _, _ := color.LabFromNRGBA(r.Step(100))
+	deep, _, _ := color.LabFromNRGBA(r.Step(900))
+	if pale >= deep {
+		return 300
+	}
+	return 700
+}
+
 // roleRamp returns one role's ramp out of a scheme.
 func roleRamp(t tokens.ColorTokens, role tokens.Role) tokens.Ramp {
 	switch role {
@@ -683,13 +695,12 @@ func TestStatusAnchorsHoldTheirFamiliesForEverySeed(t *testing.T) {
 // WCAG AA over it, and the mark the derivation chose for it reaches WCAG
 // 1.4.11's 3:1 non-text floor over it.
 //
-// "Its parent's hue" is read off the rung the container is realized at
-// rather than off the ramp's mid-value step, because one family's hue is a
-// function of the depth it is realized at (see seed.go's bend): a container
-// standing at the step-300 depth owes that depth's hue, and measuring it
-// against a depth it does not stand at would gate the wrong thing. For the
-// three families that do not bend the two readings are the same rung's worth
-// of eight-bit noise apart, and the gate reads the same as it did.
+// "Its parent's hue" is read off the rung the container reads its own hue
+// from — the ramp's pale tint depth, step 300 counted from the pale end —
+// because a wash's hue is its role's and not its depth's (containers.go).
+// Measuring it against the rung it is realized at instead would gate the
+// bend, which is a rule for marks and not for washes: the whole point of the
+// derivation is that a role's wash is one hue at every depth it is drawn at.
 func TestStatusContainersKeepTheirParentsHue(t *testing.T) {
 	const dial, dialSlack, graphicFloor = 0.055, 0.004, 3.0
 	worstText, worstMark, worstChroma := 99.0, 99.0, 99.0
@@ -708,10 +719,11 @@ func TestStatusContainersKeepTheirParentsHue(t *testing.T) {
 				container := s.tok.StatusContainer(r.role)
 				mark := s.tok.OnStatusContainer(r.role)
 				_, chroma, hue := color.OKLChFromNRGBA(container)
-				parent := roleRamp(s.tok, r.role).Step(300)
-				_, _, parentHue := color.OKLChFromNRGBA(parent)
+				ramp := roleRamp(s.tok, r.role)
+				parent := ramp.Step(300)
+				_, _, parentHue := color.OKLChFromNRGBA(ramp.Step(paleTintStep(ramp)))
 				if drift := hueGap(hue, parentHue); drift > containerSlack {
-					t.Errorf("seed %v: %s %s container %v sits at hue %.1f°, %.1f° off its step-300 rung's %.1f° — a container has left its family",
+					t.Errorf("seed %v: %s %s container %v sits at hue %.1f°, %.1f° off the pale tint depth's %.1f° — a container has left its family",
 						seed, s.name, r.name, container, hue, drift, parentHue)
 				} else if drift > worstHue {
 					worstHue = drift
@@ -742,7 +754,7 @@ func TestStatusContainersKeepTheirParentsHue(t *testing.T) {
 			}
 		}
 	}
-	t.Logf("over %d seeds: worst container chroma %.4f (dial %.3f), worst hue drift from the step-300 rung %.2f° (slack %.1f°), worst body text on a container %.2f:1, worst mark on a container %.2f:1",
+	t.Logf("over %d seeds: worst container chroma %.4f (dial %.3f), worst hue drift from the pale tint depth %.2f° (slack %.1f°), worst body text on a container %.2f:1, worst mark on a container %.2f:1",
 		len(sweepSeeds()), worstChroma, dial, worstHue, containerSlack, worstText, worstMark)
 }
 
@@ -850,6 +862,82 @@ func TestContainersSeparateFromEveryLevelItStandsOn(t *testing.T) {
 	}
 	t.Logf("over %d seeds, both derivations, both schemes, five levels: worst seam %.3f:1 (floor %.2f), loudest %.3f:1",
 		len(sweepSeeds()), worst, tokens.ContainerFloor, loudest)
+}
+
+// TestStatusWashesKeepTheirHuesApartOnEveryLevel is the whole-population
+// gate on the status set as a set. Three floors are read together because a
+// wash owes all three at once and trading one away for another is the defect
+// they exist to catch: it must be a visible field on the surface it stands
+// on, it must not be so pronounced that it reads as a control's fill, its
+// content must be legible over it, and it must be tellable apart from the
+// other three.
+//
+// The separation floor is the one this gate was written for. It is measured,
+// not picked: [tokens.ContainerSeparation] is the light scheme's own closest
+// pairing, and the dark scheme measured 0.0183 against it while a wash read
+// its hue off the rung it was realized at — the bent warning beside the
+// error, two browns.
+func TestStatusWashesKeepTheirHuesApartOnEveryLevel(t *testing.T) {
+	// The threshold TestContainersSeparateFromEveryLevelItStandsOn reads a
+	// container against: past this a wash is a control's fill, not the
+	// surface something else stands on.
+	const solid = 2.5
+	levels := []tokens.ElevationLevel{
+		tokens.LevelBackdrop, tokens.Level0, tokens.Level1, tokens.Level2, tokens.Level3,
+	}
+	worstSeam, loudestSeam, worstText := 99.0, 0.0, 99.0
+	worstSep, worstSepAt := 99.0, ""
+	worstHue := 999.0
+	for _, seed := range sweepSeeds() {
+		for _, s := range schemesOf(seed) {
+			for _, lv := range levels {
+				surface := s.tok.SurfaceAt(lv)
+				washes := make([]stdcolor.NRGBA, len(statusRoles))
+				for i, r := range statusRoles {
+					washes[i] = s.tok.StatusContainerOn(r.role, surface)
+					got := color.ContrastRatio(washes[i], surface)
+					if got < tokens.ContainerFloor {
+						t.Errorf("seed %v: %s %s wash %v on the level-%d surface %v measures %.3f:1, under the %.2f:1 seam floor",
+							seed, s.name, r.name, washes[i], lv, surface, got, tokens.ContainerFloor)
+					} else if got < worstSeam {
+						worstSeam = got
+					}
+					if got > solid {
+						t.Errorf("seed %v: %s %s wash %v on the level-%d surface %v measures %.3f:1 — that is a fill, not a wash",
+							seed, s.name, r.name, washes[i], lv, surface, got)
+					} else if got > loudestSeam {
+						loudestSeam = got
+					}
+					fg := s.tok.ForegroundOn(r.role, washes[i])
+					if got := color.ContrastRatio(fg, washes[i]); got < tokens.TextFloor {
+						t.Errorf("seed %v: %s %s foreground %v over its own wash %v measures %.3f:1, under the %.1f:1 text floor",
+							seed, s.name, r.name, fg, washes[i], got, tokens.TextFloor)
+					} else if got < worstText {
+						worstText = got
+					}
+				}
+				for i := range washes {
+					for j := i + 1; j < len(washes); j++ {
+						got := oklabDistance(washes[i], washes[j])
+						_, _, hi := color.OKLChFromNRGBA(washes[i])
+						_, _, hj := color.OKLChFromNRGBA(washes[j])
+						if got < tokens.ContainerSeparation {
+							t.Errorf("seed %v: %s on the level-%d surface the %s wash %v and the %s wash %v are %.4f apart in OKLab (%.2f° of hue), under the %.3f the set owes",
+								seed, s.name, lv, statusRoles[i].name, washes[i], statusRoles[j].name, washes[j], got, hueGap(hi, hj), tokens.ContainerSeparation)
+						} else if got < worstSep {
+							worstSep = got
+							worstSepAt = fmt.Sprintf("%s beside %s, %s level %d", statusRoles[i].name, statusRoles[j].name, s.name, lv)
+						}
+						if h := hueGap(hi, hj); h < worstHue {
+							worstHue = h
+						}
+					}
+				}
+			}
+		}
+	}
+	t.Logf("over %d seeds, both derivations, both schemes, five levels: closest two washes %.4f in OKLab (floor %.3f, %s) at %.2f° of hue; seam worst %.3f:1 loudest %.3f:1; worst foreground over a wash %.3f:1",
+		len(sweepSeeds()), worstSep, tokens.ContainerSeparation, worstSepAt, worstHue, worstSeam, loudestSeam, worstText)
 }
 
 // TestTheGroundAwareContainerHoldsTheFixedOneWhereItAlreadyWorks pins the

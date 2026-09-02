@@ -131,9 +131,13 @@
 //     chroma, the realized chroma goes 0.0977 → 0.1206 at L* 39, 0.0781 →
 //     0.0962 at L* 28, 0.0620 → 0.0763 at L* 19 and 0.0391 → 0.0478 at L* 6.
 //     warningChroma therefore stays 0.172: the bend raises the ceiling
-//     wherever it acts. The container dial gains the same way — its binding
-//     case, amber at the dark step-300 depth, held 0.0620 against a dial of
-//     0.055 and now holds 0.0735.
+//     wherever it acts.
+//
+//     The bend is a rule for marks and does not reach the washes. A status
+//     container reads its hue at the pale tint depth, where the anchor is
+//     unrotated, because at the container dial the rotation buys no
+//     legibility and costs the status set its separation — it brought a dark
+//     scheme's warning wash within 19.27° of its error wash (containers.go).
 //
 //     Composition with the seed tint is tint first, bend second: the seed
 //     tints the anchor and the bend rotates the tinted anchor, so the whole
@@ -144,12 +148,12 @@
 //     in hue.
 //
 //     The rungs, the pin and the deep on-ink are all realized through the
-//     same hue-at-tone, at the tone each sits at; a status container is its
-//     role's step-300 rung with the chroma pulled down to the container dial,
-//     so it takes the hue of its depth and inherits the bend without asking
-//     (see containers.go).
+//     same hue-at-tone, at the tone each sits at. A status container is not:
+//     it takes its step-300 rung's tone and the container dial's chroma, but
+//     reads its hue at the pale tint depth, so a wash carries the family's
+//     anchor at every depth it is drawn at (see containers.go).
 //
-//   - Status containers are tonal, not blended: the role's own hue at
+//   - Status containers are tonal, not blended: the role's own anchor hue at
 //     containerChroma, 0.055, realized at the role ramp's step-300 depth —
 //     StatusContainer, with OnStatusContainer for the mark read on it.
 //     Alpha-compositing the pinned base over the neutral Surface instead

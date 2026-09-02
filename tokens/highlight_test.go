@@ -136,14 +136,14 @@ func TestContentInkClearsItsFloorOverTheHighlight(t *testing.T) {
 //
 // The bounds are the sweep's own measurements less a rounding margin, and
 // they are read against what the palette already asks a reader to tell
-// apart: the two closest status containers come to 19.27° and 0.0183 of
-// each other (the bent warning beside the error), while the highlight
-// stands 65.92° and 0.0606 from the nearest of them. Nothing on this
-// palette is as far from a status colour as the highlight is.
+// apart: the two closest status containers come to 48.33° and 0.0453 of
+// each other, while the highlight stands 64.01° and 0.0582 from the
+// nearest of them. Nothing on this palette is as far from a status colour
+// as the highlight is.
 func TestTheHighlightKeepsItsDistanceFromEveryStatus(t *testing.T) {
 	const (
-		hueBound = 60.0  // measured 65.92° over the sweep
-		labBound = 0.055 // measured 0.0606 over the sweep
+		hueBound = 60.0  // measured 64.01° over the sweep
+		labBound = 0.055 // measured 0.0582 over the sweep
 	)
 	worstHue, worstHueAt := 999.0, ""
 	worstLab, worstLabAt := 99.0, ""

@@ -1,9 +1,10 @@
-// Tonal containers: the ground a status role fills, and the mark read on it.
+// Tonal containers: the wash a status role fills the surface it stands on
+// with, and the mark read on it.
 //
 // A container is a role's own hue held at one measured chroma and realized
 // at one measured depth — never a blend. Compositing the pinned base over
 // the neutral Surface at 12% alpha interpolates in non-linear sRGB, which is
-// neither hue-preserving nor chroma-preserving: the four status grounds come
+// neither hue-preserving nor chroma-preserving: the four status washes come
 // out at chroma 0.0155–0.0212, within a rounding error of the grey they are
 // mixed into, and the red one's hue slides from 28.7° to 21.6°, seven degrees
 // toward magenta — a dirty pink.
@@ -13,7 +14,27 @@
 // neutral axis, never off the hue ray), so a container of a red role is
 // red-family whatever the seed; and asking every role for the same chroma
 // at the same depth means the four differ in hue and in nothing else, which
-// is the only arrangement in which four status grounds read as four.
+// is the only arrangement in which four status washes read as four.
+//
+// A wash's hue is its role's, not its depth's. One family's hue is a
+// function of the tone it is realized at — warning rotates toward orange as
+// it deepens (seed.go) — and that rotation is a rule for marks: a deep amber
+// mark at full chroma is an olive-brown and carries no warning. A wash
+// carries the dial's chroma, where the rotation buys no legibility and costs
+// the set its separation. Read off the realized rung, a dark scheme's
+// warning wash comes within 19.27° and 0.0183 in OKLab of its error wash,
+// where the same reading leaves a light scheme's closest pair 31.37° and
+// 0.0299 apart. So the hue is read at the ramp's pale tint depth — the
+// third rung counted from the ramp's pale end — which stands at or above
+// the tone the rotation begins from, and so answers the family's anchor as
+// the seed tinted it and nothing else. Both schemes then clear
+// ContainerSeparation with room: 0.0453 in light and 0.0458 in dark over
+// the seed sweep.
+//
+// That also leaves the walk below with one job. A hue read off the realized
+// rung rotates whenever the walk deepens the wash, which would put a warning
+// badge on the paper and one on the chrome furniture beside it in two
+// different hues for a reason no reader could infer.
 //
 // The mark a role puts on a ground — an icon, a leading edge, a rule — is
 // not text and is not chosen against a text floor. MarkOn picks it: the
@@ -36,7 +57,7 @@
 // Two members answer the depth question, and only the depth question:
 // Container at the fixed step the family was designed around, for a
 // component whose container IS the elevation it claims, and ContainerOn
-// against a named ground, for one placed at an arbitrary storey. Same
+// against a named surface, for one placed at an arbitrary level. Same
 // construction, same chroma, same hue; the second only declines to land the
 // fill on the surface it is filling.
 //
@@ -77,32 +98,49 @@ import (
 // it is where this palette's own answers separate.
 const ContainerFloor = 1.25
 
-// Container returns the role's tonal container: its ramp's
-// containerStep rung with the chroma pulled down to containerChroma.
+// ContainerSeparation is the least perceptual distance two status washes
+// drawn on one surface may come to, in OKLab. The four are one set, and a
+// set of four is only four if a reader can tell its members apart.
+//
+// 0.029 is measured rather than picked. Over the seed sweep — both
+// derivations, both schemes, every level — a light scheme's closest pairing
+// measures 0.0299 with the hue read off the realized rung, which is 31.37°
+// of OKLCh hue at the container dial, and its four washes read as four; a
+// dark scheme's measures 0.0183 (19.27°), and they read as two browns and
+// two near-black tints. The threshold goes at the light reading, which is
+// the demonstrated one. Reading the hue at the pale tint depth instead
+// carries both schemes to 0.0453 at worst.
+//
+// Hue angle alone cannot state it — two hues 90° apart at no chroma are one
+// grey — so the distance is taken in the space the derivation places its
+// hues and chromas in.
+const ContainerSeparation = 0.029
+
+// Container returns the role's tonal container: its ramp's containerStep
+// rung's tone, at the hue the role wears at its ramp's pale tint depth,
+// with the chroma pulled down to containerChroma.
 //
 // It is defined for every role that has a ramp, status or accent, because
-// the derivation asks the ramp and not a table. The depth and the hue both
-// come off the rung the container is realized at, which is what lets a role
-// whose hue varies with depth — warning, which bends toward orange as its
-// tone deepens (see seed.go) — carry that hue into its container without
-// this file knowing there is a bend.
+// the derivation asks the ramp and not a table.
 //
-// The chroma is the one quantity read off the ramp's mid-value step 500
-// instead, and the asymmetry is the point: hue answers "which colour, at
-// this depth", which is a property of the depth, while chroma is only being
-// asked "has this role a colour at all", which is a property of the role
-// and is best read where the gamut constrains it least. The answer is the
-// lesser of the dial and what the role actually carries, which is what
-// keeps a brandless palette brandless — a neutral seed's accent ramp
-// carries no chroma, so its container carries none either, rather than
-// inventing a hue the brand does not have.
+// Three readings off three rungs, and the asymmetry is the point. Tone
+// answers "how deep", which is the container's own question and so is read
+// at the rung it is realized at. Hue answers "which colour", which is a
+// property of the role rather than of the depth — see the file header for
+// what reading it off the realized rung cost the status set — so it is read
+// at the pale tint depth. Chroma is only being asked "has this role a colour
+// at all", which is best read where the gamut constrains it least, so it
+// comes off the ramp's mid-value step 500; the answer is the lesser of the
+// dial and what the role actually carries, which is what keeps a brandless
+// palette brandless — a neutral seed's accent ramp carries no chroma, so its
+// container carries none either, rather than inventing a hue the brand does
+// not have.
 //
-// Moving the hue reading one rung costs the families that do not bend a
-// byte and no more: over a 216-colour seed grid, 1172 of the 6048
-// non-warning containers change at all and every one of them by 1/255 in a
-// single channel, which is the whole difference between reading an angle
-// off a rung at one chroma and off a rung at another. Nothing about their
-// derivation changed; the eight bits landed one step over.
+// Reading the hue one rung over costs the families whose hue does not move
+// with depth an eight-bit step and no more: over the seed sweep every
+// non-warning container that changed at all changed by at most three units
+// summed across its channels, which is the whole difference between reading
+// an angle off a rung at one chroma and off a rung at another.
 //
 // RoleNeutral is accepted and yields the neutral ramp's own step, chroma 0.
 func (t ColorTokens) Container(role Role) stdcolor.NRGBA {
@@ -116,14 +154,14 @@ func (t ColorTokens) StatusContainer(role Role) stdcolor.NRGBA {
 }
 
 // ContainerOn returns the role's tonal container for a component that stands
-// on a named ground: [ColorTokens.Container]'s rung while that rung is visibly
-// a different surface from the ground, and otherwise the first deeper rung
-// that is.
+// on a named surface: [ColorTokens.Container]'s rung while that rung is
+// visibly a different surface from that one, and otherwise the first deeper
+// rung that is.
 //
 // Depth is the one thing Container cannot answer alone. It is realized
 // at a fixed step, which is right for a component that fills the page it is
 // on — the depth then IS the elevation the container is claiming — and wrong
-// for a small one placed at an arbitrary storey, because the elevation ladder
+// for a small one placed at an arbitrary level, because the elevation ladder
 // walks through that fixed step. A dark scheme's level-2 surface and its
 // step-300 container land within 1.01:1 of each other; a container drawn
 // there is not subtle, it is absent, and the component wearing it silently
@@ -133,10 +171,14 @@ func (t ColorTokens) StatusContainer(role Role) stdcolor.NRGBA {
 // reference one that clears [ContainerFloor]. It needs no direction because
 // the ramps are paired scales — 100–300 are the tinted fills of whichever
 // scheme is running and 700–900 the text over them — so a higher step is
-// further from that scheme's own ground in the light ramp and in the dark
-// one alike. A container therefore moves only as far as the ground forces it
-// to, and every role on one ground moves together, which is what keeps four
-// status fills reading as one set.
+// further from that scheme's own surfaces in the light ramp and in the dark
+// one alike. A container therefore moves only as far as the surface forces
+// it to, and every role on one surface moves together, which is what keeps
+// four status fills reading as one set.
+//
+// The walk moves depth and nothing else: hue comes off the pale tint depth
+// whatever rung the walk lands on (see the file header), so a role's wash is
+// one hue wherever it is drawn.
 //
 // Unlike [MarkOn]'s nearest-to-the-reference rule, which suits a mark that
 // must land at one depth whichever side of the reference it comes from.
@@ -145,19 +187,18 @@ func (t ColorTokens) StatusContainer(role Role) stdcolor.NRGBA {
 // is step 900, and a caller that asked for a tint gets a white block.
 //
 // ContainerFloor, not GraphicFloor: a container is a region and not a mark
-// on one, and 3:1 against the ground would make the four statuses read as
-// four filled controls. What a fill owes is to be a different surface from
-// the surface, which is a threshold about seeing a seam and not about
-// resolving a shape.
+// on one, and 3:1 would make the four statuses read as four filled controls.
+// What a fill owes is to be a different surface from the one it stands on,
+// which is a threshold about seeing a seam and not about resolving a shape.
 //
-// A ground no rung separates from yields the rung that separates most, so a
+// A surface no rung separates from yields the rung that separates most, so a
 // caller always has a fill — an unseparated container is a defect the gates
 // report, not a reason to paint nothing.
 //
 // Over the seed sweep the answer stays in a narrow band: worst 1.30:1,
 // loudest 1.72:1. A container is never invisible and never a solid.
-func (t ColorTokens) ContainerOn(role Role, ground stdcolor.NRGBA) stdcolor.NRGBA {
-	return fillToFloor(func(step int) stdcolor.NRGBA { return t.containerAt(role, step) }, ground)
+func (t ColorTokens) ContainerOn(role Role, surface stdcolor.NRGBA) stdcolor.NRGBA {
+	return fillToFloor(func(step int) stdcolor.NRGBA { return t.containerAt(role, step) }, surface)
 }
 
 // fillToFloor is the walk both ground-aware tonal fills take: the first
@@ -184,24 +225,43 @@ func fillToFloor(at func(step int) stdcolor.NRGBA, surface stdcolor.NRGBA) stdco
 
 // StatusContainerOn is [ColorTokens.ContainerOn] under the status family's own
 // name; see the file header.
-func (t ColorTokens) StatusContainerOn(role Role, ground stdcolor.NRGBA) stdcolor.NRGBA {
-	return t.ContainerOn(role, ground)
+func (t ColorTokens) StatusContainerOn(role Role, surface stdcolor.NRGBA) stdcolor.NRGBA {
+	return t.ContainerOn(role, surface)
 }
 
 // containerAt realizes the role's container at one ramp step: the step's own
-// tone and hue, at the chroma read off the ramp's mid-value step 500 and
-// clamped to containerChroma. See [ColorTokens.Container] for why the two
-// readings come off two different rungs.
+// tone, the hue read at the ramp's pale tint depth, and the chroma read off
+// the ramp's mid-value step 500 and clamped to containerChroma. See
+// [ColorTokens.Container] for why the three readings come off three
+// different rungs.
 func (t ColorTokens) containerAt(role Role, step int) stdcolor.NRGBA {
 	r := t.rampFor(role) // validates role
-	rung := r.Step(step)
-	tone, _, _ := color.LabFromNRGBA(rung)
-	_, _, hue := color.OKLChFromNRGBA(rung)
+	tone, _, _ := color.LabFromNRGBA(r.Step(step))
+	_, _, hue := color.OKLChFromNRGBA(r.Step(containerHueStep(r)))
 	_, chroma, _ := color.OKLChFromNRGBA(r.Step(500))
 	if chroma > containerChroma {
 		chroma = containerChroma
 	}
 	return color.NRGBAFromToneChromaHue(tone, chroma, hue)
+}
+
+// containerHueStep is the step a container reads its hue at: the third rung
+// from the ramp's pale end, which is step 300 in a light scheme's ramp and
+// step 700 in a dark scheme's. The two are one tone by construction — the
+// ramps are paired scales — and it is the tone at which the one family whose
+// hue moves with depth still carries its anchor, so a wash realized anywhere
+// on the ramp wears the hue of its role and not of its depth.
+//
+// The end is read off the scale rather than named, the way every other
+// scheme-agnostic rule in the derivation reads it: nothing here knows which
+// scheme is running.
+func containerHueStep(r Ramp) int {
+	pale, _, _ := color.LabFromNRGBA(r.Step(100))
+	deep, _, _ := color.LabFromNRGBA(r.Step(900))
+	if pale >= deep {
+		return 300
+	}
+	return 700
 }
 
 // OnContainer returns the colour of the role's mark over its own
