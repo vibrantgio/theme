@@ -247,15 +247,23 @@ var pinRoles = []struct {
 	// and the sheet states two edge colours where the light one states one.
 	//
 	// focus-ring is the scheme's one ring, the colour every focused control
-	// draws on every level: focusRing below, the rung of the primary ramp
+	// draws on every level: focusRing below, the step of the primary ramp
 	// nearest its mid-value step that reaches the graphic floor against all
-	// five levels at once. One token, not one per ground, because a walk
-	// aimed at a ground answers the ground: two controls whose fills lie
-	// three units apart on one level come back rungs 19 L* apart when the
-	// ramp carries a rung between them, and two purples for one state on one
+	// five levels at once. One token, not one per surface, because a walk
+	// aimed at one surface answers that surface: two controls whose fills lie
+	// three units apart on one level come back steps 19 L* apart when the
+	// ramp carries a step between them, and two purples for one state on one
 	// page is not an idiom. Asking every level is affordable because a ring
 	// only ever lies on a level elevation carries, and there are five of them
 	// rather than the whole scheme.
+	//
+	// The same pick answers the four edge tokens above as well, and owes them
+	// a separation rather than a floor. A ring is a graphic on a surface, so
+	// the levels are what the graphic floor is measured to; but the line the
+	// ring replaces is the level's own resting edge, and a ring that matched
+	// that edge in luminance would announce focus in hue alone —
+	// focusRingBorderSeparation is what keeps the two apart in the channel a
+	// forced-colors or greyscale display leaves standing.
 	//
 	// One ground belongs to no level: the accent fill a FILLED button's
 	// ring lies on, because that ring is inset in the button's own
@@ -283,13 +291,34 @@ var pinRoles = []struct {
 	}},
 }
 
-// primaryMidRung indexes the primary ramp's step 500, the mid-value rung the
-// ring's pick is aimed at. A tokens.Ramp is nine rungs, 100 through 900.
-const primaryMidRung = 4
+// primaryMidStep indexes the primary ramp's step 500, the mid-value step the
+// ring's pick is aimed at. A tokens.Ramp is nine steps, 100 through 900.
+const primaryMidStep = 4
+
+// focusRingBorderSeparation is the least luminance separation the ring owes
+// the neutral resting border a control on the same level draws — the line
+// control-border, card-border, dialog-border and popover-border carry, and the
+// line a focused field swaps for its ring. Colour is the ring's only channel,
+// so a ring at the border's own luminance says nothing but hue, and hue is
+// what Differentiate Without Color, forced-colors and a greyscale display take
+// away.
+//
+// 1.25:1 is measured rather than picked. Over the seed sweep — 411 seeds, both
+// schemes, both derivations, every level — the separations a step of the
+// primary ramp can reach while still clearing graphicFloor fall in two bands
+// with a wide empty stretch between them: 1.00–1.01, where the ring and the
+// border are one grey, and 1.53 upward, where the ramp's next step is a
+// different grey. The threshold goes in the empty stretch.
+//
+// It is components/internal/focus.BorderSeparation, restated here for the same
+// reason the walk below is.
+const focusRingBorderSeparation = 1.25
 
 // focusRing is the colour every focused control draws its ring in, one per
-// scheme: the rung of the primary ramp nearest primaryMidRung that reaches
-// graphicFloor against every elevation level. It is the
+// scheme: the step of the primary ramp nearest primaryMidStep that reaches
+// graphicFloor against every elevation level, reaches
+// focusRingBorderSeparation against every level's neutral resting border, and
+// is not the accent fill itself. It is the
 // derivation components/internal/focus draws by, restated here because the
 // sheet is emitted a layer below the components and the two must land on the
 // same hex.
@@ -297,32 +326,44 @@ const primaryMidRung = 4
 // Every level rather than one, because the ring is one colour
 // and a control may stand anywhere on it: a chip on a card and the button
 // beside it are the same state and owe the reader the same pixel. The ramp
-// is walked from its middle out, so where several rungs clear every level the
+// is walked from its middle out, so where several steps clear every level the
 // ring is the one nearest the depth the brand hue is most itself at, and the
 // one furthest from both ends.
 //
-// A ring has to be drawn whatever it measures, so a palette no rung cleared
-// on every level takes the rung that comes closest rather than none.
+// The accent fill is excluded rather than measured, because what it owes the
+// ring has no scale: it is what a checked box and a filled button paint at
+// rest, and a dark scheme realizes it exactly on a step of this ramp. A ring
+// drawn in it would announce focus in the colour the control was already
+// speaking.
+//
+// A ring has to be drawn whatever it measures, so a palette no step satisfied
+// all three on takes the step that comes closest against the levels rather
+// than none.
 func focusRing(t tokens.ColorTokens) stdcolor.NRGBA {
 	pick, dist := -1, len(t.Ramps.Primary)
 	widest, widestAt := -1.0, 0
-	for i, rung := range t.Ramps.Primary {
+	for i, step := range t.Ramps.Primary {
 		// maxContrast is the ceiling of the WCAG ratio — black on white —
 		// so the first level always lowers it.
 		const maxContrast = 21.0
-		worst := maxContrast
+		worst, worstBorder := maxContrast, maxContrast
 		for _, lvl := range elevationLevels {
-			if got := vgcolor.ContrastRatio(rung, t.SurfaceAt(lvl.level)); got < worst {
+			surface := t.SurfaceAt(lvl.level)
+			if got := vgcolor.ContrastRatio(step, surface); got < worst {
 				worst = got
+			}
+			border := t.MarkOn(tokens.RoleNeutral, surface, graphicFloor)
+			if got := vgcolor.ContrastRatio(step, border); got < worstBorder {
+				worstBorder = got
 			}
 		}
 		if worst > widest {
 			widest, widestAt = worst, i
 		}
-		if worst < graphicFloor {
+		if worst < graphicFloor || worstBorder < focusRingBorderSeparation || step == t.Primary {
 			continue
 		}
-		d := i - primaryMidRung
+		d := i - primaryMidStep
 		if d < 0 {
 			d = -d
 		}
@@ -834,13 +875,15 @@ const componentClasses = `/* ---- Component classes ----
 
 /* Keyboard focus keeps the resting fill and adds the ring — a stroke
    centred on the control's edge, as the Gio side draws it. One width, one
-   hue, one value: var(--color-focus-ring) is the rung of the primary ramp
-   nearest its mid-value step that reaches 3:1 against every level at once,
-   so a control wears the same ring wherever it was put and no rule here
-   asks where that is. The one ground that belongs to no level is the
-   accent fill a filled button's ring lies on — that ring is inset in the
-   button's own background rather than drawn at its boundary, and no rung
-   that reads against the page reads against that fill — so that one takes
+   hue, one value: var(--color-focus-ring) is the step of the primary ramp
+   nearest its mid-value step that reaches 3:1 against every level at once
+   and parts from every level's resting border in luminance, so a control
+   wears the same ring wherever it was put, no rule here asks where that is,
+   and focus survives a display that removes the colour. The one surface
+   that belongs to no level is the accent fill a filled button's ring lies
+   on — that ring is inset in the button's own background rather than drawn
+   at its boundary, and no step that reads against the page reads against
+   that fill — so that one takes
    var(--color-focus-ring-on-accent) wherever the button stands, and it is
    the same ring in the same place at the same width. */
 .btn:focus-visible, .btn.is-focus {

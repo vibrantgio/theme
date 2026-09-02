@@ -118,12 +118,16 @@ func readmeMD(s Snapshot) string {
 		"`-hover` and `-active` pairs, whose foreground moves with the fill.\n" +
 		"Keyboard focus (`:focus-visible`) keeps the resting fill and draws\n" +
 		"the ring: `--focus-ring-width` of `--color-focus-ring`, the one ring the\n" +
-		"scheme carries — the rung of the primary ramp nearest its mid-value step\n" +
+		"scheme carries — the step of the primary ramp nearest its mid-value step\n" +
 		"that reaches 3:1 against every level at once, so a control wears the\n" +
-		"same ring wherever it is put. `--color-focus-ring-on-accent` is the sole\n" +
-		"exception, for the ring a filled button insets in its own fill: that\n" +
-		"fill is a rung of the primary ramp too, and the scheme's ring cannot\n" +
-		"read on it. Same ring, same width, same 3:1 floor in every register.\n" +
+		"same ring wherever it is put. It also parts from every resting border\n" +
+		"in luminance rather than in hue alone, so focus stays findable where a\n" +
+		"display or a system setting takes the colour away, and it is never the\n" +
+		"accent fill itself, which is what a checked control already paints.\n" +
+		"`--color-focus-ring-on-accent` is the sole exception, for the ring a\n" +
+		"filled button insets in its own fill: that\n" +
+		"fill is a step of the primary ramp too, and the scheme's ring cannot\n" +
+		"read on it. Same ring, same width, same 3:1 floor in every variant.\n" +
 		"Disabled (`:disabled`) fades each colour to\n" +
 		"`--state-disabled-opacity` of its alpha. A ghost has no selected\n" +
 		"treatment: it stays quiet. `.btn.icon` is the icon-only form: a square\n" +

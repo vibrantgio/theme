@@ -406,35 +406,43 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		}
 		// The ring: one per mode, restated here from the rule rather than
 		// called out of the emitter, so the sheet and its generator cannot
-		// agree on a wrong answer. The rule is the rung of the primary ramp
-		// nearest step 500 that reaches 3:1 against EVERY storey the ladder
-		// carries — the property the Gio side derives by, and the reason no
-		// per-storey ring token exists to pin.
+		// agree on a wrong answer. The rule is the step of the primary ramp
+		// nearest step 500 that reaches 3:1 against EVERY level elevation
+		// carries, 1.25:1 against every one of those levels' neutral resting
+		// borders, and is not the accent fill — the property the Gio side
+		// derives by, and the reason no per-level ring token exists to pin.
+		// The second floor is what keeps focus from being spelled in hue
+		// alone: the resting border is the line a focused field swaps for its
+		// ring. The exclusion keeps it from being spelled in the colour a
+		// checked box already paints.
 		var wantRing stdcolor.NRGBA
 		wantAt, clearing := -1, 0
-		for r, rung := range mode.tok.Ramps.Primary {
+		for r, step := range mode.tok.Ramps.Primary {
 			clears := true
 			for _, level := range elevationLevels {
-				if color.ContrastRatio(rung, mode.tok.SurfaceAt(level.level)) < 3.0 {
+				surface := mode.tok.SurfaceAt(level.level)
+				border := mode.tok.MarkOn(tokens.RoleNeutral, surface, 3.0)
+				if color.ContrastRatio(step, surface) < 3.0 ||
+					color.ContrastRatio(step, border) < 1.25 {
 					clears = false
 					break
 				}
 			}
-			if !clears {
+			if !clears || step == mode.tok.Primary {
 				continue
 			}
 			clearing++
 			// Steps run 100…900, so index 4 is step 500. Nearest to it wins;
-			// walking upward, a tie keeps the lower rung, as the sheet does.
+			// walking upward, a tie keeps the lower step, as the sheet does.
 			if wantAt < 0 || rungDistance(r) < rungDistance(wantAt) {
-				wantRing, wantAt = rung, r
+				wantRing, wantAt = step, r
 			}
 		}
 		if clearing == 0 {
-			t.Fatalf("mode %d: no rung of the primary ramp clears 3:1 on all five storeys — the sheet's ring rule has nothing to pick", i)
+			t.Fatalf("mode %d: no step of the primary ramp clears both the ring's floors on all five levels — the sheet's ring rule has nothing to pick", i)
 		}
 		if got, want := mode.vars["--color-focus-ring"], wantHex(wantRing); got != want {
-			t.Errorf("--color-focus-ring (mode %d) = %q, want the primary rung nearest step 500 that reads on every storey %q", i, got, want)
+			t.Errorf("--color-focus-ring (mode %d) = %q, want the primary step nearest step 500 that reads on every level and parts from every resting border %q", i, got, want)
 		}
 		// The one exception, and the only ground that belongs to no storey:
 		// the fill a filled button insets its ring in. The scheme's ring
