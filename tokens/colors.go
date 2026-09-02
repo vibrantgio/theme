@@ -182,11 +182,21 @@ type ColorTokens struct {
 	// high-contrast variant like every other role.
 	InverseSurface   color.NRGBA // counterpart Neutral.Step(200)
 	OnInverseSurface color.NRGBA // text/icon over it — counterpart Neutral.Step(900)
+
+	// Highlight is the reserved highlighter: the wash marking content the
+	// user was brought to. It is not a colour role and reports no status,
+	// so its hue is reserved outside the role table and no status hue may
+	// serve it; highlight.go carries the reservation and the distances
+	// that hold it. This is the wash resolved against the Background pin,
+	// the surface content stands on;
+	// [ColorTokens.HighlightOn] answers for any other surface.
+	Highlight color.NRGBA
 }
 
 // resolveAliases fills every field defined as a resolution of a ramp step:
-// Surface and Divider off this scheme's own neutral ramp, and the inverse
-// pair off the counterpart scheme's. dividerStep is the Neutral step
+// Surface and Divider off this scheme's own neutral ramp, the inverse
+// pair off the counterpart scheme's, and Highlight off the reserved hue
+// against the Background pin. dividerStep is the Neutral step
 // Divider resolves from: 300 in the default derivation, 500 in the
 // high-contrast variant. counterpart is the other scheme's neutral ramp —
 // the dark one while building the light scheme and the light one while
@@ -198,5 +208,6 @@ func resolveAliases(t ColorTokens, dividerStep int, counterpart Ramp) ColorToken
 	t.Divider = t.Ramps.Neutral.Step(dividerStep)
 	t.InverseSurface = counterpart.Step(200)
 	t.OnInverseSurface = counterpart.Step(900)
+	t.Highlight = t.HighlightOn(t.Background)
 	return t
 }

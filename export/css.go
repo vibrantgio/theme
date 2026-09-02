@@ -64,6 +64,15 @@ var pinRoles = []struct {
 	// var() arithmetic that could reach it.
 	{"inverse-surface", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.InverseSurface }},
 	{"on-inverse-surface", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.OnInverseSurface }},
+	// The reserved highlighter: the wash marking content the reader was
+	// brought to. It is emitted as a first-class token because it belongs
+	// to no ramp — its hue is reserved outside the roles, so no var()
+	// reference over the ramps could reach it — and it is the wash resolved
+	// for the surface these pages stand on, level 0, which is the one
+	// answer a sheet has to give. It is not a status and no status hue
+	// serves it; see the tokens package's highlight.go for the distances
+	// that hold.
+	{"highlight", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Highlight }},
 	{"accent", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Primary }},
 	{"on-accent", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.OnPrimary }},
 	// The solid-fill state walk: hover one rung from the pin toward the

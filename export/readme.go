@@ -65,7 +65,7 @@ func readmeMD(s Snapshot) string {
 	for i, pin := range pinRoles {
 		pinNames[i] = "`--color-" + pin.name + "`"
 	}
-	fmt.Fprintf(&b, "| pins & semantic layer | %s | pinned bases, their on-colours, the ramp-resolved surface/divider, the inverse pair the counterpart scheme's ramp resolves, and the edges and rings each ramp measures for itself — a resting border per level, for the page, the outlined card, the dialog and the popover, and one focus ring for the whole scheme, measured against every level at once, plus the accent fill a filled button's ring lies on, which belongs to no level at all |\n", strings.Join(pinNames, ", "))
+	fmt.Fprintf(&b, "| pins & semantic layer | %s | pinned bases, their on-colours, the ramp-resolved surface/divider, the inverse pair the counterpart scheme's ramp resolves, the reserved highlighter no status hue may serve, and the edges and rings each ramp measures for itself — a resting border per level, for the page, the outlined card, the dialog and the popover, and one focus ring for the whole scheme, measured against every level at once, plus the accent fill a filled button's ring lies on, which belongs to no level at all |\n", strings.Join(pinNames, ", "))
 	b.WriteString("| `--font-family` | `--font-family` | the typeface every prose role uses |\n")
 	b.WriteString("| `--font-family-code` | `--font-family-code` | the monospace typeface the code role uses |\n")
 	typeNames := make([]string, len(typeRoles))

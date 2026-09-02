@@ -157,10 +157,21 @@ func (t ColorTokens) StatusContainer(role Role) stdcolor.NRGBA {
 // Over the seed sweep the answer stays in a narrow band: worst 1.30:1,
 // loudest 1.72:1. A container is never invisible and never a solid.
 func (t ColorTokens) ContainerOn(role Role, ground stdcolor.NRGBA) stdcolor.NRGBA {
+	return fillToFloor(func(step int) stdcolor.NRGBA { return t.containerAt(role, step) }, ground)
+}
+
+// fillToFloor is the walk both ground-aware tonal fills take: the first
+// step at or past containerStep whose realization clears [ContainerFloor]
+// against surface, and otherwise the step that separates most. at realizes
+// one step of the fill being walked — a role's container, or the reserved
+// highlighter (highlight.go). See [ColorTokens.ContainerOn] for why the
+// walk only ever deepens and why an unseparated fill still returns a
+// colour.
+func fillToFloor(at func(step int) stdcolor.NRGBA, surface stdcolor.NRGBA) stdcolor.NRGBA {
 	best, bestAt := -1.0, containerStep
 	for step := containerStep; step <= 900; step += 100 {
-		fill := t.containerAt(role, step)
-		got := color.ContrastRatio(fill, ground)
+		fill := at(step)
+		got := color.ContrastRatio(fill, surface)
 		if got >= ContainerFloor {
 			return fill
 		}
@@ -168,7 +179,7 @@ func (t ColorTokens) ContainerOn(role Role, ground stdcolor.NRGBA) stdcolor.NRGB
 			best, bestAt = got, step
 		}
 	}
-	return t.containerAt(role, bestAt)
+	return at(bestAt)
 }
 
 // StatusContainerOn is [ColorTokens.ContainerOn] under the status family's own

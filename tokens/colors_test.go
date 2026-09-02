@@ -23,6 +23,7 @@ func tokenPairs(t tokens.ColorTokens) []contrastPair {
 	n := t.Ramps.Neutral
 	return []contrastPair{
 		{"Background/Text", t.Background, t.Text},
+		{"Highlight/Text", t.Highlight, t.Text},
 		{"InverseSurface/OnInverseSurface", t.InverseSurface, t.OnInverseSurface},
 		{"Surface/Neutral.Step(900)", t.Surface, n.Step(900)},
 		{"Neutral.Step(300)/Neutral.Step(700)", n.Step(300), n.Step(700)},
@@ -123,10 +124,12 @@ func TestRampStepAddressing(t *testing.T) {
 }
 
 // TestSemanticLayerResolvesFromRamps verifies the semantic layer resolves
-// from ramp steps in both default schemes: Surface, Divider and the inverse
-// pair. The inverse pair is the one resolution that reads across the
-// scheme boundary: it is the counterpart scheme's own Surface and Text, so
-// each scheme's inverse chip is built out of the other one.
+// from ramp steps in both default schemes: Surface, Divider, the inverse
+// pair and the highlight. The inverse pair is the one resolution that
+// reads across the scheme boundary: it is the counterpart scheme's own
+// Surface and Text, so each scheme's inverse chip is built out of the
+// other one. The highlight resolves off no ramp at all — it is the
+// reserved wash, walked against the paper.
 func TestSemanticLayerResolvesFromRamps(t *testing.T) {
 	for _, s := range []struct {
 		name        string
@@ -146,6 +149,7 @@ func TestSemanticLayerResolvesFromRamps(t *testing.T) {
 			{"Divider = Neutral.Step(300)", s.tok.Divider, n.Step(300)},
 			{"InverseSurface = the counterpart scheme's Surface", s.tok.InverseSurface, s.counterpart.Surface},
 			{"OnInverseSurface = the counterpart scheme's Text", s.tok.OnInverseSurface, s.counterpart.Text},
+			{"Highlight = the reserved wash resolved against the paper", s.tok.Highlight, s.tok.HighlightOn(s.tok.Background)},
 		}
 		for _, c := range checks {
 			if c.got != c.want {
@@ -181,6 +185,7 @@ func TestAllRampStepsPopulated(t *testing.T) {
 			"Warning": s.tok.Warning, "OnWarning": s.tok.OnWarning,
 			"Background": s.tok.Background, "Text": s.tok.Text,
 			"InverseSurface": s.tok.InverseSurface, "OnInverseSurface": s.tok.OnInverseSurface,
+			"Highlight": s.tok.Highlight,
 		} {
 			if c.A != 0xff {
 				t.Errorf("%s: %s = %v, want an opaque colour", s.name, name, c)
@@ -524,16 +529,19 @@ func defaultGolden() (light, dark tokens.ColorTokens) {
 	// Surface, Divider and the inverse pair are recorded as the resolutions
 	// they are — the first two off this scheme's neutral ramp, the inverse
 	// pair off the counterpart scheme's, which is what makes a light
-	// scheme's inverse chip dark and a dark scheme's light.
-	fill := func(t, counterpart tokens.ColorTokens) tokens.ColorTokens {
+	// scheme's inverse chip dark and a dark scheme's light. The highlight
+	// is recorded as the colour it is: it is reserved outside the roles,
+	// so no ramp resolves it and no seed moves it.
+	fill := func(t, counterpart tokens.ColorTokens, highlight color.NRGBA) tokens.ColorTokens {
 		n, o := t.Ramps.Neutral, counterpart.Ramps.Neutral
 		t.Surface = n.Step(200)
 		t.Divider = n.Step(300)
 		t.InverseSurface = o.Step(200)
 		t.OnInverseSurface = o.Step(900)
+		t.Highlight = highlight
 		return t
 	}
-	return fill(light, dark), fill(dark, light)
+	return fill(light, dark, hex(0xe6, 0xcb, 0xee)), fill(dark, light, hex(0x3b, 0x26, 0x41))
 }
 
 // hcGolden returns the recorded palette FromSeedHighContrast derives from
@@ -769,16 +777,19 @@ func hcGolden() (light, dark tokens.ColorTokens) {
 	// Surface, Divider and the inverse pair are recorded as the resolutions
 	// they are — the first two off this scheme's neutral ramp, the inverse
 	// pair off the counterpart scheme's, which is what makes a light
-	// scheme's inverse chip dark and a dark scheme's light.
-	fill := func(t, counterpart tokens.ColorTokens) tokens.ColorTokens {
+	// scheme's inverse chip dark and a dark scheme's light. The highlight
+	// is recorded as the colour it is: it is reserved outside the roles,
+	// so no ramp resolves it and no seed moves it.
+	fill := func(t, counterpart tokens.ColorTokens, highlight color.NRGBA) tokens.ColorTokens {
 		n, o := t.Ramps.Neutral, counterpart.Ramps.Neutral
 		t.Surface = n.Step(200)
 		t.Divider = n.Step(500)
 		t.InverseSurface = o.Step(200)
 		t.OnInverseSurface = o.Step(900)
+		t.Highlight = highlight
 		return t
 	}
-	return fill(light, dark), fill(dark, light)
+	return fill(light, dark, hex(0xe6, 0xcb, 0xee)), fill(dark, light, hex(0x3b, 0x26, 0x41))
 }
 
 // TestFromSeedHighContrastGoldenPalette pins the high-contrast variant
@@ -863,6 +874,7 @@ func diffTokens(t *testing.T, scheme string, got, want tokens.ColorTokens) {
 			"Background": c.Background, "Text": c.Text,
 			"Surface": c.Surface, "Divider": c.Divider,
 			"InverseSurface": c.InverseSurface, "OnInverseSurface": c.OnInverseSurface,
+			"Highlight": c.Highlight,
 		}
 	}
 	g, w := fields(got), fields(want)
