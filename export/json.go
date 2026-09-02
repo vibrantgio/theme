@@ -77,23 +77,24 @@ type DensityMetrics struct {
 	PaddingY      float64 `json:"paddingY"`
 }
 
-// ElevationParams records the ladder, indexed the way the ladder is ordered
-// — the floor first, then levels 0 through 3, away from the desk and toward
-// the reader. Surfaces carries each storey's realized fill per scheme and
-// ShadowDp the storey's shadow depth, which is mode-invariant.
+// ElevationParams records the elevation, indexed the way the levels are
+// ordered — the backdrop first, then chrome, then levels 0 through 3, from
+// the backdrop up toward the reader. Surfaces carries each level's realized
+// fill per scheme and ShadowDp the level's shadow depth, which is
+// scheme-invariant.
 //
 // Surfaces carries resolved colours rather than neutral-ramp step numbers
-// because a storey is not a ramp step in both schemes, so a step number
+// because a level is not a ramp step in both schemes, so a step number
 // cannot name it.
 type ElevationParams struct {
 	Surfaces ModeSurfaces `json:"surfaces"`
-	ShadowDp [5]float64   `json:"shadowDp"`
+	ShadowDp [6]float64   `json:"shadowDp"`
 }
 
-// ModeSurfaces carries the ladder's five storey fills, as hex, per scheme.
+// ModeSurfaces carries the six level fills, as hex, per scheme.
 type ModeSurfaces struct {
-	Light [5]string `json:"light"`
-	Dark  [5]string `json:"dark"`
+	Light [6]string `json:"light"`
+	Dark  [6]string `json:"dark"`
 }
 
 // MotionParams records the motion set.

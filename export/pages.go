@@ -612,15 +612,16 @@ func layoutHTML(s Snapshot) string {
 
 	b.WriteString("<section>\n<h2>Elevation</h2>\n")
 	b.WriteString("<p class=\"intro\">Elevation is tonal, and it climbs toward the light: <strong>in both schemes, " +
-		"a surface nearer the viewer is lighter</strong> &mdash; one rule, no mirror. " +
+		"every level is lighter than the one beneath it</strong> &mdash; one rule, no mirror. " +
 		"<code>--elevation-*</code> is the surface fill and the default cue, resolved per scheme, so both blocks " +
-		"state their own five. The storeys run away from the desk and toward the reader: the floor a window's chrome " +
-		"furniture wears, the paper the content ground fills with, then raised insets and floating transients. " +
-		"Read the cards below left to right and the fill gets lighter, in either mode. " +
-		"The ladder stops at 3 &mdash; desktop has no six-storey stack.</p>\n")
+		"state their own six. The levels run from the backdrop up toward the reader: the bare window plane, the " +
+		"chrome a window's furniture wears, the content surface, then raised insets and floating transients. " +
+		"Read the cards below left to right and the fill gets lighter, in either scheme. " +
+		"The levels stop at 3 &mdash; desktop has no six-deep stack.</p>\n")
 	b.WriteString("<div class=\"elevation-ground\">\n")
 	for i, level := range elevationLevels {
-		wears := []string{"chrome furniture", "the paper", "cards, fences, fields", "dialogs, toasts", "menus, popovers"}[i]
+		wears := []string{"nothing: it shows where nothing stands", "navbars, toolbars, sidebars, panes",
+			"the content", "cards, fences, fields", "dialogs, toasts", "menus, popovers"}[i]
 		fmt.Fprintf(&b, "<div>\n<div class=\"surface-card\" style=\"background: var(--elevation-%s)\">%s</div>\n", level.name, level.name)
 		fmt.Fprintf(&b, "<p class=\"annot\"><code>--elevation-%s</code> &middot; %s</p>\n</div>\n", level.name, wears)
 	}

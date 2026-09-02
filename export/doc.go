@@ -60,20 +60,22 @@
 //   - --radius-<key> from tokens.RadiusScale in Tailwind naming (none, sm,
 //     base, md, lg, xl, 2xl, 3xl, full), in px; Base is also theme.json's
 //     base radius parameter.
-//   - --elevation-<storey> (floor, 0, 1, 2, 3): the tonal surface fills,
-//     the DEFAULT elevation cue, ordered away from the desk and toward the
-//     reader — the floor a window's chrome furniture wears, the paper at 0,
-//     then raised and floating. Read the five down and the fill gets
-//     lighter, in :root and in .dark alike. They are emitted as resolved
-//     hex in BOTH blocks rather than as var(--color-neutral-N) references
-//     the .dark block flips underneath: a storey is placed against the
-//     Background pin in CIELAB L*, so the light scheme's storeys above the
-//     paper and the dark scheme's floor are not ramp steps at all and no
-//     var() chain over the ramp reaches them.
-//   - --shadow-<storey> (floor, 0, 1, 2, 3): CSS box-shadow approximations
-//     of the dp depths, the OPT-IN cue floating transients (menus, dialogs,
-//     tooltips) layer over their tonal fill. The floor and level 0
-//     cast nothing. Each storey's dp depth d becomes
+//   - --elevation-<level> (backdrop, chrome, 0, 1, 2, 3): the tonal surface
+//     fills, the DEFAULT elevation cue, ordered from the backdrop up toward
+//     the reader — the bare window plane, the chrome a window's furniture
+//     wears, the content at 0, then raised and floating. Read the six down
+//     and the fill gets lighter, in :root and in .dark alike. They are
+//     emitted as resolved hex in BOTH blocks rather than as
+//     var(--color-neutral-N) references the .dark block flips underneath: a
+//     level is placed against the Background pin in CIELAB L*, so the light
+//     scheme's levels above the content and the dark scheme's two levels
+//     below it are not ramp steps at all and no var() chain over the ramp
+//     reaches them.
+//   - --shadow-<level> (backdrop, chrome, 0, 1, 2, 3): CSS box-shadow
+//     approximations of the dp depths, the OPT-IN cue floating transients
+//     (menus, dialogs, tooltips) layer over their tonal fill. The backdrop,
+//     the chrome level and level 0 cast nothing. Each level's dp depth d
+//     becomes
 //     "0 <d>px <2d>px 0 rgba(0, 0, 0, 0.2)" — y-offset the depth, blur
 //     twice it, no spread, black at 20% — and a zero depth is "none".
 //   - --ease-<name> from tokens.MotionScale: the six MD3 easing presets as

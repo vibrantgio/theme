@@ -10,10 +10,11 @@ import (
 )
 
 // highlightLevels is the five levels a highlight can be drawn on: it marks
-// content, and content stands on the paper, on a card, in a dialog or in a
-// popover as readily as on the window's own furniture.
+// content, and content stands on the content plane, on a card, in a dialog
+// or in a popover as readily as in the window's own furniture. The backdrop
+// is not among them — nothing stands on it, so no highlight is drawn there.
 var highlightLevels = []tokens.ElevationLevel{
-	tokens.LevelBackdrop, tokens.Level0, tokens.Level1, tokens.Level2, tokens.Level3,
+	tokens.LevelChrome, tokens.Level0, tokens.Level1, tokens.Level2, tokens.Level3,
 }
 
 // oklabDistance is the Euclidean distance between two colours in OKLab —

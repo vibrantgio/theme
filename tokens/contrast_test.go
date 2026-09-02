@@ -826,7 +826,7 @@ func TestContainersSeparateFromEveryLevelItStandsOn(t *testing.T) {
 		}{r.name, r.role})
 	}
 	levels := []tokens.ElevationLevel{
-		tokens.LevelBackdrop, tokens.Level0, tokens.Level1, tokens.Level2, tokens.Level3,
+		tokens.LevelBackdrop, tokens.LevelChrome, tokens.Level0, tokens.Level1, tokens.Level2, tokens.Level3,
 	}
 	worst, loudest := 99.0, 0.0
 	for _, seed := range sweepSeeds() {
@@ -860,7 +860,7 @@ func TestContainersSeparateFromEveryLevelItStandsOn(t *testing.T) {
 			}
 		}
 	}
-	t.Logf("over %d seeds, both derivations, both schemes, five levels: worst seam %.3f:1 (floor %.2f), loudest %.3f:1",
+	t.Logf("over %d seeds, both derivations, both schemes, six levels: worst seam %.3f:1 (floor %.2f), loudest %.3f:1",
 		len(sweepSeeds()), worst, tokens.ContainerFloor, loudest)
 }
 
@@ -883,7 +883,7 @@ func TestStatusWashesKeepTheirHuesApartOnEveryLevel(t *testing.T) {
 	// surface something else stands on.
 	const solid = 2.5
 	levels := []tokens.ElevationLevel{
-		tokens.LevelBackdrop, tokens.Level0, tokens.Level1, tokens.Level2, tokens.Level3,
+		tokens.LevelBackdrop, tokens.LevelChrome, tokens.Level0, tokens.Level1, tokens.Level2, tokens.Level3,
 	}
 	worstSeam, loudestSeam, worstText := 99.0, 0.0, 99.0
 	worstSep, worstSepAt := 99.0, ""
@@ -955,7 +955,7 @@ func TestTheGroundAwareContainerHoldsTheFixedOneWhereItAlreadyWorks(t *testing.T
 		}{{"light", light}, {"dark", dark}} {
 			for _, r := range statusRoles {
 				for _, lv := range []tokens.ElevationLevel{
-					tokens.LevelBackdrop, tokens.Level0, tokens.Level1, tokens.Level2, tokens.Level3,
+					tokens.LevelBackdrop, tokens.LevelChrome, tokens.Level0, tokens.Level1, tokens.Level2, tokens.Level3,
 				} {
 					ground := s.tok.SurfaceAt(lv)
 					fixed := s.tok.StatusContainer(r.role)

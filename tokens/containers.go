@@ -32,8 +32,8 @@
 // the seed sweep.
 //
 // That also leaves the walk below with one job. A hue read off the realized
-// rung rotates whenever the walk deepens the wash, which would put a warning
-// badge on the paper and one on the chrome furniture beside it in two
+// rung rotates whenever the walk deepens the fill, which would put a warning
+// badge on the content and one on the window's furniture beside it in two
 // different hues for a reason no reader could infer.
 //
 // The mark a role puts on a ground — an icon, a leading edge, a rule — is

@@ -76,8 +76,8 @@ func readmeMD(s Snapshot) string {
 	fmt.Fprintf(&b, "| `--density-<metric>` | %s, `--density-min-hit-target` | control metrics, px; `:root` is comfortable, `.compact` overrides all but the hit-target floor |\n", joinTokens("--density-", densityNames()))
 	fmt.Fprintf(&b, "| `--space-<key>` | %s | the 4-pt spacing grid, px |\n", joinTokens("--space-", spaceNames()))
 	fmt.Fprintf(&b, "| `--radius-<key>` | %s | corner radii, Tailwind naming, px |\n", joinTokens("--radius-", radiusNames()))
-	fmt.Fprintf(&b, "| `--elevation-<level>` | %s | tonal surface fills — the DEFAULT elevation cue; ordered away from the desk and toward the reader, and resolved per scheme, so both blocks state their own five |\n", joinTokens("--elevation-", elevationNames()))
-	fmt.Fprintf(&b, "| `--elevation-<level>-<state>` | %s | each level's own interaction walk — what a control with no ground of its own washes the surface under it to when hovered or pressed. Taken FROM the level's fill rather than named as a ramp step, because a level is not a ramp step in both schemes |\n", joinTokens("--elevation-", elevationStateNames()))
+	fmt.Fprintf(&b, "| `--elevation-<level>` | %s | tonal surface fills — the DEFAULT elevation cue; ordered from the backdrop up toward the reader, and resolved per scheme, so both blocks state their own six |\n", joinTokens("--elevation-", elevationNames()))
+	fmt.Fprintf(&b, "| `--elevation-<level>-<state>` | %s | each level's own interaction walk — what a control with no fill of its own takes the surface under it to when hovered or pressed. Taken FROM the level's fill rather than named as a ramp step, because a level is not a ramp step in both schemes |\n", joinTokens("--elevation-", elevationStateNames()))
 	fmt.Fprintf(&b, "| `--shadow-<level>` | %s | dp box-shadows — the OPT-IN cue for floating transients (menus, dialogs, tooltips) layered over the tonal fill; resting surfaces use the fill alone |\n", joinTokens("--shadow-", elevationNames()))
 	fmt.Fprintf(&b, "| `--ease-<name>` | %s | MD3 easing presets as `cubic-bezier()`; emphasized is the documented single-bezier stand-in for MD3's two-segment path |\n", joinTokens("--ease-", easeNames()))
 	fmt.Fprintf(&b, "| `--duration-<stop>` | %s | MD3-pinned duration stops, ms; the reduce-motion variant zeroes them |\n", joinTokens("--duration-", durationNames()))
@@ -176,31 +176,36 @@ func readmeMD(s Snapshot) string {
 		"gap.\n\n")
 
 	b.WriteString("## Elevation: default vs opt-in\n\n" +
-		"Elevation is tonal, and it climbs toward the light: **in both schemes, a\n" +
-		"surface nearer the viewer is lighter.** One perceptual rule, no second\n" +
-		"rule for dark mode and no mirror — a surface nearer the viewer catches\n" +
-		"more light, and reflectance does not invert when the room goes dark.\n" +
-		"Five levels, counted from the backdrop up, away from the desk and toward\n" +
-		"the reader:\n\n" +
+		"Elevation is tonal, and it climbs toward the light: **in both schemes,\n" +
+		"every level is lighter than the one beneath it.** One perceptual rule,\n" +
+		"no second rule for the dark scheme and no mirror — a surface nearer the\n" +
+		"viewer catches more light, and reflectance does not invert when the room\n" +
+		"goes dark. Six levels, counted from the backdrop up toward the reader:\n\n" +
 		"| Level | What wears it |\n| --- | --- |\n" +
-		"| `--elevation-backdrop` | chrome furniture — sidebars, rails, toolbars, inspectors; the window's darkest region |\n" +
-		"| `--elevation-0` | the paper: the content surface, the bg pin |\n" +
-		"| `--elevation-1` | raised insets on the paper — cards, code fences, text fields |\n" +
+		"| `--elevation-backdrop` | nothing: the bare window plane, showing wherever nothing stands; the window's darkest region |\n" +
+		"| `--elevation-chrome` | the window's furniture — navbar, toolbar, sidebar, inspector, status bar, pane |\n" +
+		"| `--elevation-0` | the content surface, the bg pin |\n" +
+		"| `--elevation-1` | raised on the content — cards, code fences, text fields |\n" +
 		"| `--elevation-2` | floating — dialogs, toasts |\n" +
-		"| `--elevation-3` | floating, nearest the scheme's light extreme — menus, popovers |\n\n" +
+		"| `--elevation-3` | floating, nearest the scheme's light extreme — menus, popovers, tooltips |\n\n" +
 		"Read that down and the fill gets lighter, in `:root` and in `.dark`\n" +
-		"alike. The backdrop is the one level the ramp does not place: its step\n" +
-		"under the paper is measured off the platform rather than derived, and\n" +
-		"the two schemes measure differently — about 4.9 L\\* under a light\n" +
-		"paper, about 1.5 under a dark one, where a full ramp step would read as\n" +
-		"a hole rather than as furniture. That asymmetry is the platform's own,\n" +
-		"not a rule mirrored between the schemes. A chrome pane that floats is\n" +
-		"still chrome and still fills at the backdrop: what says it is a floating\n" +
-		"object is its own hairline edge and its shadow, never a lighter fill.\n" +
+		"alike. Chrome is window-scale only: the trim inside a component or a\n" +
+		"pattern — a card's header, a dialog's footer — is that thing's\n" +
+		"structure and takes no level of its own. The chrome level is the one\n" +
+		"the ramp does not place: its step under the content is measured off the\n" +
+		"platform rather than derived, and the two schemes measure\n" +
+		"differently — about 4.9 L\\* under light content, about 1.5 under dark,\n" +
+		"where a full ramp step would read as a hole rather than as furniture.\n" +
+		"That asymmetry is the platform's own, not a rule mirrored between the\n" +
+		"schemes. The backdrop takes that step scaled by the ramp's own\n" +
+		"proportion, because no platform capture shows a window plane beneath\n" +
+		"its furniture to measure. A chrome region that floats is still chrome\n" +
+		"and still fills at the chrome level: what says it is a floating object\n" +
+		"is its own hairline edge and its shadow, never a lighter fill.\n" +
 		"The levels stop at 3: desktop has no six-deep stack. Note the\n" +
 		"sizes — a light scheme has spent almost all of the tonal axis on its\n" +
-		"paper, so its levels above the paper are separated by a fraction of an\n" +
-		"L\\* and the derived hairline (`--card-border`, `--dialog-border`,\n" +
+		"content, so its levels above the content are separated by a fraction of\n" +
+		"an L\\* and the derived hairline (`--card-border`, `--dialog-border`,\n" +
 		"`--popover-border`) is what says where a surface is. That is what the\n" +
 		"desktop applications this system is judged against measure too.\n\n" +
 		"The surface fill is the **default** cue. The dp shadow is the **opt-in**\n" +

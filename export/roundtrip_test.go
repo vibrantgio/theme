@@ -407,9 +407,10 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		// The ring: one per mode, restated here from the rule rather than
 		// called out of the emitter, so the sheet and its generator cannot
 		// agree on a wrong answer. The rule is the step of the primary ramp
-		// nearest step 500 that reaches 3:1 against EVERY level elevation
-		// carries, 1.25:1 against every one of those levels' neutral resting
-		// borders, and is not the accent fill — the property the Gio side
+		// nearest step 500 that reaches 3:1 against EVERY level a control
+		// can stand on — every level but the backdrop, which nothing is
+		// drawn at — 1.25:1 against every one of those levels' neutral
+		// resting borders, and is not the accent fill — the property the Gio side
 		// derives by, and the reason no per-level ring token exists to pin.
 		// The second floor is what keeps focus from being spelled in hue
 		// alone: the resting border is the line a focused field swaps for its
@@ -419,7 +420,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		wantAt, clearing := -1, 0
 		for r, step := range mode.tok.Ramps.Primary {
 			clears := true
-			for _, level := range elevationLevels {
+			for _, level := range standableLevels {
 				surface := mode.tok.SurfaceAt(level.level)
 				border := mode.tok.MarkOn(tokens.RoleNeutral, surface, 3.0)
 				if color.ContrastRatio(step, surface) < 3.0 ||
@@ -439,12 +440,12 @@ func TestRoundTripButtonClasses(t *testing.T) {
 			}
 		}
 		if clearing == 0 {
-			t.Fatalf("mode %d: no step of the primary ramp clears both the ring's floors on all five levels — the sheet's ring rule has nothing to pick", i)
+			t.Fatalf("mode %d: no step of the primary ramp clears both the ring's floors on every level a control stands on — the sheet's ring rule has nothing to pick", i)
 		}
 		if got, want := mode.vars["--color-focus-ring"], wantHex(wantRing); got != want {
 			t.Errorf("--color-focus-ring (mode %d) = %q, want the primary step nearest step 500 that reads on every level and parts from every resting border %q", i, got, want)
 		}
-		// The one exception, and the only ground that belongs to no storey:
+		// The one exception, and the only ground that belongs to no level:
 		// the fill a filled button insets its ring in. The scheme's ring
 		// serves wherever it reads on that fill; where it cannot — a solid
 		// primary fill being a rung of the ring's own ramp — the ramp is

@@ -236,26 +236,27 @@ var pinRoles = []struct {
 	//
 	// Whether the four answers differ is the derivation's to report, and
 	// today they part in one scheme only. Because elevation lightens toward
-	// the viewer in both schemes, a light window's hardest ground is its
-	// BACKDROP and a dark window's is its TOP level, and a rung that clears
-	// the hardest clears every other by more. In the light scheme one neutral
-	// rung therefore serves the whole window — 3.55:1 on the backdrop, rising
-	// to 4.35:1 on a popover — and all four tokens repeat it. The dark
-	// scheme's levels climb further from its backdrop: its level-0 rung reads
-	// 2.62:1 on a dialog's fill and 1.80:1 on a popover's, under the floor a
-	// graphic owes its ground, so those two levels walk on to a lighter rung
-	// and the sheet states two edge colours where the light one states one.
+	// the viewer in both schemes, a light window's hardest surface is its
+	// CHROME level and a dark window's is its TOP level, and a rung that
+	// clears the hardest clears every other by more. In the light scheme one
+	// neutral rung therefore serves the whole window — 3.55:1 on chrome,
+	// rising to 4.35:1 on a popover — and all four tokens repeat it. The dark
+	// scheme's levels climb further from its chrome level: its level-0 rung
+	// reads 2.62:1 on a dialog's fill and 1.80:1 on a popover's, under the
+	// floor a graphic owes its ground, so those two levels walk on to a
+	// lighter rung and the sheet states two edge colours where the light one
+	// states one.
 	//
 	// focus-ring is the scheme's one ring, the colour every focused control
 	// draws on every level: focusRing below, the step of the primary ramp
 	// nearest its mid-value step that reaches the graphic floor against all
-	// five levels at once. One token, not one per surface, because a walk
-	// aimed at one surface answers that surface: two controls whose fills lie
-	// three units apart on one level come back steps 19 L* apart when the
-	// ramp carries a step between them, and two purples for one state on one
-	// page is not an idiom. Asking every level is affordable because a ring
-	// only ever lies on a level elevation carries, and there are five of them
-	// rather than the whole scheme.
+	// the levels a control can stand on at once. One token, not one per
+	// surface, because a walk aimed at one surface answers that surface: two
+	// controls whose fills lie three units apart on one level come back steps
+	// 19 L* apart when the ramp carries a step between them, and two purples
+	// for one state on one page is not an idiom. Asking every level is
+	// affordable because a ring only ever lies on a level elevation carries,
+	// and there are five of those rather than the whole scheme.
 	//
 	// The same pick answers the four edge tokens above as well, and owes them
 	// a separation rather than a floor. A ring is a graphic on a surface, so
@@ -347,7 +348,7 @@ func focusRing(t tokens.ColorTokens) stdcolor.NRGBA {
 		// so the first level always lowers it.
 		const maxContrast = 21.0
 		worst, worstBorder := maxContrast, maxContrast
-		for _, lvl := range elevationLevels {
+		for _, lvl := range standableLevels {
 			surface := t.SurfaceAt(lvl.level)
 			if got := vgcolor.ContrastRatio(step, surface); got < worst {
 				worst = got
@@ -504,26 +505,35 @@ var radiusKeys = []struct {
 	{"full", func(r tokens.RadiusScale) float32 { return r.Full }},
 }
 
-// elevationLevels orders the levels away from the desk and toward the
-// reader: the backdrop under its own name, then the four numbered levels.
-// Each level's fill is resolved per scheme through
+// elevationLevels orders the levels from the backdrop up toward the reader:
+// the two levels under the content under their own names, then the four
+// numbered levels. Each level's fill is resolved per scheme through
 // [tokens.ColorTokens.SurfaceAt] and its shadow dp read off the snapshot's
 // ElevationScale.
 //
-// The backdrop is spelled out rather than numbered because the numbering is
-// anchored on the paper and the backdrop is below it: naming it "-1"
-// in a CSS variable would read as an arithmetic accident, and renumbering
-// the four above it would rename every token to say the same thing.
+// The backdrop and the chrome level are spelled out rather than numbered
+// because the numbering is anchored on the content and they are below it:
+// naming them "-2" and "-1" in a CSS variable would read as an arithmetic
+// accident, and renumbering the four above them would rename every token to
+// say the same thing.
 var elevationLevels = []struct {
 	name  string
 	level tokens.ElevationLevel
 }{
 	{"backdrop", tokens.LevelBackdrop},
+	{"chrome", tokens.LevelChrome},
 	{"0", tokens.Level0},
 	{"1", tokens.Level1},
 	{"2", tokens.Level2},
 	{"3", tokens.Level3},
 }
+
+// standableLevels is elevationLevels without the backdrop: the levels a
+// control can be put on, and so the surfaces a derivation that answers "on
+// every level" has to clear. Nothing is drawn at the backdrop — it shows
+// wherever nothing stands — so a ring measured against it would be walked
+// against a surface no ring ever lies on.
+var standableLevels = elevationLevels[1:]
 
 // densityMetrics orders the per-setting density metrics under their CSS
 // names. The WCAG pointer-target floor is not here: it is not a per-setting
@@ -1437,7 +1447,7 @@ const componentClasses = `/* ---- Component classes ----
   align-items: center;
   min-height: calc(var(--density-control-height) + 2 * var(--density-padding-y));
   padding: var(--density-padding-y) var(--space-4);
-  background: var(--elevation-backdrop);
+  background: var(--elevation-chrome);
   color: var(--color-text);
 }
 .navbar-links {
@@ -1516,7 +1526,7 @@ const componentClasses = `/* ---- Component classes ----
   display: flex;
   flex-direction: column;
   width: 192px;  /* expandedDp */
-  background: var(--elevation-backdrop);
+  background: var(--elevation-chrome);
   color: var(--color-text);
   overflow: hidden;
 }
