@@ -30,8 +30,8 @@ func readmeMD(s Snapshot) string {
 
 	b.WriteString("## Files\n\n" +
 		"- `styles.css` — the token sheet: one `:root` block (light colours and\n" +
-		"  elevation storeys plus every mode-invariant scale, comfortable density),\n" +
-		"  one `.dark` class override block (the paired dark colours and storeys)\n" +
+		"  elevation levels plus every mode-invariant scale, comfortable density),\n" +
+		"  one `.dark` class override block (the paired dark colours and levels)\n" +
 		"  and one `.compact` class override block (the\n" +
 		"  compact density metrics only). Add `class=\"dark\"` to the root element to\n" +
 		"  switch modes, `class=\"compact\"` to any subtree to densify it; the two\n" +
@@ -65,7 +65,7 @@ func readmeMD(s Snapshot) string {
 	for i, pin := range pinRoles {
 		pinNames[i] = "`--color-" + pin.name + "`"
 	}
-	fmt.Fprintf(&b, "| pins & semantic layer | %s | pinned bases, their on-colours, the ramp-resolved surface/divider, the inverse pair the counterpart scheme's ramp resolves, and the edges and rings each ramp measures for itself — a resting border per storey, for the page, the outlined card, the dialog and the popover, and one focus ring for the whole scheme, measured against every storey at once, plus the accent fill a filled button's ring lies on, which belongs to no storey at all |\n", strings.Join(pinNames, ", "))
+	fmt.Fprintf(&b, "| pins & semantic layer | %s | pinned bases, their on-colours, the ramp-resolved surface/divider, the inverse pair the counterpart scheme's ramp resolves, and the edges and rings each ramp measures for itself — a resting border per level, for the page, the outlined card, the dialog and the popover, and one focus ring for the whole scheme, measured against every level at once, plus the accent fill a filled button's ring lies on, which belongs to no level at all |\n", strings.Join(pinNames, ", "))
 	b.WriteString("| `--font-family` | `--font-family` | the typeface every prose role uses |\n")
 	b.WriteString("| `--font-family-code` | `--font-family-code` | the monospace typeface the code role uses |\n")
 	typeNames := make([]string, len(typeRoles))
@@ -76,9 +76,9 @@ func readmeMD(s Snapshot) string {
 	fmt.Fprintf(&b, "| `--density-<metric>` | %s, `--density-min-hit-target` | control metrics, px; `:root` is comfortable, `.compact` overrides all but the hit-target floor |\n", joinTokens("--density-", densityNames()))
 	fmt.Fprintf(&b, "| `--space-<key>` | %s | the 4-pt spacing grid, px |\n", joinTokens("--space-", spaceNames()))
 	fmt.Fprintf(&b, "| `--radius-<key>` | %s | corner radii, Tailwind naming, px |\n", joinTokens("--radius-", radiusNames()))
-	fmt.Fprintf(&b, "| `--elevation-<storey>` | %s | tonal surface fills — the DEFAULT elevation cue; ordered away from the desk and toward the reader, and resolved per scheme, so both blocks state their own five |\n", joinTokens("--elevation-", elevationNames()))
-	fmt.Fprintf(&b, "| `--elevation-<storey>-<state>` | %s | each storey's own interaction walk — what a control with no ground of its own washes the surface under it to when hovered or pressed. Taken FROM the storey's fill rather than named as a ramp step, because a storey is not a ramp step in both schemes |\n", joinTokens("--elevation-", elevationStateNames()))
-	fmt.Fprintf(&b, "| `--shadow-<storey>` | %s | dp box-shadows — the OPT-IN cue for floating transients (menus, dialogs, tooltips) layered over the tonal fill; resting surfaces use the fill alone |\n", joinTokens("--shadow-", elevationNames()))
+	fmt.Fprintf(&b, "| `--elevation-<level>` | %s | tonal surface fills — the DEFAULT elevation cue; ordered away from the desk and toward the reader, and resolved per scheme, so both blocks state their own five |\n", joinTokens("--elevation-", elevationNames()))
+	fmt.Fprintf(&b, "| `--elevation-<level>-<state>` | %s | each level's own interaction walk — what a control with no ground of its own washes the surface under it to when hovered or pressed. Taken FROM the level's fill rather than named as a ramp step, because a level is not a ramp step in both schemes |\n", joinTokens("--elevation-", elevationStateNames()))
+	fmt.Fprintf(&b, "| `--shadow-<level>` | %s | dp box-shadows — the OPT-IN cue for floating transients (menus, dialogs, tooltips) layered over the tonal fill; resting surfaces use the fill alone |\n", joinTokens("--shadow-", elevationNames()))
 	fmt.Fprintf(&b, "| `--ease-<name>` | %s | MD3 easing presets as `cubic-bezier()`; emphasized is the documented single-bezier stand-in for MD3's two-segment path |\n", joinTokens("--ease-", easeNames()))
 	fmt.Fprintf(&b, "| `--duration-<stop>` | %s | MD3-pinned duration stops, ms; the reduce-motion variant zeroes them |\n", joinTokens("--duration-", durationNames()))
 	b.WriteString("| interaction states | `--focus-ring-width`, `--state-disabled-opacity` | the ring's 2 px stroke and the disabled fade fraction for `color-mix()` — both mode-invariant, unlike the ring's colour, which is measured against a ground that flips and so sits with the colours above |\n")
@@ -116,7 +116,7 @@ func readmeMD(s Snapshot) string {
 		"stops. Keyboard focus (`:focus-visible`) keeps the resting fill and draws\n" +
 		"the ring: `--focus-ring-width` of `--color-focus-ring`, the one ring the\n" +
 		"scheme carries — the rung of the primary ramp nearest its mid-value step\n" +
-		"that reaches 3:1 against every storey at once, so a control wears the\n" +
+		"that reaches 3:1 against every level at once, so a control wears the\n" +
 		"same ring wherever it is put. `--color-focus-ring-on-accent` is the sole\n" +
 		"exception, for the ring a filled button insets in its own fill: that\n" +
 		"fill is a rung of the primary ramp too, and the scheme's ring cannot\n" +
@@ -152,15 +152,15 @@ func readmeMD(s Snapshot) string {
 		"ground, which is 600 in the light scheme and 500 in the dark; the named\n" +
 		"rung it replaced read below the floor in one of them, at 2.67:1 in the\n" +
 		"scheme most people read in. The edge follows the control into a raised\n" +
-		"host: a surface that fills a deeper storey declares `--ground-border`\n" +
-		"beside its own fill, the rules name it with the ground floor's token as\n" +
+		"host: a surface that fills a deeper level declares `--ground-border`\n" +
+		"beside its own fill, the rules name it with the paper's own token as\n" +
 		"the fallback, and every control inside re-derives — the same walk\n" +
 		"against the same fill the host measures its own outline against, which\n" +
 		"is why a checkbox in a dialog wears the dialog's edge. In the dark\n" +
 		"scheme the page's own rung reads 2.62:1 over a level-2 fill and 1.80:1\n" +
 		"over a level-3 one, both under the floor; in the light scheme it clears\n" +
-		"every storey and the handed-down token repeats. The ring does not\n" +
-		"follow, because it never left: it is measured against every storey at\n" +
+		"every level and the handed-down token repeats. The ring does not\n" +
+		"follow, because it never left: it is measured against every level at\n" +
 		"once and is one colour for the scheme.\n" +
 		"Checked, the box is the accent fill under a check mark in the\n" +
 		"on-accent pin, drawn from the icon set's grid as two gradient bands — a\n" +
@@ -173,25 +173,26 @@ func readmeMD(s Snapshot) string {
 		"surface nearer the viewer is lighter.** One perceptual rule, no second\n" +
 		"rule for dark mode and no mirror — a surface nearer the viewer catches\n" +
 		"more light, and reflectance does not invert when the room goes dark.\n" +
-		"Five storeys, ordered away from the desk and toward the reader:\n\n" +
-		"| Storey | What wears it |\n| --- | --- |\n" +
-		"| `--elevation-floor` | chrome furniture — sidebars, rails, toolbars, inspectors; the window's darkest region |\n" +
-		"| `--elevation-0` | the paper: the content ground, the bg pin |\n" +
+		"Five levels, counted from the backdrop up, away from the desk and toward\n" +
+		"the reader:\n\n" +
+		"| Level | What wears it |\n| --- | --- |\n" +
+		"| `--elevation-backdrop` | chrome furniture — sidebars, rails, toolbars, inspectors; the window's darkest region |\n" +
+		"| `--elevation-0` | the paper: the content surface, the bg pin |\n" +
 		"| `--elevation-1` | raised insets on the paper — cards, code fences, text fields |\n" +
 		"| `--elevation-2` | floating — dialogs, toasts |\n" +
 		"| `--elevation-3` | floating, nearest the scheme's light extreme — menus, popovers |\n\n" +
 		"Read that down and the fill gets lighter, in `:root` and in `.dark`\n" +
-		"alike. The floor is the one storey the ramp does not place: its step\n" +
+		"alike. The backdrop is the one level the ramp does not place: its step\n" +
 		"under the paper is measured off the platform rather than derived, and\n" +
 		"the two schemes measure differently — about 4.9 L\\* under a light\n" +
 		"paper, about 1.5 under a dark one, where a full ramp step would read as\n" +
 		"a hole rather than as furniture. That asymmetry is the platform's own,\n" +
 		"not a rule mirrored between the schemes. A chrome pane that floats is\n" +
-		"still chrome and still fills at the floor: what says it is a floating\n" +
+		"still chrome and still fills at the backdrop: what says it is a floating\n" +
 		"object is its own hairline edge and its shadow, never a lighter fill.\n" +
-		"The ladder stops at 3: desktop has no six-storey stack. Note the\n" +
+		"The levels stop at 3: desktop has no six-deep stack. Note the\n" +
 		"sizes — a light scheme has spent almost all of the tonal axis on its\n" +
-		"paper, so its storeys above the paper are separated by a fraction of an\n" +
+		"paper, so its levels above the paper are separated by a fraction of an\n" +
 		"L\\* and the derived hairline (`--card-border`, `--dialog-border`,\n" +
 		"`--popover-border`) is what says where a surface is. That is what the\n" +
 		"desktop applications this system is judged against measure too.\n\n" +
@@ -206,7 +207,7 @@ func readmeMD(s Snapshot) string {
 		"controls, 24 dp chips, 12/6 dp padding) is the `.compact` class override,\n" +
 		"scoping to any subtree the way `.dark` scopes colours. The chip height is\n" +
 		"the control height less 4 dp in both settings — one relation, not a second\n" +
-		"ladder. `--density-min-hit-target` (44 dp, WCAG 2.5.5) is deliberately not\n" +
+		"scale. `--density-min-hit-target` (44 dp, WCAG 2.5.5) is deliberately not\n" +
 		"overridden: compact shrinks the drawn control, never the clickable area.\n" +
 		"`theme.json` records both settings' metrics plus which one the theme runs.\n\n")
 
@@ -261,10 +262,10 @@ func elevationNames() []string {
 	return names
 }
 
-// elevationStateNames lists each storey's interaction walk in sheet order —
-// floor-hover, floor-active, 0-hover, and so on. The walk is a family of its
-// own because a storey is not a ramp step in both schemes, so a state taken
-// from a storey cannot be spelled as that step's neighbour.
+// elevationStateNames lists each level's interaction walk in sheet order —
+// backdrop-hover, backdrop-active, 0-hover, and so on. The walk is a family
+// of its own because a level is not a ramp step in both schemes, so a state
+// taken from a level cannot be spelled as that step's neighbour.
 func elevationStateNames() []string {
 	names := make([]string, 0, 2*len(elevationLevels))
 	for _, k := range elevationLevels {

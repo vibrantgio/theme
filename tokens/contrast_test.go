@@ -783,13 +783,13 @@ func TestStatusPinsAreTheirRampsSeventhStep(t *testing.T) {
 	}
 }
 
-// TestContainersSeparateFromEveryStoreyItStandsOn is the gate on the
-// ground-aware member of the container family: whatever storey a component
+// TestContainersSeparateFromEveryLevelItStandsOn is the gate on the
+// ground-aware member of the container family: whatever level a component
 // places its tonal container on, the fill is a visibly different surface from
 // that surface — and is still only a tint, never a solid.
 //
 // The fixed-depth container cannot pass this and is not asked to: it is
-// realized at one step, and the elevation ladder walks THROUGH that step, so
+// realized at one step, and the elevation levels walk THROUGH that step, so
 // a dark scheme's level-2 surface and its own step-300 container are the same
 // colour to within 1.01:1. That is the whole reason StatusContainerOn exists,
 // and the two bounds below are what it buys.
@@ -798,7 +798,7 @@ func TestStatusPinsAreTheirRampsSeventhStep(t *testing.T) {
 // asks the ramp rather than a table: a neutral container is the neutral
 // ramp's own depth at chroma 0, and a component labelling a plain category
 // needs it to separate from the page exactly as a status one does.
-func TestContainersSeparateFromEveryStoreyItStandsOn(t *testing.T) {
+func TestContainersSeparateFromEveryLevelItStandsOn(t *testing.T) {
 	// A container is a tint. Past this it stops being the ground of
 	// something and starts being a fill in its own right, which is the
 	// register a control occupies.
@@ -814,7 +814,7 @@ func TestContainersSeparateFromEveryStoreyItStandsOn(t *testing.T) {
 		}{r.name, r.role})
 	}
 	levels := []tokens.ElevationLevel{
-		tokens.LevelFloor, tokens.Level0, tokens.Level1, tokens.Level2, tokens.Level3,
+		tokens.LevelBackdrop, tokens.Level0, tokens.Level1, tokens.Level2, tokens.Level3,
 	}
 	worst, loudest := 99.0, 0.0
 	for _, seed := range sweepSeeds() {
@@ -833,13 +833,13 @@ func TestContainersSeparateFromEveryStoreyItStandsOn(t *testing.T) {
 					fill := s.tok.StatusContainerOn(r.role, ground)
 					got := color.ContrastRatio(fill, ground)
 					if got < tokens.ContainerFloor {
-						t.Errorf("seed %v: %s %s container %v on the level-%d storey %v measures %.3f:1, under the %.2f:1 seam floor",
+						t.Errorf("seed %v: %s %s container %v on the level-%d fill %v measures %.3f:1, under the %.2f:1 seam floor",
 							seed, s.name, r.name, fill, lv, ground, got, tokens.ContainerFloor)
 					} else if got < worst {
 						worst = got
 					}
 					if got > solid {
-						t.Errorf("seed %v: %s %s container %v on the level-%d storey %v measures %.3f:1 — that is a fill, not a tint",
+						t.Errorf("seed %v: %s %s container %v on the level-%d fill %v measures %.3f:1 — that is a fill, not a tint",
 							seed, s.name, r.name, fill, lv, ground, got)
 					} else if got > loudest {
 						loudest = got
@@ -848,15 +848,15 @@ func TestContainersSeparateFromEveryStoreyItStandsOn(t *testing.T) {
 			}
 		}
 	}
-	t.Logf("over %d seeds, both derivations, both schemes, five storeys: worst seam %.3f:1 (floor %.2f), loudest %.3f:1",
+	t.Logf("over %d seeds, both derivations, both schemes, five levels: worst seam %.3f:1 (floor %.2f), loudest %.3f:1",
 		len(sweepSeeds()), worst, tokens.ContainerFloor, loudest)
 }
 
 // TestTheGroundAwareContainerHoldsTheFixedOneWhereItAlreadyWorks pins the
 // relationship between the two members: StatusContainerOn moves off
 // StatusContainer's depth only where the fixed depth has collided with the
-// storey. Everywhere else the two are one colour, so a component that names
-// its storey and one that fills the page do not draw the same role in two
+// level. Everywhere else the two are one colour, so a component that names
+// its level and one that fills the page do not draw the same role in two
 // different tints beside each other.
 func TestTheGroundAwareContainerHoldsTheFixedOneWhereItAlreadyWorks(t *testing.T) {
 	for _, seed := range sweepSeeds() {
@@ -867,7 +867,7 @@ func TestTheGroundAwareContainerHoldsTheFixedOneWhereItAlreadyWorks(t *testing.T
 		}{{"light", light}, {"dark", dark}} {
 			for _, r := range statusRoles {
 				for _, lv := range []tokens.ElevationLevel{
-					tokens.LevelFloor, tokens.Level0, tokens.Level1, tokens.Level2, tokens.Level3,
+					tokens.LevelBackdrop, tokens.Level0, tokens.Level1, tokens.Level2, tokens.Level3,
 				} {
 					ground := s.tok.SurfaceAt(lv)
 					fixed := s.tok.StatusContainer(r.role)
@@ -875,7 +875,7 @@ func TestTheGroundAwareContainerHoldsTheFixedOneWhereItAlreadyWorks(t *testing.T
 						continue // the collision case: moving is the point
 					}
 					if got := s.tok.StatusContainerOn(r.role, ground); got != fixed {
-						t.Errorf("seed %v: %s %s on the level-%d storey: the ground-aware container %v left the fixed one %v while the fixed one still cleared the seam floor",
+						t.Errorf("seed %v: %s %s on the level-%d fill: the ground-aware container %v left the fixed one %v while the fixed one still cleared the seam floor",
 							seed, s.name, r.name, lv, got, fixed)
 					}
 				}
