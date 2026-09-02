@@ -973,9 +973,10 @@ func TestRampsCoverTheirRange(t *testing.T) {
 	}
 }
 
-// TestWashesClearThePerceptibilityFloor gates the wash a quiet control
-// paints on the surface it stands on: over the seed sweep, both
-// derivations, both schemes and every level, hover and press each separate
+// TestWashesClearThePerceptibilityFloor gates the wash a control with no
+// fill of its own paints on the surface it stands on: over the seed
+// sweep, both derivations, both schemes and every level, hover and press
+// each separate
 // from that surface by at least tokens.StateFloor, and press lies beyond
 // hover.
 //

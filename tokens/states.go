@@ -36,13 +36,13 @@
 //     scale and only the neutral sweeps it at zero chroma, so the neutral
 //     ramp is that scale itself rather than one role's tinted copy of it.
 //
-// One of those walks carries a floor. A wash — the state a quiet control
-// paints on the surface it stands on, which is what
+// One of those walks carries a floor. A wash — the state a control with
+// no fill of its own paints on the surface it stands on, which is what
 // [ColorTokens.StateAt] resolves — is the only one of them whose own
 // step can be too small to see, because both colours come off the same
 // neutral scale; a solid fill's walk starts from a pin that is already
-// loud. So the wash deepens past one step until it clears StateFloor, and
-// press stays one step past where hover landed.
+// a fill in its own right. So the wash deepens past one step until it
+// clears StateFloor, and press stays one step past where hover landed.
 //
 
 // Clamping: a walk past the ramp end clamps to the 900 stop — ground 800
@@ -194,11 +194,12 @@ func (t ColorTokens) PinnedStateColor(pin stdcolor.NRGBA, state State) stdcolor.
 // StateFloor is the least contrast a wash owes the surface it is walked
 // from: enough that a reader sees that something happened there at all.
 //
-// A wash is the quietest a state is spoken at — the surface itself, a step
-// along the same neutral scale — so what it owes is only that its edge be
-// findable, and the ceiling is left to whatever draws it. It is not a WCAG
-// criterion, because WCAG has none for this: 1.4.11's 3:1 governs a mark
-// that has to be resolved as a shape, and a wash carries no shape.
+// A wash is the least pronounced form a state takes — the surface itself,
+// a step along the same neutral scale — so what it owes is only that its
+// edge be findable, and the ceiling is left to whatever draws it. It is
+// not a WCAG criterion, because WCAG has none for this: 1.4.11's 3:1
+// governs a mark that has to be resolved as a shape, and a wash carries no
+// shape.
 //
 // 1.25:1 is measured rather than picked. Over the seed sweep — both
 // derivations, both schemes, all five levels — the one-step walk's

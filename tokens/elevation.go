@@ -340,8 +340,8 @@ func (t ColorTokens) SurfaceAt(level ElevationLevel) color.NRGBA {
 }
 
 // StateAt resolves a level's fill under an interaction state, taken from the
-// level's own colour: the wash a quiet control paints on the surface it
-// stands on.
+// level's own colour: the wash a control with no fill of its own paints
+// on the surface it stands on.
 //
 // The walk is [ColorTokens.PinnedStateColor]'s — a level above the paper is
 // off the ramp in one scheme or the other, so it is exactly the case that
