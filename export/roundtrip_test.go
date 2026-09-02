@@ -524,12 +524,15 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		".radio:focus-visible, .radio.is-focus {",
 		// Disabled fades to the disabled fraction of each colour's alpha.
 		"color-mix(in srgb, var(--color-accent) var(--state-disabled-opacity), transparent)",
-		// Tonal: ground 200 under 900 text; hover 300; pressed/selected 400.
-		"background: var(--color-primary-200);",
-		"color: var(--color-primary-900);",
-		".btn.tonal:hover, .btn.tonal.is-hover { background: var(--color-primary-300); }",
-		".btn.tonal.selected { background: var(--color-primary-400); }",
-		".btn.tonal:active, .btn.tonal.is-active { background: var(--color-primary-400); }",
+		// Tonal: the badge's tint under the accent role, the foreground
+		// moving with the fill the pointer walks.
+		"background: var(--color-btn-tonal-fill);",
+		"color: var(--color-btn-tonal);",
+		"background: var(--color-btn-tonal-fill-hover);",
+		"color: var(--color-btn-tonal-hover);",
+		".btn.tonal.selected,",
+		"background: var(--color-btn-tonal-fill-active);",
+		"color: var(--color-btn-tonal-active);",
 		// Icon-only: a control-height square, glyph inset by PaddingY.
 		"width: var(--density-control-height);",
 		"padding: var(--density-padding-y);",

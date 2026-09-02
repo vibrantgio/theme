@@ -98,3 +98,32 @@ func (t ColorTokens) InkOn(role Role, ground stdcolor.NRGBA, floor float64) stdc
 	}
 	return t.MarkOn(role, ground, floor)
 }
+
+// ForegroundOn returns the colour a role's content — a word, a count, or a
+// sign standing in for one — reads in over surface: [ColorTokens.InkOn] at
+// [TextFloor] for the roles that carry a pinned base, and
+// [ColorTokens.MarkOn]'s walk for RoleNeutral, which carries none.
+//
+// It is the foreground half of the one tonal recipe, and it exists as a
+// function because more than one component draws content in a role's own
+// hue over a fill of that same hue: a tinted button and a status badge are
+// the same tint, and it is behaviour rather than colour that tells them
+// apart. Two spellings of one derivation is how they drift.
+//
+// The floor is the text one whatever the content is. A component that says
+// its word as a sign is making the same utterance at the same weight, so
+// deriving the sign at [GraphicFloor] would make one component read at two
+// strengths depending on which of its faces it wore.
+//
+// surface is whatever is ACTUALLY behind the content, which for a fill that
+// walks under the pointer is the walked fill and not the resting one: a
+// foreground held over a fill that moved is derived against a surface that
+// is no longer there.
+func (t ColorTokens) ForegroundOn(role Role, surface stdcolor.NRGBA) stdcolor.NRGBA {
+	if role == RoleNeutral {
+		// InkOn asks a role for its pinned base and neutral has none; the
+		// walk is the whole derivation for it.
+		return t.MarkOn(role, surface, TextFloor)
+	}
+	return t.InkOn(role, surface, TextFloor)
+}

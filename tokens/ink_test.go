@@ -277,3 +277,39 @@ func TestInkOnNeutralPanics(t *testing.T) {
 	}()
 	tokens.DefaultLight.InkOn(tokens.RoleNeutral, tokens.DefaultLight.Background, tokens.TextFloor)
 }
+
+// TestForegroundOnAnswersEveryRole: the shared foreground derivation is
+// [ColorTokens.InkOn] at the text floor for the roles that carry a pinned
+// base, and the walk for RoleNeutral, which carries none — so unlike InkOn
+// it answers every role rather than refusing one. A component drawing a
+// role's word over a fill of that role's hue calls this, and only this;
+// a second spelling is how two components stop matching.
+func TestForegroundOnAnswersEveryRole(t *testing.T) {
+	for _, sc := range []struct {
+		name string
+		c    tokens.ColorTokens
+	}{{"light", tokens.DefaultLight}, {"dark", tokens.DefaultDark}} {
+		c := sc.c
+		for _, role := range []tokens.Role{
+			tokens.RoleNeutral, tokens.RolePrimary, tokens.RoleSecondary,
+			tokens.RoleTertiary, tokens.RoleError, tokens.RoleSuccess,
+			tokens.RoleWarning, tokens.RoleInfo,
+		} {
+			fill := c.ContainerOn(role, c.SurfaceAt(tokens.Level0))
+			got := c.ForegroundOn(role, fill)
+
+			want := c.MarkOn(role, fill, tokens.TextFloor)
+			if role != tokens.RoleNeutral {
+				want = c.InkOn(role, fill, tokens.TextFloor)
+			}
+			if got != want {
+				t.Errorf("%s role %d: ForegroundOn = %s, want %s",
+					sc.name, role, hexOf(got), hexOf(want))
+			}
+			if ratio := contrastRatio(got, fill); ratio < tokens.TextFloor {
+				t.Errorf("%s role %d: foreground %s on its own container %s = %.2f:1, under %.1f:1",
+					sc.name, role, hexOf(got), hexOf(fill), ratio, tokens.TextFloor)
+			}
+		}
+	}
+}

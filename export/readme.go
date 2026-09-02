@@ -107,13 +107,16 @@ func readmeMD(s Snapshot) string {
 		"the same rule, so a static page can show a state with exactly the live\n" +
 		"declarations; disabled is forced with the native attribute.\n\n" +
 		"`.btn` is the button, **filled** by default: the accent pin under its\n" +
-		"on-colour. Two modifier classes select the quieter emphasis registers —\n" +
-		"`.btn.tonal` (a tinted fill: primary 200 under primary 900 text) and\n" +
-		"`.btn.ghost` (no ground at rest; neutral 700 text). Interaction states\n" +
-		"resolve as the step walks above: hover walks one step (`:hover`), pressed\n" +
-		"and selected two (`:active`, `.selected`); a filled button's solid fill\n" +
-		"walks via the emitted `--color-accent-hover` / `--color-accent-pressed`\n" +
-		"stops. Keyboard focus (`:focus-visible`) keeps the resting fill and draws\n" +
+		"on-colour. Two modifier classes select the quieter emphasis variants —\n" +
+		"`.btn.tonal` (the accent's tint, `--color-btn-tonal-fill` under\n" +
+		"`--color-btn-tonal`: the same recipe `.badge` wears, one hue at two\n" +
+		"strengths) and `.btn.ghost` (no ground at rest; neutral 700 text).\n" +
+		"Interaction states resolve as the step walks above: hover walks one step\n" +
+		"(`:hover`), pressed and selected two (`:active`, `.selected`); a filled\n" +
+		"button's solid fill walks via the emitted `--color-accent-hover` /\n" +
+		"`--color-accent-pressed` stops, and a tonal button through its own\n" +
+		"`-hover` and `-active` pairs, whose foreground moves with the fill.\n" +
+		"Keyboard focus (`:focus-visible`) keeps the resting fill and draws\n" +
 		"the ring: `--focus-ring-width` of `--color-focus-ring`, the one ring the\n" +
 		"scheme carries — the rung of the primary ramp nearest its mid-value step\n" +
 		"that reaches 3:1 against every level at once, so a control wears the\n" +

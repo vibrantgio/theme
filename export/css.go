@@ -166,7 +166,7 @@ var pinRoles = []struct {
 	//
 	// The floor is the text floor for all five: a sign is the same utterance
 	// at the same weight as a word. Never an inverted on-colour — a white
-	// word on a saturated field is the register interaction speaks in, and a
+	// word on a saturated field is the variant interaction speaks in, and a
 	// badge is read rather than used.
 	{"badge-neutral-fill", badgeFill(tokens.RoleNeutral)},
 	{"badge-neutral", badgeForeground(tokens.RoleNeutral)},
@@ -178,6 +178,23 @@ var pinRoles = []struct {
 	{"badge-error", badgeForeground(tokens.RoleError)},
 	{"badge-info-fill", badgeFill(tokens.RoleInfo)},
 	{"badge-info", badgeForeground(tokens.RoleInfo)},
+	// The tinted button is that same recipe under the accent role, so its
+	// six tokens are the badge's two taken through the three states a
+	// button answers a pointer with. They are tokens rather than ramp
+	// references for the reason the containers above are: the fill is
+	// realized at a tone against the ground it stands on, and the walk is
+	// counted on the neutral ladder from that realization, so no var()
+	// arithmetic over the ramp steps reproduces either.
+	//
+	// Level 0, as the badge family is, and for the same reason: the Gio
+	// side derives against the surface the control is placed on
+	// (RenderState.Level) and a sheet has one answer to give.
+	{"btn-tonal-fill", tonalFill(tokens.StateNormal)},
+	{"btn-tonal", tonalForeground(tokens.StateNormal)},
+	{"btn-tonal-fill-hover", tonalFill(tokens.StateHover)},
+	{"btn-tonal-hover", tonalForeground(tokens.StateHover)},
+	{"btn-tonal-fill-active", tonalFill(tokens.StatePressed)},
+	{"btn-tonal-active", tonalForeground(tokens.StatePressed)},
 	// The marks a control and a raised surface draw on themselves, each the
 	// rung its own ramp's MarkOn walk answers with at the graphic floor. All
 	// are per-scheme tokens rather than named rungs, because a named rung is
@@ -347,12 +364,26 @@ func badgeFill(role tokens.Role) func(tokens.ColorTokens) stdcolor.NRGBA {
 
 func badgeForeground(role tokens.Role) func(tokens.ColorTokens) stdcolor.NRGBA {
 	return func(t tokens.ColorTokens) stdcolor.NRGBA {
-		fill := t.StatusContainerOn(role, t.SurfaceAt(tokens.Level0))
-		if role == tokens.RoleNeutral {
-			// InkOn refuses RoleNeutral, which has no pinned base.
-			return t.MarkOn(role, fill, tokens.TextFloor)
-		}
-		return t.InkOn(role, fill, tokens.TextFloor)
+		return t.ForegroundOn(role, t.StatusContainerOn(role, t.SurfaceAt(tokens.Level0)))
+	}
+}
+
+// tonalFill and tonalForeground are the SAME recipe under the accent role,
+// which is what a tinted button wears: a tinted button and a status badge
+// differ by no practical visual difference, so they speak one recipe and
+// behaviour tells them apart. state is the walk the fill is under — normal,
+// hover or pressed — and the foreground is derived against wherever that walk
+// landed rather than against the resting fill.
+func tonalFill(state tokens.State) func(tokens.ColorTokens) stdcolor.NRGBA {
+	return func(t tokens.ColorTokens) stdcolor.NRGBA {
+		rest := t.StatusContainerOn(tokens.RolePrimary, t.SurfaceAt(tokens.Level0))
+		return t.PinnedStateColor(rest, state)
+	}
+}
+
+func tonalForeground(state tokens.State) func(tokens.ColorTokens) stdcolor.NRGBA {
+	return func(t tokens.ColorTokens) stdcolor.NRGBA {
+		return t.ForegroundOn(tokens.RolePrimary, tonalFill(state)(t))
 	}
 }
 
@@ -720,20 +751,21 @@ func stylesCSS(s Snapshot) string {
 // chevron, the 1/2 dp input borders); each is commented at its source.
 //
 // It mirrors the button and input components, the sources of truth: .btn is
-// the filled register by default, .tonal and .ghost the emphasis
-// modifiers, and every state resolves as the ramp walks from
-// exactly the rungs buttonColors picks (button.go: tonalGround 200 /
-// tonalText 900, ghostGround 200 / ghostText 700 / ghostTextOnWash 900; the
-// filled fill walks via SolidStateColor into --color-accent-hover/
-// -pressed). A ghost's wash derives from the local ground, so the raised
-// hosts carry contextual overrides walking from their own level's step
-// (ghostGroundStep: the level-2 dialog and elevated card wash 400/500,
-// the level-3 popover 500/600), matching RenderState.Level on the Gio
-// side. Because each register's blocks override every state it treats,
-// later register blocks never bleed a state from an earlier one; :disabled
-// resolutions are per-register for the same reason. Selected resolves as
-// tokens.StateColor resolves StateSelected — the two-step walk pressed
-// takes. The form controls resolve as components/input does: the raised
+// the filled variant by default, .tonal and .ghost the emphasis
+// modifiers, and every state resolves exactly as buttonColors resolves it
+// (button.go: the filled fill walks via SolidStateColor into
+// --color-accent-hover/-pressed; tonal takes the shared tint tokens above,
+// which are the badge's own recipe under the accent role; ghost is
+// ghostText 700 / ghostTextOnWash 900 over the local ground's own walk).
+// A ghost's wash derives from the local ground, so the raised hosts carry
+// contextual overrides walking from their own level's step (ghostGroundStep:
+// the level-2 dialog and elevated card wash 400/500, the level-3 popover
+// 500/600), matching RenderState.Level on the Gio side. Tonal derives
+// against that same level on the Gio side and the sheet states level 0, as
+// the badge tokens do. Because each variant's blocks override every state
+// it treats, later variant blocks never bleed a state from an earlier one;
+// :disabled resolutions are per-variant for the same reason. Selected
+// resolves where pressed does — the two-step walk. The form controls resolve as components/input does: the raised
 // level under body text, the ramp's own measured answer on the text field,
 // the radio and the checkbox alike — all of it taken against the level the
 // control stands on, which is what --ground-border and
@@ -754,8 +786,8 @@ func stylesCSS(s Snapshot) string {
 const componentClasses = `/* ---- Component classes ----
    The class vocabulary, built only on the tokens above. .btn mirrors
    components/button: filled by default, .tonal and .ghost the emphasis
-   modifiers, states resolved as one-rung ramp walks from the same rungs the
-   Gio side draws. .input/.select/.checkbox/.radio mirror components/input,
+   modifiers, states resolved exactly as the Gio side resolves them.
+   .input/.select/.checkbox/.radio mirror components/input,
    .badge the inline annotation components/badge draws (the plain category
    label and the four status roles; the close mark is a Gio interaction and
    has no class here), .card the
@@ -870,18 +902,28 @@ const componentClasses = `/* ---- Component classes ----
   color: color-mix(in srgb, var(--color-on-accent) var(--state-disabled-opacity), transparent);
 }
 
-/* Tonal: a tinted fill off the role's own ramp — ground 200 under the
-   ramp's 900 text; hover walks one step, pressed and selected two. */
+/* Tonal: the accent's tint over the surface the button stands on, under the
+   accent's own colour at the text floor — the same recipe .badge wears, one
+   hue at two strengths, never an inverted on-colour. The foreground moves
+   with the fill under the pointer: a colour held over a fill that walked two
+   steps is measured against a surface no longer there. Selected resolves
+   where pressed does, the two-step walk. */
 .btn.tonal {
-  background: var(--color-primary-200);
-  color: var(--color-primary-900);
+  background: var(--color-btn-tonal-fill);
+  color: var(--color-btn-tonal);
 }
-.btn.tonal:hover, .btn.tonal.is-hover { background: var(--color-primary-300); }
-.btn.tonal.selected { background: var(--color-primary-400); }
-.btn.tonal:active, .btn.tonal.is-active { background: var(--color-primary-400); }
+.btn.tonal:hover, .btn.tonal.is-hover {
+  background: var(--color-btn-tonal-fill-hover);
+  color: var(--color-btn-tonal-hover);
+}
+.btn.tonal.selected,
+.btn.tonal:active, .btn.tonal.is-active {
+  background: var(--color-btn-tonal-fill-active);
+  color: var(--color-btn-tonal-active);
+}
 .btn.tonal:disabled {
-  background: color-mix(in srgb, var(--color-primary-200) var(--state-disabled-opacity), transparent);
-  color: color-mix(in srgb, var(--color-primary-900) var(--state-disabled-opacity), transparent);
+  background: color-mix(in srgb, var(--color-btn-tonal-fill) var(--state-disabled-opacity), transparent);
+  color: color-mix(in srgb, var(--color-btn-tonal) var(--state-disabled-opacity), transparent);
 }
 
 /* Ghost: no ground at rest — the neutral ramp's low-contrast text over
