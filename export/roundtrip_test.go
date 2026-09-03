@@ -553,15 +553,13 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"background: var(--elevation-0-active);",
 		"color: var(--color-neutral-900);",
 		// Ghost in a raised host: the wash re-derives from the host
-		// surface's own storey — the plain card at level 1, the dialog and
-		// elevated card at level 2, the popover at level 3 — token
+		// surface's own level — both card looks at level 1, the dialog
+		// at level 2, the popover at level 3 — token
 		// references all the way, exactly buttonColors' ghostWash walk.
 		".card .btn.ghost:hover, .card .btn.ghost.is-hover {",
 		".card .btn.ghost:active, .card .btn.ghost.is-active {",
-		".dialog .btn.ghost:hover, .dialog .btn.ghost.is-hover,",
-		".card.elevated .btn.ghost:hover, .card.elevated .btn.ghost.is-hover {",
-		".dialog .btn.ghost:active, .dialog .btn.ghost.is-active,",
-		".card.elevated .btn.ghost:active, .card.elevated .btn.ghost.is-active {",
+		".dialog .btn.ghost:hover, .dialog .btn.ghost.is-hover {",
+		".dialog .btn.ghost:active, .dialog .btn.ghost.is-active {",
 		".popover .btn.ghost:hover, .popover .btn.ghost.is-hover {",
 		".popover .btn.ghost:active, .popover .btn.ghost.is-active {",
 		"background: var(--elevation-1-hover);",
@@ -615,11 +613,12 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"background-size: 4.929px 4.929px, 9.929px 9.929px;",
 		"linear-gradient(45deg, transparent calc(50% - 0.833px), var(--color-on-accent) calc(50% - 0.833px), var(--color-on-accent) calc(50% + 0.833px), transparent calc(50% + 0.833px)),",
 		"radial-gradient(circle, var(--color-accent) 5px, var(--ground-raised, var(--elevation-1)) 5px)",
-		// Card: level-1 fill under a 1 dp stroke in
-		// the rung the ramp measures against that fill,
-		// .elevated one storey deeper with no stroke and no shadow;
+		// Card: both looks fill at level 1 and differ only at the edge —
+		// outlined under a 1 dp stroke in the step the ramp measures
+		// against that fill, .filled with no stroke and no shadow;
 		// radius Lg, S4 inset (the outlined padding gives back the border's
 		// 1px), S3 slot gaps.
+		".card.filled {",
 		"padding: calc(var(--space-4) - 1px);",
 		"border-radius: var(--radius-lg);",
 		"background: var(--elevation-1);",
