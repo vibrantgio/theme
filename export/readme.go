@@ -49,7 +49,7 @@ func readmeMD(s Snapshot) string {
 		"  density settings, the radius scale and tonal elevation as rendered\n" +
 		"  specimens.\n" +
 		"- `components/*.html` — hand-authored component pages (not generated):\n" +
-		"  every class-layer component in every register and state, at both\n" +
+		"  every class-layer component in every variant and state, at both\n" +
 		"  densities, as copyable markup. `buttons.html` covers `.btn` and `.badge`,\n" +
 		"  `forms.html` the native-element form controls.\n\n" +
 		"Each page reads only from `styles.css` — every styled value is a `var(--…)`\n" +
