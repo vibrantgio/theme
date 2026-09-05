@@ -149,7 +149,7 @@ func TestSemanticLayerResolvesFromRamps(t *testing.T) {
 			{"Divider = Neutral.Step(300)", s.tok.Divider, n.Step(300)},
 			{"InverseSurface = the counterpart scheme's Surface", s.tok.InverseSurface, s.counterpart.Surface},
 			{"OnInverseSurface = the counterpart scheme's Text", s.tok.OnInverseSurface, s.counterpart.Text},
-			{"Highlight = the reserved wash resolved against the paper", s.tok.Highlight, s.tok.HighlightOn(s.tok.Background)},
+			{"Highlight = the reserved fill resolved against the paper", s.tok.Highlight, s.tok.HighlightOn(s.tok.Background)},
 		}
 		for _, c := range checks {
 			if c.got != c.want {
@@ -541,7 +541,7 @@ func defaultGolden() (light, dark tokens.ColorTokens) {
 		t.Highlight = highlight
 		return t
 	}
-	return fill(light, dark, hex(0xd9, 0xd6, 0xad)), fill(dark, light, hex(0x32, 0x2f, 0x09))
+	return fill(light, dark, hex(0xe7, 0xd7, 0x00)), fill(dark, light, hex(0x4e, 0x48, 0x00))
 }
 
 // hcGolden returns the recorded palette FromSeedHighContrast derives from
@@ -789,7 +789,7 @@ func hcGolden() (light, dark tokens.ColorTokens) {
 		t.Highlight = highlight
 		return t
 	}
-	return fill(light, dark, hex(0xd9, 0xd6, 0xad)), fill(dark, light, hex(0x32, 0x2f, 0x09))
+	return fill(light, dark, hex(0xe7, 0xd7, 0x00)), fill(dark, light, hex(0x4e, 0x48, 0x00))
 }
 
 // TestFromSeedHighContrastGoldenPalette pins the high-contrast variant

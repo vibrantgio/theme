@@ -50,8 +50,8 @@ func schemesOf(seed stdcolor.NRGBA) []struct {
 // seed derives the same two fills in both derivations. A highlighter that
 // followed the brand would be an accent under another name.
 func TestTheHighlightIsReservedAgainstTheBrand(t *testing.T) {
-	lightFill := stdcolor.NRGBA{0xd9, 0xd6, 0xad, 0xff}
-	darkFill := stdcolor.NRGBA{0x32, 0x2f, 0x09, 0xff}
+	lightFill := stdcolor.NRGBA{0xe7, 0xd7, 0x00, 0xff}
+	darkFill := stdcolor.NRGBA{0x4e, 0x48, 0x00, 0xff}
 	for _, seed := range sweepSeeds() {
 		for i, s := range schemesOf(seed) {
 			want := lightFill
@@ -138,13 +138,13 @@ func TestContentInkClearsItsFloorOverTheHighlight(t *testing.T) {
 // The bounds are the sweep's own measurements less a rounding margin, and
 // they are read against what the palette already asks a reader to tell
 // apart: the two closest status containers come to 30.18° and 0.0286 of
-// each other, while the highlight stands 37.64° and 0.0359 from the
+// each other, while the highlight stands 37.60° and 0.0397 from the
 // nearest of them. Nothing on this palette is as far from a status colour
 // as the highlight is.
 func TestTheHighlightKeepsItsDistanceFromEveryStatus(t *testing.T) {
 	const (
-		hueBound = 36.0  // measured 37.64° over the sweep
-		labBound = 0.035 // measured 0.0359 over the sweep
+		hueBound = 36.0  // measured 37.60° over the sweep
+		labBound = 0.039 // measured 0.0397 over the sweep
 	)
 	worstHue, worstHueAt := 999.0, ""
 	worstLab, worstLabAt := 99.0, ""

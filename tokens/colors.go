@@ -183,11 +183,11 @@ type ColorTokens struct {
 	InverseSurface   color.NRGBA // counterpart Neutral.Step(200)
 	OnInverseSurface color.NRGBA // text/icon over it — counterpart Neutral.Step(900)
 
-	// Highlight is the reserved highlighter: the wash marking content the
+	// Highlight is the reserved highlighter: the fill marking content the
 	// user was brought to. It is not a colour role and reports no status,
 	// so its hue is reserved outside the role table and no status hue may
 	// serve it; highlight.go carries the reservation and the distances
-	// that hold it. This is the wash resolved against the Background pin,
+	// that hold it. This is the fill resolved against the Background pin,
 	// the surface content stands on;
 	// [ColorTokens.HighlightOn] answers for any other surface.
 	Highlight color.NRGBA

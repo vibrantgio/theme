@@ -51,33 +51,54 @@ func TestHighlightHueIsTheMidpointOfTheArcTheYellowsOccupy(t *testing.T) {
 	}
 }
 
-// TestTheHighlightDialFitsTheGamutAtBothFillDepths verifies sRGB holds the
-// container dial at the reserved hue at both depths the fill is realized
-// at, with the headroom the file header records: a clipped chroma would
-// take the reservation's distance from the status hues away silently.
-func TestTheHighlightDialFitsTheGamutAtBothFillDepths(t *testing.T) {
+// TestTheFillTakesAllTheChromaItsDepthHolds verifies the two halves of the
+// marker's chroma: the depth the fill is realized at is the shallowest step
+// that holds markerChroma, and the fill realized there carries all the
+// chroma sRGB holds at that depth — a highlighter owes its own chroma, not
+// a dial borrowed from the containers. The margin is eight-bit
+// quantization: the realization is rounded to a byte per channel, which
+// costs the measured chroma a little of what the solver found.
+func TestTheFillTakesAllTheChromaItsDepthHolds(t *testing.T) {
+	light, dark := FromSeed(DefaultSeed)
 	for _, d := range []struct {
 		name string
-		tone int
-		want float64 // the most chroma sRGB holds at highlightHue at this depth
+		tok  ColorTokens
+		step int     // the depth the fill is realized at
+		tone float64 // that depth's L*
+		held float64 // the most chroma sRGB holds at highlightHue there
 	}{
-		{"light step 300", 85, 0.1850},
-		{"dark step 300", 19, 0.0650},
+		{"light", light, 300, 84.91, 0.1845},
+		{"dark", dark, 400, 30.16, 0.0850},
 	} {
-		got := 0.0
-		for c := 0.0; c < 0.4; c += 0.0005 {
-			_, realized, _ := color.OKLChFromNRGBA(color.Tone(highlightHue, c, d.tone))
+		if got := d.tok.highlightStep(); got != d.step {
+			t.Errorf("%s: the fill is realized at step %d, want step %d — the shallowest depth that holds the marker's chroma", d.name, got, d.step)
+		}
+		tone, _, _ := color.LabFromNRGBA(d.tok.Ramps.Neutral.Step(d.step))
+		if math.Abs(tone-d.tone) > 0.01 {
+			t.Errorf("%s: step %d stands at L* %.2f, want %.2f", d.name, d.step, tone, d.tone)
+		}
+		held := 0.0
+		for c := 0.0; c < highlightChroma; c += 0.0005 {
+			_, realized, _ := color.OKLChFromNRGBA(color.NRGBAFromToneChromaHue(tone, c, highlightHue))
 			if realized < c-0.002 { // past the gamut the solver reduces chroma
 				break
 			}
-			got = c
+			held = c
 		}
-		if math.Abs(got-d.want) > 0.001 {
-			t.Errorf("%s (L* %d): sRGB holds chroma %.4f at hue %.2f°, want %.4f", d.name, d.tone, got, highlightHue, d.want)
+		if math.Abs(held-d.held) > 0.001 {
+			t.Errorf("%s: sRGB holds chroma %.4f at hue %.2f° at L* %.2f, want %.4f", d.name, held, highlightHue, tone, d.held)
 		}
-		if got <= containerChroma {
-			t.Errorf("%s (L* %d): sRGB holds only chroma %.4f at hue %.2f°, under the %.3f dial the fill is realized at",
-				d.name, d.tone, got, highlightHue, containerChroma)
+		if held < markerChroma {
+			t.Errorf("%s: the depth the fill is realized at holds only chroma %.4f, under the %.3f a marker's yellow asks for",
+				d.name, held, markerChroma)
+		}
+		_, chroma, hue := color.OKLChFromNRGBA(d.tok.Highlight)
+		if chroma < held-0.002 {
+			t.Errorf("%s: the fill %v carries chroma %.4f where sRGB holds %.4f — it is not taking the yellow its depth can hold",
+				d.name, d.tok.Highlight, chroma, held)
+		}
+		if math.Abs(hue-highlightHue) > 0.5 {
+			t.Errorf("%s: the fill %v wears hue %.2f°, want the reserved %.2f°", d.name, d.tok.Highlight, hue, highlightHue)
 		}
 	}
 }
