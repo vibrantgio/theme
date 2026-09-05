@@ -160,9 +160,11 @@ func TestRoundTripColors(t *testing.T) {
 		}
 	}
 	// Three families per level — the fill, and the hover and press walks
-	// taken from it — plus the seam every level a thing can stand on owes
-	// what stands on it. All resolve per scheme for the same reason.
-	if want := len(rampRoles)*9 + len(pinRoles) + 3*len(elevationLevels) + len(standableLevels); len(dark) != want {
+	// taken from it — plus two hairlines every level a thing can stand on
+	// carries: the seam it owes what stands on it, and the line two regions
+	// sharing its own fill are parted by. All resolve per scheme for the
+	// same reason.
+	if want := len(rampRoles)*9 + len(pinRoles) + 3*len(elevationLevels) + 2*len(standableLevels); len(dark) != want {
 		t.Errorf(".dark declares %d variables, want %d", len(dark), want)
 	}
 }
@@ -490,11 +492,12 @@ func TestRoundTripButtonClasses(t *testing.T) {
 			}
 		}
 		// The control row's resting edge, likewise: components/input's
-		// controlBorder is MarkOn against the level-0 ground, and the three
-		// outline tokens are the same walk one, two and three storeys up —
-		// the fills patterns/card, patterns/modal and patterns/popover paint
-		// and measure their own edges against, and the edge any control
-		// standing on those storeys wears.
+		// controlBorder is MarkOn against the level-0 ground, and the two
+		// outline tokens are the same walk two and three levels up — the
+		// fills patterns/modal and patterns/popover paint and measure their
+		// own edges against, and the edge any control standing on those
+		// levels wears. Level 1 has none: a card draws no line of its own,
+		// and a control on a card takes control-border unchanged.
 		if got, want := mode.vars["--color-control-border"], wantHex(mode.tok.MarkOn(tokens.RoleNeutral, mode.tok.SurfaceAt(tokens.Level0), 3.0)); got != want {
 			t.Errorf("--color-control-border (mode %d) = %q, want the neutral rung that reads on the window ground %q", i, got, want)
 		}
@@ -503,7 +506,6 @@ func TestRoundTripButtonClasses(t *testing.T) {
 			level tokens.ElevationLevel
 			what  string
 		}{
-			{"--color-card-border", tokens.Level1, "the outlined card's level-1 fill"},
 			{"--color-dialog-border", tokens.Level2, "the dialog's level-2 fill"},
 			{"--color-popover-border", tokens.Level3, "the popover's level-3 fill"},
 		} {
@@ -636,12 +638,13 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"background-size: 4.929px 4.929px, 9.929px 9.929px;",
 		"linear-gradient(45deg, transparent calc(50% - 0.833px), var(--color-on-accent) calc(50% - 0.833px), var(--color-on-accent) calc(50% + 0.833px), transparent calc(50% + 0.833px)),",
 		"radial-gradient(circle, var(--color-accent) 5px, var(--ground-raised, var(--elevation-1)) 5px)",
-		// Card: both looks fill at level 1 and differ only at the edge —
-		// outlined under a 1 dp stroke in the step the ramp measures
-		// against that fill, .filled with no stroke and no shadow;
-		// radius Lg, S4 inset (the outlined padding gives back the border's
-		// 1px), S3 slot gaps.
-		".card.filled {",
+		// Card and group: the card fills at level 1 under the seam its raise
+		// owes and no other line; the group declares no fill at all and is
+		// read by its hairline. Both radius Lg, S4 inset (the padding gives
+		// back the border's 1px), S3 slot gaps.
+		".group {",
+		"border: 1px solid var(--ground-seam, var(--elevation-0-seam));",
+		"border: 1px solid var(--ground-hairline, var(--elevation-0-hairline));",
 		"padding: calc(var(--space-4) - 1px);",
 		"border-radius: var(--radius-lg);",
 		"background: var(--elevation-1);",

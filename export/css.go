@@ -222,17 +222,20 @@ var pinRoles = []struct {
 	// the scheme most people read in. The walk answers 600 in the light
 	// scheme and 500 in the dark and needs to know nothing about either.
 	//
-	// card-border, dialog-border and popover-border are the same walk taken
-	// against a deeper level, and each serves both readings of "edge on that
-	// level": the surface's own outline — an outlined card's edge circles
-	// its level-1 fill, a dialog's its level 2, a popover's its level 3, each
-	// pattern painting the fill it is measured against — and the resting edge
-	// of any control standing on it, which is the same line over the same
-	// ground and cannot sensibly be a second colour. A checkbox in a dialog
-	// therefore takes dialog-border, not control-border, and asks its own
-	// question rather than inheriting an answer. A focus ring asks nothing of
-	// the level it was put on, which is why no dialog-focus-ring stands
-	// beside dialog-border here.
+	// dialog-border and popover-border are the same walk taken against a
+	// deeper level, and each serves both readings of "edge on that level":
+	// the surface's own outline — a dialog's edge circles its level-2 fill,
+	// a popover's its level 3, each pattern painting the fill it is measured
+	// against — and the resting edge of any control standing on it, which is
+	// the same line over the same ground and cannot sensibly be a second
+	// colour. A checkbox in a dialog therefore takes dialog-border, not
+	// control-border, and asks its own question rather than inheriting an
+	// answer. A focus ring asks nothing of the level it was put on, which is
+	// why no dialog-focus-ring stands beside dialog-border here.
+	//
+	// Level 1 has no member: a card is never outlined and draws no line of
+	// its own, and the light scheme's level-0 step already clears level 1,
+	// so a control standing on a card takes control-border unchanged.
 	//
 	// Whether the four answers differ is the derivation's to report, and
 	// today they part in one scheme only. Because elevation lightens toward
@@ -277,9 +280,6 @@ var pinRoles = []struct {
 	{"control-border", func(t tokens.ColorTokens) stdcolor.NRGBA {
 		return t.MarkOn(tokens.RoleNeutral, t.SurfaceAt(tokens.Level0), graphicFloor)
 	}},
-	{"card-border", func(t tokens.ColorTokens) stdcolor.NRGBA {
-		return t.MarkOn(tokens.RoleNeutral, t.SurfaceAt(tokens.Level1), graphicFloor)
-	}},
 	{"dialog-border", func(t tokens.ColorTokens) stdcolor.NRGBA {
 		return t.MarkOn(tokens.RoleNeutral, t.SurfaceAt(tokens.Level2), graphicFloor)
 	}},
@@ -298,7 +298,7 @@ const primaryMidStep = 4
 
 // focusRingBorderSeparation is the least luminance separation the ring owes
 // the neutral resting border a control on the same level draws — the line
-// control-border, card-border, dialog-border and popover-border carry, and the
+// control-border, dialog-border and popover-border carry, and the
 // line a focused field swaps for its ring. Colour is the ring's only channel,
 // so a ring at the border's own luminance says nothing but hue, and hue is
 // what Differentiate Without Color, forced-colors and a greyscale display take
@@ -648,6 +648,20 @@ func colorVars(t tokens.ColorTokens) []cssVar {
 		}
 		vars = append(vars, cssVar{"--elevation-" + level.name + "-seam", value})
 	}
+	// And the hairline two regions that SHARE a level's fill are parted by:
+	// what a group draws at its own edge. It is the same derivation as the
+	// seam above with both sides at one fill
+	// (tokens.ColorTokens.SeamOn), and it differs from that seam in when it
+	// is drawn: a raise owes its seam only where the fill cannot tell the
+	// raise, so --elevation-N-seam is `transparent` in every other scheme,
+	// while a group has no fill of its own and the line is the whole of what
+	// says where it ends. It is never transparent.
+	//
+	// The backdrop has none: nothing is grouped on the bare window plane.
+	for _, level := range standableLevels {
+		vars = append(vars, cssVar{"--elevation-" + level.name + "-hairline",
+			hexRGB(t.SeamOn(t.SurfaceAt(level.level)))})
+	}
 	// And each level's own interaction walk, for the same reason and one
 	// step further: a ghost button paints no ground at rest and washes the
 	// surface it stands on under the pointer, so the wash is a state taken
@@ -865,8 +879,8 @@ const componentClasses = `/* ---- Component classes ----
    .input/.select/.checkbox/.radio mirror components/input,
    .badge the inline annotation components/badge draws (the plain category
    label and the four status roles; the close mark is a Gio interaction and
-   has no class here), .card the
-   patterns/card surface, .table the patterns/table grid, the navigation
+   has no class here), .card the patterns/card surface and .group the
+   patterns/group hairline, .table the patterns/table grid, the navigation
    family — .navbar, .tabs, .sidebar, .crumbs — the four patterns of the same
    names, and the overlay family — .scrim/.dialog (patterns/modal), .popover,
    .tooltip, .toast — the transient surfaces. The focus ring is the same
@@ -961,13 +975,14 @@ const componentClasses = `/* ---- Component classes ----
 
    The two join under different rules, and the difference is
    worth stating. --ground-border is a MEASUREMENT, so a host only declares it
-   where the paper's answer stops clearing — which is why an outlined
-   .card, at level 1, does not. --ground-raised is a LEVEL, and a
+   where the paper's answer stops clearing — which is why .card, at level 1,
+   does not. --ground-raised is a LEVEL, and a
    level differs by construction: a control filling at its host's own step is
    invisible against it whatever the contrast table says. So every
    container surface a control can be put inside declares it — .card,
-   .dialog and .popover — both card looks included, since they stand at
-   one level and .card.filled inherits the card's own declaration. The
+   .dialog and .popover. A .group declares neither: it takes the fill of the
+   surface it is in and raises nothing, so a control inside a group asks the
+   same questions it would ask standing on that surface bare. The
    popover declares the ceiling: at the top of the scheme's own range the
    walk clamps rather than stepping, so a control in a popover fills flush
    with it and is read by its border and by --elevation-3-seam. */
@@ -1037,12 +1052,14 @@ const componentClasses = `/* ---- Component classes ----
 /* A ghost's wash derives from the local ground it sits on, not the window
    ground: inside a host that is not the paper the hover and press washes
    re-derive as that host surface's own walk (components/button
-   buttonColors, walking from RenderState.Level). Both card looks sit
-   at level 1, the dialog at level 2, the popover at
+   buttonColors, walking from RenderState.Level). The card sits at level 1,
+   the dialog at level 2, the popover at
    the deepest level 3; the text stays the ramp's 900 end, where the walk
-   itself clamps.
+   itself clamps. A group has no rule of its own: it raises nothing, so a
+   ghost inside one takes the surface the group is in to that surface's
+   own hover and press steps.
 
-   Level 1 carries its own rule and the plain card is why: level 0 walks
+   Level 1 carries its own rule and the card is why: level 0 walks
    from the Background pin and level 1 from the level above it, which are
    two different fills and, in the dark scheme, two different washes. */
 .card .btn.ghost:hover, .card .btn.ghost.is-hover {
@@ -1344,38 +1361,74 @@ const componentClasses = `/* ---- Component classes ----
   background: radial-gradient(circle, color-mix(in srgb, var(--color-accent) var(--state-disabled-opacity), transparent) 5px, color-mix(in srgb, var(--ground-raised, var(--elevation-1)) var(--state-disabled-opacity), transparent) 5px);
 }
 
-/* ---- Card ----
-   patterns/card: a rounded surface raised on the content by tonal step
-   alone — no cast shadow in either look, because a
-   card is raised, not floating; the dp shadows stay reserved for surfaces
-   that can leave (menus, dialogs, toasts). Both looks fill at the raise
-   walked from the content (--elevation-1) and differ only at the edge: the
-   default outlined card wears a 1 dp neutral 500 strong stroke, .filled
-   wears the seam its raise owes — var(--ground-seam,
+/* ---- Card and group ----
+   The two are one ruling with two answers. patterns/card singles something
+   out: one rounded surface raised on the content by tonal step alone — no
+   cast shadow, because a card is raised, not floating, and the dp shadows
+   stay reserved for surfaces that can leave (menus, dialogs, toasts); no
+   line of its own, because the raise is what does the singling out; and no
+   role, because what a developer wants to say about a card is a .badge in
+   its header. patterns/group divides the page: a hairline around related
+   components at the level of the surface the group is in, taking that
+   surface's own fill, so it declares no background at all and nothing is
+   derived against it.
+
+   A card fills at the raise walked from the content (--elevation-1) and
+   carries the seam that raise owes — var(--ground-seam,
    var(--elevation-0-seam)), transparent in the scheme where the fill tells
    the raise on its own and a hairline where it does not. A card on the
    content is told by its fill in both schemes, so that border shows only on
    a card placed inside a host already at the top of its scheme, which is
-   what --ground-seam is redeclared for on .dialog and .popover. Radius Lg, an S4 inset, S3 gaps between the
-   slots — exactly drawCard's rad.Lg / sp.S4 / sp.S3. The Gio stroke is
-   centred on the card's edge while the CSS border lies inside it, so the
-   outlined padding gives back the border's 1px and the slots land where the
-   Gio inset puts them. The card styles no slot text of its own: the Gio
-   card draws no text, so slot typography belongs to the content. */
+   what --ground-seam is redeclared for on .dialog and .popover.
+
+   A group's hairline is var(--ground-hairline,
+   var(--elevation-0-hairline)): the seam of two regions sharing one fill,
+   quieter than the 3:1 mark a graphic carrying meaning owes, and never
+   transparent — it is the whole of what says where the group ends. A host
+   at another level redeclares --ground-hairline, as .dialog and .popover
+   do, so a group inside one is derived against that host's fill.
+
+   Both carry radius Lg, an S4 inset and S3 gaps between the slots —
+   exactly drawCard's rad.Lg / sp.S4 / sp.S3. The Gio line lies inside the
+   bounds where the CSS border does, so the padding gives back the border's
+   1px and the slots land where the Gio inset puts them. Neither styles
+   slot text of its own: the Gio card draws no text at all, and the group
+   draws only its own label, so slot typography belongs to the content. */
 .card {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
   padding: calc(var(--space-4) - 1px);
-  border: 1px solid var(--color-card-border);
+  border: 1px solid var(--ground-seam, var(--elevation-0-seam));
   border-radius: var(--radius-lg);
   background: var(--elevation-1);
   color: var(--color-text);
   --ground-raised: var(--elevation-2);
 }
-.card.filled {
-  border-color: var(--ground-seam, var(--elevation-0-seam));
+.group {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: calc(var(--space-4) - 1px);
+  border: 1px solid var(--ground-hairline, var(--elevation-0-hairline));
+  border-radius: var(--radius-lg);
+  color: var(--color-text);
+}
+/* The group's own label: top-leading, inside the hairline, as the first row
+   of the group's stack — the platform's idiom for a section header over a
+   bordered container, and not the fieldset legend cut into the top line,
+   which has no native counterpart and does not survive a Lg corner. The
+   label-large role in the ramp's low-contrast step: a group wears no role,
+   so it is never the accent, and never the Text pin, which would give a
+   section header the weight of the content it names. */
+.group-label {
+  font-size: var(--font-label-large-size);
+  line-height: var(--font-label-large-line-height);
+  font-weight: var(--font-label-large-weight);
+  letter-spacing: var(--font-label-large-tracking);
+  color: var(--color-neutral-700);
 }
 
 /* ---- Table ----
@@ -1716,6 +1769,7 @@ const componentClasses = `/* ---- Component classes ----
   --ground-border: var(--color-dialog-border);
   --ground-raised: var(--elevation-3);
   --ground-seam: var(--elevation-2-seam);
+  --ground-hairline: var(--elevation-2-hairline);
 }
 
 /* The header row (modal.go headerWidget): the title-medium title on the
@@ -1763,6 +1817,7 @@ const componentClasses = `/* ---- Component classes ----
   --ground-border: var(--color-popover-border);
   --ground-raised: var(--elevation-3);
   --ground-seam: var(--elevation-3-seam);
+  --ground-hairline: var(--elevation-3-hairline);
 }
 
 /* The tail (popover.go drawTail): a triangle 12 dp across the base and

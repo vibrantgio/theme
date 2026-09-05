@@ -65,7 +65,7 @@ func readmeMD(s Snapshot) string {
 	for i, pin := range pinRoles {
 		pinNames[i] = "`--color-" + pin.name + "`"
 	}
-	fmt.Fprintf(&b, "| pins & semantic layer | %s | pinned bases, their on-colours, the ramp-resolved surface/divider, the inverse pair the counterpart scheme's ramp resolves, the reserved highlighter no status hue may serve, and the edges and rings each ramp measures for itself — a resting border per level, for the page, the outlined card, the dialog and the popover, and one focus ring for the whole scheme, measured against every level at once, plus the accent fill a filled button's ring lies on, which belongs to no level at all |\n", strings.Join(pinNames, ", "))
+	fmt.Fprintf(&b, "| pins & semantic layer | %s | pinned bases, their on-colours, the ramp-resolved surface/divider, the inverse pair the counterpart scheme's ramp resolves, the reserved highlighter no status hue may serve, and the edges and rings each ramp measures for itself — a resting border for the page, the dialog and the popover, and one focus ring for the whole scheme, measured against every level at once, plus the accent fill a filled button's ring lies on, which belongs to no level at all |\n", strings.Join(pinNames, ", "))
 	b.WriteString("| `--font-family` | `--font-family` | the typeface every prose role uses |\n")
 	b.WriteString("| `--font-family-code` | `--font-family-code` | the monospace typeface the code role uses |\n")
 	typeNames := make([]string, len(typeRoles))
@@ -78,6 +78,7 @@ func readmeMD(s Snapshot) string {
 	fmt.Fprintf(&b, "| `--radius-<key>` | %s | corner radii, Tailwind naming, px |\n", joinTokens("--radius-", radiusNames()))
 	fmt.Fprintf(&b, "| `--elevation-<level>` | %s | tonal surface fills — the DEFAULT elevation cue; ordered from the backdrop up toward the reader, and resolved per scheme, so both blocks state their own six |\n", joinTokens("--elevation-", elevationNames()))
 	fmt.Fprintf(&b, "| `--elevation-<level>-seam` | %s | the hairline a raise draws at its own edge where the scheme has no step left to tell it by fill — `transparent` where the fill tells it. The backdrop has none: nothing stands on the backdrop |\n", joinTokens("--elevation-", elevationSeamNames()))
+	fmt.Fprintf(&b, "| `--elevation-<level>-hairline` | %s | the hairline two regions that SHARE a level's fill are parted by — what a group draws at its own edge, and never `transparent`, because a group has no fill of its own and the line is the whole of what says where it ends. The backdrop has none: nothing is grouped on the bare window plane |\n", joinTokens("--elevation-", elevationHairlineNames()))
 	fmt.Fprintf(&b, "| `--elevation-<level>-<state>` | %s | each level's own interaction walk — what a control with no fill of its own takes the surface under it to when hovered or pressed. Taken FROM the level's fill rather than named as a ramp step, because a level is not a ramp step in both schemes |\n", joinTokens("--elevation-", elevationStateNames()))
 	fmt.Fprintf(&b, "| `--shadow-<level>` | %s | dp box-shadows — the OPT-IN cue for floating transients (menus, dialogs, tooltips) layered over the tonal fill; resting surfaces use the fill alone |\n", joinTokens("--shadow-", elevationNames()))
 	fmt.Fprintf(&b, "| `--ease-<name>` | %s | MD3 easing presets as `cubic-bezier()`; emphasized is the documented single-bezier stand-in for MD3's two-segment path |\n", joinTokens("--ease-", easeNames()))
@@ -206,9 +207,10 @@ func readmeMD(s Snapshot) string {
 		"The levels stop at 3: desktop has no six-deep stack. Note the\n" +
 		"sizes — a light scheme has spent almost all of the tonal axis on its\n" +
 		"content, so its levels above the content are separated by a fraction of\n" +
-		"an L\\* and the derived hairline (`--card-border`, `--dialog-border`,\n" +
-		"`--popover-border`) is what says where a surface is. That is what the\n" +
-		"desktop applications this system is judged against measure too.\n\n" +
+		"an L\\* and the derived line (`--elevation-<level>-hairline`,\n" +
+		"`--dialog-border`, `--popover-border`) is what says where a surface is.\n" +
+		"That is what the desktop applications this system is judged against\n" +
+		"measure too.\n\n" +
 		"The surface fill is the **default** cue. The dp shadow is the **opt-in**\n" +
 		"secondary cue, reserved for floating transients — menus, dialogs,\n" +
 		"tooltips — which layer `--shadow-N` over their tonal fill. Resting\n" +
@@ -285,6 +287,17 @@ func elevationSeamNames() []string {
 	names := make([]string, 0, len(standableLevels))
 	for _, k := range standableLevels {
 		names = append(names, k.name+"-seam")
+	}
+	return names
+}
+
+// elevationHairlineNames lists the hairline each standable level's own fill
+// is parted from itself by, in sheet order. The backdrop is absent: nothing
+// is grouped on it.
+func elevationHairlineNames() []string {
+	names := make([]string, 0, len(standableLevels))
+	for _, k := range standableLevels {
+		names = append(names, k.name+"-hairline")
 	}
 	return names
 }

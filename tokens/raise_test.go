@@ -205,3 +205,52 @@ func TestSeamIsFilledInWhetherOrNotItIsOwed(t *testing.T) {
 		}
 	}
 }
+
+// TestSeamOnIsFindableAgainstTheSurfaceItPartsFromItself takes the group's
+// hairline over the whole seed sweep, in both schemes of both derivations,
+// at every level a thing can stand on: a group takes the fill of the
+// surface it is in, so both sides of its line are that one fill, and the
+// line owes SeamRatio against it. Nothing else says where a group ends, so
+// a hairline that misses the ratio is a group nobody can find.
+func TestSeamOnIsFindableAgainstTheSurfaceItPartsFromItself(t *testing.T) {
+	quietest := 99.0
+	for _, seed := range sweepSeeds() {
+		for _, scheme := range schemes(seed) {
+			for _, level := range standable {
+				surface := scheme.tok.SurfaceAt(level)
+				got := vgcolor.ContrastRatio(scheme.tok.SeamOn(surface), surface)
+				if got < tokens.SeamRatio {
+					t.Fatalf("seed %v %s: the hairline on level %d measures %.3f:1 against the fill it parts, under SeamRatio %.2f:1",
+						seed, scheme.name, level, got, tokens.SeamRatio)
+				}
+				if got < quietest {
+					quietest = got
+				}
+			}
+		}
+	}
+	t.Logf("over %d seeds × 4 schemes × %d levels: quietest group hairline %.3f:1",
+		len(sweepSeeds()), len(standable), quietest)
+}
+
+// TestSeamOnIsTheDirectionTheSchemeReads holds the direction the derivation
+// claims: a hairline goes toward the scheme's own foreground, so a light
+// scheme's is darker than the fill it parts and a dark scheme's is lighter.
+// A line that went the other way would read as a second fill rather than as
+// a boundary.
+func TestSeamOnIsTheDirectionTheSchemeReads(t *testing.T) {
+	for _, seed := range sweepSeeds() {
+		for _, scheme := range schemes(seed) {
+			toward := lstar(scheme.tok.Text) > lstar(scheme.tok.Background)
+			for _, level := range standable {
+				surface := scheme.tok.SurfaceAt(level)
+				lighter := lstar(scheme.tok.SeamOn(surface)) > lstar(surface)
+				if lighter != toward {
+					t.Fatalf("seed %v %s: the hairline on level %d is L*%.2f against a fill of L*%.2f; the foreground is L*%.2f against a background of L*%.2f, so it went the wrong way",
+						seed, scheme.name, level, lstar(scheme.tok.SeamOn(surface)), lstar(surface),
+						lstar(scheme.tok.Text), lstar(scheme.tok.Background))
+				}
+			}
+		}
+	}
+}

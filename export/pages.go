@@ -616,7 +616,7 @@ func layoutHTML(s Snapshot) string {
 		"<code>--elevation-*</code> is the surface fill and the default cue, resolved per scheme, so both blocks " +
 		"state their own six. The levels run from the backdrop up toward the reader: the bare window plane, the " +
 		"chrome a window's furniture wears, the content surface, then raised insets and floating transients. " +
-		"Read the cards below left to right and the fill gets lighter, in either scheme. " +
+		"Read the swatches below left to right and the fill gets lighter, in either scheme. " +
 		"The levels stop at 3 &mdash; desktop has no six-deep stack.</p>\n")
 	b.WriteString("<div class=\"elevation-ground\">\n")
 	for i, level := range elevationLevels {
@@ -638,7 +638,7 @@ func layoutHTML(s Snapshot) string {
 	b.WriteString("</div>\n</section>\n")
 
 	intro := "The spacing scale as sized bars, the control metrics at both density settings, the radius scale on sample boxes " +
-		"and tonal elevation as filled cards &mdash; every bar width, control height, padding, corner radius, surface fill and " +
+		"and tonal elevation as fill swatches &mdash; every bar width, control height, padding, corner radius, surface fill and " +
 		"shadow resolves through its token, so the sheet is the single source of these shapes."
 	return page("Layout — Vibrant Gio foundations", "Layout", intro, layoutPageCSS, b.String())
 }

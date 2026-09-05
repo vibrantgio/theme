@@ -121,6 +121,19 @@ func (t ColorTokens) RaisedOn(surface color.NRGBA) Raise {
 	}
 }
 
+// SeamOn returns the hairline a thing drawn flush on surface parts itself
+// from it with: [SeamRatio] away from surface, toward the scheme's own
+// foreground, realized at surface's own hue and chroma.
+//
+// It is the seam of two regions that share one fill, which is what a group
+// draws — the hairline is the whole of what says where the group ends,
+// because a group takes the fill of the surface it is in and raises
+// nothing. [ColorTokens.RaisedOn]'s Seam answers the other case, where the
+// two sides of the line are a surface and the raise standing on it.
+func (t ColorTokens) SeamOn(surface color.NRGBA) color.NRGBA {
+	return t.seamBetween(surface, surface)
+}
+
 // seamBetween derives the hairline parting two flush surfaces: [SeamRatio]
 // away from both of them, toward the scheme's own foreground, realized at
 // the raised fill's own hue and chroma.
