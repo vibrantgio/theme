@@ -8,7 +8,7 @@
 //     dark, and it is one curve read twice rather than two tables. A scheme
 //     names four depths of its own — its ground (step 100), the deepest of
 //     its window surfaces (400), its accent pin (700) and its body ink
-//     (900) — and toneCurve places the rungs between them as fractions of
+//     (900) — and toneCurve places the steps between them as fractions of
 //     each run. The fractions are the light scale's own, so light realizes
 //     its measured depths exactly: 97, 92, 85, 74, 63, 51, 39, 28, 6. Read
 //     between the dark anchors 8, 30, 82 and 94 the same curve gives 8, 13,
@@ -27,8 +27,8 @@
 //     boundary tone nor a text tone to offer. Derived, the dark scale's
 //     worst gap is 18 L* against light's
 //     22, its closest neighbours measure 1.11:1 against each other, and its
-//     500 and 600 rungs measure 3.4:1 and 6.4:1 over the dark page — one
-//     rung in the 3:1 non-text band and one in the 4.5:1 text band, where
+//     500 and 600 steps measure 3.4:1 and 6.4:1 over the dark page — one
+//     step in the 3:1 non-text band and one in the 4.5:1 text band, where
 //     light's 600 and 700 sit at 4.0:1 and 6.2:1 over the light page. Every
 //     one of those is gated in this package's contrast tests.
 //
@@ -125,13 +125,13 @@
 //     and the dial keeps headroom under both so quantization can never clip
 //     one container and not another.
 //
-//     OnStatusContainer takes the most chromatic rung of the role's own ramp
+//     OnStatusContainer takes the most chromatic step of the role's own ramp
 //     that reaches graphicFloor over the container — WCAG 1.4.11's 3:1 for a
 //     non-text graphic, which is what a status mark is (MarkOn, in
-//     containers.go, is the general form). Asking for the most chromatic rung
+//     containers.go, is the general form). Asking for the most chromatic step
 //     rather than naming one is what keeps four hues equally saturated: sRGB
 //     holds a red only at mid depths and an orange only at high ones, so a
-//     fixed rung serves one hue at the cost of the others. The worst
+//     fixed step serves one hue at the cost of the others. The worst
 //     mark-on-container pairing over the whole seed sweep measures 4.47:1 and
 //     the default seed's eight measure 4.52 and up.
 //     Body text on a container is not this pairing — the neutral Text token
@@ -159,7 +159,7 @@
 //     reaches Lc 60 over (black tops out near Lc 52, white near 57), and
 //     L* 82 is also the shallowest depth the increased-contrast variant's
 //     Lc ≥ 75 floor allows (L* 80 reaches only 73.5 against pure black). The
-//     solid state walk lands on exact rungs from there (hover 800, pressed
+//     solid state walk lands on exact steps from there (hover 800, pressed
 //     900). The accent dial buys the dark primary base nothing: at L* 82 the
 //     seed's hue holds chroma 0.0822 in sRGB and no more. It is the one
 //     accent surface the dial cannot reach.
@@ -213,7 +213,7 @@
 //     the default scale unchanged: the grounds stay, the text pulls away.
 //
 //   - Divider resolves from Neutral step 500 instead of 300: the separator
-//     moves from the subtle-border rung to the strong-border rung.
+//     moves from the subtle-border step to the strong-border step.
 //
 //   - Each pinned base's on-colour is pushed further from its base. The dark
 //     pins' on-colours drop from their ramp's step 100 (L* 8, Lc ≈ 74, just
@@ -245,18 +245,18 @@ import (
 // 900). They are the whole of what separates the two schemes' scales.
 type toneAnchors [4]float64
 
-// toneCurve is the shared shape of a nine-step ramp: for each rung, which
+// toneCurve is the shared shape of a nine-step ramp: for each step, which
 // of the three anchored runs it sits in and how far along that run it lies.
 // The three runs are the surface stack (100–400, the ground and the
 // storeys a tinted surface hovers and presses onto), the mark run (400–700,
 // from the deepest surface up to the accent pin, where boundary tones and
 // text tones live) and the ink run (700–900, the pin's own hover and
-// pressed rungs).
+// pressed steps).
 //
 // The fractions are the light scale's, measured off the platform's own
 // window greys: read between the light anchors they return 97, 92, 85, 74,
 // 63, 51, 39, 28, 6 exactly. Stating the shape once is what makes the dark
-// scale light's counterpart rather than a second table — a rung does the
+// scale light's counterpart rather than a second table — a step does the
 // same job in both schemes because it sits at the same place in the same
 // run.
 var toneCurve = [9]struct {
@@ -299,7 +299,7 @@ func highContrast(s [9]int) [9]int {
 // The two schemes' anchors, and the four scales they derive. The light
 // ground is the platform's paper and the dark ground its window floor; the
 // step-400 anchors are the deepest surface each scheme stacks; the step-700
-// anchors are the pin depths, so a pin and its 700 rung are one colour; the
+// anchors are the pin depths, so a pin and its 700 step are one colour; the
 // step-900 anchors are the body inks.
 var (
 	lightAnchors = toneAnchors{97, 74, statusPinTone, 6}
@@ -377,7 +377,7 @@ var (
 //
 // The two ends are pure White and pure Black, and that is load-bearing:
 // over any colour whatever, the better of white and black reaches 4.58:1,
-// so no seed can produce a pinned pairing under the floor. An ink one rung
+// so no seed can produce a pinned pairing under the floor. An ink one step
 // short of the axis end — the ramp's own 900 stop — gives that guarantee up
 // (it bottoms out at 4.31:1 across a seed sweep).
 func onColour(base, preferred, other stdcolor.NRGBA, floor float64) stdcolor.NRGBA {
@@ -568,7 +568,7 @@ func fromSeed(seed stdcolor.NRGBA, d derivation) (light, dark ColorTokens) {
 		chroma float64
 		// pinTone is the light scheme's pin depth. The accent roles take
 		// MD3's tone 40; the status roles take their ramp's own step-700
-		// depth, so a status pin and its 700 rung are one colour.
+		// depth, so a status pin and its 700 step are one colour.
 		pinTone int
 	}{
 		{flatHue(hue), neutralChroma, lightPinTone},

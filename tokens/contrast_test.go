@@ -384,19 +384,19 @@ var statusRoles = []struct {
 // own rather than against the one the code under test used.
 const statusTintBound = 1.75
 
-// hueReadChroma is the realized OKLCh chroma below which a rung's hue cannot
+// hueReadChroma is the realized OKLCh chroma below which a step's hue cannot
 // be read — by these gates or by anyone. A hue is an angle on a circle whose
 // radius is the chroma, so eight-bit quantization costs about 0.12/C degrees
-// of hue: measured over the four anchors across every rung of all four
-// lightness scales, a rung at chroma 0.0119 reads 3.5° off the hue it was
-// asked for and one at 0.0131 reads 4.8° off, while every rung at or above
-// 0.045 reads within 1.7°. Those pale and near-black rungs are exactly the
+// of hue: measured over the four anchors across every step of all four
+// lightness scales, a step at chroma 0.0119 reads 3.5° off the hue it was
+// asked for and one at 0.0131 reads 4.8° off, while every step at or above
+// 0.045 reads within 1.7°. Those pale and near-black steps are exactly the
 // ones with no hue to confuse — a colour that has given up its chroma has
-// given up its family too — so the per-rung gates below skip them and report
+// given up its family too — so the per-step gates below skip them and report
 // how many they skipped rather than pretending to measure them.
 const hueReadChroma = 0.045
 
-// rungSlack is the hue-reading slack the per-rung gates allow above that
+// rungSlack is the hue-reading slack the per-step gates allow above that
 // threshold: 1.7° measured, 2.0° allowed. What the sweep then reports is a
 // worst drift of 3.20° against a 3.75° allowance (1.75° of tint plus this)
 // — the whole of that margin being the eight bits, not the derivation.
@@ -404,7 +404,7 @@ const rungSlack = 2.0
 
 // paleTintStep is the step a container reads its hue at, restated here so
 // the gate reads it off the ramp rather than off the code under test: the
-// third rung counted from the ramp's pale end.
+// third step counted from the ramp's pale end.
 func paleTintStep(r tokens.Ramp) int {
 	pale, _, _ := color.LabFromNRGBA(r.Step(100))
 	deep, _, _ := color.LabFromNRGBA(r.Step(900))
@@ -436,7 +436,7 @@ func roleRamp(t tokens.ColorTokens, role tokens.Role) tokens.Ramp {
 	}
 }
 
-// rungTone reads back the CIELAB depth a realized rung sits at, which is
+// rungTone reads back the CIELAB depth a realized step sits at, which is
 // what the warning family's hue rule keys on.
 func rungTone(c stdcolor.NRGBA) int {
 	l, _, _ := color.LabFromNRGBA(c)
@@ -451,7 +451,7 @@ func hueGap(a, b float64) float64 {
 }
 
 // roleHue reads a role's realized hue off its ramp's mid-value step, which
-// is the rung furthest from both ends of the lightness scale and so the one
+// is the step furthest from both ends of the lightness scale and so the one
 // least disturbed by gamut mapping or 8-bit quantization.
 func roleHue(t tokens.ColorTokens, role tokens.Role) float64 {
 	var r tokens.Ramp
@@ -477,7 +477,7 @@ func roleHue(t tokens.ColorTokens, role tokens.Role) float64 {
 // mid-value step carries most of its role's chroma and pins its hue to
 // within a degree, while a container carries the 0.055 dial and pins its hue
 // to within about a degree and a half — 1.42° measured over the sweep,
-// against the rung it is realized from. Both are far below the 3° tint bound
+// against the step it is realized from. Both are far below the 3° tint bound
 // these gates are actually about, and both are far below anything an eye
 // resolves at these chromas.
 const (
@@ -490,9 +490,9 @@ const (
 // The anchors sit 35.35°, 80.2°, 104.6° and 139.9° apart, so the error and
 // the warning are the closest pair the set has: an orange next to a red. A
 // seed lying between the two tints them toward each other by the tint bound
-// each, leaving 31.85° at the anchors, and the rungs realize that to 30.2° at
+// each, leaving 31.85° at the anchors, and the steps realize that to 30.2° at
 // the worst chroma a container carries. The gate asks 29°, the narrowest the
-// derivation can produce less the hue-reading slack two rungs carry between
+// derivation can produce less the hue-reading slack two steps carry between
 // them.
 //
 // 30° is not a gate-shaped compromise but a number rendered and judged, the
@@ -504,12 +504,12 @@ const statusSeparation = 29.0
 
 // TestStatusAnchorsHoldTheirFamiliesForEverySeed is the whole-population
 // gate on the status anchors and the bound on the seed's tint, over the
-// shared seed sweep, in both schemes of both derivations, at every rung of
-// every ramp rather than at one reference rung.
+// shared seed sweep, in both schemes of both derivations, at every step of
+// every ramp rather than at one reference step.
 //
 // Three properties, and they are the reasons the anchors exist:
 //
-//   - Every status rung stays within statusTintBound of its own family's
+//   - Every status step stays within statusTintBound of its own family's
 //     anchor, so no brand can rotate a semantic colour out of its family. An
 //     error is red under every seed there is, and a warning is orange.
 //   - No two status families come within statusSeparation of each other at
@@ -539,7 +539,7 @@ func TestStatusAnchorsHoldTheirFamiliesForEverySeed(t *testing.T) {
 		} {
 			for step := 0; step < 9; step++ {
 				// Each family's realized hue at this one depth, or "no hue
-				// to read" for a rung with too little chroma to carry one.
+				// to read" for a step with too little chroma to carry one.
 				hues := make([]float64, len(statusRoles))
 				legible := make([]bool, len(statusRoles))
 				for i, r := range statusRoles {
@@ -582,7 +582,7 @@ func TestStatusAnchorsHoldTheirFamiliesForEverySeed(t *testing.T) {
 			// realizations differ by a fraction of a degree and the sign of
 			// the margin is eight-bit noise — hence the slack, which is what
 			// the narrowest margins logged below are made of. Both are read
-			// off their ramps' mid-value step, the rung furthest from either
+			// off their ramps' mid-value step, the step furthest from either
 			// end of the lightness scale and so the least disturbed by gamut
 			// mapping.
 			errRed := hueGap(roleHue(s.tok, tokens.RoleError), redAnchor)
@@ -612,10 +612,10 @@ func TestStatusAnchorsHoldTheirFamiliesForEverySeed(t *testing.T) {
 // WCAG AA over it, and the mark the derivation chose for it reaches WCAG
 // 1.4.11's 3:1 non-text floor over it.
 //
-// "Its parent's hue" is read off the rung the container reads its own hue
+// "Its parent's hue" is read off the step the container reads its own hue
 // from — the ramp's pale tint depth, step 300 counted from the pale end —
 // because a wash's hue is its role's and not its depth's (containers.go).
-// Measuring it against the rung it is realized at instead would gate the
+// Measuring it against the step it is realized at instead would gate the
 // bend, which is a rule for marks and not for washes: the whole point of the
 // derivation is that a role's wash is one hue at every depth it is drawn at.
 func TestStatusContainersKeepTheirParentsHue(t *testing.T) {
@@ -678,13 +678,13 @@ func TestStatusContainersKeepTheirParentsHue(t *testing.T) {
 // TestStatusPinsAreTheirRampsSeventhStep holds the status roles' pin rule: a
 // status role's pinned base and its ramp's step 700 are one colour, in both
 // schemes, for every seed. Realizing them at two depths a single tone apart
-// — the pin at MD3's tone 40 and the rung at the scale's 39 — puts five of
-// six light role fills 3/255 per channel beside the rung they claim to be,
+// — the pin at MD3's tone 40 and the step at the scale's 39 — puts five of
+// six light role fills 3/255 per channel beside the step they claim to be,
 // which is a palette shipping two Errors that differ by one percent.
 //
 // It is asserted of FromSeed only. The increased-contrast variant deepens
 // its text steps and leaves its fills where they are, exactly as it leaves
-// the light pins' White on-colours alone, so its 700 rung is deliberately
+// the light pins' White on-colours alone, so its 700 step is deliberately
 // not its pin.
 func TestStatusPinsAreTheirRampsSeventhStep(t *testing.T) {
 	for _, seed := range sweepSeeds() {
@@ -792,7 +792,7 @@ func TestContainersSeparateFromEveryLevelItStandsOn(t *testing.T) {
 // The separation floor is the one this gate was written for. It is measured,
 // not picked: [tokens.ContainerSeparation] is the light scheme's own closest
 // pairing, and the dark scheme measured 0.0183 against it while a wash read
-// its hue off the rung it was realized at — the bent warning beside the
+// its hue off the step it was realized at — the bent warning beside the
 // error, two browns.
 func TestStatusWashesKeepTheirHuesApartOnEveryLevel(t *testing.T) {
 	// The threshold TestContainersSeparateFromEveryLevelItStandsOn reads a
@@ -893,22 +893,22 @@ func TestTheGroundAwareContainerHoldsTheFixedOneWhereItAlreadyWorks(t *testing.T
 // below over every ramp of both schemes, for every seed in the sweep;
 // the bracketing measurements are that sweep's own extremes.
 const (
-	// gapCeiling is the widest a ramp may leave two neighbouring rungs in
+	// gapCeiling is the widest a ramp may leave two neighbouring steps in
 	// CIELAB L*. The binding case is the light scale's own extreme, where
 	// the 900 stop drops to L* 6 to clear the Lc ≥ 90 text gate: 22.33 L*
 	// over the sweep. A dark scale read from the same curve tops out at
-	// 18.2, between its 600 and 700 rungs.
+	// 18.2, between its 600 and 700 steps.
 	gapCeiling = 23.0
-	// adjacencyFloor is the least two neighbouring rungs may measure
-	// against each other, which is what makes them two rungs rather than
+	// adjacencyFloor is the least two neighbouring steps may measure
+	// against each other, which is what makes them two steps rather than
 	// one. The binding case is step 100 against step 200 — the window floor
 	// under the paper, 5 L* apart in both schemes by measurement — which
 	// bottoms out at 1.1062:1 over the sweep, in the dark scheme.
 	adjacencyFloor = 1.10
-	// The two bands a ramp has to put a rung in, measured against its own
+	// The two bands a ramp has to put a step in, measured against its own
 	// step-100 ground: WCAG 1.4.11's 3:1 for a mark that is not text, and
 	// WCAG 1.4.3 AA's 4.5:1 for one that is. Each band is closed at the
-	// next threshold up, so clearing it takes a rung of about the right
+	// next threshold up, so clearing it takes a step of about the right
 	// weight rather than one loud enough to clear everything. The boundary
 	// tone is light's 600 and dark's 500, measuring 3.410:1 to 4.049:1 over
 	// the sweep; the text tone is light's 700 and dark's 600, 6.167:1 to
@@ -919,12 +919,12 @@ const (
 )
 
 // TestRampsCoverTheirRange gates the tone curve itself, in every ramp of
-// both schemes and for every seed: no two rungs further apart than
-// gapCeiling, none closer than adjacencyFloor, and a rung in each of the
+// both schemes and for every seed: no two steps further apart than
+// gapCeiling, none closer than adjacencyFloor, and a step in each of the
 // two contrast bands over the ramp's own ground. Together they say a ramp
 // is a progression covering its range rather than two clusters with a hole
-// between them — a scale with no rung in the 3:1 band has no boundary tone
-// to draw an outline in, and one with no rung in the 4.5:1 band has no text
+// between them — a scale with no step in the 3:1 band has no boundary tone
+// to draw an outline in, and one with no step in the 4.5:1 band has no text
 // tone.
 //
 // The increased-contrast variant is deliberately outside this gate: it
