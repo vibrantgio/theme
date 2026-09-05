@@ -59,8 +59,8 @@ import (
 // focus ring's border separation share, and deliberately: those three ask
 // when a fill laid ON a surface stops being that surface, and are set where
 // this design's own pairings already sit. A raise is the surface itself
-// moving, and every raise the elevation carries is quieter than any of the
-// state washes drawn on it. So this floor is measured off the levels' own
+// moving, and every raise the elevation carries is less pronounced than any
+// of the state fills drawn on it. So this floor is measured off the levels' own
 // population and not borrowed from theirs.
 const RaiseFloor = 1.09
 
@@ -73,7 +73,8 @@ const RaiseFloor = 1.09
 // carries meaning by itself and owes WCAG 1.4.11, while a seam only says
 // where one region ends and the next begins, read alongside the corner
 // radius and the shadow that say the same thing. At 3:1 every card in a
-// light window would wear a line louder than anything the platform draws.
+// light window would wear a line more pronounced than anything the platform
+// draws.
 const SeamRatio = 1.51
 
 // Raise is what a thing standing on a surface is drawn with: the surface one

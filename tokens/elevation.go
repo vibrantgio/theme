@@ -378,7 +378,7 @@ func (t ColorTokens) SurfaceAt(level ElevationLevel) color.NRGBA {
 // step of it can be too small to see, and a fill nobody can see has stopped
 // being feedback. Every caller of this — a ghost button's fill, a sidebar
 // row's, a tree row's — asks the same question and owes the same minimum,
-// so the floor is carried here rather than by each of them.
+// so [StateFloor] is carried here rather than by each of them.
 //
 // The walk's direction is deliberately independent of elevation's. A
 // state walk heads toward the ramp's 900 end — darker in a light scheme,

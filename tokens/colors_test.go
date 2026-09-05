@@ -77,7 +77,7 @@ const wcagAA = 4.5
 // and people seed a brand with one, which is a seed that reads perfectly in
 // the dark scheme and lands the light scheme's primary pin a whisper off
 // the paper. That shape is what put a 1.95:1 link on a light page (see
-// ink.go); the random draw covers it thinly and by accident, and a
+// `ink.go`); the random draw covers it thinly and by accident, and a
 // regression that only a randomly drawn seed catches is one a future change
 // to the draw can lose. So the shape is in the matrix by name: a blue, a
 // mauve and a green at L* 72.8, 74.0 and 84.8.
@@ -129,7 +129,7 @@ func TestRampStepAddressing(t *testing.T) {
 // reads across the scheme boundary: it is the counterpart scheme's own
 // Surface and Text, so each scheme's inverse chip is built out of the
 // other one. The highlight resolves off no ramp at all — it is the
-// reserved wash, walked against the paper.
+// reserved highlighter fill, walked against the paper.
 func TestSemanticLayerResolvesFromRamps(t *testing.T) {
 	for _, s := range []struct {
 		name        string
@@ -214,7 +214,7 @@ func namedRamps(t tokens.ColorTokens) []namedRamp {
 
 // TestRampLightnessDirection verifies the paired scales run the documented
 // way in every ramp: in light mode step 100 is the lightest and luminance
-// strictly falls toward 900; in dark mode step 100 is the darkest ground
+// strictly falls toward 900; in dark mode step 100 is the darkest surface
 // and luminance strictly rises toward 900 — same step, same job.
 func TestRampLightnessDirection(t *testing.T) {
 	for _, s := range []struct {
@@ -305,7 +305,7 @@ func TestFromSeedReproducesItselfFromItsBase(t *testing.T) {
 // its pin (#9e9da4, L* 65) and the ramp needs three. Two further recorded
 // values sit off the raw measurements: the light 900 stops are at L* 6
 // rather than the measured L* 18 (with Text following the neutral 900) to
-// clear the Lc ≥ 90 gate over the step-200 grounds, and the dark pins are
+// clear the Lc ≥ 90 gate over the step-200 surfaces, and the dark pins are
 // at L* 82 (step-700 depth, byte-identical to the ramp's 700 stop) rather
 // than L* 65, because no on-colour reaches Lc 60 over an L* 65 mid-tone.
 func defaultGolden() (light, dark tokens.ColorTokens) {
@@ -547,7 +547,7 @@ func defaultGolden() (light, dark tokens.ColorTokens) {
 // hcGolden returns the recorded palette FromSeedHighContrast derives from
 // DefaultSeed: the high-contrast variant, byte for byte. Landmarks
 // that tie the recording to the variant's three widenings: steps 100–600 of
-// every ramp are byte-identical to defaultGolden's (the grounds stay), the
+// every ramp are byte-identical to defaultGolden's (the surfaces stay), the
 // 700 stops sit at the default scale's 900 depth (light #131313 neutral 700
 // = defaultGolden's neutral 900; dark #eeeeee mirrors it) with 800/900
 // sliding to the axis ends (light 900 pure black, dark 900 pure white, Text
@@ -803,7 +803,7 @@ func TestFromSeedHighContrastGoldenPalette(t *testing.T) {
 }
 
 // TestFromSeedHighContrastSharesGrounds verifies the variant widens tone
-// separation without moving the grounds or the light pins: steps 100–600 of
+// separation without moving the surfaces or the light pins: steps 100–600 of
 // every ramp are byte-identical to FromSeed's, and the light pinned bases —
 // the seed-exact Primary included — and their White on-colours carry over
 // unchanged.

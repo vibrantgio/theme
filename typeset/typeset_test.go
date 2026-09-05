@@ -16,7 +16,7 @@ import (
 	"github.com/vibrantgio/theme/typeset"
 )
 
-// specimen carries an ascender, a descender and digits, so the ink box is the
+// specimen carries an ascender, a descender and digits, so the text box is the
 // widest a Latin run gets and the correction cannot be an artefact of a string
 // that happens to sit inside x-height.
 const specimen = "Il1 Wm gj 018"
@@ -107,8 +107,8 @@ func TestLineHeightChangesSingleLineHeight(t *testing.T) {
 // heights legitimately agree, with the reason beside it: a line height smaller
 // than the face's own ascent-plus-descent has no leading to distribute, and
 // typeset does not shrink a line box below its glyphs. LabelLarge at 14 dp
-// inks 17 px, so 8 and 12 both come back as 17 — not because the property was
-// dropped, but because there is nothing to add.
+// measures 17 px, so 8 and 12 both come back as 17 — not because the property
+// was dropped, but because there is nothing to add.
 func TestLineHeightBelowNaturalLineIsFloored(t *testing.T) {
 	var ops op.Ops
 	g := gtx(&ops, 1<<20)
@@ -209,7 +209,7 @@ func TestFontFallbackWeight(t *testing.T) {
 
 // TestBaselineMovesWithTheLowerHalf checks the baseline is reported against
 // the new bottom edge. Dimensions.Baseline is measured up from the bottom, so
-// it must grow by the leading added below the ink and not by the whole
+// it must grow by the leading added below the text and not by the whole
 // deficit — otherwise every layout.Flex aligned on Baseline would drift by
 // half a line.
 func TestBaselineMovesWithTheLowerHalf(t *testing.T) {
@@ -227,7 +227,7 @@ func TestBaselineMovesWithTheLowerHalf(t *testing.T) {
 
 	deficit := dims.Size.Y - plain.Size.Y
 	if want := plain.Baseline + deficit - deficit/2; dims.Baseline != want {
-		t.Errorf("baseline = %d, want %d (plain %d + %d below the ink)",
+		t.Errorf("baseline = %d, want %d (plain %d + %d below the text)",
 			dims.Baseline, want, plain.Baseline, deficit-deficit/2)
 	}
 }
@@ -291,7 +291,7 @@ func TestMixedFaceWrappedLinesGetWholeLineBoxes(t *testing.T) {
 // which is every Flexed child of a vertical layout.Flex. The org's components
 // dodged it by zeroing Constraints.Min first, which was convention and not
 // contract. Layout now constrains the corrected size instead, so the contract
-// is the one every other Gio widget keeps.
+// is the one every other Gio component keeps.
 func TestResultFitsTheCallersConstraints(t *testing.T) {
 	var ops op.Ops
 	sh := pinned()
@@ -308,14 +308,14 @@ func TestResultFitsTheCallersConstraints(t *testing.T) {
 	}
 }
 
-// TestFloorCentresTheInk pins where the ink sits under a Min.Y floor, via the
+// TestFloorCentresTheInk pins where the text sits under a Min.Y floor, via the
 // baseline: Dimensions.Baseline is measured up from the bottom, so with the
-// glyphs fixed it names the ink's vertical position exactly. Three cases:
+// glyphs fixed it names the text's vertical position exactly. Three cases:
 // no floor, a floor below the line box (which must change nothing), and a
 // floor above it — layout.Flex hands an exact cell height down as a minimum,
 // so this is every label in an exact-height row. The surplus splits half
 // above (rounded down) and half below; left to widget.Label it would all
-// land below and the ink would pin to the top of the cell.
+// land below and the text would pin to the top of the cell.
 func TestFloorCentresTheInk(t *testing.T) {
 	var ops op.Ops
 	sh := pinned()
@@ -342,7 +342,7 @@ func TestFloorCentresTheInk(t *testing.T) {
 	}
 	surplus := 41 - base.Size.Y // 21: 10 above (rounded down), 11 below
 	if want := base.Baseline + surplus - surplus/2; dims.Baseline != want {
-		t.Errorf("floor 41: baseline %d, want %d (unfloored %d + %d below the ink)",
+		t.Errorf("floor 41: baseline %d, want %d (unfloored %d + %d below the text)",
 			dims.Baseline, want, base.Baseline, surplus-surplus/2)
 	}
 }
@@ -372,7 +372,7 @@ func TestFloorCentresOnTheUncorrectedPathsToo(t *testing.T) {
 			t.Fatalf("%s: reported %d px under a %d px floor", name, dims.Size.Y, base.Size.Y+21)
 		}
 		if want := base.Baseline + 21 - 21/2; dims.Baseline != want {
-			t.Errorf("%s: baseline %d, want %d (unfloored %d + 11 below the ink)",
+			t.Errorf("%s: baseline %d, want %d (unfloored %d + 11 below the text)",
 				name, dims.Baseline, want, base.Baseline)
 		}
 	}

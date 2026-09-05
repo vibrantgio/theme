@@ -69,7 +69,7 @@ func apcaClamp(y float64) float64 {
 // non-premultiplied); pairs too close to distinguish return 0.
 //
 // This is the palette's gating metric: step 900 must reach
-// |Lc| 90 and step 700 |Lc| 60 over the step-100/200 grounds, and each
+// |Lc| 90 and step 700 |Lc| 60 over the step-100/200 surfaces, and each
 // pinned base's on-colour |Lc| 60 over the base.
 func APCA(text, background stdcolor.NRGBA) float64 {
 	ytxt := apcaClamp(apcaLuminance(text))

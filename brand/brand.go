@@ -58,9 +58,9 @@
 // this package does not ship is Roboto Mono, the default Code face. The
 // one other name it knows is "JetBrains Mono".
 //
-// It is a pair because a syntax palette is fitted to a ground: a set of inks
-// somebody balanced against a near-white page is not the set they would
-// balance against a near-black one, and the two appearances of one theme
+// It is a pair because a syntax palette is fitted to a surface: a set of
+// colours somebody balanced against a near-white page is not the set they
+// would balance against a near-black one, and the two appearances of one theme
 // therefore call for two names rather than one name and a rule. So the light
 // appearance and the dark appearance each name their own, and a person moving
 // between them moves between both.
@@ -175,10 +175,10 @@ type Brand struct {
 // a dark one.
 //
 // The two are held apart and never derived from each other. A name is an
-// artifact somebody fitted to a ground, and the pair is a person's answer to
-// "what should code look like on each of my two grounds" — the reader applies
-// the member the appearance on screen calls for, and swaps to the other when
-// the appearance changes.
+// artifact somebody fitted to a surface, and the pair is a person's answer to
+// "what should code look like on each of my two backgrounds" — the reader
+// applies the member the appearance on screen calls for, and swaps to the
+// other when the appearance changes.
 //
 // Either member may be empty, which means nothing was chosen for that
 // appearance and the reader's own default stands in. So may both, which is a

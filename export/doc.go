@@ -33,11 +33,11 @@
 //     containers and the marks read on them, realized at a tone rather than
 //     mixed, so a container keeps its parent's hue exactly;
 //     --color-<status>-on-inverse is each status role's mark on the inverse
-//     surface, which is not a fixed ramp step — which rung answers depends
+//     surface, which is not a fixed ramp step — which step answers depends
 //     on the hue and on the scheme; --color-bg, --color-text are the pinned
 //     background and body text; --color-surface and --color-divider are the
 //     semantic layer's ramp-resolved card and separator colours;
-//     --color-highlight is the reserved highlighter, the wash marking
+//     --color-highlight is the reserved highlighter, the fill marking
 //     content the reader was brought to — reserved outside the roles, so
 //     it belongs to no ramp, does not rotate with the seed and carries no
 //     status hue.
@@ -107,7 +107,7 @@
 // OKLCh hue and sat), the pinned role hexes per mode, the heading, body and
 // mono faces, the base radius, the shared CIELAB L* scales measured back from
 // the emitted neutral ramps, the density model (the active setting by name,
-// both settings' metrics and the invariant hit-target floor), the elevation
+// both settings' metrics and the invariant hit-target minimum), the elevation
 // model (surface step and shadow dp per level) and the motion set
 // (durations in ms, easing control points, spring presets).
 // tokens.FromSeed(seed) regenerates the full palette from the seed alone —

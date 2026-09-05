@@ -40,7 +40,7 @@
 //
 // The depth is not the container step in both schemes, because what the
 // depth has to deliver is a yellow. A light scheme's step-300 depth
-// (L* 84.91) is where a marker sits anyway — pale enough to read as ink on
+// (L* 84.91) is where a marker sits anyway — pale enough to read as text on
 // paper laid over with a pen, and it holds chroma to spare. A dark scheme's
 // step-300 depth (L* 18.94) holds only 0.0650, which renders as an olive;
 // its step-400 depth (L* 30.16) holds 0.0850 and renders as a yellow, so
@@ -54,9 +54,9 @@
 // marks is that its edge be findable. So the fill moves off that depth
 // wherever the surface it marks has walked into it — see
 // [ColorTokens.HighlightOn] for the two directions it may move in and why:
-// over the sweep the seam measures 1.317:1 at worst and 1.957:1 at
-// loudest, and the neutral Text token clears TextFloor over every fill the
-// walk returns, 5.157:1 at worst.
+// over the sweep the seam measures 1.317:1 at worst and 1.957:1 at best,
+// and the neutral Text token clears TextFloor over every fill the walk
+// returns, 5.157:1 at worst.
 //
 // One strength. The fill is one colour per scheme; a second, stronger one
 // would owe its own floor against the first and its own text floor over

@@ -76,7 +76,7 @@ func TestARaiseIsLighterOrCarriesASeam(t *testing.T) {
 			}
 		}
 	}
-	t.Logf("over %d seeds × 4 schemes: quietest fill-told raise %.4f:1, quietest seam %.3f:1",
+	t.Logf("over %d seeds × 4 schemes: faintest fill-told raise %.4f:1, faintest seam %.3f:1",
 		len(sweepSeeds()), worstFill, quietestSeam)
 }
 
@@ -229,7 +229,7 @@ func TestSeamOnIsFindableAgainstTheSurfaceItPartsFromItself(t *testing.T) {
 			}
 		}
 	}
-	t.Logf("over %d seeds × 4 schemes × %d levels: quietest group hairline %.3f:1",
+	t.Logf("over %d seeds × 4 schemes × %d levels: faintest group hairline %.3f:1",
 		len(sweepSeeds()), len(standable), quietest)
 }
 

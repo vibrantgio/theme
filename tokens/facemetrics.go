@@ -13,13 +13,14 @@ import (
 //
 // They exist because a mark set beside a label is read as part of that label's
 // line. The band the words occupy runs from the baseline to the cap height, so
-// a mark rises no higher and hangs no lower; and the ink the words are made of
-// is one stem wide, so a stroked mark beside them is stroked at that width.
-// Measured on the platform's own marks — the plus, the check and the cross set
-// against a system-font label, rendered offscreen — the mark's ink box runs
-// 1.11 to 1.21 times the label's cap height and its stroke band equals the
-// label's stem; the excess over the cap band is the optical licence a stroke
-// straddling that band takes on its own. See the measured macOS reference.
+// a mark rises no higher and hangs no lower; and the strokes the words are
+// made of are one stem wide, so a stroked mark beside them is stroked at that
+// width. Measured on the platform's own marks — the plus, the check and the
+// cross set against a system-font label, rendered offscreen — the mark's drawn
+// box runs 1.11 to 1.21 times the label's cap height and its stroke band
+// equals the label's stem; the excess over the cap band is the optical licence
+// a stroke straddling that band takes on its own. See the measured macOS
+// reference.
 //
 // Both come from the face rather than from a ratio pinned in this table,
 // because they are the face's property and not the role's: a collection

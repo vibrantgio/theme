@@ -26,9 +26,9 @@ func nrgbaFromABGR(v uint32) color.NRGBA {
 
 // gnomeAccentSeeds maps the GNOME 47+ accent-color names (the
 // org.gnome.desktop.interface accent-color enum) to libadwaita's published
-// accent background colours (AdwAccentColor accent_bg_color, libadwaita
-// 1.6). These are the colours GNOME itself paints accented widgets with,
-// so a seeded palette matches the desktop exactly.
+// accent background colours (AdwAccentColor accent_bg_color, libadwaita 1.6).
+// These are the colours GNOME itself paints its accented controls with, so a
+// seeded palette matches the desktop exactly.
 var gnomeAccentSeeds = map[string]color.NRGBA{
 	"blue":   {R: 0x35, G: 0x84, B: 0xE4, A: 0xFF},
 	"teal":   {R: 0x21, G: 0x90, B: 0xA4, A: 0xFF},

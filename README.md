@@ -9,14 +9,14 @@ stream, so the answer can change while the application runs.
 Following the operating system between light and dark is the kind of thing that
 is easy to demo and tedious to actually do: something has to poll the OS,
 notice a real change rather than re-emitting the same value, turn it into
-design tokens, and get those tokens to every widget on screen without the
+design tokens, and get those tokens to every component on screen without the
 application threading a parameter through its whole view tree. theme does
 that in one line at startup. `system.LiveTheme` publishes the OS appearance as
 an `rx.Observable[theme.Theme]`; `window.New` binds that observable to an
 [mvu](https://github.com/vibrantgio/mvu) window and hands it to the builder
 that constructs the layers. Every [components](https://github.com/vibrantgio/components)
 component already takes a theme observable as its first argument, so the
-appearance change reaches the buttons with no application code at all — which
+appearance change arrives at the buttons with no application code at all — which
 is why all seven [workbench](https://github.com/vibrantgio/workbench)
 applications bootstrap the same two lines and none of them asks the OS about
 appearance a second time. The same stream carries the OS accent colour — an
@@ -86,7 +86,7 @@ github.com/reactivego/rx v0.3.0 and Go 1.25.1.
 
 | Package | |
 | --- | --- |
-| `tokens` | The typed design values, all of them: the ADR-007 colour ramps and pins, with `FromSeed` deriving both modes from one seed colour; `Typography` — fifteen MD3 text roles plus `Code` and `DocumentHeadings`, the six-step heading ladder prose surfaces set their headings in, carrying the face collection, `WithFaces` to widen it, and two shapers cached apart: `Shaper()` with the system fallback for applications and `DeterministicShaper()` with the collection pinned for golden tests; `Density` (Comfortable 36 dp / Compact 28 dp control heights); `MotionScale` (duration stops, easings, spring presets, and `Reduced()` for the OS reduce-motion preference); the elevation levels (`SurfaceAt` for a level's fill, `StateAt` for a state walked from it, and `ElevationLevel.Raised` for the level one step nearer the viewer than the surface a thing stands on — `LevelBackdrop` for the bare window plane and `LevelChrome` for the window's furniture under the content, then levels 0–3, lighter with every level in both schemes per ADR-022); and the 4-pt spacing and named radius scales. |
+| `tokens` | The typed design values, all of them: the ADR-007 colour ramps and pins, with `FromSeed` deriving both modes from one seed colour; `Typography` — fifteen MD3 text roles plus `Code` and `DocumentHeadings`, the six-step heading scale prose surfaces set their headings in, carrying the face collection, `WithFaces` to widen it, and two shapers cached apart: `Shaper()` with the system fallback for applications and `DeterministicShaper()` with the collection pinned for golden tests; `Density` (Comfortable 36 dp / Compact 28 dp control heights); `MotionScale` (duration stops, easings, spring presets, and `Reduced()` for the OS reduce-motion preference); the elevation levels (`SurfaceAt` for a level's fill, `StateAt` for a state walked from it, and `ElevationLevel.Raised` for the level one step nearer the viewer than the surface a thing stands on — `LevelBackdrop` for the bare window plane and `LevelChrome` for the window's furniture under the content, then levels 0–3, lighter with every level in both schemes per ADR-022); and the 4-pt spacing and named radius scales. |
 | `color` | The generative colour engine the palettes are derived with — sRGB ↔ CIELAB and OKLCh conversions and the APCA contrast metric that gates every generated pair. Mathematics only; no colour values live here. |
 | `theme` | `Theme`: one `rx.Observable` per token category, so a consumer subscribes to just the categories it reads. `Default()` and `AutoLightDark()` construct one — note `AutoLightDark()` reads the clock (hours 7–17 light), not the OS; `system.LiveTheme` is the real tracker. |
 | `system` | The OS appearance — dark mode and accent colour — polled behind a `Source` interface and published as an observable that emits only on change. `Live` gives the raw `Appearance`; `LiveTheme` gives the `theme.Theme` a window wants, with `WithSeed`/`WithPalette` options for branding. Dark mode is read on macOS; the accent is read on all three platforms — macOS's accent choice, the Windows DWM registry value, GNOME's named accent and KDE's `kdeglobals` RGB. |

@@ -147,7 +147,7 @@ func wcagStr(a, b stdcolor.NRGBA) string {
 func stepPurpose(step int) string {
 	switch step {
 	case 100:
-		return "tinted fill · ground"
+		return "tinted fill · backdrop"
 	case 200:
 		return "tinted fill · card"
 	case 300:
@@ -542,7 +542,7 @@ const layoutPageCSS = `.space-row {
   border-radius: var(--radius-md);
   margin: var(--space-2) 0;
 }
-.elevation-ground {
+.elevation-row {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-8);
@@ -618,7 +618,7 @@ func layoutHTML(s Snapshot) string {
 		"chrome a window's furniture wears, the content surface, then raised insets and floating transients. " +
 		"Read the swatches below left to right and the fill gets lighter, in either scheme. " +
 		"The levels stop at 3 &mdash; desktop has no six-deep stack.</p>\n")
-	b.WriteString("<div class=\"elevation-ground\">\n")
+	b.WriteString("<div class=\"elevation-row\">\n")
 	for i, level := range elevationLevels {
 		wears := []string{"nothing: it shows where nothing stands", "navbars, toolbars, sidebars, panes",
 			"the content", "cards, fences, fields", "dialogs, toasts", "menus, popovers"}[i]
@@ -630,7 +630,7 @@ func layoutHTML(s Snapshot) string {
 	b.WriteString("<h3>The opt-in shadow</h3>\n")
 	b.WriteString("<p class=\"intro\">The dp shadows survive as <code>--shadow-N</code> for floating transients only &mdash; " +
 		"menus, dialogs, tooltips: a float adds its shadow on top of its tonal fill; resting surfaces use the fill alone.</p>\n")
-	b.WriteString("<div class=\"elevation-ground\">\n")
+	b.WriteString("<div class=\"elevation-row\">\n")
 	for _, level := range elevationLevels {
 		fmt.Fprintf(&b, "<div>\n<div class=\"surface-card\" style=\"background: var(--elevation-%s); box-shadow: var(--shadow-%s)\">%s</div>\n", level.name, level.name, level.name)
 		fmt.Fprintf(&b, "<p class=\"annot\"><code>--shadow-%s</code> &middot; depth %sdp</p>\n</div>\n", level.name, fnum(s.Elevation.Dp(level.level)))

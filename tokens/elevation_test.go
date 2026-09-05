@@ -285,7 +285,7 @@ func TestTheHairlineCarriesTheWhisperStep(t *testing.T) {
 				fill := scheme.tok.SurfaceAt(level.level)
 				got := contrastRatio(scheme.tok.MarkOn(tokens.RoleNeutral, fill, graphicFloor), fill)
 				if got < graphicFloor {
-					t.Errorf("seed %v %s %s: hairline reads %.2f:1 on the fill, floor %.1f:1",
+					t.Errorf("seed %v %s %s: hairline reads %.2f:1 on the fill, want %.1f:1",
 						seed, scheme.name, level.name, got, graphicFloor)
 				}
 				if got < worst {
@@ -331,7 +331,7 @@ func TestStateAtWalksFromTheLevel(t *testing.T) {
 			// The walk is PinnedStateColor's, taken from the level's own
 			// fill, and it stops at the first depth clearing StateFloor:
 			// never shallower than the one step that walk takes, and
-			// never deeper than the floor requires.
+			// never deeper than the minimum requires.
 			pinned := scheme.tok.PinnedStateColor(fill, tokens.StateHover)
 			if lstar(hover) != lstar(pinned) {
 				beyond := lstar(hover) > lstar(pinned)
@@ -341,7 +341,7 @@ func TestStateAtWalksFromTheLevel(t *testing.T) {
 				}
 			}
 			if got := vgcolor.ContrastRatio(hover, fill); got < tokens.StateFloor {
-				t.Errorf("%s %s: hover wash %v on the fill %v measures %.3f:1, under the %.2f:1 floor",
+				t.Errorf("%s %s: hover state fill %v on the fill %v measures %.3f:1, under the %.2f:1 minimum",
 					scheme.name, level.name, hover, fill, got, tokens.StateFloor)
 			}
 			press := scheme.tok.StateAt(level.level, tokens.StatePressed)

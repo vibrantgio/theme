@@ -21,7 +21,7 @@ func readmeMD(s Snapshot) string {
 		"role's **base pinned separately** so the brand colour is reproduced exactly, and\n"+
 		"**dark mode is the paired ramp** — the same step keeps the same job in both\n"+
 		"modes, so nothing is assigned twice. The contrast gate is APCA\n"+
-		"(step 900 reaches |Lc| 90 and step 700 |Lc| 60 over the 100/200 grounds, every\n"+
+		"(step 900 reaches |Lc| 90 and step 700 |Lc| 60 over the 100/200 surfaces, every\n"+
 		"pin's on-colour |Lc| 60 over its pin); WCAG 2 ratios are reported alongside but\n"+
 		"do not gate.\n\n", hexRGB(s.Seed))
 
@@ -83,13 +83,13 @@ func readmeMD(s Snapshot) string {
 	fmt.Fprintf(&b, "| `--shadow-<level>` | %s | dp box-shadows — the OPT-IN cue for floating transients (menus, dialogs, tooltips) layered over the tonal fill; resting surfaces use the fill alone |\n", joinTokens("--shadow-", elevationNames()))
 	fmt.Fprintf(&b, "| `--ease-<name>` | %s | MD3 easing presets as `cubic-bezier()`; emphasized is the documented single-bezier stand-in for MD3's two-segment path |\n", joinTokens("--ease-", easeNames()))
 	fmt.Fprintf(&b, "| `--duration-<stop>` | %s | MD3-pinned duration stops, ms; the reduce-motion variant zeroes them |\n", joinTokens("--duration-", durationNames()))
-	b.WriteString("| interaction states | `--focus-ring-width`, `--state-disabled-opacity` | the ring's 2 px stroke and the disabled fade fraction for `color-mix()` — both mode-invariant, unlike the ring's colour, which is measured against a ground that flips and so sits with the colours above |\n")
+	b.WriteString("| interaction states | `--focus-ring-width`, `--state-disabled-opacity` | the ring's 2 px stroke and the disabled fade fraction for `color-mix()` — both mode-invariant, unlike the ring's colour, which is measured against a surface that flips and so sits with the colours above |\n")
 	b.WriteString("| scrim | `--color-scrim` | the modal backdrop dimmer: translucent black, identical in both modes — a scrim dims by reducing luminance, so it never flips with `.dark`. The alpha is the sRGB-compositing equivalent of the Gio pattern's 50% linear-space black |\n\n")
 
 	b.WriteString("## Step purposes\n\n" +
 		"| Step | Job |\n| --- | --- |\n" +
-		"| 100 | tinted fill · app ground |\n" +
-		"| 200 | tinted fill · one step off the app ground |\n" +
+		"| 100 | tinted fill · the window's backdrop |\n" +
+		"| 200 | tinted fill · one step off the backdrop |\n" +
 		"| 300 | hover · subtle border, separator |\n" +
 		"| 400 / 600 / 800 | intermediate steps; interaction states walk through them |\n" +
 		"| 500 | mid-value reference · strong border |\n" +
@@ -109,64 +109,64 @@ func readmeMD(s Snapshot) string {
 		"the same rule, so a static page can show a state with exactly the live\n" +
 		"declarations; disabled is forced with the native attribute.\n\n" +
 		"`.btn` is the button, **filled** by default: the accent pin under its\n" +
-		"on-colour. Two modifier classes select the quieter emphasis variants —\n" +
-		"`.btn.tonal` (the accent's tint, `--color-btn-tonal-fill` under\n" +
+		"on-colour. Two modifier classes select the less pronounced emphasis\n" +
+		"variants — `.btn.tonal` (the accent's tint, `--color-btn-tonal-fill` under\n" +
 		"`--color-btn-tonal`: the same recipe `.badge` wears, one hue at two\n" +
-		"strengths) and `.btn.ghost` (no ground at rest; neutral 700 text).\n" +
+		"strengths) and `.btn.ghost` (no fill at rest; neutral 700 text).\n" +
 		"Interaction states resolve as the step walks above: hover walks one step\n" +
 		"(`:hover`), pressed and selected two (`:active`, `.selected`); a filled\n" +
 		"button's solid fill walks via the emitted `--color-accent-hover` /\n" +
 		"`--color-accent-pressed` stops, and a tonal button through its own\n" +
 		"`-hover` and `-active` pairs, whose foreground moves with the fill.\n" +
-		"Keyboard focus (`:focus-visible`) keeps the resting fill and draws\n" +
-		"the ring: `--focus-ring-width` of `--color-focus-ring`, the one ring the\n" +
+		"Keyboard focus (`:focus-visible`) keeps the resting fill and draws the\n" +
+		"ring: `--focus-ring-width` of `--color-focus-ring`, the one ring the\n" +
 		"scheme carries — the step of the primary ramp nearest its mid-value step\n" +
-		"that reaches 3:1 against every level at once, so a control wears the\n" +
-		"same ring wherever it is put. It also parts from every resting border\n" +
-		"in luminance rather than in hue alone, so focus stays findable where a\n" +
+		"that reaches 3:1 against every level at once, so a control wears the same\n" +
+		"ring wherever it is put. It also parts from every resting border in\n" +
+		"luminance rather than in hue alone, so focus stays findable where a\n" +
 		"display or a system setting takes the colour away, and it is never the\n" +
 		"accent fill itself, which is what a checked control already paints.\n" +
 		"`--color-focus-ring-on-accent` is the sole exception, for the ring a\n" +
-		"filled button insets in its own fill: that\n" +
-		"fill is a step of the primary ramp too, and the scheme's ring cannot\n" +
-		"read on it. Same ring, same width, same 3:1 floor in every variant.\n" +
-		"Disabled (`:disabled`) fades each colour to\n" +
-		"`--state-disabled-opacity` of its alpha. A ghost has no selected\n" +
-		"treatment: it stays quiet. `.btn.icon` is the icon-only form: a square\n" +
-		"the density's control height on a side, the glyph (an inline SVG on\n" +
-		"`currentColor`) inset by the density's vertical padding.\n\n" +
-		"`.badge` is the inline annotation: `label-medium` text over a tinted\n" +
-		"field of its own hue. One hue at two strengths — a pale fill for the\n" +
-		"field and the same hue at reading strength for the word — and never the\n" +
-		"inverted pairing, which is what `.btn` uses and what a badge must not\n" +
-		"claim to be. No boundary and no vertical padding, so its height is the\n" +
-		"role's line box; the side padding is `--space-2` and the corner is\n" +
-		"`--radius-base`, deliberately not the pill `.chip` wears. The default\n" +
-		"is the plain category label; `.badge.success` / `.badge.warning` /\n" +
-		"`.badge.error` / `.badge.info` are the four statuses, differing in hue\n" +
-		"alone. Both halves are tokens because both are derived against a ground\n" +
-		"rather than named on a ramp — the fill against the page, the foreground\n" +
-		"against the fill. Compose them for status; never inline-style a status\n" +
-		"colour. A badge is read, not used: no interaction states.\n\n" +
+		"filled button insets in its own fill: that fill is a step of the primary\n" +
+		"ramp too, and the scheme's ring cannot read on it. Same ring, same width,\n" +
+		"same 3:1 floor in every variant. Disabled (`:disabled`) fades each colour\n" +
+		"to `--state-disabled-opacity` of its alpha. A ghost has no selected\n" +
+		"treatment: it stays the least pronounced. `.btn.icon` is the icon-only\n" +
+		"form: a square the density's control height on a side, the glyph (an\n" +
+		"inline SVG on `currentColor`) inset by the density's vertical\n" +
+		"padding.\n\n" +
+		"`.badge` is the inline annotation: `label-medium` text over a tinted field\n" +
+		"of its own hue. One hue at two strengths — a pale fill for the field and\n" +
+		"the same hue at reading strength for the word — and never the inverted\n" +
+		"pairing, which is what `.btn` uses and what a badge must not claim to be.\n" +
+		"No boundary and no vertical padding, so its height is the role's line box;\n" +
+		"the side padding is `--space-2` and the corner is `--radius-base`,\n" +
+		"deliberately not the pill `.chip` wears. The default is the plain category\n" +
+		"label; `.badge.success` / `.badge.warning` / `.badge.error` /\n" +
+		"`.badge.info` are the four statuses, differing in hue alone. Both halves\n" +
+		"are tokens because both are derived against a surface rather than named on\n" +
+		"a ramp — the fill against the page, the foreground against the fill.\n" +
+		"Compose them for status; never inline-style a status colour. A badge is\n" +
+		"read, not used: no interaction states.\n\n" +
 		"The form controls dress native elements — no script anywhere:\n" +
 		"`.input` (text `<input>`, and `<select class=\"input select\">` inside a\n" +
 		"`.select-wrap` for the chevron), `.checkbox` and `.radio` on their native\n" +
 		"input types with `appearance: none`. They resolve exactly as\n" +
-		"`components/input` does: Surface ground under `body-large` text,\n" +
+		"`components/input` does: the Surface fill under `body-large` text,\n" +
 		"`--color-control-border` on the resting edge of all four controls,\n" +
 		"neutral 700 placeholder and chevron, focus promoting the border to the\n" +
 		"ring (2 dp on the text field, the shared outline on checkbox/radio),\n" +
 		"disabled fading every colour via `color-mix()`. That border is the\n" +
-		"neutral rung the ramp measures as reaching 3:1 against the window\n" +
-		"ground, which is 600 in the light scheme and 500 in the dark; the named\n" +
-		"rung it replaced read below the floor in one of them, at 2.67:1 in the\n" +
+		"neutral step the ramp measures as reaching 3:1 against the window\n" +
+		"backdrop, which is 600 in the light scheme and 500 in the dark; the named\n" +
+		"step it replaced read below the floor in one of them, at 2.67:1 in the\n" +
 		"scheme most people read in. The edge follows the control into a raised\n" +
-		"host: a surface that fills a deeper level declares `--ground-border`\n" +
+		"host: a surface that fills a deeper level declares `--surface-border`\n" +
 		"beside its own fill, the rules name it with the paper's own token as\n" +
 		"the fallback, and every control inside re-derives — the same walk\n" +
 		"against the same fill the host measures its own outline against, which\n" +
 		"is why a checkbox in a dialog wears the dialog's edge. In the dark\n" +
-		"scheme the page's own rung reads 2.62:1 over a level-2 fill and 1.80:1\n" +
+		"scheme the page's own step reads 2.62:1 over a level-2 fill and 1.80:1\n" +
 		"over a level-3 one, both under the floor; in the light scheme it clears\n" +
 		"every level and the handed-down token repeats. The ring does not\n" +
 		"follow, because it never left: it is measured against every level at\n" +

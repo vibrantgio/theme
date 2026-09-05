@@ -70,7 +70,7 @@ func TestTheHighlightIsReservedAgainstTheBrand(t *testing.T) {
 // visible as a field wherever content is marked: it clears ContainerFloor
 // against every level's fill, in both schemes of both derivations, for
 // every seed — and stays under the ratio at which a tint stops being the
-// ground of something and becomes a fill in its own right.
+// surface of something and becomes a fill in its own right.
 func TestTheHighlightClearsTheSeamFloorOnEveryLevel(t *testing.T) {
 	// The threshold TestContainersSeparateFromEveryLevelItStandsOn reads a
 	// container against: past this a fill is a control's fill, not a mark
@@ -98,12 +98,12 @@ func TestTheHighlightClearsTheSeamFloorOnEveryLevel(t *testing.T) {
 			}
 		}
 	}
-	t.Logf("over %d seeds, both derivations, both schemes, five levels: worst seam %.3f:1 (floor %.2f), loudest %.3f:1",
+	t.Logf("over %d seeds, both derivations, both schemes, five levels: worst seam %.3f:1 (floor %.2f), best %.3f:1",
 		len(sweepSeeds()), worst, tokens.ContainerFloor, loudest)
 }
 
 // TestContentInkClearsItsFloorOverTheHighlight verifies a highlight never
-// costs the content it marks its legibility: the scheme's own body ink
+// costs the content it marks its legibility: the scheme's own body foreground
 // clears TextFloor over every fill the walk returns, on every level, in
 // both schemes of both derivations. A highlight is applied to content, so
 // the words it covers are the whole point of it.
@@ -123,7 +123,7 @@ func TestContentInkClearsItsFloorOverTheHighlight(t *testing.T) {
 			}
 		}
 	}
-	t.Logf("over %d seeds, both derivations, both schemes, five levels: worst body ink over a highlight %.3f:1 (floor %.1f)",
+	t.Logf("over %d seeds, both derivations, both schemes, five levels: worst body foreground over a highlight %.3f:1 (floor %.1f)",
 		len(sweepSeeds()), worst, tokens.TextFloor)
 }
 

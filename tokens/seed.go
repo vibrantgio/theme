@@ -6,8 +6,8 @@
 //
 //   - The shared lightness scale is CIELAB L* per step, light and paired
 //     dark, and it is one curve read twice rather than two tables. A scheme
-//     names four depths of its own — its ground (step 100), the deepest of
-//     its window surfaces (400), its accent pin (700) and its body ink
+//     names four depths of its own — its backdrop (step 100), the deepest
+//     of its window surfaces (400), its accent pin (700) and its body text
 //     (900) — and toneCurve places the steps between them as fractions of
 //     each run. The fractions are the light scale's own, so light realizes
 //     its measured depths exactly: 97, 92, 85, 74, 63, 51, 39, 28, 6. Read
@@ -17,11 +17,11 @@
 //
 //     The 900 stop is L* 6 rather than the measured 18 because APCA's soft
 //     black clamp caps even pure black near Lc 92 over the L* 92 step-200
-//     ground, so Lc ≥ 90 needs L* 6 (min Lc 90.7 across the seven default
+//     surface, so Lc ≥ 90 needs L* 6 (min Lc 90.7 across the seven default
 //     ramps; L* 18 measures Lc 85–87).
 //
 //     Only the anchors are read off the measured dark column; its 500 stop
-//     is not. A platform's greys are its window surfaces and its ink with
+//     is not. A platform's greys are its window surfaces and its text with
 //     nothing between them — read as a nine-step ramp they leave 35 L*
 //     between 400 and 500, and a ramp with no mid tones has neither a
 //     boundary tone nor a text tone to offer. Derived, the dark scale's
@@ -155,7 +155,7 @@
 //     (L* 40.08). Dark bases are the same hue and chroma re-toned to L* 82 —
 //     the dark scale's step-700 depth, beside MD3's dark accent-base tone 80,
 //     making the dark pin byte-identical to its ramp's step 700. L* 82 is
-//     pinned from both directions: an L* 65 mid-tone is a ground no text
+//     pinned from both directions: an L* 65 mid-tone is a surface no text
 //     reaches Lc 60 over (black tops out near Lc 52, white near 57), and
 //     L* 82 is also the shallowest depth the increased-contrast variant's
 //     Lc ≥ 75 floor allows (L* 80 reaches only 73.5 against pure black). The
@@ -173,28 +173,32 @@
 //     pass here, so neither needs anything the other has not computed.
 //
 //   - On-colours are measured, not assumed. Each pinned base is read in the
-//     ink that reaches 4.5:1 over it — WCAG AA for body text — with the
-//     scheme's usual ink preferred and the other end of the tonal axis taken
+//     foreground that reaches 4.5:1 over it — WCAG AA for body text — with
+//     the scheme's usual foreground preferred and the other end of the tonal
+//     axis taken
 //     when the usual one falls short (see onColour). In the light scheme the
 //     pair on offer is White and Black; in the dark scheme the role's own
 //     step-100 depth and White.
 //
 //     The rule is a no-op for almost every base: a light base at tone 40
 //     carries White at Lc ≥ 85 (WCAG ≈ 6.4:1) and a dark base at L* 82
-//     carries its deep ink at Lc ≥ 73 (WCAG ≈ 11:1). It exists for the one
+//     carries its deep foreground at Lc ≥ 73 (WCAG ≈ 11:1). It exists for
+//     the one
 //     base pinned to no depth — the primary base is the brand colour itself,
 //     and a light brand colour under white text measures as little as 2.1:1.
-//     Its ink flips and the colour does not move, so the accent stays true to
+//     Its foreground flips and the colour does not move, so the accent stays
+//     true to
 //     the seed. Across a 414-seed sweep 269 of the light schemes' primary
-//     inks flip, nothing else in either scheme does, and no pinned pairing
-//     any seed produces measures under the floor. Ramp-step pairings are
-//     unaffected: a step is realized at a fixed depth, so 700-and-900 text
-//     over 100 and 200 grounds measures 5.4:1 and up whatever the seed.
+//     foregrounds flip, nothing else in either scheme does, and no pinned
+//     pairing any seed produces measures under the floor. Ramp-step pairings
+//     are unaffected: a step is realized at a fixed depth, so 700-and-900
+//     text over 100 and 200 surfaces measures 5.4:1 and up whatever the seed.
 //
 //     The state walk under a solid fill is not part of this and cannot be: a
 //     fill walks toward its ramp's 900 end whichever depth its pin sits at
-//     (see states.go), so on a mid-depth accent one ink reads at rest and the
-//     other reads pressed, and one token cannot be both. Choosing each ink
+//     (see states.go), so on a mid-depth accent one foreground reads at rest
+//     and the other reads pressed, and one token cannot be both. Choosing
+//     each foreground
 //     for the whole walk instead of for the resting pair was measured over
 //     the same sweep and buys four pairings back under the pointer at the
 //     cost of eighty-three at rest.
@@ -208,9 +212,9 @@
 //     the same Lc ≥ 90 bar the default asks only of 900 (light min Lc 90.7,
 //     dark 93.0 across the role ramps; APCA's soft black clamp caps lighter
 //     choices below 90). The 800 and 900 stops slide outward — light 3 and 0,
-//     dark 97 and 100 — keeping the ladder strictly monotonic and the 900
+//     dark 97 and 100 — keeping the scale strictly monotonic and the 900
 //     gate clear with margin (light Lc 92.3, dark 104.4). Steps 100–600 are
-//     the default scale unchanged: the grounds stay, the text pulls away.
+//     the default scale unchanged: the surfaces stay, the text pulls away.
 //
 //   - Divider resolves from Neutral step 500 instead of 300: the separator
 //     moves from the subtle-border step to the strong-border step.
@@ -223,12 +227,12 @@
 //     (Lc ≥ 85.7).
 //
 //     The on-colour rule follows the variant to a stricter floor: the light
-//     ink stands only while it reaches 7:1 rather than 4.5:1. What it can do
-//     with the answer is bounded by the axis, which has no ink further out
-//     than its two ends — where neither reaches the floor the better of the
-//     two stands in both derivations, so the variant's flipped set is the
-//     default's plus the sliver where the light ink clears AA and the dark
-//     ink still reads higher. Every variant pairing therefore measures at
+//     foreground stands only while it reaches 7:1 rather than 4.5:1. What it
+//     can do with the answer is bounded by the axis, which has no foreground
+//     further out than its two ends — where neither reaches the floor the
+//     better of the two stands in both derivations, so the variant's flipped
+//     set is the default's plus the sliver where the light foreground clears
+//     AA and the dark one still reads higher. Every variant pairing therefore measures at
 //     least what the default's does, which is the property its gate holds.
 package tokens
 
@@ -240,17 +244,17 @@ import (
 )
 
 // toneAnchors are the four CIELAB depths a scheme names for itself, in
-// order: its ground (the step-100 window floor), the deepest of its window
-// surfaces (step 400), its accent pin (step 700) and its body ink (step
-// 900). They are the whole of what separates the two schemes' scales.
+// order: its backdrop (the step-100 window plane), the deepest of its
+// window surfaces (step 400), its accent pin (step 700) and its body text
+// (step 900). They are the whole of what separates the two schemes' scales.
 type toneAnchors [4]float64
 
 // toneCurve is the shared shape of a nine-step ramp: for each step, which
 // of the three anchored runs it sits in and how far along that run it lies.
-// The three runs are the surface stack (100–400, the ground and the
-// storeys a tinted surface hovers and presses onto), the mark run (400–700,
+// The three runs are the surface stack (100–400, the backdrop and the
+// levels a tinted surface hovers and presses onto), the mark run (400–700,
 // from the deepest surface up to the accent pin, where boundary tones and
-// text tones live) and the ink run (700–900, the pin's own hover and
+// text tones live) and the text run (700–900, the pin's own hover and
 // pressed steps).
 //
 // The fractions are the light scale's, measured off the platform's own
@@ -260,8 +264,8 @@ type toneAnchors [4]float64
 // same job in both schemes because it sits at the same place in the same
 // run.
 var toneCurve = [9]struct {
-	run int     // which anchored run the rung sits in
-	at  float64 // how far along that run, ground end to ink end
+	run int     // which anchored run the step sits in
+	at  float64 // how far along that run, surface end to text end
 }{
 	{0, 0}, {0, 5.0 / 23}, {0, 12.0 / 23}, {0, 1},
 	{1, 11.0 / 35}, {1, 23.0 / 35}, {1, 1},
@@ -280,10 +284,10 @@ func (a toneAnchors) scale() [9]int {
 }
 
 // highContrast widens a scale for the increased-contrast variant: steps
-// 100–600 stand, so the grounds stay where they are; 700 deepens to the
-// scale's own ink depth, so 700 text meets the Lc ≥ 90 bar the default asks
-// only of 900; and 800 and 900 slide to the end of the tonal axis the ink
-// runs toward, in two equal steps, keeping the ladder strictly monotonic.
+// 100–600 stand, so the surfaces stay where they are; 700 deepens to the
+// scale's own text depth, so 700 text meets the Lc ≥ 90 bar the default asks
+// only of 900; and 800 and 900 slide to the end of the tonal axis the text
+// runs toward, in two equal steps, keeping the scale strictly monotonic.
 // See the file header.
 func highContrast(s [9]int) [9]int {
 	axisEnd := 100
@@ -297,10 +301,10 @@ func highContrast(s [9]int) [9]int {
 }
 
 // The two schemes' anchors, and the four scales they derive. The light
-// ground is the platform's paper and the dark ground its window floor; the
+// backdrop is the platform's paper and the dark one its window plane; the
 // step-400 anchors are the deepest surface each scheme stacks; the step-700
 // anchors are the pin depths, so a pin and its 700 step are one colour; the
-// step-900 anchors are the body inks.
+// step-900 anchors are the body text tones.
 var (
 	lightAnchors = toneAnchors{97, 74, statusPinTone, 6}
 	darkAnchors  = toneAnchors{8, 30, darkPinTone, 94}
@@ -368,16 +372,16 @@ var (
 	hcDerivation      = derivation{hcLightTones, hcDarkTones, 500, hcDarkOnTone, hcOnFloor}
 )
 
-// onColour picks the ink one pinned base is read in. The preferred ink
-// stands while it reaches the floor over that base; below it the ink flips
-// to the other end of the tonal axis, unless that end reads worse still —
-// a base no ink can carry keeps the better of the two rather than the
-// darker of the two. Flipping the ink rather than deepening the colour is
-// what keeps a palette true to the colour it was seeded with.
+// onColour picks the foreground one pinned base is read in. The preferred one
+// stands while it reaches the floor over that base; below it the foreground
+// flips to the other end of the tonal axis, unless that end reads worse still
+// — a base no foreground can carry keeps the better of the two rather than the
+// darker of the two. Flipping the foreground rather than deepening the colour
+// is what keeps a palette true to the colour it was seeded with.
 //
-// The two ends are pure White and pure Black, and that is load-bearing:
-// over any colour whatever, the better of white and black reaches 4.58:1,
-// so no seed can produce a pinned pairing under the floor. An ink one step
+// The two ends are pure White and pure Black, and that is load-bearing: over
+// any colour whatever, the better of white and black reaches 4.58:1, so no
+// seed can produce a pinned pairing under the floor. A foreground one step
 // short of the axis end — the ramp's own 900 stop — gives that guarantee up
 // (it bottoms out at 4.31:1 across a seed sweep).
 func onColour(base, preferred, other stdcolor.NRGBA, floor float64) stdcolor.NRGBA {
@@ -397,8 +401,8 @@ func onColour(base, preferred, other stdcolor.NRGBA, floor float64) stdcolor.NRG
 // brand has none. One already at or past the dial (within accentChromaSnap,
 // which absorbs the eight-bit quantization of a realized colour) keeps its
 // own chroma, so a vivid brand is never pulled down. Everything between is
-// rendered at the dial, which is the whole point: a washed-out brand colour
-// does not make a washed-out palette.
+// rendered at the dial, which is the whole point: a desaturated brand colour
+// does not make a desaturated palette.
 //
 // The function is a projection — every value it returns is a value it
 // leaves alone — and that is load-bearing, not tidiness: re-deriving a
@@ -414,7 +418,7 @@ func liftChroma(c float64) float64 {
 // liftSeed realizes the light primary base: the brand colour's own hue and
 // CIELAB depth at liftChroma of its chroma. A brand colour the dial leaves
 // alone comes back byte-for-byte, which is what keeps a palette seeded from
-// a desktop's accent colour matching that accent exactly; a washed-out one
+// a desktop's accent colour matching that accent exactly; a desaturated one
 // comes back at the same hue and depth with the dial's chroma, so nothing
 // the contrast gates pin about the base moves.
 func liftSeed(seed stdcolor.NRGBA) stdcolor.NRGBA {
@@ -465,7 +469,7 @@ func packRGB(c stdcolor.NRGBA) uint32 {
 // tintToward rotates a fixed status anchor toward the accent hue along the
 // shorter arc of the OKLCh hue circle, by at most statusTint degrees. It is
 // the whole of the seed's influence on a status role: the anchor's chroma
-// is never touched, so no brand can wash a status colour out or light one
+// is never touched, so no brand can desaturate a status colour or light one
 // up, and the rotation is bounded far below the gap between two anchors, so
 // no brand can make one status role read as another. A brand at or under
 // greyChroma has no hue to lend and lends none.
@@ -585,12 +589,13 @@ func fromSeed(seed stdcolor.NRGBA, d derivation) (light, dark ColorTokens) {
 		lr[i] = rampOf(d.lightTones, role.hue, role.chroma)
 		dr[i] = rampOf(d.darkTones, role.hue, role.chroma)
 	}
-	// The pinned bases and the ink each is read in. Index 0 is the neutral
-	// role, which carries surfaces rather than a solid fill and has no pin.
-	// Every ink is measured over the base it sits on rather than assumed
-	// from the scheme (see onColour); the light scheme's alternative is the
-	// far end of the tonal axis and the dark scheme's is White, so in each
-	// scheme the pair on offer is the ramp's own dark end and its light one.
+	// The pinned bases and the foreground each is read in. Index 0 is the
+	// neutral role, which carries surfaces rather than a solid fill and has no
+	// pin. Every foreground is measured over the base it sits on rather than
+	// assumed from the scheme (see onColour); the light scheme's alternative
+	// is the far end of the tonal axis and the dark scheme's is White, so in
+	// each scheme the pair on offer is the ramp's own dark end and its light
+	// one.
 	var lightBase, darkBase, lightInk, darkInk [8]stdcolor.NRGBA
 	for i := 1; i < len(roles); i++ {
 		lightBase[i] = color.Tone(roles[i].hue(roles[i].pinTone), roles[i].chroma, roles[i].pinTone)

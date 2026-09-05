@@ -1,5 +1,5 @@
 // Alpha compositing: the opaque colour a translucent fill actually lands as
-// on the ground under it, which is the only colour a contrast measurement
+// on the surface under it, which is the only colour a contrast measurement
 // can be taken against.
 package color
 
@@ -16,10 +16,11 @@ import (
 // The design system's own overlay scrollbar is the demonstration — the
 // low-contrast-text step at 39% coverage over the light page lands on
 // #CCCCCC by this route and on #BABABA by the naive one, 1.49:1 against the
-// page rather than 1.80:1. Measuring a translucent ink against the wrong
-// composite is how an ink no reader can find comes to be believed legible.
+// page rather than 1.80:1. Measuring a translucent foreground against the
+// wrong composite is how a foreground no reader can find comes to be believed
+// legible.
 //
-// src's alpha is its coverage. dst is a ground — what is already on the
+// src's alpha is its coverage. dst is a surface — what is already on the
 // screen when the fill is drawn on it — so its alpha is ignored and the
 // result is opaque, which is what makes the result something [ContrastRatio]
 // can be handed. Coverage 0 returns dst and coverage 255 returns src, both

@@ -59,7 +59,7 @@ func TestDefaultTypographyCode(t *testing.T) {
 	}
 }
 
-// TestDocumentHeadingScaleIsComplete: the ladder is a type role like any
+// TestDocumentHeadingScaleIsComplete: the scale is a type role like any
 // other, so every stop names a face and carries a size, a weight and a line
 // height. A zero stop would silently fall back to the shaper's defaults on a
 // prose surface.
@@ -81,7 +81,7 @@ func TestDocumentHeadingScaleIsComplete(t *testing.T) {
 	}
 }
 
-// TestDocumentHeadingScaleProportions pins the ladder to the body role it is
+// TestDocumentHeadingScaleProportions pins the scale to the body role it is
 // stepped off: level 1 at 1.6 times BodyLarge, level 2 at 1.4, level 5 at the
 // reading size itself and level 6 just under it.
 func TestDocumentHeadingScaleProportions(t *testing.T) {
@@ -101,7 +101,7 @@ func TestDocumentHeadingScaleProportions(t *testing.T) {
 	}
 }
 
-// TestDocumentHeadingScaleStepsEvenly is the complaint the ladder exists to
+// TestDocumentHeadingScaleStepsEvenly is the complaint the scale exists to
 // answer: adjacent levels a reader cannot rank. Every step down must be a
 // real one, and no step may be so much smaller than its neighbours that the
 // pair it separates reads as one level.
@@ -111,7 +111,7 @@ func TestDocumentHeadingScaleStepsEvenly(t *testing.T) {
 	for level := 2; level <= 6; level++ {
 		above, here := scale.Level(level-1).Size, scale.Level(level).Size
 		if here >= above {
-			t.Fatalf("level %d sets at %g dp against level %d's %g; the ladder must fall",
+			t.Fatalf("level %d sets at %g dp against level %d's %g; the scale must fall",
 				level, here, level-1, above)
 		}
 		steps = append(steps, above/here)
@@ -128,9 +128,9 @@ func TestDocumentHeadingScaleStepsEvenly(t *testing.T) {
 	}
 }
 
-// TestDocumentHeadingScaleIsBoldThroughout: by the bottom of the ladder there
+// TestDocumentHeadingScaleIsBoldThroughout: by the bottom of the scale there
 // is no size difference left to mark a heading, so weight carries it, and a
-// weight that fades with the level would end in rungs indistinguishable from
+// weight that fades with the level would end in steps indistinguishable from
 // the paragraph under them.
 func TestDocumentHeadingScaleIsBoldThroughout(t *testing.T) {
 	for level := 1; level <= 6; level++ {
@@ -140,7 +140,7 @@ func TestDocumentHeadingScaleIsBoldThroughout(t *testing.T) {
 	}
 }
 
-// TestDocumentHeadingScaleLevelAddressesTheIndex: Level(n) is the ladder's
+// TestDocumentHeadingScaleLevelAddressesTheIndex: Level(n) is the scale's
 // only documented accessor, so it must agree with the index it wraps and
 // reject a level that is not one of the six.
 func TestDocumentHeadingScaleLevelAddressesTheIndex(t *testing.T) {

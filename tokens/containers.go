@@ -30,19 +30,19 @@
 // badge on the content and one on the window's furniture beside it in two
 // different hues for a reason no reader could infer.
 //
-// The mark a role puts on a ground — an icon, a leading edge, a rule — is
+// The mark a role puts on a surface — an icon, a leading edge, a rule — is
 // not text and is not chosen against a text floor. MarkOn picks it: the
 // most chromatic step of the role's own ramp that still reaches the floor
-// asked for over that ground. Said the other way round, a mark should be as
-// much its own colour as it can be while still reading, and which step that
-// is depends on the hue as much as on the surface — sRGB holds a saturated
-// red only at mid depths and a saturated orange only at high ones, so a
-// fixed step would serve one hue at the cost of the others. It is one rule
-// for two jobs: a status container's own mark takes it against the
-// container at WCAG 1.4.11's 3:1 non-text floor, and a component marking
-// some other ground — a transient chip's leading edge over the inverse
-// surface, say — takes it against that ground at whatever floor that job
-// owes.
+// asked for over that surface. Said the other way round, a mark should be
+// as much its own colour as it can be while still reading, and which step
+// that is depends on the hue as much as on the surface — sRGB holds a
+// saturated red only at mid depths and a saturated orange only at high
+// ones, so a fixed step would serve one hue at the cost of the others. It
+// is one rule for two jobs: a status container's own mark takes it against
+// the container at WCAG 1.4.11's 3:1 non-text floor, and a component that
+// marks some other surface — a transient chip's leading edge over the
+// inverse surface, say — takes it against that surface at whatever floor
+// that job owes.
 //
 // Body text on a container is a different pairing and does not use MarkOn.
 // It reads in the neutral Text token, which measures 11.6:1 or better over
@@ -67,22 +67,23 @@ import (
 	"github.com/vibrantgio/theme/color"
 )
 
-// ContainerFloor is the least contrast a tonal container owes the ground it
-// is placed on: enough that a reader sees a filled region there at all.
+// ContainerFloor is the least contrast a tonal container owes the surface
+// it is placed on: enough that a reader sees a filled region there at all.
 //
-// A container's fill is the quietest a hue is spoken at — tinted toward the
-// ground until it is a field rather than a mark — so its floor is a floor on
-// being a field at all, and the ceiling is left to whatever draws it.
+// A container's fill is the least pronounced a hue is spoken at — tinted
+// toward the surface beneath until it is a field rather than a mark — so its
+// floor is a floor on being a field at all, and the ceiling is left to
+// whatever draws it.
 //
 // It is not a WCAG criterion, because WCAG has none for this. 1.4.11's 3:1
 // governs a mark that has to be resolved as a shape; a container carries no
 // shape and no information of its own — it is a place, and what it owes is
 // only that its edge be findable. Gating a container at 3:1 would make every
-// tonal fill in the system as loud as the marks on it.
+// tonal fill in the system as pronounced as the marks on it.
 //
 // 1.25:1 is measured rather than picked. Over the seed sweep — ten seeds,
-// both schemes, both contrast variants, five roles, every storey — the fixed
-// step-300 container's separation from the ground falls in bands with air
+// both schemes, both contrast variants, five roles, every level — the fixed
+// step-300 container's separation from that surface falls in bands with air
 // between them: 1.00–1.01 where the container IS the surface, 1.16–1.21 where
 // it is a shade the eye reads as the same surface, then 1.30–1.40 and 1.42
 // upward, which is where the design's own pairings sit. The threshold goes in
@@ -159,8 +160,8 @@ func (t ColorTokens) StatusContainer(role Role) stdcolor.NRGBA {
 // Depth is the one thing Container cannot answer alone. It is realized
 // at a fixed step, which is right for a component that fills the page it is
 // on — the depth then IS the elevation the container is claiming — and wrong
-// for a small one placed at an arbitrary level, because the elevation ladder
-// walks through that fixed step. A dark scheme's level-2 surface and its
+// for a small one placed at an arbitrary level, because the elevation levels
+// walk through that fixed step. A dark scheme's level-2 surface and its
 // step-300 container land within 1.01:1 of each other; a container drawn
 // there is not subtle, it is absent, and the component wearing it silently
 // loses whatever channel the fill was carrying.
@@ -194,7 +195,7 @@ func (t ColorTokens) StatusContainer(role Role) stdcolor.NRGBA {
 // report, not a reason to paint nothing.
 //
 // Over the seed sweep the answer stays in a narrow band: worst 1.30:1,
-// loudest 1.72:1. A container is never invisible and never a solid.
+// best 1.72:1. A container is never invisible and never a solid.
 func (t ColorTokens) ContainerOn(role Role, surface stdcolor.NRGBA) stdcolor.NRGBA {
 	return fillToFloor(func(step int) stdcolor.NRGBA { return t.containerAt(role, step) }, surface)
 }
@@ -268,7 +269,7 @@ func containerHueStep(r Ramp) int {
 // roles — and the worst pairing over the whole seed sweep measures 4.47:1.
 //
 // It is the floor a mark owes, so a caller setting a run of words on a
-// container asks for the text floor instead: the role's ink derived against
+// container asks for the text floor instead: the role's foreground derived against
 // the fill ([ColorTokens.InkOn], or [ColorTokens.MarkOn] for RoleNeutral,
 // at [TextFloor]).
 func (t ColorTokens) OnContainer(role Role) stdcolor.NRGBA {
@@ -281,9 +282,9 @@ func (t ColorTokens) OnStatusContainer(role Role) stdcolor.NRGBA {
 	return t.OnContainer(role)
 }
 
-// MarkOn returns the colour the role marks ground with: the step of the
+// MarkOn returns the colour the role marks `ground` with: the step of the
 // role's own ramp nearest the ramp's mid-value step 500 that reaches floor
-// against ground.
+// against that surface.
 //
 // Step 500 is where a role is most itself — it is the ramp's mid-value
 // reference — so the rule is "be that step, or
@@ -291,18 +292,19 @@ func (t ColorTokens) OnStatusContainer(role Role) stdcolor.NRGBA {
 // rather than naming a step is what keeps the four hues together. sRGB holds a
 // saturated red only at mid depths and a saturated orange only at high ones,
 // so a fixed step serves one hue at the cost of the others; but the
-// nearest-to-mid step that clears a given ground is the same step for all
-// four, so every mark on one ground lands at one depth and reads at one
+// nearest-to-mid step that clears a given surface is the same step for all
+// four, so every mark on one surface lands at one depth and reads at one
 // weight, which is what makes a set of status marks a set.
 //
 // Reaching for the most chromatic step instead does not hold that. Chroma
 // peaks at a different depth for every hue — the green's peaks two steps
 // deeper on the dark scale than its siblings' do — so the green mark comes
 // back at 9.45:1 beside three siblings at 4.87:1 and pulls the eye across an
-// alert stack for a reason no one reading it could infer. What a mark owes its
-// ground is legibility, and past that, agreement with the other marks.
+// alert stack for a reason no one reading it could infer. What a mark owes
+// the surface it is drawn on is legibility, and past that, agreement with
+// the other marks.
 //
-// A ground no step can clear yields the step that reads best rather than
+// A surface no step can clear yields the step that reads best rather than
 // nothing, so a caller always has a colour: a mark too weak to meet its
 // floor is a contrast defect the gates report, not a reason for a component
 // to paint an unset colour.

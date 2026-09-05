@@ -75,7 +75,7 @@ var pinRoles = []struct {
 	{"highlight", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Highlight }},
 	{"accent", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Primary }},
 	{"on-accent", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.OnPrimary }},
-	// The solid-fill state walk: hover one rung from the pin toward the
+	// The solid-fill state walk: hover one step from the pin toward the
 	// ramp's 900 end, pressed two — SolidStateColor, the exact resolution a
 	// filled button draws. They are emitted as first-class tokens because a
 	// walked pin is off-ramp: no var() arithmetic over the ramp steps could
@@ -103,7 +103,7 @@ var pinRoles = []struct {
 	// first-class tokens for the same reason the state walk above is: a
 	// container is realized at a tone rather than mixed, so no var()
 	// arithmetic over the ramp steps could reproduce one, and the mark is
-	// the rung the container's own contrast chose, which a sheet has no way
+	// the step the container's own contrast chose, which a sheet has no way
 	// to measure.
 	{"error-container", func(t tokens.ColorTokens) stdcolor.NRGBA {
 		return t.StatusContainer(tokens.RoleError)
@@ -129,13 +129,13 @@ var pinRoles = []struct {
 	{"on-info-container", func(t tokens.ColorTokens) stdcolor.NRGBA {
 		return t.OnStatusContainer(tokens.RoleInfo)
 	}},
-	// Each status role's mark on the inverse surface: the rung of that
+	// Each status role's mark on the inverse surface: the step of that
 	// role's ramp nearest its mid-value step that reads over the
 	// counterpart scheme's card at the on-colour floor (MarkOn). It is a
 	// token rather than a ramp reference because the two schemes do not
-	// land on one rung — a light scheme's marks come off step 500 and a
+	// land on one step — a light scheme's marks come off step 500 and a
 	// dark scheme's off step 400, its ramps having turned light by 500 —
-	// so a sheet naming a rung could not flip them with the scheme.
+	// so a sheet naming a step could not flip them with the scheme.
 	{"error-on-inverse", func(t tokens.ColorTokens) stdcolor.NRGBA {
 		return t.MarkOn(tokens.RoleError, t.InverseSurface, onFloor)
 	}},
@@ -150,16 +150,16 @@ var pinRoles = []struct {
 	}},
 	// A badge draws one hue at two strengths, so each of the five variants
 	// emits two tokens: the container fill it wears and the foreground read
-	// on that fill. Both are resolved for the ground the sheet's pages stand
+	// on that fill. Both are resolved for the surface the sheet's pages stand
 	// on, which is level 0 — a badge is small and its fill is
 	// derived against whatever it is placed on, and a sheet has one answer to
 	// give.
 	//
-	// The fill is a pale tint of the role's hue against that ground, at the
-	// container chroma, at the depth that separates it from the ground
+	// The fill is a pale tint of the role's hue against that surface, at the
+	// container chroma, at the depth that separates it from the surface
 	// (StatusContainerOn). The foreground is then derived against the FILL
-	// rather than against the ground: the role's pinned base while that base
-	// clears the text floor over it and the nearest rung to the mid-value
+	// rather than against the surface: the role's pinned base while that base
+	// clears the text floor over it and the nearest step to the mid-value
 	// that does otherwise (InkOn). Neutral has no pinned base — the neutral
 	// ramp carries no pin — so it takes the walk directly (MarkOn), at the
 	// same floor, and its fill comes back as depth alone.
@@ -182,8 +182,8 @@ var pinRoles = []struct {
 	// six tokens are the badge's two taken through the three states a
 	// button answers a pointer with. They are tokens rather than ramp
 	// references for the reason the containers above are: the fill is
-	// realized at a tone against the ground it stands on, and the walk is
-	// counted on the neutral ladder from that realization, so no var()
+	// realized at a tone against the surface it stands on, and the walk is
+	// counted on the neutral scale from that realization, so no var()
 	// arithmetic over the ramp steps reproduces either.
 	//
 	// Level 0, as the badge family is, and for the same reason: the Gio
@@ -196,27 +196,27 @@ var pinRoles = []struct {
 	{"btn-tonal-fill-active", tonalFill(tokens.StatePressed)},
 	{"btn-tonal-active", tonalForeground(tokens.StatePressed)},
 	// The marks a control and a raised surface draw on themselves, each the
-	// rung its own ramp's MarkOn walk answers with at the graphic floor. All
-	// are per-scheme tokens rather than named rungs, because a named rung is
+	// step its own ramp's MarkOn walk answers with at the graphic floor. All
+	// are per-scheme tokens rather than named steps, because a named step is
 	// a pairing and not a colour: the light and dark neutral ramps are
-	// realized at the same perceptual depths from opposite ends, so one rung
-	// means two different contrasts against two grounds that moved the whole
+	// realized at the same perceptual depths from opposite ends, so one step
+	// means two different contrasts against two surfaces that moved the whole
 	// way.
 	//
 	// The two families ask the elevation levels different questions, and the
 	// difference is the whole of why one is a set of four and the other a
-	// single token. A resting edge asks which rung of the neutral ramp reads
+	// single token. A resting edge asks which step of the neutral ramp reads
 	// on the level the thing stands on, and each level may answer for
 	// itself: an edge is the boundary of one surface, and two surfaces are
-	// free to draw their own. A focus ring asks which rung of the primary
+	// free to draw their own. A focus ring asks which step of the primary
 	// ramp reads on EVERY level at once, because focus is one state and a
 	// page that spelled it in two purples would be teaching two idioms.
 	//
 	// control-border is the level-0 answer for the row of controls that
 	// says what it is with a line — the unchecked box, the unselected radio,
 	// the text field, the dropdown trigger (components/input controlBorder):
-	// the neutral rung nearest step 500 that reaches 3:1 against the level-0
-	// ground a control on the page is guaranteed against. Naming step 500 in
+	// the neutral step nearest step 500 that reaches 3:1 against the level-0
+	// surface a control on the page is guaranteed against. Naming step 500 in
 	// both schemes — which this sheet did, at every one of those four sites —
 	// measured 6.63:1 in the dark and 2.67:1 in the light, under the floor in
 	// the scheme most people read in. The walk answers 600 in the light
@@ -227,7 +227,7 @@ var pinRoles = []struct {
 	// the surface's own outline — a dialog's edge circles its level-2 fill,
 	// a popover's its level 3, each pattern painting the fill it is measured
 	// against — and the resting edge of any control standing on it, which is
-	// the same line over the same ground and cannot sensibly be a second
+	// the same line over the same surface and cannot sensibly be a second
 	// colour. A checkbox in a dialog therefore takes dialog-border, not
 	// control-border, and asks its own question rather than inheriting an
 	// answer. A focus ring asks nothing of the level it was put on, which is
@@ -240,15 +240,15 @@ var pinRoles = []struct {
 	// Whether the four answers differ is the derivation's to report, and
 	// today they part in one scheme only. Because elevation lightens toward
 	// the viewer in both schemes, a light window's hardest surface is its
-	// CHROME level and a dark window's is its TOP level, and a rung that
+	// CHROME level and a dark window's is its TOP level, and a step that
 	// clears the hardest clears every other by more. In the light scheme one
-	// neutral rung therefore serves the whole window — 3.55:1 on chrome,
+	// neutral step therefore serves the whole window — 3.55:1 on chrome,
 	// rising to 4.35:1 on a popover — and all four tokens repeat it. The dark
-	// scheme's levels climb further from its chrome level: its level-0 rung
+	// scheme's levels climb further from its chrome level: its level-0 step
 	// reads 2.62:1 on a dialog's fill and 1.80:1 on a popover's, under the
-	// floor a graphic owes its ground, so those two levels walk on to a
-	// lighter rung and the sheet states two edge colours where the light one
-	// states one.
+	// floor a graphic owes the surface it stands on, so those two levels walk
+	// on to a lighter step and the sheet states two edge colours where the
+	// light one states one.
 	//
 	// focus-ring is the scheme's one ring, the colour every focused control
 	// draws on every level: focusRing below, the step of the primary ramp
@@ -269,14 +269,14 @@ var pinRoles = []struct {
 	// focusRingBorderSeparation is what keeps the two apart in the channel a
 	// forced-colors or greyscale display leaves standing.
 	//
-	// One ground belongs to no level: the accent fill a FILLED button's
+	// One surface belongs to no level: the accent fill a FILLED button's
 	// ring lies on, because that ring is inset in the button's own
 	// background rather than drawn at its boundary. It is the one place the
-	// scheme's ring cannot be used — the ring is a rung of the primary ramp
-	// and so is that fill, and the two land on the same rung, which is the
+	// scheme's ring cannot be used — the ring is a step of the primary ramp
+	// and so is that fill, and the two land on the same step, which is the
 	// same colour twice. focusRingOn keeps the scheme's ring wherever it
 	// reads on the fill and walks against the fill only where it cannot, so
-	// the exception costs exactly the one ground that forces it.
+	// the exception costs exactly the one surface that forces it.
 	{"control-border", func(t tokens.ColorTokens) stdcolor.NRGBA {
 		return t.MarkOn(tokens.RoleNeutral, t.SurfaceAt(tokens.Level0), graphicFloor)
 	}},
@@ -396,7 +396,7 @@ func focusRingOn(t tokens.ColorTokens, fill stdcolor.NRGBA) stdcolor.NRGBA {
 
 // badgeFill and badgeForeground are the badge pair, written once per role
 // rather than ten times. Splitting them is what keeps the two derivations
-// honest: the foreground's ground is the fill, so a fill that moved without
+// honest: the foreground's surface is the fill, so a fill that moved without
 // the foreground moving with it would emit a pairing nothing measured.
 func badgeFill(role tokens.Role) func(tokens.ColorTokens) stdcolor.NRGBA {
 	return func(t tokens.ColorTokens) stdcolor.NRGBA {
@@ -432,8 +432,9 @@ func tonalForeground(state tokens.State) func(tokens.ColorTokens) stdcolor.NRGBA
 // onFloor is WCAG AA for body text, the floor a mark on the inverse surface
 // is chosen against: a toast's leading edge is the only thing that says
 // which level the toast is, so it is held to the text floor rather than to
-// the 3:1 a non-text graphic owes its ground. The floor does not bind — over
-// the seed sweep, 3.0 picks the same rungs — it states what the mark owes.
+// the 3:1 a non-text graphic owes the surface it stands on. The floor does
+// not bind — over the seed sweep, 3.0 picks the same steps — it states what
+// the mark owes.
 const onFloor = 4.5
 
 // graphicFloor is WCAG 1.4.11's floor for a graphic that carries meaning
@@ -626,7 +627,7 @@ func colorVars(t tokens.ColorTokens) []cssVar {
 	// walked from the content. The sheet states it anyway because the walk
 	// has no CSS arithmetic either, and the class layer expresses the walk
 	// the way a cascade can — a host that raises what it holds redeclares
-	// --ground-raised, so a control names var(--ground-raised,
+	// --surface-raised, so a control names var(--surface-raised,
 	// var(--elevation-1)) once and lands one step above whatever it is
 	// actually inside.
 	for _, level := range elevationLevels {
@@ -662,14 +663,14 @@ func colorVars(t tokens.ColorTokens) []cssVar {
 		vars = append(vars, cssVar{"--elevation-" + level.name + "-hairline",
 			hexRGB(t.SeamOn(t.SurfaceAt(level.level)))})
 	}
-	// And each level's own interaction walk, for the same reason and one
-	// step further: a ghost button paints no ground at rest and washes the
-	// surface it stands on under the pointer, so the wash is a state taken
-	// FROM that level's fill (tokens.ColorTokens.StateAt, which is what
-	// components/button's ghostWash performs). While a level was a ramp
-	// step the sheet could name the step's neighbour and be done; a level
-	// off the ramp has no neighbour to name, so the walk is written out per
-	// scheme like the fill it starts from.
+	// And each level's own interaction walk, for the same reason and one step
+	// further: a ghost button paints no fill at rest and takes a state fill on
+	// the surface it stands on under the pointer, so that fill is taken FROM
+	// that level's fill (tokens.ColorTokens.StateAt, which is what
+	// components/button's ghostWash performs). While a level was a ramp step
+	// the sheet could name the step's neighbour and be done; a level off the
+	// ramp has no neighbour to name, so the walk is written out per scheme
+	// like the fill it starts from.
 	for _, level := range elevationLevels {
 		for _, st := range []struct {
 			suffix string
@@ -728,18 +729,18 @@ func scaleVars(s Snapshot) []cssVar {
 	// tokens.DisabledOpacity in color-mix() percent, because disabled is an
 	// opacity and not a ramp step. Both are mode-invariant, which is why they
 	// are here and the ring's COLOUR is not: --color-focus-ring is a measured
-	// walk against grounds that flip with the scheme, so it lives with the
+	// walk against surfaces that flip with the scheme, so it lives with the
 	// colours (see pinRoles).
 	vars = append(vars,
 		cssVar{"--focus-ring-width", px(focusRingWidthDp)},
 		cssVar{"--state-disabled-opacity", fnum(tokens.DisabledOpacity*100) + "%"},
 	)
-	// The scrim: a modal's full-canvas dimmer — black at alpha 0x80,
-	// deliberately the same in both modes because
-	// a scrim dims by reducing luminance, so it lives with the mode-invariant
-	// scales rather than in the colour schemes. Like the shadows' fixed black,
-	// it is a constant of the pattern, not a ramp resolution; emitting it as a
-	// token keeps the class layer itself literal-free.
+	// The scrim: a modal's dimmer over the whole window plane — black at alpha
+	// 0x80, deliberately the same in both modes because a scrim dims by
+	// reducing luminance, so it lives with the mode-invariant scales rather
+	// than in the colour schemes. Like the shadows' fixed black, it is a
+	// constant of the pattern, not a ramp resolution; emitting it as a token
+	// keeps the class layer itself literal-free.
 	vars = append(vars, cssVar{"--color-scrim", scrimRGBA})
 	return vars
 }
@@ -751,16 +752,16 @@ func scaleVars(s Snapshot) []cssVar {
 // literal alpha would dim roughly twice as hard as the pattern does
 // (measured: 123 vs Gio's 181 over the light bg pin).
 // The sRGB-equivalent alpha — the a solving srgb(bg)·(1−a) =
-// srgb(linear(bg)·0.5) — is 0.267 over the light grounds (bg ≈ 247), 0.28 at
+// srgb(linear(bg)·0.5) — is 0.267 over the light surfaces (bg ≈ 247), 0.28 at
 // mid-grey and 0.30 near black: 0.28 is the compromise, within ±0.013 of
-// exact across the whole tonal range (≤ ~3/255 per channel on any ground),
+// exact across the whole tonal range (≤ ~3/255 per channel on any surface),
 // and one value serves both modes exactly as the Gio constant does.
 const scrimRGBA = "rgba(0, 0, 0, 0.28)"
 
 // focusRingWidthDp is the focus ring's stroke width — the 2 dp
 // components/button draws (drawButton's gtx.Dp(2) stroke), identical in
-// every emphasis register because keyboard visibility is not a loudness
-// property.
+// every emphasis because keyboard visibility is not a matter of
+// prominence.
 const focusRingWidthDp = 2
 
 // densityVars renders one density setting's per-setting metrics. The :root
@@ -845,23 +846,23 @@ func stylesCSS(s Snapshot) string {
 // (button.go: the filled fill walks via SolidStateColor into
 // --color-accent-hover/-pressed; tonal takes the shared tint tokens above,
 // which are the badge's own recipe under the accent role; ghost is
-// ghostText 700 / ghostTextOnWash 900 over the local ground's own walk).
-// A ghost's wash derives from the local ground, so the raised hosts carry
-// contextual overrides walking from their own level's step (ghostGroundStep:
-// the level-2 dialog washes 400/500, the level-3 popover
+// ghostText 700 / ghostTextOnWash 900 over the local surface's own walk).
+// A ghost's state fill derives from the local surface, so the raised hosts
+// carry contextual overrides walking from their own level's step
+// (ghostGroundStep: the level-2 dialog takes 400/500, the level-3 popover
 // 500/600), matching RenderState.Level on the Gio side. Tonal derives
 // against that same level on the Gio side and the sheet states level 0, as
 // the badge tokens do. Because each variant's blocks override every state
 // it treats, later variant blocks never bleed a state from an earlier one;
 // :disabled resolutions are per-variant for the same reason. Selected
-// resolves where pressed does — the two-step walk. The form controls resolve as components/input does: the raised
-// level under body text, the ramp's own measured answer on the text field,
-// the radio and the checkbox alike — all of it taken against the level the
-// control stands on, which is what --ground-border and
-// --ground-raised carry down from
-// a raised host — neutral 700 placeholder and glyph, focus promoting the
-// border to the scheme's ring, disabled fading each colour to the disabled
-// fraction of its alpha. The checked checkbox carries the check mark the Gio side
+// resolves where pressed does — the two-step walk. The form controls
+// resolve as components/input does: the raised level under body text, the
+// ramp's own measured answer on the text field, the radio and the checkbox
+// alike — all of it taken against the level the control stands on, which is
+// what --surface-border and --surface-raised carry down from a raised host
+// — neutral 700 placeholder and glyph, focus promoting the border to the
+// scheme's ring, disabled fading each colour to the disabled fraction of
+// its alpha. The checked checkbox carries the check mark the Gio side
 // strokes, drawn out of the icon set's grid as two gradient bands rather
 // than encoded as an image, so the layer stays literal-free.
 //
@@ -884,8 +885,8 @@ const componentClasses = `/* ---- Component classes ----
    family — .navbar, .tabs, .sidebar, .crumbs — the four patterns of the same
    names, and the overlay family — .scrim/.dialog (patterns/modal), .popover,
    .tooltip, .toast — the transient surfaces. The focus ring is the same
-   ring in every register — one width, one hue, one measured floor against
-   whatever ground it circles: keyboard visibility is not an emphasis
+   ring in every variant — one width, one hue, one measured floor against
+   whatever surface it circles: keyboard visibility is not an emphasis
    property. Each state rule carries a forcing twin class (.is-hover,
    .is-active, .is-focus, .is-checked) so a static page can show the state
    with the very declarations the live pseudo-class applies. */
@@ -915,7 +916,7 @@ const componentClasses = `/* ---- Component classes ----
 }
 
 /* Filled states: the solid fill walks from the pin toward the ramp's 900
-   end (hover one rung, pressed and selected two) — the walked stops are
+   end (hover one step, pressed and selected two) — the walked stops are
    tokens, not mixes. */
 .btn:hover, .btn.is-hover { background: var(--color-accent-hover); }
 .btn.selected { background: var(--color-accent-pressed); }
@@ -946,11 +947,11 @@ const componentClasses = `/* ---- Component classes ----
   outline-offset: calc(var(--focus-ring-width) / -2);
 }
 
-/* --ground-border and --ground-raised are the level-local pair, and the
-   whole of how a raised host reaches the controls inside it. The first is
-   the neutral rung that reads on this level; the second is the level a
-   control that fills a box of its own is raised TO from here — the rung
-   above the host's own.
+/* --surface-border and --surface-raised are the level-local pair, and the
+   whole of how a raised host hands its level down to the controls inside
+   it. The first is the neutral step that reads on this level; the second is
+   the level a control that fills a box of its own is raised TO from here —
+   the step above the host's own.
    Both inherit, so a surface declares them once — in its
    own rule, beside the --elevation-N it fills with — and every control below
    it re-derives, with no descendant selector anywhere in this sheet. It is
@@ -962,24 +963,24 @@ const componentClasses = `/* ---- Component classes ----
    answer — so the default is written once, at the point of use, and cannot
    drift from the tokens the rules already name.
 
-   A focus ring is not among them, and that absence is the point: the ring
-   is one colour per scheme, measured against every level at once, so a
-   raised host has nothing to hand down. A resting edge is the boundary of
-   one surface and may differ per level — in the dark scheme the level-0
-   neutral rung reads 2.62:1 over a level-2 fill and 1.80:1 over a
-   level-3 one, under the 3:1 a graphic owes its ground, which is why a
-   checkbox in a dialog wears the edge the dialog's own outline wears. The
-   light scheme's levels climb less far from its backdrop and its level-0
-   rung already clears every level, so the handed-down token repeats there
-   and nothing moves — the derivation reporting that nothing needs to.
+   A focus ring is not among them, and that absence is the point: the ring is
+   one colour per scheme, measured against every level at once, so a raised
+   host has nothing to hand down. A resting edge is the boundary of one
+   surface and may differ per level — in the dark scheme the level-0 neutral
+   step reads 2.62:1 over a level-2 fill and 1.80:1 over a level-3 one, under
+   the 3:1 a graphic owes the surface it stands on, which is why a checkbox in
+   a dialog wears the edge the dialog's own outline wears. The light scheme's
+   levels climb less far from its backdrop and its level-0 step already clears
+   every level, so the handed-down token repeats there and nothing moves — the
+   derivation reporting that nothing needs to.
 
    The two join under different rules, and the difference is
-   worth stating. --ground-border is a MEASUREMENT, so a host only declares it
+   worth stating. --surface-border is a MEASUREMENT, so a host only declares it
    where the paper's answer stops clearing — which is why .card, at level 1,
-   does not. --ground-raised is a LEVEL, and a
+   does not. --surface-raised is a LEVEL, and a
    level differs by construction: a control filling at its host's own step is
    invisible against it whatever the contrast table says. So every
-   container surface a control can be put inside declares it — .card,
+   raised surface a control can be put inside declares it — .card,
    .dialog and .popover. A .group declares neither: it takes the fill of the
    surface it is in and raises nothing, so a control inside a group asks the
    same questions it would ask standing on that surface bare. The
@@ -1019,10 +1020,10 @@ const componentClasses = `/* ---- Component classes ----
   color: color-mix(in srgb, var(--color-btn-tonal) var(--state-disabled-opacity), transparent);
 }
 
-/* Ghost: no ground at rest — the neutral ramp's low-contrast text over
+/* Ghost: no fill at rest — the neutral ramp's low-contrast text over
    whatever surface it sits on; under the pointer it performs that
    surface's own hover and press walk, the text walking to 900 with the
-   ground. No selected treatment: a ghost stays quiet.
+   fill. No selected treatment: a ghost stays the least pronounced.
 
    The walk is named as a level's own state rather than as a ramp step,
    because a level is not a ramp step: the fills above the
@@ -1049,9 +1050,9 @@ const componentClasses = `/* ---- Component classes ----
   color: color-mix(in srgb, var(--color-neutral-700) var(--state-disabled-opacity), transparent);
 }
 
-/* A ghost's wash derives from the local ground it sits on, not the window
-   ground: inside a host that is not the paper the hover and press washes
-   re-derive as that host surface's own walk (components/button
+/* A ghost's state fill derives from the local surface it sits on, not the
+   window's own: inside a host that is not the paper, the hover and press
+   fills re-derive as that host surface's own walk (components/button
    buttonColors, walking from RenderState.Level). The card sits at level 1,
    the dialog at level 2, the popover at
    the deepest level 3; the text stays the ramp's 900 end, where the walk
@@ -1061,7 +1062,7 @@ const componentClasses = `/* ---- Component classes ----
 
    Level 1 carries its own rule and the card is why: level 0 walks
    from the Background pin and level 1 from the level above it, which are
-   two different fills and, in the dark scheme, two different washes. */
+   two different fills and, in the dark scheme, two different state fills. */
 .card .btn.ghost:hover, .card .btn.ghost.is-hover {
   background: var(--elevation-1-hover);
 }
@@ -1086,7 +1087,7 @@ const componentClasses = `/* ---- Component classes ----
    vertical padding — content box ControlHeight − 2·PaddingY, icon.Size's
    rule (20 dp comfortable, 16 dp compact). Emphasis reaches the colours
    and stops there: the square never shrinks. The glyph inherits the
-   register's text colour via currentColor. */
+   variant's text colour via currentColor. */
 .btn.icon {
   width: var(--density-control-height);
   height: var(--density-control-height);
@@ -1108,18 +1109,18 @@ const componentClasses = `/* ---- Component classes ----
 
    It wears a tinted field, and the field is what says it is not a control.
    One hue at two strengths: a pale fill, the role's hue tinted toward the
-   ground until it is a place rather than a mark, with the same hue at reading
-   strength on top of it. A saturated fill under knocked-out white text is the
-   register interaction speaks in — .btn's — and a badge borrowing it would be
-   claiming to do something. Never invert these; never put a status colour on
-   inline style.
+   surface until it is a place rather than a mark, with the same hue at
+   reading strength on top of it. A saturated fill under knocked-out white
+   text is the variant interaction speaks in — .btn's — and a badge
+   borrowing it would be claiming to do something. Never invert these; never
+   put a status colour on inline style.
 
    Both halves are tokens because both are derived rather than named on a
    ramp. The fill is realized at a tone at the container chroma, at the depth
-   that separates it from the ground the sheet's pages stand on, which no
+   that separates it from the surface the sheet's pages stand on, which no
    var() arithmetic over ramp steps could reproduce; the foreground is then
    the role's pinned base while that base clears the text floor OVER THAT
-   FILL, and the nearest rung to the mid-value that does otherwise. The pair
+   FILL, and the nearest step to the mid-value that does otherwise. The pair
    is measured together and only means anything together.
 
    The side padding is the S2 stop and the vertical padding is none: the
@@ -1128,8 +1129,8 @@ const componentClasses = `/* ---- Component classes ----
    stop and deliberately not the pill — the pill is .chip's shape, and a chip
    is the thing a badge must not be confused with.
 
-   The label role is the comfortable density's, one rung quieter than a
-   chip's. The sheet re-maps no type role under .compact, so the class
+   The label role is the comfortable density's, one step less pronounced
+   than a chip's. The sheet re-maps no type role under .compact, so the class
    states the comfortable role and a compact page sets its badges in the
    same one.
 
@@ -1174,15 +1175,15 @@ const componentClasses = `/* ---- Component classes ----
 
 /* ---- Form controls ----
    Native elements wearing components/input's resolution: the raised level
-   under body-large text, the neutral rung that reads on the ground the
+   under body-large text, the neutral step that reads on the surface the
    control stands on for the border, neutral 700 placeholder, focus promoting
-   the border to that ground's ring, disabled fading every colour to the
+   the border to that surface's ring, disabled fading every colour to the
    disabled fraction of its alpha.
 
-   Every fill below names var(--ground-raised, var(--elevation-1)) rather than
+   Every fill below names var(--surface-raised, var(--elevation-1)) rather than
    a ramp step, and that is components/input's controlFill: a control that
    paints a box of its own is raised on whatever hosts it, so it fills one
-   rung nearer the viewer than its host. It used to be --color-surface, the
+   step nearer the viewer than its host. It used to be --color-surface, the
    neutral ramp's step 200, which lands on the raised level in the dark
    scheme by coincidence and on no level at all in the light one — a light
    field filled a whole band step BELOW the page it lies on. A surface nearer
@@ -1204,9 +1205,9 @@ const componentClasses = `/* ---- Component classes ----
   appearance: none;
   min-height: var(--density-control-height);
   padding: calc(var(--density-padding-y) - 1px) calc(var(--space-3) - 1px);
-  border: 1px solid var(--ground-border, var(--color-control-border));
+  border: 1px solid var(--surface-border, var(--color-control-border));
   border-radius: var(--radius-md);
-  background: var(--ground-raised, var(--elevation-1));
+  background: var(--surface-raised, var(--elevation-1));
   color: var(--color-text);
   font-family: var(--font-family);
   font-size: var(--font-body-large-size);
@@ -1222,8 +1223,8 @@ const componentClasses = `/* ---- Component classes ----
    same way). The colour is the ring rule above, not the accent pin: a
    promoted border IS the ring, and the accent pin is the seed a caller chose,
    which measures as low as 1.00:1 against the surface it would be drawn on.
-   So the field takes the scheme's measured rung like every other control —
-   and that rung is measured against the levels rather than the field's own
+   So the field takes the scheme's measured step like every other control —
+   and that step is measured against the levels rather than the field's own
    fill because the band has the fill inside it and the level outside, and
    the level is the side every control on it shares. */
 .input:focus-visible, .input.is-focus {
@@ -1232,9 +1233,9 @@ const componentClasses = `/* ---- Component classes ----
   box-shadow: inset 0 0 0 1px var(--color-focus-ring);
 }
 .input:disabled {
-  background: color-mix(in srgb, var(--ground-raised, var(--elevation-1)) var(--state-disabled-opacity), transparent);
+  background: color-mix(in srgb, var(--surface-raised, var(--elevation-1)) var(--state-disabled-opacity), transparent);
   color: color-mix(in srgb, var(--color-text) var(--state-disabled-opacity), transparent);
-  border-color: color-mix(in srgb, var(--ground-border, var(--color-control-border)) var(--state-disabled-opacity), transparent);
+  border-color: color-mix(in srgb, var(--surface-border, var(--color-control-border)) var(--state-disabled-opacity), transparent);
 }
 .input:disabled::placeholder {
   color: color-mix(in srgb, var(--color-neutral-700) var(--state-disabled-opacity), transparent);
@@ -1267,12 +1268,12 @@ const componentClasses = `/* ---- Component classes ----
 
 /* Checkbox (components/input checkbox.go): a 20 dp glyph (checkboxBoxSize
    — a component constant, not a token; it does not follow density) over its
-   own raised fill. Unchecked, its 2 dp edge is the neutral rung the ramp answers
-   with for a 3:1 graphic on the level the box stands on — the ground
+   own raised fill. Unchecked, its 2 dp edge is the neutral step the ramp answers
+   with for a 3:1 graphic on the level the box stands on — the surface
    floor's --color-control-border (600 in the light scheme, 500 in the dark)
-   unless a raised host has re-pointed --ground-border. The radio, the text
+   unless a raised host has re-pointed --surface-border. The radio, the text
    field and the dropdown trigger wear that same edge, all four asking the
-   ramp the one question rather than naming a rung between them.
+   ramp the one question rather than naming a step between them.
    Checked, the box is the
    accent fill under a check mark in the on-accent pin, because a fill says
    a colour was applied and only the mark says what that means: a column of
@@ -1305,8 +1306,8 @@ const componentClasses = `/* ---- Component classes ----
   width: 20px;  /* checkboxBoxSize / radioCircleSize: 20 dp */
   height: 20px;
   margin: 0;
-  border: 2px solid var(--ground-border, var(--color-control-border));
-  background: var(--ground-raised, var(--elevation-1));
+  border: 2px solid var(--surface-border, var(--color-control-border));
+  background: var(--surface-raised, var(--elevation-1));
   cursor: pointer;
 }
 .checkbox {
@@ -1329,8 +1330,8 @@ const componentClasses = `/* ---- Component classes ----
    layer geometry and the disabled-checked box would lose its mark. */
 .checkbox:disabled {
   cursor: default;
-  border-color: color-mix(in srgb, var(--ground-border, var(--color-control-border)) var(--state-disabled-opacity), transparent);
-  background-color: color-mix(in srgb, var(--ground-raised, var(--elevation-1)) var(--state-disabled-opacity), transparent);
+  border-color: color-mix(in srgb, var(--surface-border, var(--color-control-border)) var(--state-disabled-opacity), transparent);
+  background-color: color-mix(in srgb, var(--surface-raised, var(--elevation-1)) var(--state-disabled-opacity), transparent);
 }
 .checkbox:checked:disabled, .checkbox.is-checked:disabled {
   border-color: color-mix(in srgb, var(--color-accent) var(--state-disabled-opacity), transparent);
@@ -1343,22 +1344,22 @@ const componentClasses = `/* ---- Component classes ----
 /* Radio (components/input radio.go): the same 20 dp glyph as a circle;
    selected keeps the gap ring and fills a 10 dp accent dot (radioDotSize) —
    outer accent ring, the glyph's own raised fill, dot, exactly the Gio nested
-   fills. The gap is the glyph's interior, so it takes --ground-raised in the
+   fills. The gap is the glyph's interior, so it takes --surface-raised in the
    chosen state as much as the resting one: the dot is drawn on the radio's
    own surface, not on the host's. */
 .radio { border-radius: var(--radius-full); }
 .radio:checked, .radio.is-checked {
   border-color: var(--color-accent);
-  background: radial-gradient(circle, var(--color-accent) 5px, var(--ground-raised, var(--elevation-1)) 5px); /* 10 dp dot */
+  background: radial-gradient(circle, var(--color-accent) 5px, var(--surface-raised, var(--elevation-1)) 5px); /* 10 dp dot */
 }
 .radio:disabled {
   cursor: default;
-  border-color: color-mix(in srgb, var(--ground-border, var(--color-control-border)) var(--state-disabled-opacity), transparent);
-  background: color-mix(in srgb, var(--ground-raised, var(--elevation-1)) var(--state-disabled-opacity), transparent);
+  border-color: color-mix(in srgb, var(--surface-border, var(--color-control-border)) var(--state-disabled-opacity), transparent);
+  background: color-mix(in srgb, var(--surface-raised, var(--elevation-1)) var(--state-disabled-opacity), transparent);
 }
 .radio:checked:disabled, .radio.is-checked:disabled {
   border-color: color-mix(in srgb, var(--color-accent) var(--state-disabled-opacity), transparent);
-  background: radial-gradient(circle, color-mix(in srgb, var(--color-accent) var(--state-disabled-opacity), transparent) 5px, color-mix(in srgb, var(--ground-raised, var(--elevation-1)) var(--state-disabled-opacity), transparent) 5px);
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-accent) var(--state-disabled-opacity), transparent) 5px, color-mix(in srgb, var(--surface-raised, var(--elevation-1)) var(--state-disabled-opacity), transparent) 5px);
 }
 
 /* ---- Card and group ----
@@ -1374,19 +1375,19 @@ const componentClasses = `/* ---- Component classes ----
    derived against it.
 
    A card fills at the raise walked from the content (--elevation-1) and
-   carries the seam that raise owes — var(--ground-seam,
+   carries the seam that raise owes — var(--surface-seam,
    var(--elevation-0-seam)), transparent in the scheme where the fill tells
    the raise on its own and a hairline where it does not. A card on the
    content is told by its fill in both schemes, so that border shows only on
    a card placed inside a host already at the top of its scheme, which is
-   what --ground-seam is redeclared for on .dialog and .popover.
+   what --surface-seam is redeclared for on .dialog and .popover.
 
-   A group's hairline is var(--ground-hairline,
+   A group's hairline is var(--surface-hairline,
    var(--elevation-0-hairline)): the seam of two regions sharing one fill,
-   quieter than the 3:1 mark a graphic carrying meaning owes, and never
-   transparent — it is the whole of what says where the group ends. A host
-   at another level redeclares --ground-hairline, as .dialog and .popover
-   do, so a group inside one is derived against that host's fill.
+   less pronounced than the 3:1 mark a graphic carrying meaning owes, and
+   never transparent — it is the whole of what says where the group ends. A
+   host at another level redeclares --surface-hairline, as .dialog and
+   .popover do, so a group inside one is derived against that host's fill.
 
    Both carry radius Lg, an S4 inset and S3 gaps between the slots —
    exactly drawCard's rad.Lg / sp.S4 / sp.S3. The Gio line lies inside the
@@ -1400,11 +1401,11 @@ const componentClasses = `/* ---- Component classes ----
   flex-direction: column;
   gap: var(--space-3);
   padding: calc(var(--space-4) - 1px);
-  border: 1px solid var(--ground-seam, var(--elevation-0-seam));
+  border: 1px solid var(--surface-seam, var(--elevation-0-seam));
   border-radius: var(--radius-lg);
   background: var(--elevation-1);
   color: var(--color-text);
-  --ground-raised: var(--elevation-2);
+  --surface-raised: var(--elevation-2);
 }
 .group {
   box-sizing: border-box;
@@ -1412,7 +1413,7 @@ const componentClasses = `/* ---- Component classes ----
   flex-direction: column;
   gap: var(--space-3);
   padding: calc(var(--space-4) - 1px);
-  border: 1px solid var(--ground-hairline, var(--elevation-0-hairline));
+  border: 1px solid var(--surface-hairline, var(--elevation-0-hairline));
   border-radius: var(--radius-lg);
   color: var(--color-text);
 }
@@ -1432,8 +1433,8 @@ const componentClasses = `/* ---- Component classes ----
 }
 
 /* ---- Table ----
-   patterns/table: the whole grid grounds on the raised level (drawTable
-   fills Props.Ground, which defaults to level 1) and the header band on
+   patterns/table: the whole grid stands on the raised level (drawTable
+   fills the surface prop, which defaults to level 1) and the header band on
    the raise walked from it (drawHeaderRow raises the grid's own fill, never
    an absolute step), under neutral 700 label-large text (drawHeaderCell).
    Both name --elevation-N rather than a ramp step, because a
@@ -1497,11 +1498,11 @@ const componentClasses = `/* ---- Component classes ----
 
 /* ---- Navigation ----
    The four navigation patterns. All four rest their interactive cells on
-   the Surface ground (neutral 200), so the pointer states are that ground's
-   own one-rung ramp walk — hover one rung to neutral 300, exactly the wash the
-   ghost register performs on the same level. The Gio side draws no hover
+   the Surface fill (neutral 200), so the pointer states are that fill's
+   own one-step ramp walk — hover one step to neutral 300, exactly the state
+   fill the ghost variant paints on the same level. The Gio side draws no hover
    (a native window has the pointer; a static page shows the resolution),
-   but the rungs are the tokens' StateColor walk from ground 200, not a new
+   but the steps are the tokens' StateColor walk from step 200, not a new
    mix. Selection is what the Gio side does draw: the 2 dp Primary underline
    (navbar.go / tabs.go underlineDp) or the sidebar's StateColor(RolePrimary,
    200, StateSelected) two-step walk to primary 400. */
@@ -1535,7 +1536,7 @@ const componentClasses = `/* ---- Component classes ----
    (S3, PaddingY) padding, with a 2 dp underline slot along the bottom edge
    that the Active link fills with the Primary pin — the underline runs the
    full cell width, padding included, exactly the image.Rect the Gio side
-   fills. Hover is the Surface ground's one-rung walk. */
+   fills. Hover is the Surface fill's one-step walk. */
 .navbar-link, .tab {
   box-sizing: border-box;
   display: inline-flex;
@@ -1629,7 +1630,7 @@ const componentClasses = `/* ---- Component classes ----
    edge, vertically centred, one line, clipped rather than wrapped — which
    is also what hides the labels at the collapsed width. Selected is
    StateColor(RolePrimary, 200, StateSelected): the two-step walk past the
-   Surface ground to primary 400. */
+   Surface fill to primary 400. */
 .sidebar-item {
   box-sizing: border-box;
   flex: none;
@@ -1662,8 +1663,8 @@ const componentClasses = `/* ---- Component classes ----
 /* Breadcrumb (patterns/breadcrumb breadcrumb.go): a row of title-small
    segments with S2 gaps around 12 dp chevron separators (chevronDp). The
    last segment is the current location at the Text pin; ancestors rest on
-   neutral 700 and, being links, hover to neutral 900 — the ghost register's
-   text walk on the same ground. Colour follows position (labelColor), so
+   neutral 700 and, being links, hover to neutral 900 — the ghost variant's
+   text walk on the same surface. Colour follows position (labelColor), so
    :last-child carries it; .current forces it for a specimen. */
 .crumbs {
   display: flex;
@@ -1722,16 +1723,16 @@ const componentClasses = `/* ---- Component classes ----
    fill, isolates it); an unscrimmed, shadowless popover separates by fill
    alone and takes the deepest level 3; a toast takes no level at all — it
    inverts, and keeps the level-3 cast shadow to say it can leave; the tooltip
-   takes no rung at all — it inverts instead, because a bubble that small
+   takes no step at all — it inverts instead, because a bubble that small
    needs the stronger cue. */
 
-/* Scrim (modal.go drawModal/scrimColor): the full-canvas dimmer under a
+/* Scrim (modal.go drawModal/scrimColor): the whole-plane dimmer under a
    dialog — --color-scrim, black at the fixed 50% alpha in both modes. The
    scrim centres the dialog, exactly as drawModal centres the surface in the
-   canvas. Behaviour is part of the pattern: on a PANEL a scrim press invokes
-   OnClose; on a DECISION the scrim is INERT — it absorbs presses and answers
-   none of them, because dismissal is one of the decision's answers and a
-   stray click must not give it. */
+   window plane. Behaviour is part of the pattern: on a PANEL a scrim press
+   invokes OnClose; on a DECISION the scrim is INERT — it absorbs presses and
+   answers none of them, because dismissal is one of the decision's answers
+   and a stray click must not give it. */
 .scrim {
   position: absolute;
   inset: 0;
@@ -1741,12 +1742,12 @@ const componentClasses = `/* ---- Component classes ----
 }
 
 /* Dialog (modal.go drawModal): the centred surface — width 75% of the
-   canvas clamped to 180–560 dp, height hugging its content between the
+   window plane clamped to 180–560 dp, height hugging its content between the
    120 dp floor and the 560 dp cap (overflow clips), a level-2 fill under
    the 1 dp neutral 500 stroke, radius Lg, an S5 inset and S3 gaps between
    header, body and footer. The padding gives back the border's 1px, the
    card's trick, so content lands where the Gio inset puts it. G0A.2's two
-   intents share this one surface: a PANEL carries a ghost icon close
+   purposes share this one surface: a PANEL carries a ghost icon close
    (.btn.ghost.icon) in its header and no footer of its own; a DECISION
    carries no X anywhere and a .dialog-footer whose right-aligned actions
    end in the Return-bound default. */
@@ -1766,14 +1767,14 @@ const componentClasses = `/* ---- Component classes ----
   border-radius: var(--radius-lg);
   background: var(--elevation-2);
   color: var(--color-text);
-  --ground-border: var(--color-dialog-border);
-  --ground-raised: var(--elevation-3);
-  --ground-seam: var(--elevation-2-seam);
-  --ground-hairline: var(--elevation-2-hairline);
+  --surface-border: var(--color-dialog-border);
+  --surface-raised: var(--elevation-3);
+  --surface-seam: var(--elevation-2-seam);
+  --surface-hairline: var(--elevation-2-hairline);
 }
 
 /* The header row (modal.go headerWidget): the title-medium title on the
-   left, the close affordance — when the intent shows one — on the right,
+   left, the close affordance — when the purpose shows one — on the right,
    middle-aligned so the ghost button's square drives the row height. */
 .dialog-header {
   display: flex;
@@ -1789,7 +1790,7 @@ const componentClasses = `/* ---- Component classes ----
 }
 
 /* The footer row (modal.go footerWidget): right-aligned actions with S2
-   gaps. Each action is a bare widget owning its own focus ring — the
+   gaps. Each action is a bare component owning its own focus ring — the
    dialog wraps and decorates nothing. */
 .dialog-footer {
   display: flex;
@@ -1814,10 +1815,10 @@ const componentClasses = `/* ---- Component classes ----
   border-radius: var(--radius-md);
   background: var(--elevation-3);
   color: var(--color-text);
-  --ground-border: var(--color-popover-border);
-  --ground-raised: var(--elevation-3);
-  --ground-seam: var(--elevation-3-seam);
-  --ground-hairline: var(--elevation-3-hairline);
+  --surface-border: var(--color-popover-border);
+  --surface-raised: var(--elevation-3);
+  --surface-seam: var(--elevation-3-seam);
+  --surface-hairline: var(--elevation-3-hairline);
 }
 
 /* The tail (popover.go drawTail): a triangle 12 dp across the base and
@@ -1847,7 +1848,7 @@ const componentClasses = `/* ---- Component classes ----
 }
 
 /* Tooltip (tooltip.go drawSurface): the inverse-video bubble — the Text
-   pin as ground under a label in Surface, label-small, radius Sm, S2/S1
+   pin as the surface under a label in Surface, label-small, radius Sm, S2/S1
    padding, clamped to the 24x16 dp minimum. No elevation level and no
    shadow: inversion is the whole cue. */
 .tooltip {
@@ -1880,7 +1881,7 @@ const componentClasses = `/* ---- Component classes ----
    giving the chip an edge.
    The level shows as a leading edge one S2 wide, painted as a two-stop
    gradient so the chip's own radius rounds it: the level's own mark on the
-   inverse surface, the rung of that level's ramp nearest its mid-value step
+   inverse surface, the step of that level's ramp nearest its mid-value step
    that still reads over the chip. It was one S1, which is the width this
    desktop keeps for separators, pane strokes and insets — furniture it does
    not want looked at — and a mark identified by its colour cannot be drawn
@@ -1889,8 +1890,8 @@ const componentClasses = `/* ---- Component classes ----
    edge as wide as the gap it holds the text off by reads as a panel the
    message sits next to rather than as the chip's own edge.
    The mark arrives as a token rather than as a ramp reference because the
-   two schemes do not land on one rung — a light scheme's marks come off
-   step 500 and a dark scheme's off step 400 — and because one rung for both
+   two schemes do not land on one step — a light scheme's marks come off
+   step 500 and a dark scheme's off step 400 — and because one step for both
    cost the light scheme its reds, the error edge coming out the pale salmon
    a red turns into when it is asked to sit as light as an orange wants to.
    Each level takes its own status ramp — info included, which reads off the
@@ -1925,7 +1926,7 @@ const componentClasses = `/* ---- Component classes ----
 }
 
 /* The stack (toast.go paintStack): a corner-anchored column with S2 gaps,
-   inset S4 from the canvas edges (the page anchors it); newest toast
+   inset S4 from the window plane's edges (the page anchors it); newest toast
    nearest the anchored edge. */
 .toast-stack {
   display: flex;

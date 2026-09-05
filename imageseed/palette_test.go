@@ -14,8 +14,8 @@ import (
 // nothing about that.
 
 // repeat is a palette entry listed n times — the shape a curated palette
-// arrives in, where one ink is worn by eight kinds of token and another by
-// one.
+// arrives in, where one colour is worn by eight kinds of token and another
+// by one.
 func repeat(c stdcolor.NRGBA, n int) []stdcolor.NRGBA {
 	out := make([]stdcolor.NRGBA, n)
 	for i := range out {

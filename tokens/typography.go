@@ -41,7 +41,7 @@ type TextStyle struct {
 	// LineHeight is the height of one line box in dp — the whole box, not the
 	// gap between lines, and not a multiplier. It means what CSS line-height
 	// means: text in this role occupies LineHeight per line whatever its
-	// glyphs measure, with the leading split evenly above and below the ink.
+	// glyphs measure, with the leading split evenly above and below the text.
 	// theme/export writes exactly this number into
 	// `--font-<role>-line-height`, so the design-surface mirror and the Gio
 	// rendering are stating the same fact.
@@ -64,16 +64,16 @@ type TextStyle struct {
 	Tracking float32
 }
 
-// DocumentHeadingScale is the six-step heading ladder a prose surface sets
+// DocumentHeadingScale is the six-step heading scale a prose surface sets
 // its headings in: a rendered document, an article, a note, a long-form
 // reading column — anywhere running text is broken up by headings that recur
 // every few paragraphs rather than announcing a screen. Index i holds level
 // i+1; use Level to address the scale by heading level.
 //
-// The ladder is that surface's own role — the reading surface, paper, as
+// The scale is that surface's own role — the reading surface, paper, as
 // against the chrome a screen is assembled from. A document ranks its sections
 // with this the way a view sizes its one headline with a display role, and
-// keeping the two apart is what lets a reading ladder be tuned for reading
+// keeping the two apart is what lets a reading scale be tuned for reading
 // without a screen's furniture following it.
 //
 // It exists because the Display, Headline and Title roles are screen
@@ -81,11 +81,11 @@ type TextStyle struct {
 // 16 dp reading size the largest of them is twice the body — which reads as a
 // poster inside a paragraph stream, wraps a title that should fit one line,
 // and leaves too little room below it for six levels to be told apart. A
-// document wants a quieter ladder that still has six rungs.
+// document wants a shallower scale that still has six steps.
 //
 // # The proportions
 //
-// The ladder is geometric in the body role's size, stepping by about 1.13
+// The scale is geometric in the body role's size, stepping by about 1.13
 // from level 6 up to level 1:
 //
 //	level 1   1.6 × body    level 4   1.125 × body
@@ -95,21 +95,21 @@ type TextStyle struct {
 // The two ends are the fixed points. Level 1 at roughly 1.6 × body is the
 // largest a heading can be while a page of prose still reads as one text
 // rather than as a banner over some paragraphs, and it is where a
-// measurement of typeset reading surfaces puts the top of the ladder. The
+// measurement of typeset reading surfaces puts the top of the scale. The
 // bottom lands at the reading size: a level-5 heading sets in the body's own
 // size and a level-6 heading just under it, because below the reading size a
 // heading stops reading as a heading and starts reading as fine print. The
-// even step between them is the point — a ladder that crowds two adjacent
+// even step between them is the point — a scale that crowds two adjacent
 // levels together to buy a bigger jump elsewhere leaves the reader unable to
 // rank the two it crowded.
 //
 // # The weight
 //
 // Every stop is bold, and the weight does not fall with the level. Size does
-// most of the work at the top of the ladder, but by level 5 there is no size
+// most of the work at the top of the scale, but by level 5 there is no size
 // difference left to do any, so weight is all that separates a heading from
 // the paragraph under it — and a scale whose deep levels fade towards the
-// body weight ends in rungs the reader cannot pick out at all. Measured on
+// body weight ends in steps the reader cannot pick out at all. Measured on
 // typeset reading surfaces, their headings hold a stroke about 1.5 times the
 // stroke of their own body text at every level they use, which is the bold
 // face's ratio against regular rather than the medium face's.
@@ -152,7 +152,7 @@ type Typography struct {
 	// style, carrying a body role's metrics on the mono face.
 	Code TextStyle
 
-	// DocumentHeadings is the heading ladder for prose surfaces, derived from
+	// DocumentHeadings is the heading scale for prose surfaces, derived from
 	// BodyLarge rather than borrowed from the Headline and Title roles; see
 	// [DocumentHeadingScale] for what it is for and how its steps are
 	// proportioned. It sits outside the MD3 grid the way Code does, and it
@@ -241,11 +241,12 @@ func (t *Typography) cache() *shaperCache {
 //
 // Sharing one shaper is nevertheless right, because Gio renders on a single
 // goroutine. The rx observables in this organization paint nothing: they
-// assemble a forest of widgets that the frame event handler then lays out, on
-// that one goroutine. A shaper therefore does not need to be per-value, per
-// component or per emission — one shaper per face collection is what the
-// toolkit expects, and the only arrangement that does not re-parse sixteen
-// embedded faces and re-enumerate the platform's fonts on every theme change.
+// assemble a forest of layout.Widgets that the frame event handler then lays
+// out, on that one goroutine. A shaper therefore does not need to be
+// per-value, per component or per emission — one shaper per face collection is
+// what the toolkit expects, and the only arrangement that does not re-parse
+// sixteen embedded faces and re-enumerate the platform's fonts on every theme
+// change.
 //
 // The rule that follows is short: call Shaper from the goroutine that runs the
 // event loop and do not hand the result to another one. Copying the Typography
@@ -500,7 +501,7 @@ var DefaultTypography = Typography{
 
 	Code: TextStyle{Typeface: "Roboto Mono", Weight: WeightRegular, Size: 14, LineHeight: 20, Tracking: 0.25},
 
-	// The document ladder, in BodyLarge's 16 dp: 25.5, 22.5, 20, 18, 16, 14 —
+	// The document scale, in BodyLarge's 16 dp: 25.5, 22.5, 20, 18, 16, 14 —
 	// 1.6, 1.4, 1.25, 1.125, 1.0 and 0.875 times the body, an even step of
 	// about 1.13 all the way down. Line height loosens as the size falls,
 	// from a quarter over the largest stop to nearly half over the smallest,

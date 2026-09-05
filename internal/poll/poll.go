@@ -1,7 +1,7 @@
 // Package poll implements the one shared poll loop behind theme's live
 // OS-preference streams (theme/system, theme/a11y).
 //
-// [Shared] is the FX.5 fix for the cold-stream defect the register recorded:
+// [Shared] is the FX.5 fix for the cold-stream defect it recorded:
 // a plain Ticker+Map observable starts a fresh ticker per subscription, so a
 // stream handed to n consumers polled the OS n times per interval — and on
 // macOS every poll is a `defaults` fork+exec. Shared multicasts the loop:

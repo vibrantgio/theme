@@ -74,7 +74,7 @@ func pinForRole(t tokens.ColorTokens, role tokens.Role) color.NRGBA {
 
 // TestTintedStatesStayOnRamp verifies the tinted regime resolves every
 // state to an exact ramp step — never a blend or overlay — at the defined
-// walk: normal and focus on the ground, hover one step past, pressed,
+// walk: normal and focus on the step itself, hover one step past, pressed,
 // selected and dragged two, in both modes with the same index (the
 // paired-scale invariant: same step, same job).
 func TestTintedStatesStayOnRamp(t *testing.T) {
@@ -95,7 +95,7 @@ func TestTintedStatesStayOnRamp(t *testing.T) {
 				}
 				for _, c := range checks {
 					if got := s.tok.StateColor(r.role, ground, c.state); got != c.want {
-						t.Errorf("%s %s: StateColor(ground %d, state %d) = %v, want ramp step %v",
+						t.Errorf("%s %s: StateColor(step %d, state %d) = %v, want ramp step %v",
 							s.name, r.name, ground, c.state, got, c.want)
 					}
 				}
@@ -105,7 +105,7 @@ func TestTintedStatesStayOnRamp(t *testing.T) {
 }
 
 // TestTintedWalkClampsAtRampEnd verifies walks past the ramp end clamp to
-// step 900: ground 800 pressed resolves to 900, ground 900 stays put.
+// step 900: step 800 pressed resolves to 900, step 900 stays put.
 func TestTintedWalkClampsAtRampEnd(t *testing.T) {
 	for _, s := range stateSchemes {
 		n := s.tok.Ramps.Neutral
@@ -129,8 +129,8 @@ func TestTintedWalkClampsAtRampEnd(t *testing.T) {
 }
 
 // TestTintedWalkMonotonic verifies the walk is monotonic along the ramp in
-// the mode's own direction: on a light ground hover is darker than normal
-// and pressed darker than hover; on a dark ground the same index walk is
+// the mode's own direction: on a light surface hover is darker than normal
+// and pressed darker than hover; on a dark surface the same index walk is
 // lighter — the paired scales make one rule serve both modes.
 func TestTintedWalkMonotonic(t *testing.T) {
 	for _, s := range stateSchemes {
@@ -144,7 +144,7 @@ func TestTintedWalkMonotonic(t *testing.T) {
 					ok = normal < hover && hover < pressed
 				}
 				if !ok {
-					t.Errorf("%s %s ground %d: luminance walk not monotonic: normal %.4f, hover %.4f, pressed %.4f",
+					t.Errorf("%s %s step %d: luminance walk not monotonic: normal %.4f, hover %.4f, pressed %.4f",
 						s.name, r.name, ground, normal, hover, pressed)
 				}
 			}
@@ -188,7 +188,7 @@ func TestSolidWalkMonotonicTowardNine(t *testing.T) {
 // TestDarkSolidWalkLandsOnPairedDepths verifies "same step, same job" for
 // the solid regime: FromSeed pins every dark base at the dark scale's
 // step-700 depth, so its hover must land at step-800 depth and its
-// pressed must clamp at step-900 depth — the exact rungs a tinted walk
+// pressed must clamp at step-900 depth — the exact steps a tinted walk
 // from 700 would visit.
 func TestDarkSolidWalkLandsOnPairedDepths(t *testing.T) {
 	const tol = 1.5 // L*, absorbs 8-bit quantization of pin and ramp
@@ -217,7 +217,7 @@ func TestDarkSolidWalkLandsOnPairedDepths(t *testing.T) {
 // offPins are pins no scheme carries: colours a caller fixes on one control
 // and expects to survive a scheme change. They are spread over the tonal
 // axis on purpose — one at each end and two in the middle — because a
-// caller's pin can sit anywhere on the ladder, including past its 900 rung,
+// caller's pin can sit anywhere on the scale, including past its 900 step,
 // where a role's own pin never does.
 var offPins = []struct {
 	name string
@@ -230,14 +230,14 @@ var offPins = []struct {
 	{"white", tokens.White},
 }
 
-// TestRoleLaddersTrackTheNeutralLadder is the evidence for the ladder
+// TestRoleLaddersTrackTheNeutralLadder is the evidence for the scale
 // PinnedStateColor walks on. Every ramp in a scheme sweeps one shared
 // lightness scale and only the neutral sweeps it at zero chroma, so the
 // neutral ramp is the scale itself; the coloured ramps are the same scale
 // realized at a hue and a chroma, which the tonal solver may pull a fraction
 // of an L* off target where the gamut bites. This bounds that fraction over
-// the whole seed sweep, which is what makes "ladder a caller's pin on the
-// neutral ramp" cost nothing measurable against laddering it on any other.
+// the whole seed sweep, which is what makes "walk a caller's pin on the
+// neutral ramp" cost nothing measurable against walking it on any other.
 func TestRoleLaddersTrackTheNeutralLadder(t *testing.T) {
 	const tol = 1.0 // L*
 	for _, seed := range sweepSeeds() {
@@ -252,7 +252,7 @@ func TestRoleLaddersTrackTheNeutralLadder(t *testing.T) {
 					lRole, _, _ := speccolor.LabFromNRGBA(ramp[i])
 					lNeutral, _, _ := speccolor.LabFromNRGBA(s.tok.Ramps.Neutral[i])
 					if math.Abs(lRole-lNeutral) > tol {
-						t.Errorf("seed %v %s %s step %d: L* %.2f, neutral ladder %.2f, differ by more than %.1f",
+						t.Errorf("seed %v %s %s step %d: L* %.2f, neutral scale %.2f, differ by more than %.1f",
 							seed, s.name, r.name, (i+1)*100, lRole, lNeutral, tol)
 					}
 				}
@@ -290,22 +290,22 @@ func TestPinnedStateColorWalksLikeARolePin(t *testing.T) {
 					t.Errorf("%s %s: %s = %v, want an opaque colour", s.name, p.name, state, c)
 				}
 			}
-			// A pin already at or past the 900 rung has nowhere to walk: the
-			// ladder clamps there, so the walk holds at that depth instead of
+			// A pin already at or past the 900 step has nowhere to walk: the
+			// scale clamps there, so the walk holds at that depth instead of
 			// running off the end of the scale.
 			lPin, _, _ := speccolor.LabFromNRGBA(p.c)
 			lHover, _, _ := speccolor.LabFromNRGBA(hover)
 			lPressed, _, _ := speccolor.LabFromNRGBA(pressed)
 			lEnd, _, _ := speccolor.LabFromNRGBA(s.tok.Ramps.Neutral.Step(900))
-			const tol = 1.5     // L*, absorbs the 8-bit quantization of pin and rung
-			room := lPin - lEnd // how much depth is left before the rung
+			const tol = 1.5     // L*, absorbs the 8-bit quantization of pin and step
+			room := lPin - lEnd // how much depth is left before the step
 			if !s.descending {
 				room = lEnd - lPin
 			}
 			switch {
 			case room <= tol:
 				if math.Abs(lPressed-lEnd) > tol {
-					t.Errorf("%s %s: pin past the 900 rung pressed to L* %.2f, want it held at the rung %.2f ± %.1f",
+					t.Errorf("%s %s: pin past the 900 step pressed to L* %.2f, want it held at the step %.2f ± %.1f",
 						s.name, p.name, lPressed, lEnd, tol)
 				}
 			case s.descending:
@@ -325,8 +325,8 @@ func TestPinnedStateColorWalksLikeARolePin(t *testing.T) {
 
 // TestPinnedStateColorReproducesTheRoleWalk is the claim that the two solid
 // entry points are one rule seen twice: hand a role's own pin to the
-// caller's-pin walk and it lands where the role walk put it, the two ladders
-// being the same lightness scale at different chromas. Within a rung's worth
+// caller's-pin walk and it lands where the role walk put it, the two scales
+// being the same lightness scale at different chromas. Within a step's worth
 // of quantization, not exactly — which is why the role walk keeps its own
 // ramp rather than being reimplemented on this one.
 func TestPinnedStateColorReproducesTheRoleWalk(t *testing.T) {
@@ -360,7 +360,7 @@ func TestDisabledIsOpacity(t *testing.T) {
 		ground := s.tok.Ramps.Neutral.Step(200)
 		want := color.NRGBA{ground.R, ground.G, ground.B, 0x61}
 		if got := s.tok.StateColor(tokens.RoleNeutral, 200, tokens.StateDisabled); got != want {
-			t.Errorf("%s: disabled tinted = %v, want the ground at 38%% alpha %v", s.name, got, want)
+			t.Errorf("%s: disabled tinted = %v, want the surface at 38%% alpha %v", s.name, got, want)
 		}
 		pin := s.tok.Primary
 		want = color.NRGBA{pin.R, pin.G, pin.B, 0x61}
@@ -379,7 +379,7 @@ func TestFocusIsTheRing(t *testing.T) {
 			t.Errorf("%s: FocusRing() = %v, want Neutral step 500 %v", s.name, got, want)
 		}
 		if got, want := s.tok.StateColor(tokens.RoleNeutral, 200, tokens.StateFocus), s.tok.Ramps.Neutral.Step(200); got != want {
-			t.Errorf("%s: focused tinted = %v, want the unchanged ground %v", s.name, got, want)
+			t.Errorf("%s: focused tinted = %v, want the unchanged surface %v", s.name, got, want)
 		}
 		if got, want := s.tok.SolidStateColor(tokens.RolePrimary, tokens.StateFocus), s.tok.Primary; got != want {
 			t.Errorf("%s: focused solid = %v, want the unchanged pin %v", s.name, got, want)
@@ -396,7 +396,7 @@ func TestDraggedFollowsPressed(t *testing.T) {
 				dragged := s.tok.StateColor(r.role, ground, tokens.StateDragged)
 				pressed := s.tok.StateColor(r.role, ground, tokens.StatePressed)
 				if dragged != pressed {
-					t.Errorf("%s %s ground %d: dragged %v != pressed %v", s.name, r.name, ground, dragged, pressed)
+					t.Errorf("%s %s step %d: dragged %v != pressed %v", s.name, r.name, ground, dragged, pressed)
 				}
 			}
 		}
@@ -411,7 +411,7 @@ func TestDraggedFollowsPressed(t *testing.T) {
 }
 
 // TestStateResolverPanics verifies out-of-vocabulary inputs panic, exactly
-// as Ramp.Step does: bad grounds, unknown states and roles, and asking
+// as Ramp.Step does: bad steps, unknown states and roles, and asking
 // Neutral — which has no pinned base — for a solid fill.
 func TestStateResolverPanics(t *testing.T) {
 	mustPanic := func(name string, f func()) {
@@ -423,8 +423,8 @@ func TestStateResolverPanics(t *testing.T) {
 		f()
 	}
 	tok := tokens.DefaultLight
-	mustPanic("ground 150", func() { tok.StateColor(tokens.RoleNeutral, 150, tokens.StateHover) })
-	mustPanic("ground 0", func() { tok.StateColor(tokens.RoleNeutral, 0, tokens.StateNormal) })
+	mustPanic("step 150", func() { tok.StateColor(tokens.RoleNeutral, 150, tokens.StateHover) })
+	mustPanic("step 0", func() { tok.StateColor(tokens.RoleNeutral, 0, tokens.StateNormal) })
 	mustPanic("unknown state", func() { tok.StateColor(tokens.RoleNeutral, 200, tokens.State(99)) })
 	mustPanic("unknown role", func() { tok.StateColor(tokens.Role(99), 200, tokens.StateHover) })
 	mustPanic("solid unknown state", func() { tok.SolidStateColor(tokens.RolePrimary, tokens.State(99)) })

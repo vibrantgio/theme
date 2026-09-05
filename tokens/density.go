@@ -111,7 +111,7 @@ package tokens
 // asymmetry is intended. What is not allowed is calling the result a height
 // and then measuring something else.
 //
-// The consequence worth saying out loud: controls in different type roles come
+// The consequence worth stating: controls in different type roles come
 // out at different heights, and a Comfortable text field (40) is taller than a
 // Comfortable button (36) because BodyLarge is a larger role than LabelLarge.
 // Both are honest readings of the tokens. A design that wants them equal
@@ -226,7 +226,7 @@ func (Density) MinHitTarget() float32 { return MinHitTarget }
 
 // ChipHeight returns the chip height in dp: [Density.ControlHeight] less
 // [ChipDrop]. A chip is smaller than a button, and the relation says that once
-// instead of pinning a second ladder that can drift off the first —
+// instead of pinning a second scale that can drift off the first —
 // Comfortable lands on 32 and Compact on 24.
 //
 // It is a method for the same reason [Density.MinHitTarget] is one: no Density

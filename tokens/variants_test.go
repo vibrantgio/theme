@@ -9,7 +9,7 @@ import (
 	"github.com/vibrantgio/theme/tokens"
 )
 
-// variantGrounds are the two neutral grounds both variant rungs are chosen
+// variantGrounds are the two neutral surfaces both variant steps are chosen
 // against: the surface a piece of furniture wears and the paper the window
 // stands on. A token that cleared only the easier of the two would be a
 // promise kept on one of them.
@@ -26,14 +26,14 @@ func variantGrounds(t tokens.ColorTokens) []struct {
 	}
 }
 
-// TestVariantRungsClearTheirFloors is the gate the two variant rungs exist
-// for: whatever the seed, the scheme or the derivation, the boundary rung
-// reaches the 3:1 a mark owes its ground and the muted ink reaches the 4.5:1
-// a run of words owes it — against BOTH neutral grounds, not the easier one.
+// TestVariantRungsClearTheirFloors is the gate the two variant steps exist
+// for: whatever the seed, the scheme or the derivation, the boundary step
+// reaches the 3:1 a mark owes its surface and the muted foreground reaches the 4.5:1
+// a run of words owes it — against BOTH neutral surfaces, not the easier one.
 //
 // It is the failure M3's fixed outline role has and this palette must not:
-// a rung named once states one colour and as many measurements as it has
-// grounds.
+// a step named once states one colour and as many measurements as it has
+// surfaces.
 func TestVariantRungsClearTheirFloors(t *testing.T) {
 	worstOutline, worstOutlineAt := 99.0, ""
 	worstInk, worstInkAt := 99.0, ""
@@ -67,12 +67,12 @@ func TestVariantRungsClearTheirFloors(t *testing.T) {
 		len(sweepSeeds()), worstOutline, worstOutlineAt, worstInk, worstInkAt)
 }
 
-// TestVariantRungsStayQuiet holds the other half of each rung's contract.
+// TestVariantRungsStayQuiet holds the other half of each step's contract.
 // Clearing a floor is easy at the ramp's far end — step 900 clears
-// everything — and a token that went there would be the loud rung under a
-// quiet name. Both are the QUIETEST rung that clears, so each must stay under
-// the token that speaks at full strength: the boundary under the muted ink,
-// and the muted ink under Text.
+// everything — and a token that went there would be the most pronounced step
+// under a muted name. Both are the LEAST PRONOUNCED step that clears, so each
+// must stay under the token that speaks at full strength: the boundary under
+// the muted foreground, and the muted foreground under Text.
 func TestVariantRungsStayQuiet(t *testing.T) {
 	for _, seed := range sweepSeeds() {
 		light, dark := tokens.FromSeed(seed)
@@ -89,11 +89,11 @@ func TestVariantRungsStayQuiet(t *testing.T) {
 				ink := color.ContrastRatio(s.tok.OnSurfaceVariant(), g.ground)
 				text := color.ContrastRatio(s.tok.Text, g.ground)
 				if outline > ink {
-					t.Errorf("seed %v: %s OutlineVariant on %s measures %.2f:1, louder than OnSurfaceVariant's %.2f:1",
+					t.Errorf("seed %v: %s OutlineVariant on %s measures %.2f:1, more pronounced than OnSurfaceVariant's %.2f:1",
 						seed, s.name, g.name, outline, ink)
 				}
 				if ink >= text {
-					t.Errorf("seed %v: %s OnSurfaceVariant on %s measures %.2f:1, at or past Text's %.2f:1 — a muted ink that is not muted",
+					t.Errorf("seed %v: %s OnSurfaceVariant on %s measures %.2f:1, at or past Text's %.2f:1 — a muted foreground that is not muted",
 						seed, s.name, g.name, ink, text)
 				}
 			}
@@ -102,15 +102,15 @@ func TestVariantRungsStayQuiet(t *testing.T) {
 }
 
 // TestVariantRungsBeatTheFixedStep is the comparison the derivation is worth
-// having: naming one neutral rung and calling it the outline — M3's fixed
+// having: naming one neutral step and calling it the outline — M3's fixed
 // role, and what this sheet's borders once did — reads under the boundary
 // floor in the light scheme, and the derived token does not.
 //
 // The numbers are the file header's: step 500 measures 2.35:1 over the harder
-// of the two light grounds and 3.07:1 over the harder dark one, so the fixed
+// of the two light surfaces and 3.07:1 over the harder dark one, so the fixed
 // naming fails in the scheme most people read in and passes in the other. The
-// test asserts the shape rather than the digits — that the fixed rung falls
-// short somewhere the derived rung does not — so a re-derived ramp moves the
+// test asserts the shape rather than the digits — that the fixed step falls
+// short somewhere the derived step does not — so a re-derived ramp moves the
 // numbers without turning this red for the wrong reason.
 func TestVariantRungsBeatTheFixedStep(t *testing.T) {
 	fixedFails := false
@@ -132,7 +132,7 @@ func TestVariantRungsBeatTheFixedStep(t *testing.T) {
 		}
 	}
 	if !fixedFails {
-		t.Error("the fixed step-500 outline clears the boundary floor on every ground of both default schemes; the derived rung's whole reason is that it does not, so variants.go needs rewriting before this passes")
+		t.Error("the fixed step-500 outline clears the boundary floor on every surface of both default schemes; the derived step's whole reason is that it does not, so variants.go needs rewriting before this passes")
 	}
 }
 

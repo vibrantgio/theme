@@ -71,13 +71,13 @@
 // # A palette instead of an image
 //
 // [ExtractPalette] takes a list of colours somebody already chose — a syntax
-// style's inks, a brand sheet, a scheme copied off a screenshot — and returns
-// the same kind of answer. Only the first two steps differ: there is nothing
-// to sample and nothing to cluster, because a palette's entries already are
-// the decisions clustering exists to recover from a photograph. Gathering,
-// ranking and the degenerate cases are the image path's own, so a candidate
-// row derived from a palette and one derived from a picture are comparable
-// things.
+// style's colours, a brand sheet, a scheme copied off a screenshot — and
+// returns the same kind of answer. Only the first two steps differ: there is
+// nothing to sample and nothing to cluster, because a palette's entries
+// already are the decisions clustering exists to recover from a photograph.
+// Gathering, ranking and the degenerate cases are the image path's own, so a
+// candidate row derived from a palette and one derived from a picture are
+// comparable things.
 package imageseed
 
 import (

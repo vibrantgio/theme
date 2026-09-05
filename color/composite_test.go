@@ -24,7 +24,7 @@ func TestOverBlendsInLinearLight(t *testing.T) {
 	if want := nrgba(0xC1C1C1, 0xff); got != want {
 		t.Errorf("Over(#5C5C5C@100, #E8E8E8) = %v, want %v (the recorded golden pixel)", got, want)
 	}
-	// The same ink over the light page, the pairing Phase AS was opened by.
+	// The same foreground over the light page, the pairing Phase AS was opened by.
 	page := nrgba(0xF6F6F6, 0xff)
 	comp := color.Over(nrgba(0x5C5C5C, 100), page)
 	if want := nrgba(0xCCCCCC, 0xff); comp != want {
@@ -35,23 +35,23 @@ func TestOverBlendsInLinearLight(t *testing.T) {
 	}
 }
 
-// TestOverAtTheEndsOfCoverage: no coverage is the ground and full coverage
-// is the ink, both exactly, so a caller can hand Over any alpha without
+// TestOverAtTheEndsOfCoverage: no coverage is the surface and full coverage
+// is the foreground, both exactly, so a caller can hand Over any alpha without
 // special-casing either end.
 func TestOverAtTheEndsOfCoverage(t *testing.T) {
 	ground := nrgba(0x1E293B, 0xff)
 	for _, ink := range []uint32{0x000000, 0xFFFFFF, 0x5C5C5C, 0x3B82F6} {
 		if got := color.Over(nrgba(ink, 0), ground); got != ground {
-			t.Errorf("Over(%06X@0, ground) = %v, want the ground %v", ink, got, ground)
+			t.Errorf("Over(%06X@0, surface) = %v, want the surface %v", ink, got, ground)
 		}
 		if got, want := color.Over(nrgba(ink, 0xff), ground), nrgba(ink, 0xff); got != want {
-			t.Errorf("Over(%06X@255, ground) = %v, want the ink %v", ink, got, want)
+			t.Errorf("Over(%06X@255, surface) = %v, want the foreground %v", ink, got, want)
 		}
 	}
 }
 
 // TestOverIsMonotonicInCoverage: raising coverage moves the composite
-// toward the ink and never away from it. The derivations that solve for a
+// toward the foreground and never away from it. The derivations that solve for a
 // coverage — components/scrollbar's thumb above all — walk alpha upward and
 // stop at the first value that clears a floor, which is only the least such
 // value if the walk is monotonic.
@@ -65,7 +65,7 @@ func TestOverIsMonotonicInCoverage(t *testing.T) {
 		for a := 1; a <= 255; a++ {
 			l := color.RelativeLuminance(color.Over(nrgba(tc.ink, uint8(a)), ground))
 			if (toward < 0 && l > prev) || (toward > 0 && l < prev) {
-				t.Fatalf("ink %06X over %06X: coverage %d moved the composite away from the ink (%.6f from %.6f)",
+				t.Fatalf("foreground %06X over %06X: coverage %d moved the composite away from the foreground (%.6f from %.6f)",
 					tc.ink, tc.ground, a, l, prev)
 			}
 			prev = l

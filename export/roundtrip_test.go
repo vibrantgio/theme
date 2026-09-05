@@ -147,7 +147,7 @@ func TestRoundTripColors(t *testing.T) {
 
 	// The dark block carries exactly the overrides that resolve against a
 	// scheme — every variable it declares must exist in :root, and nothing
-	// but a colour or an elevation storey may differ per mode. A storey is
+	// but a colour or an elevation level may differ per mode. A level is
 	// placed against the Background pin rather than named as a ramp step,
 	// so it resolves per scheme like the walked pins do and cannot be a
 	// var() reference the .dark block flips underneath.
@@ -247,12 +247,12 @@ func TestRoundTripScales(t *testing.T) {
 // returns for that scheme — the sheet's default elevation cue cannot drift
 // from the Go resolver.
 //
-// They cannot be var() references into the neutral ramp: a storey is placed
-// against the Background pin in CIELAB L*, so the light scheme's storeys
+// They cannot be var() references into the neutral ramp: a level is placed
+// against the Background pin in CIELAB L*, so the light scheme's levels
 // above the paper and the dark scheme's floor are not ramp steps at all and
 // no var() chain reaches them. Each block states its own five.
 //
-// The ladder's direction is asserted here too: read down the storeys and
+// The scale's direction is asserted here too: read down the levels and
 // the fill gets lighter, in the :root block and in the .dark one, with no
 // mirror clause between them.
 func TestRoundTripElevationSurfaces(t *testing.T) {
@@ -269,7 +269,7 @@ func TestRoundTripElevationSurfaces(t *testing.T) {
 			name := "--elevation-" + level.name
 			got, ok := mode.vars[name]
 			if !ok {
-				t.Fatalf("%s does not declare %s; every scheme states its own ladder", mode.name, name)
+				t.Fatalf("%s does not declare %s; every scheme states its own scale", mode.name, name)
 			}
 			fill := mode.scheme.SurfaceAt(level.level)
 			if want := wantHex(fill); got != want {
@@ -395,9 +395,9 @@ func TestRoundTripMotion(t *testing.T) {
 // TestRoundTripButtonClasses asserts the class layer cannot drift from the
 // button component's resolution: the walked solid-fill stops equal
 // SolidStateColor's per mode, the focus ring and the checkbox's edge are the
-// rungs their own ramps measure against the grounds they lie on, the
-// disabled fraction is DisabledOpacity, and every register/state rule picks
-// exactly the ramp rungs button.go's constants pick (tonalGround 200 /
+// steps their own ramps measure against the surfaces they lie on, the
+// disabled fraction is DisabledOpacity, and every variant/state rule picks
+// exactly the ramp steps button.go's constants pick (tonalGround 200 /
 // tonalText 900, ghostGround 200 / ghostText 700 / ghostTextOnWash 900) —
 // with not one literal colour in the layer.
 // rungDistance is how far a ramp index sits from step 500, the mid-value
@@ -470,10 +470,10 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		if got, want := mode.vars["--color-focus-ring"], wantHex(wantRing); got != want {
 			t.Errorf("--color-focus-ring (mode %d) = %q, want the primary step nearest step 500 that reads on every level and parts from every resting border %q", i, got, want)
 		}
-		// The one exception, and the only ground that belongs to no level:
+		// The one exception, and the only surface that belongs to no level:
 		// the fill a filled button insets its ring in. The scheme's ring
 		// serves wherever it reads on that fill; where it cannot — a solid
-		// primary fill being a rung of the ring's own ramp — the ramp is
+		// primary fill being a step of the ring's own ramp — the ramp is
 		// walked against the fill instead.
 		fill := mode.tok.SolidStateColor(tokens.RolePrimary, tokens.StateFocus)
 		onAccent := wantRing
@@ -483,23 +483,23 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		if got, want := mode.vars["--color-focus-ring-on-accent"], wantHex(onAccent); got != want {
 			t.Errorf("--color-focus-ring-on-accent (mode %d) = %q, want the ring the filled button's own fill can carry %q", i, got, want)
 		}
-		// The storey-varying ring tokens are gone, and their absence is
-		// pinned: a ring that depended on the ground is the divergence this
+		// The level-varying ring tokens are gone, and their absence is
+		// pinned: a ring that depended on the surface is the divergence this
 		// sheet exists not to reintroduce.
 		for _, gone := range []string{"--color-dialog-focus-ring", "--color-popover-focus-ring"} {
 			if got, ok := mode.vars[gone]; ok {
-				t.Errorf("%s (mode %d) = %q, want no such token: the ring does not vary with the storey", gone, i, got)
+				t.Errorf("%s (mode %d) = %q, want no such token: the ring does not vary with the level", gone, i, got)
 			}
 		}
 		// The control row's resting edge, likewise: components/input's
-		// controlBorder is MarkOn against the level-0 ground, and the two
+		// controlBorder is MarkOn against the level-0 surface, and the two
 		// outline tokens are the same walk two and three levels up — the
 		// fills patterns/modal and patterns/popover paint and measure their
 		// own edges against, and the edge any control standing on those
 		// levels wears. Level 1 has none: a card draws no line of its own,
 		// and a control on a card takes control-border unchanged.
 		if got, want := mode.vars["--color-control-border"], wantHex(mode.tok.MarkOn(tokens.RoleNeutral, mode.tok.SurfaceAt(tokens.Level0), 3.0)); got != want {
-			t.Errorf("--color-control-border (mode %d) = %q, want the neutral rung that reads on the window ground %q", i, got, want)
+			t.Errorf("--color-control-border (mode %d) = %q, want the neutral step that reads on the window surface %q", i, got, want)
 		}
 		for _, edge := range []struct {
 			name  string
@@ -511,7 +511,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		} {
 			want := wantHex(mode.tok.MarkOn(tokens.RoleNeutral, mode.tok.SurfaceAt(edge.level), 3.0))
 			if got := mode.vars[edge.name]; got != want {
-				t.Errorf("%s (mode %d) = %q, want the neutral rung that reads on %s %q", edge.name, i, got, edge.what, want)
+				t.Errorf("%s (mode %d) = %q, want the neutral step that reads on %s %q", edge.name, i, got, edge.what, want)
 			}
 		}
 	}
@@ -522,7 +522,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		t.Errorf("--state-disabled-opacity = %q, want %q", got, want)
 	}
 
-	// The class layer itself: token references only, at button.go's rungs.
+	// The class layer itself: token references only, at button.go's steps.
 	src := stylesCSS(snap)
 	idx := strings.Index(src, ".btn")
 	if idx < 0 {
@@ -545,8 +545,8 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		".btn.selected { background: var(--color-accent-pressed); }",
 		".btn:active, .btn.is-active { background: var(--color-accent-pressed); }",
 		// The ring: one width, one hue and one value everywhere — the filled
-		// button's own fill is the one ground that answers differently, and
-		// no rule names a storey. And its forcing twins: a static
+		// button's own fill is the one surface that answers differently, and
+		// no rule names a level. And its forcing twins: a static
 		// page shows a state through a class grouped into the same rule as
 		// the live pseudo-class, never through duplicated declarations.
 		"outline: var(--focus-ring-width) solid var(--color-focus-ring);",
@@ -571,13 +571,13 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"width: var(--density-control-height);",
 		"padding: var(--density-padding-y);",
 		// Ghost: nothing at rest under 700 text; under the pointer, the
-		// paper's own walk under 900. The wash is a state taken FROM a
-		// storey rather than a step named on the ramp.
+		// paper's own walk under 900. The state fill is a state taken FROM a
+		// level rather than a step named on the ramp.
 		"color: var(--color-neutral-700);",
 		"background: var(--elevation-0-hover);",
 		"background: var(--elevation-0-active);",
 		"color: var(--color-neutral-900);",
-		// Ghost in a raised host: the wash re-derives from the host
+		// Ghost in a raised host: the state fill re-derives from the host
 		// surface's own level — both card looks at level 1, the dialog
 		// at level 2, the popover at level 3 — token
 		// references all the way, exactly buttonColors' ghostWash walk.
@@ -594,10 +594,10 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"background: var(--elevation-3-hover);",
 		"background: var(--elevation-3-active);",
 		// Badge: the inline annotation — label-medium text in one derived
-		// ink, with no fill, no corner, no boundary and no padding, so the
-		// role's line box is the whole height. Five variants differing in
-		// hue alone, each ink a token because it is derived against the
-		// ground rather than named on a ramp.
+		// foreground, with no fill, no corner, no boundary and no padding, so
+		// the role's line box is the whole height. Five variants differing in
+		// hue alone, each foreground a token because it is derived against the
+		// surface rather than named on a ramp.
 		".badge {",
 		"font-size: var(--font-label-medium-size);",
 		"color: var(--color-badge-neutral);",
@@ -609,48 +609,48 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"color: var(--color-badge-error);",
 		".badge.info {",
 		"color: var(--color-badge-info);",
-		// Forms: the input component's resolution — the raised storey
+		// Forms: the input component's resolution — the raised level
 		// under body text, the ramp's measured edge, neutral 700
 		// placeholder/glyph, focus promoting the border to the ring,
 		// disabled fading via color-mix. Every edge and every fill names the
-		// storey-local with the ground floor's token as its fallback, which
+		// level-local with the content level's own token as its fallback, which
 		// is how a raised host re-derives the controls inside it; the ring
 		// names none, being one colour for the scheme.
-		"border: 1px solid var(--ground-border, var(--color-control-border));",
-		"background: var(--ground-raised, var(--elevation-1));",
+		"border: 1px solid var(--surface-border, var(--color-control-border));",
+		"background: var(--surface-raised, var(--elevation-1));",
 		"font-size: var(--font-body-large-size);",
 		".input::placeholder { color: var(--color-neutral-700); opacity: 1; }",
 		"border-color: var(--color-focus-ring);",
 		"box-shadow: inset 0 0 0 1px var(--color-focus-ring);",
-		"color-mix(in srgb, var(--ground-border, var(--color-control-border)) var(--state-disabled-opacity), transparent)",
+		"color-mix(in srgb, var(--surface-border, var(--color-control-border)) var(--state-disabled-opacity), transparent)",
 		// Dropdown chevron: neutral 700, the low-contrast glyph step.
 		"border-top: 8px solid var(--color-neutral-700);",
 		// Checkbox/radio: a 2 dp border over Surface, both wearing the one
-		// rung the neutral ramp measures for a control's resting edge — the
+		// step the neutral ramp measures for a control's resting edge — the
 		// same token the text field and the dropdown trigger take. Checked is
 		// the accent fill under the icon-grid check mark (checkbox) / the
 		// 10 dp accent dot (radio), both drawn out of gradients rather than
 		// encoded as an image, so the no-literal guard above still holds over
 		// the whole layer.
-		"border: 2px solid var(--ground-border, var(--color-control-border));",
+		"border: 2px solid var(--surface-border, var(--color-control-border));",
 		".checkbox:checked, .checkbox.is-checked {",
 		"background-position: 3.161px 9.411px, 6.911px 4.411px;",
 		"background-size: 4.929px 4.929px, 9.929px 9.929px;",
 		"linear-gradient(45deg, transparent calc(50% - 0.833px), var(--color-on-accent) calc(50% - 0.833px), var(--color-on-accent) calc(50% + 0.833px), transparent calc(50% + 0.833px)),",
-		"radial-gradient(circle, var(--color-accent) 5px, var(--ground-raised, var(--elevation-1)) 5px)",
+		"radial-gradient(circle, var(--color-accent) 5px, var(--surface-raised, var(--elevation-1)) 5px)",
 		// Card and group: the card fills at level 1 under the seam its raise
 		// owes and no other line; the group declares no fill at all and is
 		// read by its hairline. Both radius Lg, S4 inset (the padding gives
 		// back the border's 1px), S3 slot gaps.
 		".group {",
-		"border: 1px solid var(--ground-seam, var(--elevation-0-seam));",
-		"border: 1px solid var(--ground-hairline, var(--elevation-0-hairline));",
+		"border: 1px solid var(--surface-seam, var(--elevation-0-seam));",
+		"border: 1px solid var(--surface-hairline, var(--elevation-0-hairline));",
 		"padding: calc(var(--space-4) - 1px);",
 		"border-radius: var(--radius-lg);",
 		"background: var(--elevation-1);",
 		"background: var(--elevation-2);",
 		"gap: var(--space-3);",
-		// Table: Surface ground, neutral-300 header
+		// Table: the Surface fill, neutral-300 header
 		// band under neutral-700 label-large, control-height row pitch,
 		// Divider rules inside the rows, S3 cell inset, and the 10x5 dp
 		// neutral-700 sort chevron on the active column only.
@@ -661,9 +661,9 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		".table th.sort-asc::after { border-bottom: 5px solid var(--color-neutral-700); }",
 		".table th.sort-desc::after { border-top: 5px solid var(--color-neutral-700); }",
 		// Navigation: the four patterns. The navbar bar is the shell's
-		// density pin over the Surface ground; link/tab cells carry the 2 dp
+		// density pin over the Surface fill; link/tab cells carry the 2 dp
 		// underline slot the Active/selected cell fills with the accent pin;
-		// hover is the Surface storey's one-rung walk to neutral 300.
+		// hover is the Surface fill's one-step walk to neutral 300.
 		"min-height: calc(var(--density-control-height) + 2 * var(--density-padding-y));",
 		".navbar-link.selected, .tab.selected {",
 		"border-bottom-color: var(--color-accent);",
@@ -699,14 +699,14 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"font-size: var(--font-title-medium-size);",
 		".dialog-footer {",
 		"justify-content: flex-end;",
-		// Popover: level-3 fill (the deepest rung — an unscrimmed, shadowless
+		// Popover: level-3 fill (the deepest step — an unscrimmed, shadowless
 		// overlay separates by fill alone) under the neutral-500 stroke,
 		// radius Md, S3 inset; the tail is the surface's own fill.
 		"background: var(--elevation-3);",
 		"padding: calc(var(--space-3) - 1px);",
 		"border-top: 6px solid var(--elevation-3);",
 		"border-bottom: 6px solid var(--elevation-3);",
-		// Tooltip: inverse-video — Text ground under a Surface label,
+		// Tooltip: inverse-video — Text as the fill under a Surface label,
 		// radius Sm, S2/S1 padding.
 		"background: var(--color-text);",
 		"color: var(--color-surface);",
@@ -834,7 +834,7 @@ func TestThemeJSONReproduces(t *testing.T) {
 		t.Errorf("density.minHitTarget = %v, want %v", p.Density.MinHitTarget, tokens.MinHitTarget)
 	}
 
-	// Elevation: the storey fill per scheme and the shadow dp per storey,
+	// Elevation: the level fill per scheme and the shadow dp per level,
 	// off the captured snapshot through the same resolver the sheet uses.
 	for i, level := range elevationLevels {
 		if got, want := p.Elevation.Surfaces.Light[i], hexRGB(snap.Light.SurfaceAt(level.level)); got != want {

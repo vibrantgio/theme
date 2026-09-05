@@ -37,10 +37,10 @@ var inkRoles = []struct {
 		func(t tokens.ColorTokens) tokens.Ramp { return t.Ramps.Info }},
 }
 
-// inkStoreys are the four storeys a brand ink can be drawn on: the paper a
+// inkStoreys are the four levels a brand foreground can be drawn on: the paper a
 // paragraph is set on and the three raised fills that host content above
 // it. A link in a card and a link on the page are the same link and owe
-// their own grounds the same ratio, so the gate is read against all four
+// their own surfaces the same ratio, so the gate is read against all four
 // rather than against the page alone.
 var inkStoreys = []struct {
 	name  string
@@ -52,7 +52,7 @@ var inkStoreys = []struct {
 	{"level 3 (popover)", tokens.Level3},
 }
 
-// inkFloors are the two floors an ink is gated at: words and marks.
+// inkFloors are the two floors a foreground is gated at: words and marks.
 var inkFloors = []struct {
 	name  string
 	floor float64
@@ -82,12 +82,12 @@ func inkSchemes(seed color.NRGBA) []struct {
 	}
 }
 
-// TestBrandInkClearsItsFloorForEverySeed is the gate the link ink defect
-// asked for: whatever the seed, whatever the scheme, whatever the storey it
-// is drawn on, a brand ink reaches the floor its job owes its ground.
+// TestBrandInkClearsItsFloorForEverySeed is the gate the link foreground defect
+// asked for: whatever the seed, whatever the scheme, whatever the level it
+// is drawn on, a brand foreground reaches the floor its job owes its surface.
 //
 // It is asserted for every pinned role and both floors rather than for the
-// link alone, because the rule is one rule — a fill colour used as an ink —
+// link alone, because the rule is one rule — a fill colour used as a foreground —
 // and the six roles that never fail are worth reading as measurements
 // rather than assuming as facts.
 func TestBrandInkClearsItsFloorForEverySeed(t *testing.T) {
@@ -102,10 +102,10 @@ func TestBrandInkClearsItsFloorForEverySeed(t *testing.T) {
 						ink := s.tok.InkOn(r.role, ground, f.floor)
 						got := contrastRatio(ink, ground)
 						if got < f.floor {
-							t.Errorf("seed %v: %s %s: %s ink %v on %v measures %.2f:1, under the %.1f:1 %s floor",
+							t.Errorf("seed %v: %s %s: %s foreground %v on %v measures %.2f:1, under the %.1f:1 %s floor",
 								seed, s.name, st.name, r.name, ink, ground, got, f.floor, f.name)
 						}
-						// The answer is the brand's own colour or a rung of
+						// The answer is the brand's own colour or a step of
 						// the brand's own ramp, never something invented.
 						if ink != r.pin(s.tok) {
 							found := false
@@ -116,7 +116,7 @@ func TestBrandInkClearsItsFloorForEverySeed(t *testing.T) {
 								}
 							}
 							if !found {
-								t.Errorf("seed %v: %s %s: %s ink %v is neither the pin nor a rung of the role's ramp",
+								t.Errorf("seed %v: %s %s: %s foreground %v is neither the pin nor a step of the role's ramp",
 									seed, s.name, st.name, r.name, ink)
 							}
 						}
@@ -131,7 +131,7 @@ func TestBrandInkClearsItsFloorForEverySeed(t *testing.T) {
 		}
 	}
 	for _, key := range []string{"text light", "text dark", "graphic light", "graphic dark"} {
-		t.Logf("over %d seeds: worst %s brand ink %.2f:1 (%s)",
+		t.Logf("over %d seeds: worst %s brand foreground %.2f:1 (%s)",
 			len(sweepSeeds()), key, worst[key], worstAt[key])
 	}
 }
@@ -152,7 +152,7 @@ func TestBrandInkKeepsThePinThatReads(t *testing.T) {
 							continue
 						}
 						if ink := s.tok.InkOn(r.role, ground, f.floor); ink != pin {
-							t.Errorf("seed %v: %s %s: %s %s ink moved from the pin %v to %v though the pin measured %.2f:1",
+							t.Errorf("seed %v: %s %s: %s %s foreground moved from the pin %v to %v though the pin measured %.2f:1",
 								seed, s.name, st.name, r.name, f.name, pin, ink, contrastRatio(pin, ground))
 						}
 					}
@@ -172,7 +172,7 @@ func TestTheCanonicalSeedsBrandInkIsItsPin(t *testing.T) {
 			for _, r := range inkRoles {
 				for _, f := range inkFloors {
 					if ink := s.tok.InkOn(r.role, ground, f.floor); ink != r.pin(s.tok) {
-						t.Errorf("%s %s: %s %s ink is %v, not the pin %v — a stored image moved",
+						t.Errorf("%s %s: %s %s foreground is %v, not the pin %v — a stored image moved",
 							s.name, st.name, r.name, f.name, ink, r.pin(s.tok))
 					}
 				}
@@ -186,8 +186,8 @@ func TestTheCanonicalSeedsBrandInkIsItsPin(t *testing.T) {
 // realized at fixed perceptual depths, so their contrast against the paper
 // is a property of the derivation rather than of the brand and they never
 // need the walk. The light primary base is the brand colour itself at the
-// brand's own depth, which is the one place a seed can put an ink too near
-// its ground — and the one place this gate ever answers with a rung.
+// brand's own depth, which is the one place a seed can put a foreground too near
+// its surface — and the one place this gate ever answers with a step.
 func TestOnlyTheLightPrimaryPinEverWalks(t *testing.T) {
 	walked := map[string]int{}
 	worstPin := 99.0
@@ -222,7 +222,7 @@ func TestOnlyTheLightPrimaryPinEverWalks(t *testing.T) {
 			worstPin, worstPinAt = got, hexOf(seed)
 		}
 	}
-	t.Logf("over %d seeds, four palettes and four storeys: %d text walks and %d graphic walks, all of them the light primary pin; bare light pin over the paper bottoms out at %.2f:1 (%s)",
+	t.Logf("over %d seeds, four palettes and four levels: %d text walks and %d graphic walks, all of them the light primary pin; bare light pin over the paper bottoms out at %.2f:1 (%s)",
 		len(sweepSeeds()), walked["text light"], walked["graphic light"], worstPin, worstPinAt)
 }
 
@@ -241,10 +241,10 @@ func TestAPastelSeedGetsAReadableLinkInk(t *testing.T) {
 	}
 	lightInk := light.InkOn(tokens.RolePrimary, lightPaper, tokens.TextFloor)
 	if lightInk == light.Primary {
-		t.Errorf("light link ink is still the bare pin %v", light.Primary)
+		t.Errorf("light link foreground is still the bare pin %v", light.Primary)
 	}
 	if got := contrastRatio(lightInk, lightPaper); got < tokens.TextFloor {
-		t.Errorf("light link ink %v on paper %v measures %.2f:1, under %.1f:1",
+		t.Errorf("light link foreground %v on paper %v measures %.2f:1, under %.1f:1",
 			lightInk, lightPaper, got, tokens.TextFloor)
 	}
 
@@ -253,11 +253,11 @@ func TestAPastelSeedGetsAReadableLinkInk(t *testing.T) {
 	darkPaper := dark.SurfaceAt(tokens.Level0)
 	darkInk := dark.InkOn(tokens.RolePrimary, darkPaper, tokens.TextFloor)
 	if darkInk != dark.Primary {
-		t.Errorf("dark link ink walked to %v; the dark pin %v measures %.2f:1 and should stand",
+		t.Errorf("dark link foreground walked to %v; the dark pin %v measures %.2f:1 and should stand",
 			darkInk, dark.Primary, contrastRatio(dark.Primary, darkPaper))
 	}
 	if got := contrastRatio(darkInk, darkPaper); got < tokens.TextFloor {
-		t.Errorf("dark link ink %v on paper %v measures %.2f:1, under %.1f:1",
+		t.Errorf("dark link foreground %v on paper %v measures %.2f:1, under %.1f:1",
 			darkInk, darkPaper, got, tokens.TextFloor)
 	}
 	t.Logf("seed %s: light link %s on %s %.2f:1 (bare pin %s %.2f:1); dark link %s on %s %.2f:1",
@@ -267,7 +267,7 @@ func TestAPastelSeedGetsAReadableLinkInk(t *testing.T) {
 }
 
 // TestInkOnNeutralPanics: the neutral role carries surfaces and has no
-// pinned fill, so asking it for a brand ink is a programming error — the
+// pinned fill, so asking it for a brand foreground is a programming error — the
 // same answer every other pin accessor gives.
 func TestInkOnNeutralPanics(t *testing.T) {
 	defer func() {

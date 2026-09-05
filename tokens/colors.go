@@ -63,7 +63,7 @@ var (
 // FromSeed chooses a light-scheme on-colour from, by measuring both over
 // the base rather than assuming one. White carries almost every accent —
 // a pinned base sits deep enough to read white text — and Black is what an
-// accent light enough to lose its white ink takes instead.
+// accent light enough to lose its white foreground takes instead.
 var (
 	White = color.NRGBA{0xff, 0xff, 0xff, 0xff}
 	Black = color.NRGBA{0x00, 0x00, 0x00, 0xff}
@@ -77,7 +77,7 @@ var (
 //
 // Light and dark ramps are paired scales, not two role tables: the same step
 // keeps the same job in both modes, so a component asking for neutral 200
-// gets a light card on a light ground and a dark card on a dark one.
+// gets a light card on a light surface and a dark card on a dark one.
 type Ramp [9]color.NRGBA
 
 // Step returns the colour at step n, where n is one of 100, 200, … 900.
@@ -124,10 +124,10 @@ type RampSet struct {
 // There are no MD3-only alias fields. Where the M3 role is a fixed resolution
 // off the neutral ramp it is reachable by asking the ramp directly:
 // OnBackground is Text, OnSurface Ramps.Neutral.Step(900), SurfaceVariant
-// Step(300), Outline Step(500) — or FocusRing(). Where naming a rung would
+// Step(300), Outline Step(500) — or FocusRing(). Where naming a step would
 // state one colour and two measurements, the token is a derivation instead:
 // [ColorTokens.OutlineVariant] and [ColorTokens.OnSurfaceVariant] choose their
-// rung against a floor, and SurfaceContainerLow is a storey, so
+// step against a floor, and SurfaceContainerLow is a level, so
 // [ColorTokens.SurfaceAt] answers it.
 type ColorTokens struct {
 	// Ramps holds the functional ramps, fully populated: nine steps per
@@ -154,12 +154,11 @@ type ColorTokens struct {
 	// Divider resolve from Neutral ramp steps at construction.
 	Background color.NRGBA // pinned app background
 	Text       color.NRGBA // pinned body text over Background
-	// Surface is the neutral ramp's step 200 — the rung one step off the
-	// app ground. It is a RAMP ALIAS, not a storey: the elevation ladder is
-	// anchored on the Background pin and placed in
-	// CIELAB L*, so which storey this rung happens to carry depends on the
-	// scheme (light furniture wears it; dark raised surfaces do). Ask
-	// [ColorTokens.SurfaceAt] for a storey.
+	// Surface is the neutral ramp's step 200 — one step off the app's own
+	// background. It is a RAMP ALIAS, not a level: the elevation is anchored
+	// on the Background pin and placed in CIELAB L*, so which level this step
+	// happens to carry depends on the scheme (light furniture wears it; dark
+	// raised surfaces do). Ask [ColorTokens.SurfaceAt] for a level.
 	Surface color.NRGBA
 	// Divider is the subtle border / separator — Ramps.Neutral.Step(300),
 	// except in the high-contrast variant, which resolves it from the

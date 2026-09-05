@@ -1,5 +1,5 @@
 // Package typeset lays a type role's text out in the line box that role names,
-// rather than in the box its glyphs happen to ink.
+// rather than in the box its glyphs happen to occupy.
 //
 // It exists because gioui.org's text layout and a design system's typography
 // mean different things by "line height". [gioui.org/widget.Label] passes
@@ -13,7 +13,7 @@
 //
 // A design system means the CSS thing. `line-height: 20px` on a one-line
 // button makes the line box 20 px tall whatever the glyphs measure, the extra
-// space split half above and half below the ink, and that is what
+// space split half above and half below the text, and that is what
 // theme/export already writes into `--font-<role>-line-height` for the
 // design-surface mirror to consume. Without this package the Gio rendering and
 // the CSS it exports disagree about the same token.
@@ -38,7 +38,7 @@
 //
 // The same split applies one level up: a caller whose Min.Y floor exceeds the
 // line box — layout.Flex hands an exact cell height down as a minimum —
-// gets the ink centred within the floored height rather than pinned to the
+// gets the text centred within the floored height rather than pinned to the
 // top of it. See [Layout] for the details.
 package typeset
 
@@ -93,7 +93,7 @@ func Label(style tokens.TextStyle, maxLines int) widget.Label {
 
 // Layout lays txt out as lbl would and returns it in its line box: the same
 // pixels, in dimensions tall enough for the line height lbl carries, with the
-// leading split evenly above and below the ink and the baseline moved to
+// leading split evenly above and below the text and the baseline moved to
 // match.
 //
 // The correction is a no-op in two cases. An absolute line height smaller
@@ -108,7 +108,7 @@ func Label(style tokens.TextStyle, maxLines int) widget.Label {
 // short of its box is the first: adding lineHeight − naturalLine to a run of n
 // lines makes it exactly n × lineHeight tall. The half above is rounded down,
 // which is what keeps a centred label pixel-identical to the uncorrected one
-// whenever its container was already taller than the ink.
+// whenever its container was already taller than the text.
 //
 // # The natural line is this text's, not this face's
 //
@@ -127,17 +127,17 @@ func Label(style tokens.TextStyle, maxLines int) widget.Label {
 // child of a vertical layout.Flex — would report more than its slot. Layout
 // therefore lays out under a relaxed Min.Y, corrects, and constrains the
 // corrected size once with the caller's own constraints. The result fits the
-// constraints it was given, which is what every other Gio widget promises, so
-// a caller does not have to zero Constraints.Min to be told the truth.
+// constraints it was given, which is what every other Gio component promises,
+// so a caller does not have to zero Constraints.Min to be told the truth.
 //
-// # A floor above the line box centres the ink too
+// # A floor above the line box centres the text too
 //
 // When the caller's Min.Y exceeds the corrected line box — layout.Flex hands
 // an exact cell height down to every rigid child as a minimum, so this is
 // every label in an exact-height row — the surplus is split around the line
-// box the same way the leading is split around the ink: half above, rounded
-// down, half below, with the baseline tracking the ink. Left to
-// widget.Label, that surplus would all land below the ink and the text would
+// box the same way the leading is split around the text: half above, rounded
+// down, half below, with the baseline tracking the text. Left to
+// widget.Label, that surplus would all land below the glyphs and the text would
 // pin to the top of its cell; a parent aligning on Middle sees a child that
 // claims the whole cell and has nothing left to centre.
 //
@@ -145,7 +145,7 @@ func Label(style tokens.TextStyle, maxLines int) widget.Label {
 // the finding is about the caller's floor, not the line box, so a label with
 // no line height of its own centres in an exact-height cell exactly as a
 // corrected one does. A Max.Y below the corrected height, by contrast, keeps
-// the ink anchored to the top and moves the baseline with the bottom edge.
+// the text anchored to the top and moves the baseline with the bottom edge.
 //
 // The half-above is rounded down in both splits, which keeps a layout the
 // floor never exceeded pixel-identical to the uncorrected one.
@@ -166,7 +166,7 @@ func Layout(gtx layout.Context, sh *text.Shaper, lbl widget.Label, f font.Font, 
 		}
 	}
 
-	// Min.Y is dropped for the inner layout so widget.Label reports the ink it
+	// Min.Y is dropped for the inner layout so widget.Label reports the text it
 	// actually drew rather than the caller's floor; the floor is re-applied to
 	// the corrected size below.
 	inner := gtx
@@ -179,18 +179,18 @@ func Layout(gtx layout.Context, sh *text.Shaper, lbl widget.Label, f font.Font, 
 	above := deficit / 2
 	dims.Size.Y += deficit
 	// Baseline is measured up from the bottom of the dimensions, so it grows
-	// by the half added below the ink, not by the whole deficit.
+	// by the half added below the text, not by the whole deficit.
 	dims.Baseline += deficit - above
 
 	corrected := dims.Size.Y
 	dims.Size = gtx.Constraints.Constrain(dims.Size)
 	if surplus := dims.Size.Y - corrected; surplus > 0 {
 		// The caller's floor exceeds the line box: centre the box within it,
-		// half above rounded down, and keep the baseline on the ink.
+		// half above rounded down, and keep the baseline on the text.
 		above += surplus / 2
 		dims.Baseline += surplus - surplus/2
 	} else {
-		// The caller's Max shrank the box: the ink stays anchored to the top,
+		// The caller's Max shrank the box: the text stays anchored to the top,
 		// so the baseline moves with the bottom edge.
 		dims.Baseline += surplus
 	}
