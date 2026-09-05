@@ -2,11 +2,11 @@
 // light.
 //
 // A surface separates from the one beneath it primarily by colour and only
-// secondarily by a cast shadow. IN BOTH SCHEMES EVERY LEVEL IS LIGHTER THAN
-// THE ONE BENEATH IT. A surface nearer the viewer catches more light, and
-// reflectance does not invert when the room goes dark; what a dark scheme
-// inverts is the ink, which the paired ramps already handle. There is no
-// second rule for the dark scheme and no mirror.
+// secondarily by a cast shadow. IN BOTH SCHEMES A SURFACE NEARER THE VIEWER
+// IS NEVER DARKER THAN THE ONE BENEATH IT. A surface nearer the viewer
+// catches more light, and reflectance does not invert when the room goes
+// dark; what a dark scheme inverts is the foreground, which the paired ramps
+// already handle. There is no second rule for the dark scheme and no mirror.
 //
 // Six levels, counted from the backdrop up:
 //
@@ -21,12 +21,28 @@
 //	Level3        floating, the top of the elevation — menus, popovers and
 //	              tooltips.
 //
-// Read that down and lightness increases, in the light scheme and in the
-// dark one. Chrome is window-scale only: the trim inside a component or a
-// pattern — a card's header, a dialog's footer, a table's header row — is
-// that thing's structure and takes no level of its own. The dp shadow is
-// the secondary cue and is what effects/depth renders — opt-in vibrancy
-// marking what floats and can leave, never a substitute for a level.
+// Chrome is window-scale only: the trim inside a component or a pattern — a
+// card's header, a dialog's footer, a table's header row — is that thing's
+// structure and takes no level of its own. The dp shadow is the secondary
+// cue and is what effects/depth renders — opt-in vibrancy marking what
+// floats and can leave, never a substitute for a level.
+//
+// # A raise is walked, not read off the table
+//
+// Only four of the six are placed by this file: the backdrop, the chrome
+// level, the content, and the two floating levels, which are absolute
+// because a dialog and a menu are detached from whatever they cover. Level1
+// is not a table entry at all — it is [ColorTokens.RaisedOn] taken from the
+// content, and any other raise is that same walk taken from whatever the
+// thing actually stands on (raise.go). A card on a modal is one step above
+// the modal, a field in that card one step above the card, and neither
+// names a level.
+//
+// One step is the surface band's own first interval, |L*(200) − L*(100)|,
+// in both schemes: 4.88 L* in the light band and 4.98 L* in the dark one.
+// The floating levels are held no darker than the first raise off the
+// content, which is what "above everything raised beneath them" means when
+// the scheme has run out of room.
 //
 // # Where the levels land, and why they are not ramp steps
 //
@@ -41,40 +57,51 @@
 // L\*, not in ramp indices — but their shape is still read off the ramp
 // rather than invented, which is what keeps it generative. On both sides of
 // the pin that shape is the surface band's own: the relative spacing of
-// neutral 100/200/300/400.
+// neutral 100/200/300/400. The one fact that tells the two schemes apart is
+// whether that band CLIMBS away from its own 100 stop; nothing here carries
+// a mode flag.
 //
-//   - ABOVE THE PIN the three levels take that spacing scaled into whatever
-//     headroom the scheme has. The ceiling is the lightest tone the band
-//     itself reaches; where the band offers none because the pin IS its
-//     lightest tone, the ceiling is the tonal axis, L\* 100. In the dark
-//     scheme the band's own top is the ceiling, so the three levels land
-//     back exactly on neutral 200, 300 and 400. In the light scheme the pin
-//     has spent almost all of the axis already, so the same shape
-//     compresses into the 3.1 L\* that remain: the levels above the content
-//     are whispers.
+//   - ABOVE THE PIN the two floating levels take the band's spacing scaled
+//     into whatever headroom the scheme has. The ceiling is the band's own
+//     top where the band climbs, and the tonal axis, L\* 100, where it does
+//     not. In the dark scheme the band's top is the ceiling, so the two
+//     floating levels land back exactly on neutral 300 and 400.
 //
 //   - BELOW THE PIN chrome takes one step down, and the backdrop takes the
-//     band's second interval expressed as a multiple of that step. Where
-//     the band descends from the pin, the step IS the band's own first
-//     interval, so chrome and the backdrop land byte-for-byte on neutral
-//     200 and 300. Where the band climbs away from the pin the ramp has
-//     nothing below to say, so the chrome step is MEASURED off the platform
-//     and the backdrop keeps the band's proportion against it.
+//     band's second interval expressed as a multiple of that step.
+//
+// # The content pin keeps headroom above it
+//
+// Where the band climbs away from its 100 stop the pin IS that stop: the
+// dark content is the band's darkest surface and has the whole band above
+// it. Where the band descends there is nothing above the 100 stop at all,
+// so pinning the content there would leave a raise nowhere to go — which is
+// what the light scheme used to do, spending 3.1 L\* of axis on three
+// levels and answering a card a 0.7 L\* whisper nobody could see.
+//
+// So the content pin STANDS ONE BAND STEP BELOW THE CEILING where the band
+// offers nothing above it: L\* 100 − |L*(200) − L*(100)|, realized at the
+// band's own hue and chroma, which on the default light palette is
+// #F1F1F1 — and white is then the first raise on it, at 1.13:1. That is the
+// arrangement the platform ships: macOS light stands grouped content on an
+// off-white plane and fills the cells raised on it white.
+//
+// Chrome and the backdrop keep their measured relation to the pin, so they
+// move with it: on the default light palette #E3E3E3 and #CFCFCF, one and
+// two-and-a-half band steps under the content rather than landing on the
+// band's own 200 and 300 stops as they did while the pin was the 100 stop.
 //
 // # The chrome step's two measurements
 //
 // Chrome is the one level the ramp does not get to place in both schemes.
 // Two schemes, two captures, two numbers — and the code tells them apart
-// the way headroom does, off the direction of the band, never off a mode
-// flag.
+// off the direction of the band, never off a mode flag.
 //
 // THE LIGHT MEASUREMENT AND THE BAND STEP ARE THE SAME NUMBER. macOS light
 // panes sit about 4.9 L\* under their content, and the ramp's own first
-// surface interval |L*(200) − L*(100)| is 4.89, so chrome lands
-// byte-for-byte on neutral 200 (#E8E8E8 under the #F6F6F6 content) — the
-// arrangement the stored macOS references measure. That half is written as
-// the interval because the derivation and the measurement agree, not
-// because the derivation outranks the measurement.
+// surface interval |L*(200) − L*(100)| is 4.88, so the light chrome step is
+// written as that interval — because the derivation and the measurement
+// agree, not because the derivation outranks the measurement.
 //
 // THE DARK MEASUREMENT IS 1.48 L\*, AND THE BAND STEP OVERSHOOTS IT BY MORE
 // THAN THREE TIMES. A full band step in the dark scheme is 4.98 L\* and
@@ -90,7 +117,7 @@
 //
 // So the dark chrome step is darkChromeStep, 1.48 L\*, the Voice Memos
 // reading almost exactly; on the default dark palette it realizes #151515
-// under the #181818 content. The asymmetry between 4.89 and 1.48 is the
+// under the #181818 content. The asymmetry between 4.88 and 1.48 is the
 // platform's own and not a hand-pick: a light window separates its
 // furniture with a step the ramp happens to carry, a dark window with a
 // whisper, and this file records both rather than picking one and
@@ -103,25 +130,16 @@
 // nothing to be measured against and is DERIVED, which the comment says
 // rather than dressing it as a measurement. It is the chrome step scaled by
 // the surface band's own proportion, |L*(300) − L*(100)| over
-// |L*(200) − L*(100)| — the same shape the levels above the pin take. On
-// the default palettes it realizes #D4D4D4 under the #E8E8E8 light chrome,
-// neutral 300 exactly, and #111111 under the #151515 dark chrome.
+// |L*(200) − L*(100)| — the same shape the levels above the pin take.
 //
-// # The light scheme's headroom, and what the whisper costs
+// # What the scheme has room for, and what the seam carries
 //
-// The light scheme takes WHISPER STEPS TOWARD WHITE, WITH THE DERIVED
-// HAIRLINES CARRYING THE VISIBLE EDGE.
-//
-// The obligation that hands the libraries: a light-scheme card, fence, field
-// or dialog has almost no fill signal — 0.7, 1.6 and 3.1 L\* above the
-// content — so what says where it is, is its MarkOn-derived border and its
-// corner radius. Any construct that takes a level without taking a hairline
-// (an inline code chip, say) has to find its separation elsewhere: a tint, a
-// border of its own, or the mono face. What it buys: no light-scheme surface
-// is ever darker than what it lies on, and every light resting arrangement
-// keeps its pixels. The reference application measures 0.4 L\* between its
-// page and its fence and 0.4 and 1.1 L\* across sidebar, content and
-// composer, with hairlines doing the separating.
+// The dark scheme has four band steps above its content and the light
+// scheme has one. So a card is told by its fill in both — that is what
+// moving the pin bought — and the raise ABOVE that card is where the light
+// scheme runs out: a field on a card, a card on a modal. There the raise is
+// told by a seam at its own edge instead, which raise.go derives and
+// [Raise.Seamed] reports. A raise never vanishes.
 package tokens
 
 import (
@@ -224,38 +242,6 @@ const (
 // ElevationLevel selects an elevation level by name.
 type ElevationLevel int
 
-// Raised is the level one step nearer the viewer than level: the fill of
-// something that stands on a surface at level rather than on the window's own
-// surface. "One step up" means one step toward the scheme's LIGHT extreme, in
-// the light scheme and the dark one alike — the walk's direction does not
-// depend on which scheme is on, only its destination does.
-//
-// Levels are walked from the surface a thing is lying on, never from an
-// absolute level. So a thing raised over a level-0 plane fills at level 1 and
-// the same thing over a level-1 plane fills at level 2, a control on chrome
-// fills at the content's level, and a caller that names the surface
-// it stands on gets the separation the grammar asks for wherever it is
-// placed. Reaching for a fixed level instead holds only while every surface
-// in a window happens to be the one that level was chosen against; move the
-// surface one level and the raised thing sits two levels off it, which the
-// grammar calls a mistake in either direction.
-//
-// Level3 is the ceiling. The levels end there, so raising Level3 returns
-// Level3 rather than naming a level the scale does not have: a caller
-// already at the top asked for "as raised as it gets" and is given it, and
-// the clamp is the one place this walk stops instead of stepping. A level
-// outside the vocabulary — anything under LevelBackdrop or above Level3 —
-// panics, matching [ElevationScale.Dp] and [Ramp.Step].
-func (level ElevationLevel) Raised() ElevationLevel {
-	switch level {
-	case LevelBackdrop, LevelChrome, Level0, Level1, Level2:
-		return level + 1
-	case Level3:
-		return Level3
-	}
-	panic(fmt.Sprintf("tokens: unknown ElevationLevel %d", level))
-}
-
 // Dp returns level's shadow depth in device-independent pixels. An
 // out-of-vocabulary level panics, matching [Ramp.Step].
 func (e ElevationScale) Dp(level ElevationLevel) float32 {
@@ -322,26 +308,28 @@ func (level ElevationLevel) validate() {
 	}
 }
 
-// SurfaceAt resolves the surface colour of an elevated component: the fill
-// of the given level on t.
+// SurfaceAt resolves the surface colour of a named level on t.
 //
-// Level0 is the Background pin exactly — the content is the pin and the pin
-// is off the ramp. Every other level is realized at the pin's own hue and
-// chroma, at the CIELAB depth the level sits at: LevelChrome the platform's
-// own measured step below the pin, LevelBackdrop that step scaled by the
-// surface band's own proportion, Level1 through Level3 the same band shape
-// scaled into the headroom the scheme has above it. The file header carries
-// the chrome step's two measurements and their captures, why the backdrop's
-// step is derived instead, and what the light scheme's headroom costs above
-// the content.
+// Level0 is the Background pin exactly — the content is the pin. Level1 is
+// not a table entry: it is [ColorTokens.RaisedOn] taken from the content,
+// which is what "raised on the content" means, and a thing raised on
+// anything else asks that walk directly rather than naming a level. Every
+// other level is realized at the pin's own hue and chroma, at the CIELAB
+// depth the level sits at: LevelChrome the platform's own measured step
+// below the pin, LevelBackdrop that step scaled by the surface band's own
+// proportion, and the two floating levels the band's shape scaled into the
+// headroom the scheme has above the content.
 //
-// In the dark scheme the three levels above the content land byte-for-byte
-// on Neutral 200, 300 and 400, and in the light scheme the chrome level and
-// the backdrop land byte-for-byte on Neutral 200 and 300. A level whose
-// depth coincides with a band step answers with that step's own colour
-// rather than a re-realization of it, so those identities are exact and not
-// approximate. The dark scheme's two lower levels coincide with nothing: on
-// the default palette they realize #151515 and #111111.
+// The floating levels are held NO DARKER THAN THE FIRST RAISE off the
+// content. That is the whole of "floating: above everything raised beneath
+// them" — a dialog that filled under the card it covers would be reporting
+// depth backwards — and it binds only where the scheme has run out of room,
+// which is the light scheme, where the first raise is already white.
+//
+// In the dark scheme the two floating levels land byte-for-byte on Neutral
+// 300 and 400 and the first raise on Neutral 200. In the light scheme
+// nothing above the content lands on the band at all: the pin stands one
+// band step under the axis and every level above it is white.
 //
 // A state walked from a level is [ColorTokens.StateAt]: the fills above
 // the pin are off-ramp in one scheme or the other, so there is no ramp
@@ -352,16 +340,22 @@ func (t ColorTokens) SurfaceAt(level ElevationLevel) color.NRGBA {
 		return t.Background
 	}
 	level.validate()
+	if level == Level1 {
+		return t.RaisedOn(t.Background).Fill
+	}
 	band, tone := t.surfaceBand()
 	pin, _, _ := vgcolor.LabFromNRGBA(t.Background)
 	var target float64
 	switch level {
 	case LevelBackdrop:
-		target = pin - backdropStep(pin, tone)
+		target = pin - backdropStep(tone)
 	case LevelChrome:
-		target = pin - chromeStep(pin, tone)
+		target = pin - chromeStep(tone)
 	default:
-		target = pin + t.headroom(pin, tone)*bandShare(level, tone)
+		target = pin + t.headroom(tone)*bandShare(level, tone)
+		if raised, _, _ := vgcolor.LabFromNRGBA(t.RaisedOn(t.Background).Fill); target < raised {
+			target = raised
+		}
 	}
 	// The two levels under the content walk toward the scheme's dark
 	// extreme, which the tonal axis ends at.
@@ -419,20 +413,19 @@ const darkChromeStep = 1.48
 
 // chromeStep is how far below the pin the chrome level is drawn, in CIELAB
 // L\*. Both answers are measurements of the platform, one per scheme, and
-// the scheme is never named: which one applies is read off the band, the way
-// headroom reads it.
+// the scheme is never named: which one applies is read off the direction of
+// the band, the way every other rule in this file reads it.
 //
-// Where the band reaches above the pin, the pin is the darkest surface the
-// ramp carries and the platform's measured step is darkChromeStep. Where
-// it does not, the pin is the lightest surface the ramp carries and the
-// platform's measured step and the ramp's own first surface interval are
-// the same number — which is why that half is written as the interval and
-// lands chrome byte-for-byte on the band's own 200 step.
-func chromeStep(pin float64, tone [4]float64) float64 {
-	if bandTop(tone) > pin {
+// Where the band climbs away from its 100 stop, the content is the darkest
+// surface the ramp carries and the platform's measured step is
+// darkChromeStep. Where it descends, the platform's measured step and the
+// ramp's own first surface interval are the same number — which is why that
+// half is written as the interval.
+func chromeStep(tone [4]float64) float64 {
+	if bandClimbs(tone) {
 		return darkChromeStep
 	}
-	return math.Abs(tone[1] - tone[0])
+	return raiseStep(tone)
 }
 
 // backdropStep is how far below the pin the backdrop is drawn, in CIELAB
@@ -441,27 +434,19 @@ func chromeStep(pin float64, tone [4]float64) float64 {
 // scaled by the surface band's own proportion, its second interval over its
 // first, which is the same shape the levels above the pin take.
 //
-// Where the band descends from the pin the product is the band's second
-// interval exactly, so the backdrop lands byte-for-byte on the 300 step; in
-// the other direction it scales the measured chrome whisper by that same
-// proportion. A band whose first interval is zero has no proportion to
-// give, and the backdrop then takes a second chrome step — the least that
-// keeps every level lighter than the one beneath it.
-func backdropStep(pin float64, tone [4]float64) float64 {
-	chrome := chromeStep(pin, tone)
-	first := math.Abs(tone[1] - tone[0])
+// A band whose first interval is zero has no proportion to give, and the
+// backdrop then takes a second chrome step — the least that keeps every
+// level lighter than the one beneath it.
+func backdropStep(tone [4]float64) float64 {
+	chrome := chromeStep(tone)
+	first := raiseStep(tone)
 	if first == 0 {
 		return 2 * chrome
 	}
 	return chrome * math.Abs(tone[2]-tone[0]) / first
 }
 
-// bandTop is the lightest tone the surface band reaches. Whether it lies
-// above the pin is the one fact that tells the two schemes apart in this
-// file — a scheme whose band climbs away from its 100 stop has ramp
-// headroom above its content and a pin that is its darkest surface; one
-// whose band descends has neither — and it is read off the band rather
-// than carried as a mode flag.
+// bandTop is the lightest tone the surface band reaches.
 func bandTop(tone [4]float64) float64 {
 	top := tone[0]
 	for _, l := range tone {
@@ -472,38 +457,83 @@ func bandTop(tone [4]float64) float64 {
 	return top
 }
 
-// headroom is how much CIELAB lightness the scheme has above its pin for
-// the levels to spend: the band's own lightest tone where the band reaches
-// past the pin, and the tonal axis where it does not.
-//
-// The two cases are the two schemes, and neither is named. A dark scheme's
-// band climbs away from its 100 stop, so the band's top IS the ceiling and
-// the levels land back on the band's own steps. A light scheme's band
-// descends from its 100 stop, so the pin is already the lightest surface
-// the ramp carries and the only room left is what remains to white.
-func (t ColorTokens) headroom(pin float64, tone [4]float64) float64 {
-	ceiling := bandTop(tone)
-	if ceiling <= pin {
-		ceiling = 100 // the band offers no room above the pin; the axis does
-	}
-	if ceiling <= pin {
-		return 0
-	}
-	return ceiling - pin
+// bandClimbs reports whether the surface band reaches above its own 100
+// stop. It is the ONE fact that tells the two schemes apart in this
+// package — a band that climbs has room above its 100 stop and pins the
+// content there; a band that descends has none, and the content pin steps
+// down off the axis to make some — and it is read off the band rather than
+// carried as a mode flag. It asks the band about the band, never about the
+// pin, so it keeps answering after the pin has moved off the 100 stop.
+func bandClimbs(tone [4]float64) bool {
+	return bandTop(tone) > tone[0]
 }
 
-// bandShare is a level's position as a share of the headroom: the surface
-// band's own spacing, normalized against its full reach, so the levels above
-// the pin keep the ramp's proportions whatever room the scheme has for them.
+// raiseStep is one step of the elevation, in CIELAB L\*: the surface band's
+// own first interval, |L*(200) − L*(100)|, in both schemes. Every raise is
+// this far above the surface it stands on, and the chrome step below the
+// pin is the same interval in the scheme whose platform measurement agrees
+// with it (see chromeStep).
+func raiseStep(tone [4]float64) float64 {
+	return math.Abs(tone[1] - tone[0])
+}
+
+// ceiling is the lightest tone the scheme's surfaces may reach: the band's
+// own top where the band climbs away from its 100 stop, and the tonal axis
+// where it does not, the axis being the only room a descending band leaves.
+func ceiling(tone [4]float64) float64 {
+	if bandClimbs(tone) {
+		return bandTop(tone)
+	}
+	return axisTop
+}
+
+// axisTop is the light extreme of the tonal axis, L\* 100 — white.
+const axisTop = 100.0
+
+// contentPin is the fill of the content plane, the Background pin, read off
+// the neutral surface band alone.
+//
+// Where the band climbs away from its 100 stop the pin IS that stop: the
+// content is the darkest surface the ramp carries and the whole band stands
+// above it. Where the band descends the 100 stop is already the lightest
+// surface the ramp carries, so pinning the content there would leave a
+// raise nowhere to go; the pin stands one band step under the ceiling
+// instead, realized at the band's own hue and chroma, and white is the
+// first raise on it. The file header carries what that buys and what the
+// platform does.
+func contentPin(neutral Ramp) color.NRGBA {
+	var tone [4]float64
+	for i := range tone {
+		tone[i], _, _ = vgcolor.LabFromNRGBA(neutral.Step((i + 1) * 100))
+	}
+	if bandClimbs(tone) {
+		return neutral.Step(100)
+	}
+	_, chroma, hue := vgcolor.OKLChFromNRGBA(neutral.Step(100))
+	return vgcolor.NRGBAFromToneChromaHue(ceiling(tone)-raiseStep(tone), chroma, hue)
+}
+
+// headroom is how much CIELAB lightness the scheme has above its pin for
+// the floating levels to spend: the ceiling less the pin.
+func (t ColorTokens) headroom(tone [4]float64) float64 {
+	pin, _, _ := vgcolor.LabFromNRGBA(t.Background)
+	if room := ceiling(tone) - pin; room > 0 {
+		return room
+	}
+	return 0
+}
+
+// bandShare is a floating level's position as a share of the headroom: the
+// surface band's own spacing, normalized against its full reach, so the two
+// levels above the raised ones keep the ramp's proportions whatever room
+// the scheme has for them. Level1 is not among them — it is walked, not
+// placed (see [ColorTokens.SurfaceAt]).
 func bandShare(level ElevationLevel, tone [4]float64) float64 {
 	span := math.Abs(tone[3] - tone[0])
 	if span == 0 {
 		return 0 // a band with no reach places every level on the pin
 	}
-	switch level {
-	case Level1:
-		return math.Abs(tone[1]-tone[0]) / span
-	case Level2:
+	if level == Level2 {
 		return math.Abs(tone[2]-tone[0]) / span
 	}
 	return 1 // Level3 takes the whole headroom

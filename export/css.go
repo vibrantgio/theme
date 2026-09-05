@@ -617,12 +617,36 @@ func colorVars(t tokens.ColorTokens) []cssVar {
 	// rather than with the mode-invariant scales because a level is not a
 	// ramp step in both schemes: the levels are anchored on the Background
 	// pin and placed in CIELAB L*, so the light scheme's levels above the
-	// paper are off the ramp and the dark scheme's backdrop is off it below.
-	// No var() arithmetic over the ramp steps reaches those values, so each
-	// scheme states its own, exactly as the walked pins and the derived
-	// borders beside them do.
+	// content are off the ramp and the dark scheme's backdrop is off it
+	// below. No var() arithmetic over the ramp steps reaches those values,
+	// so each scheme states its own, exactly as the walked pins and the
+	// derived borders beside them do.
+	//
+	// --elevation-1 is not a table entry on the Go side: it is the raise
+	// walked from the content. The sheet states it anyway because the walk
+	// has no CSS arithmetic either, and the class layer expresses the walk
+	// the way a cascade can — a host that raises what it holds redeclares
+	// --ground-raised, so a control names var(--ground-raised,
+	// var(--elevation-1)) once and lands one step above whatever it is
+	// actually inside.
 	for _, level := range elevationLevels {
 		vars = append(vars, cssVar{"--elevation-" + level.name, hexRGB(t.SurfaceAt(level.level))})
+	}
+	// And the seam each level owes what stands on it: the hairline a raise
+	// draws at its own edge where the scheme has no step left to tell it
+	// with. It is `transparent` where the raise IS told by its fill, so a
+	// rule can carry the border unconditionally and the geometry does not
+	// move between the schemes — which is what the Gio side does too, its
+	// stroke being centred on an edge the inset does not depend on.
+	//
+	// The backdrop has none: nothing stands on the backdrop.
+	for _, level := range standableLevels {
+		raise := t.RaisedOn(t.SurfaceAt(level.level))
+		value := "transparent"
+		if raise.Seamed {
+			value = hexRGB(raise.Seam)
+		}
+		vars = append(vars, cssVar{"--elevation-" + level.name + "-seam", value})
 	}
 	// And each level's own interaction walk, for the same reason and one
 	// step further: a ghost button paints no ground at rest and washes the
@@ -944,9 +968,9 @@ const componentClasses = `/* ---- Component classes ----
    container surface a control can be put inside declares it — .card,
    .dialog and .popover — both card looks included, since they stand at
    one level and .card.filled inherits the card's own declaration. The
-   popover declares the ceiling: level 3 raises to level 3, the one
-   place this walk stops instead of stepping (tokens.ElevationLevel.Raised),
-   so a control in a popover fills flush with it and is read by its border. */
+   popover declares the ceiling: at the top of the scheme's own range the
+   walk clamps rather than stepping, so a control in a popover fills flush
+   with it and is read by its border and by --elevation-3-seam. */
 
 /* Disabled is an opacity, not a ramp step: each colour keeps its hue and
    fades to the disabled fraction of its alpha. */
@@ -1144,12 +1168,11 @@ const componentClasses = `/* ---- Component classes ----
    rung nearer the viewer than its host. It used to be --color-surface, the
    neutral ramp's step 200, which lands on the raised level in the dark
    scheme by coincidence and on no level at all in the light one — a light
-   field filled a whole band step BELOW the page it lies on. A
-   surface nearer the viewer is lighter in both schemes, and on a desktop a
-   text field is the lightest thing in the window, not the darkest. In the
-   light scheme the step above the page is a whisper, so the 1 px border and
-   the corner radius carry the visible edge; that is the trade elevation
-   makes and states. */
+   field filled a whole band step BELOW the page it lies on. A surface nearer
+   the viewer is never darker in either scheme, and on a desktop a text field
+   is the lightest thing in the window, not the darkest. The 1 px border and
+   the corner radius still carry the field's edge: a raise says a control is
+   raised, not where it ends. */
 
 /* Text field (components/input textfield.go). Height = ControlHeight as a
    floor, vertical inset PaddingY, horizontal inset S3 (12 dp — static, it
@@ -1325,13 +1348,15 @@ const componentClasses = `/* ---- Component classes ----
    patterns/card: a rounded surface raised on the content by tonal step
    alone — no cast shadow in either look, because a
    card is raised, not floating; the dp shadows stay reserved for surfaces
-   that can leave (menus, dialogs, toasts). Both looks fill
-   at level 1 (--elevation-1, the raised level) and differ only at the
-   edge: the default outlined card wears a 1 dp neutral
-   500 strong stroke, .filled wears none. A level is lighter than the one
-   below it in both schemes, so in the light scheme the card is a whisper
-   above the page and the outlined card's stroke says most of where it is;
-   the filled card is read by that whisper alone. Radius Lg, an S4 inset, S3 gaps between the
+   that can leave (menus, dialogs, toasts). Both looks fill at the raise
+   walked from the content (--elevation-1) and differ only at the edge: the
+   default outlined card wears a 1 dp neutral 500 strong stroke, .filled
+   wears the seam its raise owes — var(--ground-seam,
+   var(--elevation-0-seam)), transparent in the scheme where the fill tells
+   the raise on its own and a hairline where it does not. A card on the
+   content is told by its fill in both schemes, so that border shows only on
+   a card placed inside a host already at the top of its scheme, which is
+   what --ground-seam is redeclared for on .dialog and .popover. Radius Lg, an S4 inset, S3 gaps between the
    slots — exactly drawCard's rad.Lg / sp.S4 / sp.S3. The Gio stroke is
    centred on the card's edge while the CSS border lies inside it, so the
    outlined padding gives back the border's 1px and the slots land where the
@@ -1350,15 +1375,14 @@ const componentClasses = `/* ---- Component classes ----
   --ground-raised: var(--elevation-2);
 }
 .card.filled {
-  padding: var(--space-4);
-  border: none;
+  border-color: var(--ground-seam, var(--elevation-0-seam));
 }
 
 /* ---- Table ----
    patterns/table: the whole grid grounds on the raised level (drawTable
    fills Props.Ground, which defaults to level 1) and the header band on
-   the level above it (drawHeaderRow walks Ground.Raised(), never an
-   absolute step), under neutral 700 label-large text (drawHeaderCell).
+   the raise walked from it (drawHeaderRow raises the grid's own fill, never
+   an absolute step), under neutral 700 label-large text (drawHeaderCell).
    Both name --elevation-N rather than a ramp step, because a
    level is not a ramp step in both schemes and a table that named one
    would read as a mirror of itself between the two. Header and body rows are each exactly
@@ -1691,6 +1715,7 @@ const componentClasses = `/* ---- Component classes ----
   color: var(--color-text);
   --ground-border: var(--color-dialog-border);
   --ground-raised: var(--elevation-3);
+  --ground-seam: var(--elevation-2-seam);
 }
 
 /* The header row (modal.go headerWidget): the title-medium title on the
@@ -1737,6 +1762,7 @@ const componentClasses = `/* ---- Component classes ----
   color: var(--color-text);
   --ground-border: var(--color-popover-border);
   --ground-raised: var(--elevation-3);
+  --ground-seam: var(--elevation-3-seam);
 }
 
 /* The tail (popover.go drawTail): a triangle 12 dp across the base and

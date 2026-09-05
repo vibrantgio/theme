@@ -58,12 +58,18 @@ func TestElevationDpPreserved(t *testing.T) {
 	}
 }
 
-// TestLightnessClimbsTowardTheViewer takes elevation's central invariant
-// over the whole seed sweep in both schemes and both contrast variants:
-// WALKING TOWARD THE VIEWER NEVER GETS DARKER. It is asserted over the
-// population rather than over one palette, and with no mirror clause — the
-// same sentence, the same direction, in every scheme.
-func TestLightnessClimbsTowardTheViewer(t *testing.T) {
+// TestLightnessNeverFallsTowardTheViewer takes elevation's central
+// invariant over the whole seed sweep in both schemes and both contrast
+// variants: WALKING TOWARD THE VIEWER NEVER GETS DARKER. It is asserted
+// over the population rather than over one palette, and with no mirror
+// clause — the same sentence, the same direction, in every scheme.
+//
+// Never darker rather than always lighter, because the light scheme runs
+// out of room: its content stands one band step under the axis, so the
+// first raise is white and the two floating levels above it are white too.
+// What tells those apart is the seam and the shadow, not the fill, which is
+// the exception the language states and raise.go derives.
+func TestLightnessNeverFallsTowardTheViewer(t *testing.T) {
 	var narrowest = 999.0
 	var narrowestAt string
 	for _, seed := range sweepSeeds() {
@@ -76,12 +82,20 @@ func TestLightnessClimbsTowardTheViewer(t *testing.T) {
 			for i := 1; i < len(levels); i++ {
 				below := lstar(scheme.tok.SurfaceAt(levels[i-1].level))
 				above := lstar(scheme.tok.SurfaceAt(levels[i].level))
-				if above <= below {
-					t.Fatalf("seed %v %s: %s L*%.2f is not lighter than %s L*%.2f — elevation inverts",
+				if above < below {
+					t.Fatalf("seed %v %s: %s L*%.2f is under %s L*%.2f — elevation inverts",
 						seed, scheme.name, levels[i].name, above, levels[i-1].name, below)
 				}
 				if step := above - below; step < narrowest {
 					narrowest, narrowestAt = step, scheme.name+" "+levels[i-1].name+"→"+levels[i].name
+				}
+			}
+			// Every level up to the content is a step of its own; the
+			// scheme only ever runs out above it.
+			for i := 1; i <= 3; i++ {
+				if lstar(scheme.tok.SurfaceAt(levels[i].level)) <= lstar(scheme.tok.SurfaceAt(levels[i-1].level)) {
+					t.Fatalf("seed %v %s: %s does not stand over %s",
+						seed, scheme.name, levels[i].name, levels[i-1].name)
 				}
 			}
 		}
@@ -91,20 +105,17 @@ func TestLightnessClimbsTowardTheViewer(t *testing.T) {
 }
 
 // TestTheLevelsKeepTheRestingPixels pins elevation's byte-for-byte
-// identities: the light scheme's two levels under the content are Neutral
-// 200 and 300 exactly, and the dark scheme's raised and floating levels
-// land byte-for-byte on Neutral 200, 300 and 400 (the #222222/#2E2E2E
-// family).
+// identities: the dark scheme's raised and floating levels land on Neutral
+// 200, 300 and 400 exactly (the #222222/#2E2E2E family), and each scheme's
+// content is its Background pin.
+//
+// The light scheme has no such identity any more. Its content stands one
+// band step under the axis rather than on the band's 100 stop, so chrome
+// and the backdrop keep their measured relation to a pin that has moved and
+// land between the band's own steps.
 func TestTheLevelsKeepTheRestingPixels(t *testing.T) {
 	for _, seed := range sweepSeeds() {
 		light, dark := tokens.FromSeed(seed)
-		for level, step := range map[tokens.ElevationLevel]int{
-			tokens.LevelChrome: 200, tokens.LevelBackdrop: 300,
-		} {
-			if got, want := light.SurfaceAt(level), light.Ramps.Neutral.Step(step); got != want {
-				t.Fatalf("seed %v light: level %d = %v, want Neutral %d %v", seed, level, got, step, want)
-			}
-		}
 		if got, want := light.SurfaceAt(tokens.Level0), light.Background; got != want {
 			t.Fatalf("seed %v light: the content = %v, want the Background pin %v", seed, got, want)
 		}
@@ -123,8 +134,8 @@ func TestTheLevelsKeepTheRestingPixels(t *testing.T) {
 	// the values every screenshot in the plan is read against.
 	want := map[string][6]color.NRGBA{
 		"light": {
-			{0xD4, 0xD4, 0xD4, 0xff}, {0xE8, 0xE8, 0xE8, 0xff}, {0xF6, 0xF6, 0xF6, 0xff},
-			{0xF8, 0xF8, 0xF8, 0xff}, {0xFB, 0xFB, 0xFB, 0xff}, {0xFF, 0xFF, 0xFF, 0xff},
+			{0xCF, 0xCF, 0xCF, 0xff}, {0xE3, 0xE3, 0xE3, 0xff}, {0xF1, 0xF1, 0xF1, 0xff},
+			{0xFF, 0xFF, 0xFF, 0xff}, {0xFF, 0xFF, 0xFF, 0xff}, {0xFF, 0xFF, 0xFF, 0xff},
 		},
 		"dark": {
 			{0x11, 0x11, 0x11, 0xff}, {0x15, 0x15, 0x15, 0xff}, {0x18, 0x18, 0x18, 0xff},
@@ -212,12 +223,11 @@ func TestTheChromeLevelTakesTheMeasuredStep(t *testing.T) {
 // its second interval over its first — which is the same shape the levels
 // above the pin take.
 //
-// Where the band descends from the pin that product is the band's second
-// interval exactly, so the backdrop lands byte-for-byte on neutral 300; in
-// the other direction it scales the measured whisper by the same
-// proportion, and on the default dark palette realizes #111111 under the
-// #151515 chrome. The derivation is asserted, not the number, because the
-// number is not a measurement and must not be read as one.
+// It scales the measured chrome step by that proportion in both schemes: on
+// the default dark palette it realizes #111111 under the #151515 chrome,
+// and on the default light one #CFCFCF under the #E3E3E3 chrome. The
+// derivation is asserted, not the number, because the number is not a
+// measurement and must not be read as one.
 func TestTheBackdropTakesTheDerivedStep(t *testing.T) {
 	for _, seed := range sweepSeeds() {
 		light, dark := tokens.FromSeed(seed)
@@ -240,13 +250,18 @@ func TestTheBackdropTakesTheDerivedStep(t *testing.T) {
 					seed, scheme.name, backdrop, want)
 			}
 		}
-		if got, want := light.SurfaceAt(tokens.LevelBackdrop), light.Ramps.Neutral.Step(300); got != want {
-			t.Errorf("seed %v light: the backdrop = %v, want Neutral 300 %v", seed, got, want)
-		}
 	}
-	backdrop := tokens.DefaultDark.SurfaceAt(tokens.LevelBackdrop)
-	if want := (color.NRGBA{0x11, 0x11, 0x11, 0xff}); backdrop != want {
-		t.Errorf("default dark backdrop = %v, want the derived %v", backdrop, want)
+	for _, want := range []struct {
+		name     string
+		got      color.NRGBA
+		backdrop color.NRGBA
+	}{
+		{"dark", tokens.DefaultDark.SurfaceAt(tokens.LevelBackdrop), color.NRGBA{0x11, 0x11, 0x11, 0xff}},
+		{"light", tokens.DefaultLight.SurfaceAt(tokens.LevelBackdrop), color.NRGBA{0xCF, 0xCF, 0xCF, 0xff}},
+	} {
+		if want.got != want.backdrop {
+			t.Errorf("default %s backdrop = %v, want the derived %v", want.name, want.got, want.backdrop)
+		}
 	}
 }
 
@@ -287,57 +302,6 @@ func TestTheHairlineCarriesTheWhisperStep(t *testing.T) {
 		t.Logf("light %s→%s: %.2f L*", levels[i-1].name, levels[i].name, above-below)
 	}
 	t.Logf("over %d seeds: worst hairline on a level %.2f:1 (%s)", len(sweepSeeds()), worst, worstAt)
-}
-
-// TestRaisedWalksOneStepFromTheSurfaceItStandsOn asserts the step is taken
-// from the level it is asked of and not from an absolute one: every level
-// below the ceiling raises to the next one, so the same call answers
-// differently for a thing on the window's content and the same thing on
-// chrome. The walk is one-signed — the level it lands on is lighter in
-// both schemes.
-func TestRaisedWalksOneStepFromTheSurfaceItStandsOn(t *testing.T) {
-	want := map[tokens.ElevationLevel]tokens.ElevationLevel{
-		tokens.LevelBackdrop: tokens.LevelChrome,
-		tokens.LevelChrome:   tokens.Level0,
-		tokens.Level0:        tokens.Level1,
-		tokens.Level1:        tokens.Level2,
-		tokens.Level2:        tokens.Level3,
-	}
-	for ground, raised := range want {
-		if got := ground.Raised(); got != raised {
-			t.Errorf("ElevationLevel(%d).Raised() = %d, want %d", ground, got, raised)
-		}
-	}
-	for _, scheme := range []struct {
-		name string
-		tok  tokens.ColorTokens
-	}{{"light", tokens.DefaultLight}, {"dark", tokens.DefaultDark}} {
-		for ground := range want {
-			below := scheme.tok.SurfaceAt(ground)
-			above := scheme.tok.SurfaceAt(ground.Raised())
-			if above == below {
-				t.Errorf("%s: level %d and the level raised from it both fill %v; a raised thing owes the surface it stands on one step",
-					scheme.name, ground, above)
-			}
-			if lstar(above) <= lstar(below) {
-				t.Errorf("%s: level %d raises from L*%.2f to L*%.2f — a step toward the viewer is lighter in both schemes",
-					scheme.name, ground, lstar(below), lstar(above))
-			}
-		}
-	}
-}
-
-// TestRaisedClampsAtTheCeiling pins the documented behaviour at the topmost
-// level: the walk stops rather than naming a level the scale does not have.
-// The scale has no level 4, so stepping past 3 here would hand every other
-// accessor a level it panics on.
-func TestRaisedClampsAtTheCeiling(t *testing.T) {
-	if got := tokens.Level3.Raised(); got != tokens.Level3 {
-		t.Errorf("Level3.Raised() = %d, want Level3 (%d): the levels end at 3", got, tokens.Level3)
-	}
-	if got, want := tokens.DefaultLight.SurfaceAt(tokens.Level3.Raised()), tokens.DefaultLight.SurfaceAt(tokens.Level3); got != want {
-		t.Errorf("SurfaceAt(Level3.Raised()) = %v, want %v", got, want)
-	}
 }
 
 // TestStateAtWalksFromTheLevel asserts the state walks compose on top of
@@ -426,8 +390,6 @@ func TestSurfaceStepIsHalfTrue(t *testing.T) {
 // at 3, so asking for a fifth is an error. −3 is the backdrop's counterpart
 // at the other end: elevation has two levels below the content, not an
 // open-ended basement.
-// Raised answers to the same rule; its clamp at the ceiling is the one
-// deliberate exception, and TestRaisedClampsAtTheCeiling pins it.
 func TestElevationLevelPanics(t *testing.T) {
 	for _, level := range []tokens.ElevationLevel{-5, -4, -3, 4, 5, 6} {
 		for name, call := range map[string]func(){
@@ -435,7 +397,6 @@ func TestElevationLevelPanics(t *testing.T) {
 			"Dp":          func() { tokens.Elevation.Dp(level) },
 			"SurfaceAt":   func() { tokens.DefaultLight.SurfaceAt(level) },
 			"StateAt":     func() { tokens.DefaultLight.StateAt(level, tokens.StateHover) },
-			"Raised":      func() { level.Raised() },
 		} {
 			func() {
 				defer func() {

@@ -625,7 +625,7 @@ func fromSeed(seed stdcolor.NRGBA, d derivation) (light, dark ColorTokens) {
 		OnWarning:   lightInk[6],
 		Info:        lightBase[7],
 		OnInfo:      lightInk[7],
-		Background:  lr[0].Step(100),
+		Background:  contentPin(lr[0]),
 		Text:        lr[0].Step(900),
 	}, d.dividerStep, dr[0])
 	dark = resolveAliases(ColorTokens{
@@ -647,7 +647,7 @@ func fromSeed(seed stdcolor.NRGBA, d derivation) (light, dark ColorTokens) {
 		OnWarning:   darkInk[6],
 		Info:        darkBase[7],
 		OnInfo:      darkInk[7],
-		Background:  dr[0].Step(100),
+		Background:  contentPin(dr[0]),
 		Text:        dr[0].Step(900),
 	}, d.dividerStep, lr[0])
 	return light, dark

@@ -159,9 +159,10 @@ func TestRoundTripColors(t *testing.T) {
 			t.Errorf(".dark declares non-scheme variable %s", name)
 		}
 	}
-	// Three families per storey: the fill, and the hover and press walks
-	// taken from it. All three resolve per scheme for the same reason.
-	if want := len(rampRoles)*9 + len(pinRoles) + 3*len(elevationLevels); len(dark) != want {
+	// Three families per level — the fill, and the hover and press walks
+	// taken from it — plus the seam every level a thing can stand on owes
+	// what stands on it. All resolve per scheme for the same reason.
+	if want := len(rampRoles)*9 + len(pinRoles) + 3*len(elevationLevels) + len(standableLevels); len(dark) != want {
 		t.Errorf(".dark declares %d variables, want %d", len(dark), want)
 	}
 }
@@ -272,11 +273,33 @@ func TestRoundTripElevationSurfaces(t *testing.T) {
 			if want := wantHex(fill); got != want {
 				t.Errorf("%s %s = %q, want SurfaceAt = %q", mode.name, name, got, want)
 			}
-			if l, _, _ := color.LabFromNRGBA(fill); l <= last {
-				t.Errorf("%s %s is L*%.2f, not lighter than the storey below it (L*%.2f)",
+			if l, _, _ := color.LabFromNRGBA(fill); l < last {
+				t.Errorf("%s %s is L*%.2f, under the level below it (L*%.2f)",
 					mode.name, name, l, last)
 			} else {
 				last = l
+			}
+		}
+		// And the seam each standable level owes what stands on it:
+		// transparent where the raise is told by its own fill, the derived
+		// hairline where it is not. The backdrop declares none — nothing
+		// stands on the backdrop.
+		if _, ok := mode.vars["--elevation-backdrop-seam"]; ok {
+			t.Errorf("%s declares a seam for the backdrop; nothing stands on it", mode.name)
+		}
+		for _, level := range standableLevels {
+			name := "--elevation-" + level.name + "-seam"
+			got, ok := mode.vars[name]
+			if !ok {
+				t.Fatalf("%s does not declare %s", mode.name, name)
+			}
+			raise := mode.scheme.RaisedOn(mode.scheme.SurfaceAt(level.level))
+			want := "transparent"
+			if raise.Seamed {
+				want = wantHex(raise.Seam)
+			}
+			if got != want {
+				t.Errorf("%s %s = %q, want %q", mode.name, name, got, want)
 			}
 		}
 	}

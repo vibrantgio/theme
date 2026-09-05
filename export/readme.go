@@ -77,6 +77,7 @@ func readmeMD(s Snapshot) string {
 	fmt.Fprintf(&b, "| `--space-<key>` | %s | the 4-pt spacing grid, px |\n", joinTokens("--space-", spaceNames()))
 	fmt.Fprintf(&b, "| `--radius-<key>` | %s | corner radii, Tailwind naming, px |\n", joinTokens("--radius-", radiusNames()))
 	fmt.Fprintf(&b, "| `--elevation-<level>` | %s | tonal surface fills — the DEFAULT elevation cue; ordered from the backdrop up toward the reader, and resolved per scheme, so both blocks state their own six |\n", joinTokens("--elevation-", elevationNames()))
+	fmt.Fprintf(&b, "| `--elevation-<level>-seam` | %s | the hairline a raise draws at its own edge where the scheme has no step left to tell it by fill — `transparent` where the fill tells it. The backdrop has none: nothing stands on the backdrop |\n", joinTokens("--elevation-", elevationSeamNames()))
 	fmt.Fprintf(&b, "| `--elevation-<level>-<state>` | %s | each level's own interaction walk — what a control with no fill of its own takes the surface under it to when hovered or pressed. Taken FROM the level's fill rather than named as a ramp step, because a level is not a ramp step in both schemes |\n", joinTokens("--elevation-", elevationStateNames()))
 	fmt.Fprintf(&b, "| `--shadow-<level>` | %s | dp box-shadows — the OPT-IN cue for floating transients (menus, dialogs, tooltips) layered over the tonal fill; resting surfaces use the fill alone |\n", joinTokens("--shadow-", elevationNames()))
 	fmt.Fprintf(&b, "| `--ease-<name>` | %s | MD3 easing presets as `cubic-bezier()`; emphasized is the documented single-bezier stand-in for MD3's two-segment path |\n", joinTokens("--ease-", easeNames()))
@@ -185,7 +186,7 @@ func readmeMD(s Snapshot) string {
 		"| `--elevation-backdrop` | nothing: the bare window plane, showing wherever nothing stands; the window's darkest region |\n" +
 		"| `--elevation-chrome` | the window's furniture — navbar, toolbar, sidebar, inspector, status bar, pane |\n" +
 		"| `--elevation-0` | the content surface, the bg pin |\n" +
-		"| `--elevation-1` | raised on the content — cards, code fences, text fields |\n" +
+		"| `--elevation-1` | raised on the content — cards, code fences, text fields; the raise walked from `--elevation-0`, not a table entry |\n" +
 		"| `--elevation-2` | floating — dialogs, toasts |\n" +
 		"| `--elevation-3` | floating, nearest the scheme's light extreme — menus, popovers, tooltips |\n\n" +
 		"Read that down and the fill gets lighter, in `:root` and in `.dark`\n" +
@@ -278,6 +279,16 @@ func elevationNames() []string {
 // backdrop-hover, backdrop-active, 0-hover, and so on. The walk is a family
 // of its own because a level is not a ramp step in both schemes, so a state
 // taken from a level cannot be spelled as that step's neighbour.
+// elevationSeamNames lists the seam each standable level owes what stands on
+// it, in sheet order. The backdrop is absent: nothing stands on it.
+func elevationSeamNames() []string {
+	names := make([]string, 0, len(standableLevels))
+	for _, k := range standableLevels {
+		names = append(names, k.name+"-seam")
+	}
+	return names
+}
+
 func elevationStateNames() []string {
 	names := make([]string, 0, 2*len(elevationLevels))
 	for _, k := range elevationLevels {
