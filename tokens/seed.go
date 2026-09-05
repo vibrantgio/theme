@@ -63,95 +63,49 @@
 //     and chroma of a canonical Material colour, measured with this module's
 //     own converters:
 //
-//     error    hue  28.7°, chroma 0.178  — #B3261E, L* 39.7
-//     success  hue 144.2°, chroma 0.162  — #4CAF50, L* 63.98
-//     warning  hue  84.9°, chroma 0.172  — #FFC107, L* 81.52
-//     info     hue 248.8°, chroma 0.169  — #2196F3, L* 60.43
+//     error    hue  28.70°, chroma 0.178  — #B3261E, L* 39.69
+//     success  hue 144.20°, chroma 0.162  — #4CAF50, L* 63.98
+//     warning  hue  64.05°, chroma 0.174  — #FF9800, L* 72.04
+//     info     hue 248.80°, chroma 0.169  — #2196F3, L* 60.43
 //
-//     Sources are MD3's canonical error base and Material Green, Amber and
+//     Sources are MD3's canonical error base and Material Green, Orange and
 //     Blue 500 — the 500 shade is each family's palette anchor. Only hue and
 //     chroma are taken; depths come from the shared lightness scale. The four
-//     land 56.2°, 59.3°, 104.6° and 139.9° apart around the OKLCh hue circle,
-//     far enough that no status colour reads as its neighbour. Three hold
-//     that hue at every depth; warning's is a track, two bullets down.
+//     land 35.35°, 80.15°, 104.60° and 139.89° apart around the OKLCh hue
+//     circle, and each holds its hue at every depth: a semantic colour that
+//     changed family as it deepened would be a different colour at every size
+//     it was drawn.
+//
+//     Warning is orange because yellow is the highlighter's and a highlight
+//     must never read as a status (highlight.go). Orange puts the warning
+//     35.35° from the error, the closest pair the set has, and it needs no
+//     hue-versus-depth rule to hold at depth: at the light scale's step-700
+//     depth it realizes #874e00 beside the error's #b1241c, at step 800
+//     #633800 beside #8b0002, and reads as the orange it is at both. An
+//     anchor further into the yellow does not: Material Amber 500's hue
+//     (84.93°) realizes #785600 at the step-700 depth, an olive-brown that
+//     carries no warning, and the yellows past it deepen further into the
+//     olive. That is why the anchor is read off the orange family.
 //
 //   - The seed tints the status anchors, and only tints them: each rotates
-//     toward the accent hue along the shorter arc by at most statusTint, 3°,
-//     and never in chroma. The bound is what makes it a tint: 3° is a
-//     twentieth of the smallest gap between two anchors (56.2°), so tinting
-//     every anchor to its limit still leaves 50.2° between the closest pair,
+//     toward the accent hue along the shorter arc by at most statusTint,
+//     1.75°, and never in chroma. The bound is what makes it a tint: it is a
+//     twentieth of the smallest gap between two anchors (35.35°), so tinting
+//     every anchor to its limit still leaves 31.85° between the closest pair,
 //     and no seed can make one status role converge on, reorder past, or
-//     leave the family of another. Error stays inside 25.7°–31.7°. A seed at
-//     or under greyChroma tints nothing.
+//     leave the family of another. Error stays inside 26.95°–30.45°. A seed
+//     at or under greyChroma tints nothing.
 //
-//     3° rather than 5° because a tint's cost is paid not in hue, where the
-//     bound holds it, but in the chroma the gamut happens to hold at the
-//     rotated hue, where nothing does. Measured: at 5° a red brand takes the
-//     light success mark from #006B13 to #226A00 and a purple brand takes the
-//     dark warning pin's chroma from 0.1675 to 0.1458; at 3° the same two
-//     measure #136B00 and 0.1536.
+//     A twentieth rather than a flat allowance because a tint's cost is paid
+//     not in hue, where the bound holds it, but in the chroma the gamut
+//     happens to hold at the rotated hue, where nothing does — so the bound
+//     that keeps the set apart is also the one that keeps that cost small.
+//     Realized, the tint moves the closest pair of containers no further than
+//     30.18° of hue and 0.0286 in OKLab apart (containers.go).
 //
 //     Over the 414-seed sweep the accent is never closer to the fixed error
 //     anchor than the error role is, in either scheme (see the
 //     accent-versus-error gate in this package's contrast tests).
-//
-//   - Warning's hue is a function of the tone being realized, because a dark
-//     yellow is not read as a dark yellow: at the light scale's step-700
-//     depth the flat anchor realizes #785600, an olive-brown, and a brown
-//     mark carries no warning. So the hue rotates toward orange as the tone
-//     deepens: amber at and above L* 82, then warningBendSlope degrees per L*
-//     of further depth, stopped at warningBend.
-//
-//     The pivot L* 82 is where the anchor itself sits (Amber 500 measures
-//     L* 81.52) and is also the dark scale's step-700 depth, so a dark
-//     scheme's bright pin is amber by construction. The slope 2.178°/L* is
-//     the secant of the amber family's own hue-versus-lightness track:
-//     #FFC107 measures h 84.93 at L* 81.52 and #FF6F00 h 46.46 at L* 63.86,
-//     and the four shades between hold that slope to within 0.10°/L* (600:
-//     2.086, 700: 2.258, 800: 2.275, 900: 2.117).
-//
-//     The rotation is one-signed: toward orange with depth, never the other
-//     way, even though the family's own track keeps rising above the pivot
-//     (Amber 300 h 91.2, Amber 50 h 92.9). What the bend fixes is at depth;
-//     following the track upward would move every pale warning ground in the
-//     system.
-//
-//     The error family sets the bound, not amber. 30° takes the anchor to
-//     54.9°, leaving 26.2° between the two families' deep hues and 20.2° once
-//     both tints are spent against each other (a seed between the anchors
-//     tints error to 31.7° and warning to 81.9°, whence the bend takes it to
-//     51.9°). At the depths a warning is painted at, the bent warning
-//     realizes #944600 against the error's #b0250f at L* 39, #6d3100 against
-//     #861100 at L* 28, #ed7819 against #f96c54 at L* 63. 35° measures
-//     #9a4100 beside #b0250f and the two begin to read as one family; 20°
-//     measures #894d00, still a brown.
-//
-//     The bend is chroma-positive wherever it acts, because sRGB starves
-//     amber at depth and holds more of an orange. Asked for the anchor's own
-//     chroma, the realized chroma goes 0.0977 → 0.1206 at L* 39, 0.0781 →
-//     0.0962 at L* 28, 0.0620 → 0.0763 at L* 19 and 0.0391 → 0.0478 at L* 6.
-//     warningChroma therefore stays 0.172: the bend raises the ceiling
-//     wherever it acts.
-//
-//     The bend is a rule for marks and does not reach the washes. A status
-//     container reads its hue at the pale tint depth, where the anchor is
-//     unrotated, because at the container dial the rotation buys no
-//     legibility and costs the status set its separation — it brought a dark
-//     scheme's warning wash within 19.27° of its error wash (containers.go).
-//
-//     Composition with the seed tint is tint first, bend second: the seed
-//     tints the anchor and the bend rotates the tinted anchor, so the whole
-//     hue track is rigid under the tint, every rung moving by the same ≤ 3°.
-//     Bending first and tinting each realized hue afterwards is wrong — the
-//     tint takes the shorter arc, so an accent inside the bend's own swing
-//     would pull light and deep rungs opposite ways and the ramp would wobble
-//     in hue.
-//
-//     The rungs, the pin and the deep on-ink are all realized through the
-//     same hue-at-tone, at the tone each sits at. A status container is not:
-//     it takes its step-300 rung's tone and the container dial's chroma, but
-//     reads its hue at the pale tint depth, so a wash carries the family's
-//     anchor at every depth it is drawn at (see containers.go).
 //
 //   - Status containers are tonal, not blended: the role's own anchor hue at
 //     containerChroma, 0.055, realized at the role ramp's step-300 depth —
@@ -165,21 +119,21 @@
 //     so they differ in hue and nothing else.
 //
 //     0.055 is the dial the sRGB gamut allows at both container depths for
-//     every anchor across its whole tint window: the binding case is amber at
-//     the dark step-300 depth, which holds 0.0637 at the worst hue in that
-//     window, and the dial keeps 14% of headroom under it so quantization can
-//     never clip one container and not another.
+//     every anchor across its whole tint window: the binding case is the
+//     reserved highlighter's yellow at the dark step-300 depth, which holds
+//     0.0650 there, with warning's orange next at 0.0700 across its window,
+//     and the dial keeps headroom under both so quantization can never clip
+//     one container and not another.
 //
 //     OnStatusContainer takes the most chromatic rung of the role's own ramp
 //     that reaches graphicFloor over the container — WCAG 1.4.11's 3:1 for a
 //     non-text graphic, which is what a status mark is (MarkOn, in
 //     containers.go, is the general form). Asking for the most chromatic rung
 //     rather than naming one is what keeps four hues equally saturated: sRGB
-//     holds a red only at mid depths and an amber only at high ones, so a
-//     fixed rung serves one hue at the cost of the others. Light schemes land
-//     on step 700 and dark on 500, except amber, which takes 600 or 700 on
-//     the dark scale; the worst mark-on-container pairing over the whole seed
-//     sweep measures 4.47:1 and the default seed's eight measure 4.52 and up.
+//     holds a red only at mid depths and an orange only at high ones, so a
+//     fixed rung serves one hue at the cost of the others. The worst
+//     mark-on-container pairing over the whole seed sweep measures 4.47:1 and
+//     the default seed's eight measure 4.52 and up.
 //     Body text on a container is not this pairing — the neutral Text token
 //     measures 11.6:1 or better over all eight containers.
 //
@@ -371,27 +325,11 @@ const (
 	errorChroma      = 0.178     // OKLCh chroma of #B3261E
 	successHue       = 144.2     // OKLCh hue of Material Green 500 #4CAF50
 	successChroma    = 0.162     // OKLCh chroma of #4CAF50
-	warningHue       = 84.9      // OKLCh hue of Material Amber 500 #FFC107
-	warningChroma    = 0.172     // OKLCh chroma of #FFC107
+	warningHue       = 64.05     // OKLCh hue of Material Orange 500 #FF9800
+	warningChroma    = 0.174     // OKLCh chroma of #FF9800
 	infoHue          = 248.8     // OKLCh hue of Material Blue 500 #2196F3
 	infoChroma       = 0.169     // OKLCh chroma of #2196F3
-	statusTint       = 3.0       // degrees a status anchor may rotate toward the accent
-
-	// Warning's hue-versus-depth track; see the file header for the whole
-	// derivation and the renders the bound was chosen from.
-	//
-	// warningBendFrom is the L* at and above which warning is amber
-	// outright: Amber 500's own depth (L* 81.52), which is also the dark
-	// scale's step-700 depth, so the dark pin is amber by construction.
-	// warningBendSlope is the secant of the amber family's own hue track
-	// from #FFC107 (h 84.93, L* 81.52) to #FF6F00 (h 46.46, L* 63.86), a
-	// slope its four intervening shades hold to within 0.17°/L*.
-	// warningBend is the most the hue may rotate toward orange, which
-	// leaves 20.2° between the deepest warning and the reddest error any
-	// seed can ask for.
-	warningBendFrom  = 82.0
-	warningBendSlope = 2.178
-	warningBend      = 30.0
+	statusTint       = 1.75      // degrees a status anchor may rotate toward the accent
 
 	lightPinTone  = 40 // MD3's accent-base tone; the default seed's own depth
 	statusPinTone = 39 // the light scheme's pin depth, and so its step-700 anchor:
@@ -533,8 +471,9 @@ func packRGB(c stdcolor.NRGBA) uint32 {
 // greyChroma has no hue to lend and lends none.
 //
 // The bound is what makes the tint safe to state as a property rather than
-// to check case by case: the smallest gap between two anchors is 56.2°, and
-// tinting both to their limits toward each other closes it by at most 10°.
+// to check case by case: the smallest gap between two anchors is 35.35°, and
+// tinting both to their limits toward each other closes it by at most a
+// tenth of that.
 func tintToward(anchor, accentHue, accentChroma float64) float64 {
 	if accentChroma <= greyChroma {
 		return anchor
@@ -551,38 +490,15 @@ func tintToward(anchor, accentHue, accentChroma float64) float64 {
 
 // hueRule answers a role's OKLCh hue at one realized CIELAB depth. It is the
 // whole of the derivation's hue vocabulary: every surface a role has — each
-// rung of both ramps, the light pin, the dark pin, the deep on-ink — is
-// realized by asking the role's rule for the hue at the tone that surface
-// sits at, so a role that varies its hue with depth varies every one of them
-// by the one rule and none of its consumers has to know.
+// step of both ramps, the light pin, the dark pin, the deep on-foreground —
+// is realized by asking the role's rule for the hue at the tone that surface
+// sits at, so a role that varied its hue with depth would vary every one of
+// them by the one rule and none of its consumers would have to know.
 type hueRule func(tone int) float64
 
-// flatHue is the rule of every role but warning: one hue, at every depth.
+// flatHue is the rule of every role: one hue, at every depth.
 func flatHue(h float64) hueRule {
 	return func(int) float64 { return h }
-}
-
-// bendingHue is warning's rule: the anchor down to warningBendFrom, then
-// warningBendSlope degrees of rotation toward orange per L* of further
-// depth, stopped at warningBend. The anchor handed in is the tinted one —
-// the seed rotates the anchor and the bend rotates what the seed left, so
-// the family's hue track is rigid under the tint (see the file header).
-//
-// The rotation is one-signed: hues only ever fall from the anchor, never
-// rise past it, even though the amber family's own track keeps rising above
-// the pivot — what the bend exists to fix is at depth, and a light amber is
-// already read as amber.
-func bendingHue(anchor float64) hueRule {
-	return func(tone int) float64 {
-		rotate := warningBendSlope * (warningBendFrom - float64(tone))
-		if rotate <= 0 {
-			return anchor
-		}
-		if rotate > warningBend {
-			rotate = warningBend
-		}
-		return math.Mod(anchor-rotate+360, 360)
-	}
 }
 
 // rampOf sweeps one role's hue rule and chroma across a lightness scale,
@@ -643,12 +559,10 @@ func fromSeed(seed stdcolor.NRGBA, d derivation) (light, dark ColorTokens) {
 
 	// The status anchors are fixed hues the seed may only tint (see
 	// tintToward and the file header); the accent family rotates with the
-	// brand outright.
-	//
-	// Warning is the one role whose hue depends on the depth it is realized
-	// at; the rest answer one hue at every depth. Both are the same kind of
-	// thing here — a hueRule — so nothing downstream of this table has a
-	// case for either.
+	// brand outright. Every role answers one hue at every depth, and answers
+	// it through a hueRule, so a role that ever needed a hue-versus-depth
+	// track could take one without anything downstream of this table
+	// learning about it.
 	roles := []struct {
 		hue    hueRule
 		chroma float64
@@ -663,7 +577,7 @@ func fromSeed(seed stdcolor.NRGBA, d derivation) (light, dark ColorTokens) {
 		{flatHue(hue + tertiaryHueShift), accent * tertiaryShare, lightPinTone},
 		{flatHue(tintToward(errorHue, hue, accent)), errorChroma, statusPinTone},
 		{flatHue(tintToward(successHue, hue, accent)), successChroma, statusPinTone},
-		{bendingHue(tintToward(warningHue, hue, accent)), warningChroma, statusPinTone},
+		{flatHue(tintToward(warningHue, hue, accent)), warningChroma, statusPinTone},
 		{flatHue(tintToward(infoHue, hue, accent)), infoChroma, statusPinTone},
 	}
 	var lr, dr [8]Ramp

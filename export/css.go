@@ -64,10 +64,10 @@ var pinRoles = []struct {
 	// var() arithmetic that could reach it.
 	{"inverse-surface", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.InverseSurface }},
 	{"on-inverse-surface", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.OnInverseSurface }},
-	// The reserved highlighter: the wash marking content the reader was
+	// The reserved highlighter: the fill marking content the reader was
 	// brought to. It is emitted as a first-class token because it belongs
 	// to no ramp — its hue is reserved outside the roles, so no var()
-	// reference over the ramps could reach it — and it is the wash resolved
+	// reference over the ramps could reach it — and it is the fill resolved
 	// for the surface these pages stand on, level 0, which is the one
 	// answer a sheet has to give. It is not a status and no status hue
 	// serves it; see the tokens package's highlight.go for the distances
@@ -1811,7 +1811,7 @@ const componentClasses = `/* ---- Component classes ----
    two schemes do not land on one rung — a light scheme's marks come off
    step 500 and a dark scheme's off step 400 — and because one rung for both
    cost the light scheme its reds, the error edge coming out the pale salmon
-   a red turns into when it is asked to sit as light as an amber wants to.
+   a red turns into when it is asked to sit as light as an orange wants to.
    Each level takes its own status ramp — info included, which reads off the
    info ramp rather than off the accent, so a themed brand cannot make an
    informational chip wear the colour of an alarming one. */

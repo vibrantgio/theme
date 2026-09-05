@@ -8,46 +8,61 @@ import (
 	"github.com/vibrantgio/theme/color"
 )
 
-// TestHighlightHueIsTheWidestArcTheStatusAnchorsLeave recomputes the
+// markerYellow is the OKLCh hue of Material Yellow 500 #FFEB3B, the
+// canonical anchor of the yellow family. It is the witness the derivation
+// below picks its arc with, and nothing derives from it.
+const markerYellow = 102.50
+
+// TestHighlightHueIsTheMidpointOfTheArcTheYellowsOccupy recomputes the
 // reserved hue from the four status anchors themselves: sort them around
-// the OKLCh hue circle, take the widest run between two neighbours, and
-// the reserved hue is its midpoint. Pinning the constant against its own
-// derivation is what keeps the reservation true if an anchor ever moves —
-// the constant would stop matching rather than quietly drift toward a
-// status.
-func TestHighlightHueIsTheWidestArcTheStatusAnchorsLeave(t *testing.T) {
+// the OKLCh hue circle, take the run between two neighbours that the
+// yellows fall in, and the reserved hue is its midpoint — the point in the
+// yellow furthest from either status beside it. Pinning the constant
+// against its own derivation is what keeps the reservation true if an
+// anchor ever moves: the constant would stop matching rather than quietly
+// drift toward a status.
+func TestHighlightHueIsTheMidpointOfTheArcTheYellowsOccupy(t *testing.T) {
 	anchors := []float64{errorHue, successHue, warningHue, infoHue}
 	sort.Float64s(anchors)
-	widest, midpoint := 0.0, 0.0
+	run, midpoint := 0.0, 0.0
+	found := false
 	for i, a := range anchors {
 		b := anchors[(i+1)%len(anchors)]
-		run := math.Mod(b-a+360, 360)
-		if run > widest {
-			widest, midpoint = run, math.Mod(a+run/2, 360)
+		length := math.Mod(b-a+360, 360)
+		if math.Mod(markerYellow-a+360, 360) >= length {
+			continue // the yellow is not in this run
 		}
+		run, midpoint, found = length, math.Mod(a+length/2, 360), true
 	}
-	if math.Abs(widest-139.9) > 1e-9 {
-		t.Errorf("widest run between two status anchors = %.4f°, want 139.9° (info %.1f° to error %.1f°)",
-			widest, infoHue, errorHue)
+	if !found {
+		t.Fatalf("no run between two status anchors holds the marker's yellow at %.2f° — a status anchor has moved into it", markerYellow)
 	}
-	if math.Abs(midpoint-highlightHue) > 1e-9 {
-		t.Errorf("highlightHue = %.4f°, want %.4f° — the midpoint of the widest arc the anchors leave",
+	if math.Abs(run-80.15) > 0.01 {
+		t.Errorf("the run the yellows occupy measures %.4f°, want 80.15° (warning %.2f° to success %.2f°)",
+			run, warningHue, successHue)
+	}
+	if math.Abs(midpoint-highlightHue) > 0.005 {
+		t.Errorf("highlightHue = %.4f°, want %.4f° — the midpoint of the run the yellows occupy",
 			highlightHue, midpoint)
+	}
+	if gap := math.Abs(highlightHue - markerYellow); gap > 2.0 {
+		t.Errorf("the reserved hue sits %.2f° from Material Yellow 500's %.2f° — that is no longer the yellow a palette would have named",
+			gap, markerYellow)
 	}
 }
 
-// TestTheHighlightDialFitsTheGamutAtBothWashDepths verifies sRGB holds the
-// container dial at the reserved hue at both depths the wash is realized
+// TestTheHighlightDialFitsTheGamutAtBothFillDepths verifies sRGB holds the
+// container dial at the reserved hue at both depths the fill is realized
 // at, with the headroom the file header records: a clipped chroma would
 // take the reservation's distance from the status hues away silently.
-func TestTheHighlightDialFitsTheGamutAtBothWashDepths(t *testing.T) {
+func TestTheHighlightDialFitsTheGamutAtBothFillDepths(t *testing.T) {
 	for _, d := range []struct {
 		name string
 		tone int
 		want float64 // the most chroma sRGB holds at highlightHue at this depth
 	}{
-		{"light step 300", 85, 0.0935},
-		{"dark step 300", 19, 0.1575},
+		{"light step 300", 85, 0.1850},
+		{"dark step 300", 19, 0.0650},
 	} {
 		got := 0.0
 		for c := 0.0; c < 0.4; c += 0.0005 {
@@ -61,7 +76,7 @@ func TestTheHighlightDialFitsTheGamutAtBothWashDepths(t *testing.T) {
 			t.Errorf("%s (L* %d): sRGB holds chroma %.4f at hue %.2f°, want %.4f", d.name, d.tone, got, highlightHue, d.want)
 		}
 		if got <= containerChroma {
-			t.Errorf("%s (L* %d): sRGB holds only chroma %.4f at hue %.2f°, under the %.3f dial the wash is realized at",
+			t.Errorf("%s (L* %d): sRGB holds only chroma %.4f at hue %.2f°, under the %.3f dial the fill is realized at",
 				d.name, d.tone, got, highlightHue, containerChroma)
 		}
 	}

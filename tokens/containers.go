@@ -16,23 +16,17 @@
 // at the same depth means the four differ in hue and in nothing else, which
 // is the only arrangement in which four status washes read as four.
 //
-// A wash's hue is its role's, not its depth's. One family's hue is a
-// function of the tone it is realized at — warning rotates toward orange as
-// it deepens (seed.go) — and that rotation is a rule for marks: a deep amber
-// mark at full chroma is an olive-brown and carries no warning. A wash
-// carries the dial's chroma, where the rotation buys no legibility and costs
-// the set its separation. Read off the realized rung, a dark scheme's
-// warning wash comes within 19.27° and 0.0183 in OKLab of its error wash,
-// where the same reading leaves a light scheme's closest pair 31.37° and
-// 0.0299 apart. So the hue is read at the ramp's pale tint depth — the
-// third rung counted from the ramp's pale end — which stands at or above
-// the tone the rotation begins from, and so answers the family's anchor as
-// the seed tinted it and nothing else. Both schemes then clear
-// ContainerSeparation with room: 0.0453 in light and 0.0458 in dark over
-// the seed sweep.
+// A fill's hue is its role's, not its depth's, so it is read at one fixed
+// step — the ramp's pale tint depth, the third step counted from the ramp's
+// pale end — and not at whatever depth the fill is realized at. Reading it
+// off the realized step instead would let the eight-bit realization and the
+// gamut mapping at that depth answer a question about which colour the role
+// is: at the container dial a step's hue reads up to 1.42° off the angle it
+// was asked for, and the deepest steps of a hue sRGB starves read further
+// off still.
 //
 // That also leaves the walk below with one job. A hue read off the realized
-// rung rotates whenever the walk deepens the fill, which would put a warning
+// step rotates whenever the walk deepens the fill, which would put a warning
 // badge on the content and one on the window's furniture beside it in two
 // different hues for a reason no reader could infer.
 //
@@ -40,10 +34,10 @@
 // not text and is not chosen against a text floor. MarkOn picks it: the
 // most chromatic rung of the role's own ramp that still reaches the floor
 // asked for over that ground. Said the other way round, a mark should be as
-// much its own colour as it can be while still reading, and which rung that
-// is depends on the hue as much as on the ground — sRGB holds a saturated
-// red only at mid depths and a saturated amber only at high ones, so a
-// fixed rung would serve one hue at the cost of the others. It is one rule
+// much its own colour as it can be while still reading, and which step that
+// is depends on the hue as much as on the surface — sRGB holds a saturated
+// red only at mid depths and a saturated orange only at high ones, so a
+// fixed step would serve one hue at the cost of the others. It is one rule
 // for two jobs: a status container's own mark takes it against the
 // container at WCAG 1.4.11's 3:1 non-text floor, and a component marking
 // some other ground — a transient chip's leading edge over the inverse
@@ -98,23 +92,27 @@ import (
 // it is where this palette's own answers separate.
 const ContainerFloor = 1.25
 
-// ContainerSeparation is the least perceptual distance two status washes
+// ContainerSeparation is the least perceptual distance two status fills
 // drawn on one surface may come to, in OKLab. The four are one set, and a
 // set of four is only four if a reader can tell its members apart.
 //
-// 0.029 is measured rather than picked. Over the seed sweep — both
-// derivations, both schemes, every level — a light scheme's closest pairing
-// measures 0.0299 with the hue read off the realized rung, which is 31.37°
-// of OKLCh hue at the container dial, and its four washes read as four; a
-// dark scheme's measures 0.0183 (19.27°), and they read as two browns and
-// two near-black tints. The threshold goes at the light reading, which is
-// the demonstrated one. Reading the hue at the pale tint depth instead
-// carries both schemes to 0.0453 at worst.
+// 0.028 is measured rather than picked. The error and the warning are the
+// closest pair the anchors leave — an orange beside a red, 35.35° apart
+// before any tint — and a seed lying between them tints them toward each
+// other, so over the seed sweep, both derivations, both schemes, every
+// level, the pair closes to 30.18° at the dial and 0.0286 in OKLab. The
+// threshold goes just under that, so it accepts what the derivation can
+// produce and rejects a set that has closed further.
+//
+// Two readings bracket it. Two fills 31.4° apart at this dial read as two
+// colours; two 19.3° apart read as one brown twice, which is where a hue
+// read off the realized rung put a warning that rotated with depth. The
+// derivation ships the first kind.
 //
 // Hue angle alone cannot state it — two hues 90° apart at no chroma are one
 // grey — so the distance is taken in the space the derivation places its
 // hues and chromas in.
-const ContainerSeparation = 0.029
+const ContainerSeparation = 0.028
 
 // Container returns the role's tonal container: its ramp's containerStep
 // rung's tone, at the hue the role wears at its ramp's pale tint depth,
@@ -136,11 +134,11 @@ const ContainerSeparation = 0.029
 // container carries none either, rather than inventing a hue the brand does
 // not have.
 //
-// Reading the hue one rung over costs the families whose hue does not move
-// with depth an eight-bit step and no more: over the seed sweep every
-// non-warning container that changed at all changed by at most three units
-// summed across its channels, which is the whole difference between reading
-// an angle off a rung at one chroma and off a rung at another.
+// Reading the hue one step over costs a container an eight-bit step and no
+// more: over the seed sweep every container that changed at all changed by
+// at most two units summed across its channels, which is the whole
+// difference between reading an angle off a step at one chroma and off a
+// step at another.
 //
 // RoleNeutral is accepted and yields the neutral ramp's own step, chroma 0.
 func (t ColorTokens) Container(role Role) stdcolor.NRGBA {
@@ -292,17 +290,17 @@ func (t ColorTokens) OnStatusContainer(role Role) stdcolor.NRGBA {
 // reference — so the rule is "be that rung, or
 // the nearest one to it that still reads". Walking outward from the middle
 // rather than naming a rung is what keeps four hues in step. sRGB holds a
-// saturated red only at mid depths and a saturated amber only at high ones,
-// so a fixed rung serves one hue at the cost of the others; but the
-// nearest-to-mid rung that clears a given ground is the same rung for all
+// saturated red only at mid depths and a saturated orange only at high ones,
+// so a fixed step serves one hue at the cost of the others; but the
+// nearest-to-mid step that clears a given ground is the same step for all
 // four, so every mark on one ground lands at one depth and reads at one
 // weight, which is what makes a set of status marks a set.
 //
-// Reaching for the most chromatic rung instead does not hold that. Chroma
-// peaks at a different depth for every hue — amber's peaks two rungs deeper
-// on the dark scale than its siblings' do — so the amber mark comes back at
-// 8.44:1 beside three siblings at 5.03:1 and pulls the eye across an alert
-// stack for a reason no one reading it could infer. What a mark owes its
+// Reaching for the most chromatic step instead does not hold that. Chroma
+// peaks at a different depth for every hue — the green's peaks two steps
+// deeper on the dark scale than its siblings' do — so the green mark comes
+// back at 9.45:1 beside three siblings at 4.87:1 and pulls the eye across an
+// alert stack for a reason no one reading it could infer. What a mark owes its
 // ground is legibility, and past that, agreement with the other marks.
 //
 // A ground no rung can clear yields the rung that reads best rather than
