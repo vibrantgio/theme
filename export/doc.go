@@ -62,8 +62,8 @@
 //     base radius parameter.
 //   - --elevation-<level> (backdrop, chrome, 0, 1, 2, 3): the tonal surface
 //     fills, the DEFAULT elevation cue, ordered from the backdrop up toward
-//     the reader — the bare window plane, the chrome a window's furniture
-//     wears, the content at 0, then raised and floating. Read the six down
+//     the reader — the bare window plane, the chrome a window wears, the
+//     content at 0, then raised and floating. Read the six down
 //     and the fill gets lighter, in :root and in .dark alike. They are
 //     emitted as resolved hex in BOTH blocks rather than as
 //     var(--color-neutral-N) references the .dark block flips underneath: a

@@ -22,7 +22,7 @@
 // clears.
 //
 // Both surfaces rather than one because a neutral boundary and a neutral
-// foreground are drawn on the page and on the furniture alike, and a token
+// foreground are drawn on the page and on the chrome alike, and a token
 // that cleared only the easier of the two would be a promise kept on one of
 // them.
 //

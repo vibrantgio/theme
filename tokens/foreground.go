@@ -8,17 +8,17 @@
 // itself laid on the page. For six of the seven pinned roles that gap costs
 // nothing, because their bases are realized at fixed perceptual depths
 // (lightPinTone, statusPinTone, darkPinTone): whatever the seed, a secondary,
-// tertiary or status pin measures 5.94:1 or better over the light paper and
+// tertiary or status pin measures 5.94:1 or better over the light content and
 // 10.99:1 or better over the dark one. The light primary base is the one
 // exception in the whole palette, and it is an exception by design — it is the
 // brand colour itself, at the brand's own CIELAB depth (see liftSeed), so
-// whether it reads over the paper is a property of the seed and of nothing
+// whether it reads over the content is a property of the seed and of nothing
 // else.
 //
 // So the family this file gates has exactly one member that can fail, and
 // naming it is worth more than counting it: the light primary pin, used as a
 // foreground. Over the seed sweep 280 of 414 light schemes put that pin under
-// the 4.5:1 text floor against their own paper, bottoming out at 1.01:1, and
+// the 4.5:1 text floor against their own content, bottoming out at 1.01:1, and
 // 208 of 414 put it under the 3:1 graphic floor. The canonical seed #6750A4
 // sits at L* 51 and measures 5.94:1; a pastel accent of the kind a dark-scheme
 // palette publishes sits near L* 73 and puts a 1.95:1 link on a near-white
@@ -85,12 +85,12 @@ const (
 // rather than the fill — a link in a paragraph, a blockquote's bar, a task
 // list's tick, an active tab's underline — and passing that surface rather
 // than assuming one is the whole of it: the same role reads in different
-// colours on the paper, on a card and on its own fill, and only the caller
+// colours on the content, on a card and on its own fill, and only the caller
 // knows which it is drawing on. Pass [TextFloor] for words and
 // [GraphicFloor] for a mark.
 //
 // RoleNeutral has no pinned base and panics, as it does everywhere else a pin
-// is asked for. A neutral foreground over the paper is the Text pin, which is
+// is asked for. A neutral foreground over the content is the Text pin, which is
 // derived against the Background pin already.
 func (t ColorTokens) ForegroundOnAtFloor(role Role, surface stdcolor.NRGBA, floor float64) stdcolor.NRGBA {
 	pin := t.pinFor(role) // validates role

@@ -301,10 +301,10 @@ func highContrast(s [9]int) [9]int {
 }
 
 // The two schemes' anchors, and the four scales they derive. The light
-// backdrop is the platform's paper and the dark one its window plane; the
-// step-400 anchors are the deepest surface each scheme stacks; the step-700
-// anchors are the pin depths, so a pin and its 700 step are one colour; the
-// step-900 anchors are the body text tones.
+// backdrop is the platform's content surface and the dark one its window
+// plane; the step-400 anchors are the deepest surface each scheme stacks;
+// the step-700 anchors are the pin depths, so a pin and its 700 step are one
+// colour; the step-900 anchors are the body text tones.
 var (
 	lightAnchors = toneAnchors{97, 74, statusPinTone, 6}
 	darkAnchors  = toneAnchors{8, 30, darkPinTone, 94}

@@ -76,7 +76,7 @@ const wcagAA = 4.5
 // a dark scheme states its accents at a high tone — around L* 73 to L* 85 —
 // and people seed a brand with one, which is a seed that reads perfectly in
 // the dark scheme and lands the light scheme's primary pin a whisper off
-// the paper. That shape is what put a 1.95:1 link on a light page (see
+// the content. That shape is what put a 1.95:1 link on a light page (see
 // `foreground.go`); the random draw covers it thinly and by accident, and a
 // regression that only a randomly drawn seed catches is one a future change
 // to the draw can lose. So the shape is in the matrix by name: a blue, a
@@ -129,7 +129,7 @@ func TestRampStepAddressing(t *testing.T) {
 // reads across the scheme boundary: it is the counterpart scheme's own
 // Surface and Text, so each scheme's inverse chip is built out of the
 // other one. The highlight resolves off no ramp at all — it is the
-// reserved highlighter fill, walked against the paper.
+// reserved highlighter fill, walked against the content.
 func TestSemanticLayerResolvesFromRamps(t *testing.T) {
 	for _, s := range []struct {
 		name        string
@@ -149,7 +149,7 @@ func TestSemanticLayerResolvesFromRamps(t *testing.T) {
 			{"Divider = Neutral.Step(300)", s.tok.Divider, n.Step(300)},
 			{"InverseSurface = the counterpart scheme's Surface", s.tok.InverseSurface, s.counterpart.Surface},
 			{"OnInverseSurface = the counterpart scheme's Text", s.tok.OnInverseSurface, s.counterpart.Text},
-			{"Highlight = the reserved fill resolved against the paper", s.tok.Highlight, s.tok.HighlightOn(s.tok.Background)},
+			{"Highlight = the reserved fill resolved against the content", s.tok.Highlight, s.tok.HighlightOn(s.tok.Background)},
 		}
 		for _, c := range checks {
 			if c.got != c.want {

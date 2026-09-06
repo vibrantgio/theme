@@ -51,7 +51,7 @@ import (
 // palette sits near enough to it to flip on a rounding.
 //
 // A partial step is rejected on the platform's own evidence rather than on
-// taste: a macOS dark window parts its content from its furniture by 1.48
+// taste: a macOS dark window parts its content from its chrome by 1.48
 // L*, and that boundary is drawn with a seam. A 1.99 L* raise is the same
 // order of whisper and owes the same hairline.
 //

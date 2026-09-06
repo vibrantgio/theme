@@ -217,7 +217,7 @@ func TestTheChromeLevelTakesTheMeasuredStep(t *testing.T) {
 }
 
 // TestTheBackdropTakesTheDerivedStep pins the one level no stored platform
-// capture can place: a macOS window paints its furniture edge to edge, so
+// capture can place: a macOS window paints its chrome edge to edge, so
 // nothing measures a window plane beneath it. The backdrop's step is
 // therefore the chrome step scaled by the surface band's own proportion —
 // its second interval over its first — which is the same shape the levels
@@ -266,7 +266,7 @@ func TestTheBackdropTakesTheDerivedStep(t *testing.T) {
 }
 
 // TestTheHairlineCarriesTheWhisperStep is the light scheme's headroom
-// strategy held to its own bargain. Above the paper the light scheme's
+// strategy held to its own bargain. Above the content the light scheme's
 // steps are whispers — a fraction of an L* — so the derived hairline has
 // to be what says where a raised surface is. This asserts that MarkOn's
 // answer against every level clears WCAG 1.4.11's 3:1 in both schemes

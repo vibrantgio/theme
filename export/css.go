@@ -959,7 +959,7 @@ const componentClasses = `/* ---- Component classes ----
    resolves against is handed down, never looked up.
 
    Nothing declares them at the root. A control that no raised host contains
-   stands on the paper, and the fallback inside each var() IS the paper's
+   stands on the content, and the fallback inside each var() IS the content's
    answer — so the default is written once, at the point of use, and cannot
    drift from the tokens the rules already name.
 
@@ -976,7 +976,7 @@ const componentClasses = `/* ---- Component classes ----
 
    The two join under different rules, and the difference is
    worth stating. --surface-border is a MEASUREMENT, so a host only declares it
-   where the paper's answer stops clearing — which is why .card, at level 1,
+   where the content's answer stops clearing — which is why .card, at level 1,
    does not. --surface-raised is a LEVEL, and a
    level differs by construction: a control filling at its host's own step is
    invisible against it whatever the contrast table says. So every
@@ -1031,7 +1031,7 @@ const componentClasses = `/* ---- Component classes ----
    dark one, so there is no index left to walk from. Each level's own
    -hover and -active pair is that walk taken
    from each level's own fill (components/button ghostWash, which is
-   tokens.ColorTokens.StateAt). A ghost told nothing stands on the paper,
+   tokens.ColorTokens.StateAt). A ghost told nothing stands on the content,
    so the base rule is level 0's. */
 .btn.ghost {
   background: transparent;
@@ -1051,7 +1051,7 @@ const componentClasses = `/* ---- Component classes ----
 }
 
 /* A ghost's state fill derives from the local surface it sits on, not the
-   window's own: inside a host that is not the paper, the hover and press
+   window's own: inside a host that is not the content, the hover and press
    fills re-derive as that host surface's own walk (components/button
    buttonColors, walking from RenderState.Level). The card sits at level 1,
    the dialog at level 2, the popover at
@@ -1883,9 +1883,9 @@ const componentClasses = `/* ---- Component classes ----
    gradient so the chip's own radius rounds it: the level's own mark on the
    inverse surface, the step of that level's ramp nearest its mid-value step
    that still reads over the chip. It was one S1, which is the width this
-   desktop keeps for separators, pane strokes and insets — furniture it does
+   desktop keeps for separators, pane strokes and insets — hairlines it does
    not want looked at — and a mark identified by its colour cannot be drawn
-   at furniture width. Two stops is as wide as the air above the message and
+   at hairline width. Two stops is as wide as the air above the message and
    two thirds of the air beside it, which is where the widening stops: an
    edge as wide as the gap it holds the text off by reads as a panel the
    message sits next to rather than as the chip's own edge.

@@ -13,7 +13,7 @@
 //	LevelBackdrop the bare window plane. Nothing is drawn at it; it shows
 //	              wherever nothing stands — around an inset pane, between
 //	              regions — and it is the darkest region in either scheme.
-//	LevelChrome   the window's furniture: navbar, toolbar, sidebar,
+//	LevelChrome   the chrome: navbar, toolbar, sidebar,
 //	              inspector, status bar, pane.
 //	Level0        the content itself, filled with the Background pin.
 //	Level1        raised on the content — cards, filled insets, fields.
@@ -108,7 +108,7 @@
 // realizes #0C0C0C under the #181818 content — 4.93 L\* of separation,
 // which reads as pure black where the platform reads dark grey. Three dark
 // references, measured 2026-08-28, each the step from a window's content
-// down to its furniture:
+// down to its chrome:
 //
 //	Voice Memos, sidebar panel under content   1.50 L*   #1B1B1B under #1E1E1E
 //	the reference chat application             1.71 L*
@@ -119,13 +119,13 @@
 // reading almost exactly; on the default dark palette it realizes #151515
 // under the #181818 content. The asymmetry between 4.88 and 1.48 is the
 // platform's own and not a hand-pick: a light window separates its
-// furniture with a step the ramp happens to carry, a dark window with a
+// chrome with a step the ramp happens to carry, a dark window with a
 // whisper, and this file records both rather than picking one and
 // mirroring it.
 //
 // # The backdrop has no platform capture
 //
-// A macOS window paints its furniture edge to edge, so none of the stored
+// A macOS window paints its chrome edge to edge, so none of the stored
 // references shows a window plane beneath it: the backdrop's step has
 // nothing to be measured against and is DERIVED, which the comment says
 // rather than dressing it as a measurement. It is the chrome step scaled by
@@ -212,7 +212,7 @@ const (
 	// chrome level in both schemes. Nothing is drawn at it; it is what
 	// shows wherever nothing stands.
 	LevelBackdrop ElevationLevel = iota - 2
-	// LevelChrome is the window's furniture — navbar, toolbar, sidebar,
+	// LevelChrome is the chrome — navbar, toolbar, sidebar,
 	// inspector, status bar, pane — one measured step under the content in
 	// both schemes. It is window-scale only: the trim inside a component
 	// or a pattern takes no level of its own.
@@ -404,7 +404,7 @@ func (t ColorTokens) surfaceBand() (band [4]color.NRGBA, tone [4]float64) {
 // darkChromeStep is how far under the content the chrome level sits where
 // the pin is the darkest surface the ramp carries, in CIELAB L\*. It is a
 // MEASUREMENT, not a derivation: 1.48 L\*, the step three dark platform
-// references measure between a window's content and its furniture, and on
+// references measure between a window's content and its chrome, and on
 // the default dark palette it realizes #151515 under the #181818 content.
 // The file header quotes the three captures and says why the ramp's own
 // band step — which is the measurement in the other scheme — overshoots
@@ -430,7 +430,7 @@ func chromeStep(tone [4]float64) float64 {
 
 // backdropStep is how far below the pin the backdrop is drawn, in CIELAB
 // L\*. No stored platform capture shows a window plane beneath its
-// furniture, so this one is DERIVED rather than measured: the chrome step
+// chrome, so this one is DERIVED rather than measured: the chrome step
 // scaled by the surface band's own proportion, its second interval over its
 // first, which is the same shape the levels above the pin take.
 //

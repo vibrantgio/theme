@@ -615,7 +615,7 @@ func layoutHTML(s Snapshot) string {
 		"every level is lighter than the one beneath it</strong> &mdash; one rule, no mirror. " +
 		"<code>--elevation-*</code> is the surface fill and the default cue, resolved per scheme, so both blocks " +
 		"state their own six. The levels run from the backdrop up toward the reader: the bare window plane, the " +
-		"chrome a window's furniture wears, the content surface, then raised insets and floating transients. " +
+		"chrome a window wears, the content surface, then raised insets and floating transients. " +
 		"Read the swatches below left to right and the fill gets lighter, in either scheme. " +
 		"The levels stop at 3 &mdash; desktop has no six-deep stack.</p>\n")
 	b.WriteString("<div class=\"elevation-row\">\n")

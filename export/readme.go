@@ -162,7 +162,7 @@ func readmeMD(s Snapshot) string {
 		"step it replaced read below the floor in one of them, at 2.67:1 in the\n" +
 		"scheme most people read in. The edge follows the control into a raised\n" +
 		"host: a surface that fills a deeper level declares `--surface-border`\n" +
-		"beside its own fill, the rules name it with the paper's own token as\n" +
+		"beside its own fill, the rules name it with the content's own token as\n" +
 		"the fallback, and every control inside re-derives — the same walk\n" +
 		"against the same fill the host measures its own outline against, which\n" +
 		"is why a checkbox in a dialog wears the dialog's edge. In the dark\n" +
@@ -185,7 +185,7 @@ func readmeMD(s Snapshot) string {
 		"goes dark. Six levels, counted from the backdrop up toward the reader:\n\n" +
 		"| Level | What wears it |\n| --- | --- |\n" +
 		"| `--elevation-backdrop` | nothing: the bare window plane, showing wherever nothing stands; the window's darkest region |\n" +
-		"| `--elevation-chrome` | the window's furniture — navbar, toolbar, sidebar, inspector, status bar, pane |\n" +
+		"| `--elevation-chrome` | the chrome regions — navbar, toolbar, sidebar, inspector, status bar, pane |\n" +
 		"| `--elevation-0` | the content surface, the bg pin |\n" +
 		"| `--elevation-1` | raised on the content — cards, code fences, text fields; the raise walked from `--elevation-0`, not a table entry |\n" +
 		"| `--elevation-2` | floating — dialogs, toasts |\n" +
@@ -197,11 +197,11 @@ func readmeMD(s Snapshot) string {
 		"the ramp does not place: its step under the content is measured off the\n" +
 		"platform rather than derived, and the two schemes measure\n" +
 		"differently — about 4.9 L\\* under light content, about 1.5 under dark,\n" +
-		"where a full ramp step would read as a hole rather than as furniture.\n" +
+		"where a full ramp step would read as a hole rather than as chrome.\n" +
 		"That asymmetry is the platform's own, not a rule mirrored between the\n" +
 		"schemes. The backdrop takes that step scaled by the ramp's own\n" +
 		"proportion, because no platform capture shows a window plane beneath\n" +
-		"its furniture to measure. A chrome region that floats is still chrome\n" +
+		"its chrome to measure. A chrome region that floats is still chrome\n" +
 		"and still fills at the chrome level: what says it is a floating object\n" +
 		"is its own hairline edge and its shadow, never a lighter fill.\n" +
 		"The levels stop at 3: desktop has no six-deep stack. Note the\n" +

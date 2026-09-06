@@ -905,7 +905,7 @@ const (
 	// adjacencyFloor is the least two neighbouring steps may measure
 	// against each other, which is what makes them two steps rather than
 	// one. The binding case is step 100 against step 200 — the window floor
-	// under the paper, 5 L* apart in both schemes by measurement — which
+	// under the content, 5 L* apart in both schemes by measurement — which
 	// bottoms out at 1.1062:1 over the sweep, in the dark scheme.
 	adjacencyFloor = 1.10
 	// The two bands a ramp has to put a step in, measured against its own
@@ -989,7 +989,7 @@ func TestRampsCoverTheirRange(t *testing.T) {
 //
 // Both colours in this pairing come off the one neutral scale, so the walk
 // is the only one in the package whose own step can be too small to see —
-// before the floor, the dark scheme's paper hovered at 1.12:1, which is a
+// before the floor, the dark scheme's content hovered at 1.12:1, which is a
 // signal that has stopped signalling.
 func TestFillsClearThePerceptibilityFloor(t *testing.T) {
 	// strongest and faintest are contrast readings, not prominence.

@@ -10,9 +10,9 @@ import (
 )
 
 // variantSurfaces are the two neutral surfaces both variant steps are chosen
-// against: the surface a piece of furniture wears and the paper the window
-// stands on. A token that cleared only the easier of the two would be a
-// promise kept on one of them.
+// against: the surface a chrome region wears and the content surface beside
+// it. A token that cleared only the easier of the two would be a promise
+// kept on one of them.
 func variantSurfaces(t tokens.ColorTokens) []struct {
 	name    string
 	surface stdcolor.NRGBA

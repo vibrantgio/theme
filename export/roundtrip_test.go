@@ -249,7 +249,7 @@ func TestRoundTripScales(t *testing.T) {
 //
 // They cannot be var() references into the neutral ramp: a level is placed
 // against the Background pin in CIELAB L*, so the light scheme's levels
-// above the paper and the dark scheme's floor are not ramp steps at all and
+// above the content and the dark scheme's floor are not ramp steps at all and
 // no var() chain reaches them. Each block states its own five.
 //
 // The scale's direction is asserted here too: read down the levels and
@@ -571,7 +571,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"width: var(--density-control-height);",
 		"padding: var(--density-padding-y);",
 		// Ghost: nothing at rest under 700 text; under the pointer, the
-		// paper's own walk under 900. The state fill is a state taken FROM a
+		// content's own walk under 900. The state fill is a state taken FROM a
 		// level rather than a step named on the ramp.
 		"color: var(--color-neutral-700);",
 		"background: var(--elevation-0-hover);",

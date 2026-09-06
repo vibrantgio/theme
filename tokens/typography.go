@@ -70,14 +70,14 @@ type TextStyle struct {
 // every few paragraphs rather than announcing a screen. Index i holds level
 // i+1; use Level to address the scale by heading level.
 //
-// The scale is that surface's own role — the reading surface, paper, as
-// against the chrome a screen is assembled from. A document ranks its sections
-// with this the way a view sizes its one headline with a display role, and
-// keeping the two apart is what lets a reading scale be tuned for reading
-// without a screen's furniture following it.
+// The scale is that surface's own role — the reading surface, the content,
+// as against the chrome a screen is assembled from. A document ranks its
+// sections with this the way a view sizes its one headline with a display
+// role, and keeping the two apart is what lets a reading scale be tuned for
+// reading without a screen's chrome following it.
 //
-// It exists because the Display, Headline and Title roles are screen
-// furniture. Those roles size the one big line at the top of a view, and at a
+// It exists because the Display, Headline and Title roles belong to the
+// chrome. Those roles size the one big line at the top of a view, and at a
 // 16 dp reading size the largest of them is twice the body — which reads as a
 // poster inside a paragraph stream, wraps a title that should fit one line,
 // and leaves too little room below it for six levels to be told apart. A

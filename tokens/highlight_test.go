@@ -11,7 +11,7 @@ import (
 
 // highlightLevels is the five levels a highlight can be drawn on: it marks
 // content, and content stands on the content plane, on a card, in a dialog
-// or in a popover as readily as in the window's own furniture. The backdrop
+// or in a popover as readily as in the window's own chrome. The backdrop
 // is not among them — nothing stands on it, so no highlight is drawn there.
 var highlightLevels = []tokens.ElevationLevel{
 	tokens.LevelChrome, tokens.Level0, tokens.Level1, tokens.Level2, tokens.Level3,
@@ -209,8 +209,8 @@ func statusPin(t tokens.ColorTokens, role tokens.Role) stdcolor.NRGBA {
 
 // TestHighlightOnHoldsTheResolvedFillWhereItAlreadyWorks pins the
 // relationship between the field and the walk: ColorTokens.Highlight is
-// HighlightOn against the paper, and the walk moves off that realization
-// only where the level has walked into it — so content on the paper and
+// HighlightOn against the content, and the walk moves off that realization
+// only where the level has walked into it — so content on level 0 and
 // content on a card are not marked in two different fills side by side
 // for no reason.
 func TestHighlightOnHoldsTheResolvedFillWhereItAlreadyWorks(t *testing.T) {
@@ -218,7 +218,7 @@ func TestHighlightOnHoldsTheResolvedFillWhereItAlreadyWorks(t *testing.T) {
 	for _, seed := range sweepSeeds() {
 		for _, s := range schemesOf(seed) {
 			if got := s.tok.HighlightOn(s.tok.Background); got != s.tok.Highlight {
-				t.Fatalf("seed %v: %s HighlightOn(Background) = %v but Highlight = %v; the field is the walk against the paper",
+				t.Fatalf("seed %v: %s HighlightOn(Background) = %v but Highlight = %v; the field is the walk against the content",
 					seed, s.name, got, s.tok.Highlight)
 			}
 			for _, lv := range highlightLevels {

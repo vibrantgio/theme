@@ -27,7 +27,7 @@
 //
 // That also leaves the walk below with one job. A hue read off the realized
 // step rotates whenever the walk deepens the fill, which would put a warning
-// badge on the content and one on the window's furniture beside it in two
+// badge on the content and one on the window's chrome beside it in two
 // different hues for a reason no reader could infer.
 //
 // The mark a role puts on a surface — an icon, a leading edge, a rule — is

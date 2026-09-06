@@ -41,7 +41,7 @@
 // The depth is not the container step in both schemes, because what the
 // depth has to deliver is a yellow. A light scheme's step-300 depth
 // (L* 84.91) is where a marker sits anyway — pale enough to read as text on
-// paper laid over with a pen, and it holds chroma to spare. A dark scheme's
+// a page laid over with a pen, and it holds chroma to spare. A dark scheme's
 // step-300 depth (L* 18.94) holds only 0.0650, which renders as an olive;
 // its step-400 depth (L* 30.16) holds 0.0850 and renders as a yellow, so
 // the fill is realized there. markerChroma is the line between those two
@@ -94,19 +94,19 @@ const markerChroma = 0.08
 // The walk is needed for the reason [ColorTokens.ContainerOn]'s is: the
 // fixed step the fill is realized at is one the elevation levels walk
 // through, so a highlight drawn at it on a raised surface is not subtle but
-// absent, and the marking silently stops marking. Content on the paper takes
+// absent, and the marking silently stops marking. Content on level 0 takes
 // the resolved [ColorTokens.Highlight] field; content on any other level
 // passes that level's fill here.
 //
 // Where a container's walk only deepens, this one may also step back toward
-// the paper, because the two fills owe different things. A container is the
+// the content, because the two fills owe different things. A container is the
 // surface its own content stands on and may be as deep as it likes; a
 // highlight covers content the scheme's own body text is already set in, so
 // it is bounded above by the depth at which that text stops clearing
 // [TextFloor] — and in a dark scheme the level-3 surface stands at the very
 // depth the fill deepens to, leaving nothing readable above it. So the
 // candidates are the marker depth, then each deeper step whose fill the
-// body text still clears, then the steps back toward the paper, which
+// body text still clears, then the steps back toward the content, which
 // separate in the other direction; the first that clears [ContainerFloor]
 // wins, and if none does, the one that separates most.
 //

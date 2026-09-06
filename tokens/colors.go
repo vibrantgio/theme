@@ -157,7 +157,7 @@ type ColorTokens struct {
 	// Surface is the neutral ramp's step 200 — one step off the app's own
 	// background. It is a RAMP ALIAS, not a level: the elevation is anchored
 	// on the Background pin and placed in CIELAB L*, so which level this step
-	// happens to carry depends on the scheme (light furniture wears it; dark
+	// happens to carry depends on the scheme (light chrome wears it; dark
 	// raised surfaces do). Ask [ColorTokens.SurfaceAt] for a level.
 	Surface color.NRGBA
 	// Divider is the subtle border / separator — Ramps.Neutral.Step(300),

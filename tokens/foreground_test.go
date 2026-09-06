@@ -38,7 +38,7 @@ var foregroundRoles = []struct {
 }
 
 // foregroundLevels are the four levels a brand foreground can be drawn on:
-// the paper a paragraph is set on and the three raised fills that host
+// the content a paragraph is set on and the three raised fills that host
 // content above it. A link in a card and a link on the page are the same
 // link and owe their own surfaces the same ratio, so the gate is read
 // against all four rather than against the page alone.
@@ -46,7 +46,7 @@ var foregroundLevels = []struct {
 	name  string
 	level tokens.ElevationLevel
 }{
-	{"level 0 (paper)", tokens.Level0},
+	{"level 0 (the content)", tokens.Level0},
 	{"level 1 (card)", tokens.Level1},
 	{"level 2 (dialog)", tokens.Level2},
 	{"level 3 (popover)", tokens.Level3},
@@ -185,7 +185,7 @@ func TestTheCanonicalSeedsBrandForegroundIsItsPin(t *testing.T) {
 
 // TestOnlyTheLightPrimaryPinEverWalks records why the defect existed at all
 // and bounds what the gate can touch. Six of the seven pinned bases are
-// realized at fixed perceptual depths, so their contrast against the paper
+// realized at fixed perceptual depths, so their contrast against the content
 // is a property of the derivation rather than of the brand and they never
 // need the walk. The light primary base is the brand colour itself at the
 // brand's own depth, which is the one place a seed can put a foreground too near
@@ -224,48 +224,48 @@ func TestOnlyTheLightPrimaryPinEverWalks(t *testing.T) {
 			worstPin, worstPinAt = got, hexOf(seed)
 		}
 	}
-	t.Logf("over %d seeds, four palettes and four levels: %d text walks and %d graphic walks, all of them the light primary pin; bare light pin over the paper bottoms out at %.2f:1 (%s)",
+	t.Logf("over %d seeds, four palettes and four levels: %d text walks and %d graphic walks, all of them the light primary pin; bare light pin over the content bottoms out at %.2f:1 (%s)",
 		len(sweepSeeds()), walked["text light"], walked["graphic light"], worstPin, worstPinAt)
 }
 
 // TestAPastelSeedGetsAReadableLinkForeground is the regression this file was
 // written for, read on the shape that produced it: an accent stated at a
 // dark scheme's tone, used as a light scheme's seed. Its light primary pin
-// lands a whisper off the paper, and before the gate that pin was the link
+// lands a whisper off the content, and before the gate that pin was the link
 // colour a paragraph rendered with.
 func TestAPastelSeedGetsAReadableLinkForeground(t *testing.T) {
 	seed := color.NRGBA{0x89, 0xb4, 0xfa, 0xff}
 	light, dark := tokens.FromSeed(seed)
 
-	lightPaper := light.SurfaceAt(tokens.Level0)
-	if bare := contrastRatio(light.Primary, lightPaper); bare >= tokens.TextFloor {
-		t.Fatalf("the pastel seed's bare light pin now measures %.2f:1 over the paper — this test no longer reads the shape it was written for", bare)
+	lightContent := light.SurfaceAt(tokens.Level0)
+	if bare := contrastRatio(light.Primary, lightContent); bare >= tokens.TextFloor {
+		t.Fatalf("the pastel seed's bare light pin now measures %.2f:1 over the content — this test no longer reads the shape it was written for", bare)
 	}
-	lightForeground := light.ForegroundOnAtFloor(tokens.RolePrimary, lightPaper, tokens.TextFloor)
+	lightForeground := light.ForegroundOnAtFloor(tokens.RolePrimary, lightContent, tokens.TextFloor)
 	if lightForeground == light.Primary {
 		t.Errorf("light link foreground is still the bare pin %v", light.Primary)
 	}
-	if got := contrastRatio(lightForeground, lightPaper); got < tokens.TextFloor {
-		t.Errorf("light link foreground %v on paper %v measures %.2f:1, under %.1f:1",
-			lightForeground, lightPaper, got, tokens.TextFloor)
+	if got := contrastRatio(lightForeground, lightContent); got < tokens.TextFloor {
+		t.Errorf("light link foreground %v on the content %v measures %.2f:1, under %.1f:1",
+			lightForeground, lightContent, got, tokens.TextFloor)
 	}
 
 	// The dark scheme was never the broken half: its pin is realized at a
 	// fixed depth, so it clears and is kept.
-	darkPaper := dark.SurfaceAt(tokens.Level0)
-	darkForeground := dark.ForegroundOnAtFloor(tokens.RolePrimary, darkPaper, tokens.TextFloor)
+	darkContent := dark.SurfaceAt(tokens.Level0)
+	darkForeground := dark.ForegroundOnAtFloor(tokens.RolePrimary, darkContent, tokens.TextFloor)
 	if darkForeground != dark.Primary {
 		t.Errorf("dark link foreground walked to %v; the dark pin %v measures %.2f:1 and should stand",
-			darkForeground, dark.Primary, contrastRatio(dark.Primary, darkPaper))
+			darkForeground, dark.Primary, contrastRatio(dark.Primary, darkContent))
 	}
-	if got := contrastRatio(darkForeground, darkPaper); got < tokens.TextFloor {
-		t.Errorf("dark link foreground %v on paper %v measures %.2f:1, under %.1f:1",
-			darkForeground, darkPaper, got, tokens.TextFloor)
+	if got := contrastRatio(darkForeground, darkContent); got < tokens.TextFloor {
+		t.Errorf("dark link foreground %v on the content %v measures %.2f:1, under %.1f:1",
+			darkForeground, darkContent, got, tokens.TextFloor)
 	}
 	t.Logf("seed %s: light link %s on %s %.2f:1 (bare pin %s %.2f:1); dark link %s on %s %.2f:1",
-		hexOf(seed), hexOf(lightForeground), hexOf(lightPaper), contrastRatio(lightForeground, lightPaper),
-		hexOf(light.Primary), contrastRatio(light.Primary, lightPaper),
-		hexOf(darkForeground), hexOf(darkPaper), contrastRatio(darkForeground, darkPaper))
+		hexOf(seed), hexOf(lightForeground), hexOf(lightContent), contrastRatio(lightForeground, lightContent),
+		hexOf(light.Primary), contrastRatio(light.Primary, lightContent),
+		hexOf(darkForeground), hexOf(darkContent), contrastRatio(darkForeground, darkContent))
 }
 
 // TestForegroundOnAtFloorNeutralPanics: the neutral role carries surfaces
