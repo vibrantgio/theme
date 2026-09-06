@@ -151,7 +151,7 @@ type ColorTokens struct {
 	OnInfo      color.NRGBA // text/icon over Info
 
 	// The thin semantic layer. Background and Text are pins; Surface and
-	// Divider resolve from Neutral ramp steps at construction.
+	// Seam resolve from Neutral ramp steps at construction.
 	Background color.NRGBA // pinned app background
 	Text       color.NRGBA // pinned body text over Background
 	// Surface is the neutral ramp's step 200 — one step off the app's own
@@ -160,10 +160,10 @@ type ColorTokens struct {
 	// happens to carry depends on the scheme (light chrome wears it; dark
 	// raised surfaces do). Ask [ColorTokens.SurfaceAt] for a level.
 	Surface color.NRGBA
-	// Divider is the subtle border / separator — Ramps.Neutral.Step(300),
+	// Seam is the subtle border / separator — Ramps.Neutral.Step(300),
 	// except in the high-contrast variant, which resolves it from the
 	// strong-border step 500 (see FromSeedHighContrast).
-	Divider color.NRGBA
+	Seam color.NRGBA
 
 	// The inverse pair: a surface deliberately on the wrong side of the
 	// scheme, dark in a light scheme and light in a dark one, with the
@@ -193,18 +193,18 @@ type ColorTokens struct {
 }
 
 // resolveAliases fills every field defined as a resolution of a ramp step:
-// Surface and Divider off this scheme's own neutral ramp, the inverse
+// Surface and Seam off this scheme's own neutral ramp, the inverse
 // pair off the counterpart scheme's, and Highlight off the reserved hue
-// against the Background pin. dividerStep is the Neutral step
-// Divider resolves from: 300 in the default derivation, 500 in the
+// against the Background pin. seamStep is the Neutral step
+// Seam resolves from: 300 in the default derivation, 500 in the
 // high-contrast variant. counterpart is the other scheme's neutral ramp —
 // the dark one while building the light scheme and the light one while
 // building the dark. Constructing tokens through it is what keeps each
 // field byte-identical to its documented resolution; FromSeed and
 // FromSeedHighContrast build both schemes through it.
-func resolveAliases(t ColorTokens, dividerStep int, counterpart Ramp) ColorTokens {
+func resolveAliases(t ColorTokens, seamStep int, counterpart Ramp) ColorTokens {
 	t.Surface = t.Ramps.Neutral.Step(200)
-	t.Divider = t.Ramps.Neutral.Step(dividerStep)
+	t.Seam = t.Ramps.Neutral.Step(seamStep)
 	t.InverseSurface = counterpart.Step(200)
 	t.OnInverseSurface = counterpart.Step(900)
 	t.Highlight = t.HighlightOn(t.Background)

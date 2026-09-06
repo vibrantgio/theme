@@ -124,7 +124,7 @@ func TestRampStepAddressing(t *testing.T) {
 }
 
 // TestSemanticLayerResolvesFromRamps verifies the semantic layer resolves
-// from ramp steps in both default schemes: Surface, Divider, the inverse
+// from ramp steps in both default schemes: Surface, Seam, the inverse
 // pair and the highlight. The inverse pair is the one resolution that
 // reads across the scheme boundary: it is the counterpart scheme's own
 // Surface and Text, so each scheme's inverse chip is built out of the
@@ -146,7 +146,7 @@ func TestSemanticLayerResolvesFromRamps(t *testing.T) {
 			want color.NRGBA
 		}{
 			{"Surface = Neutral.Step(200)", s.tok.Surface, n.Step(200)},
-			{"Divider = Neutral.Step(300)", s.tok.Divider, n.Step(300)},
+			{"Seam = Neutral.Step(300)", s.tok.Seam, n.Step(300)},
 			{"InverseSurface = the counterpart scheme's Surface", s.tok.InverseSurface, s.counterpart.Surface},
 			{"OnInverseSurface = the counterpart scheme's Text", s.tok.OnInverseSurface, s.counterpart.Text},
 			{"Highlight = the reserved fill resolved against the content", s.tok.Highlight, s.tok.HighlightOn(s.tok.Background)},
@@ -526,7 +526,7 @@ func defaultGolden() (light, dark tokens.ColorTokens) {
 		Background:  hex(0x18, 0x18, 0x18),
 		Text:        hex(0xee, 0xee, 0xee),
 	}
-	// Surface, Divider and the inverse pair are recorded as the resolutions
+	// Surface, Seam and the inverse pair are recorded as the resolutions
 	// they are — the first two off this scheme's neutral ramp, the inverse
 	// pair off the counterpart scheme's, which is what makes a light
 	// scheme's inverse chip dark and a dark scheme's light. The highlight
@@ -535,7 +535,7 @@ func defaultGolden() (light, dark tokens.ColorTokens) {
 	fill := func(t, counterpart tokens.ColorTokens, highlight color.NRGBA) tokens.ColorTokens {
 		n, o := t.Ramps.Neutral, counterpart.Ramps.Neutral
 		t.Surface = n.Step(200)
-		t.Divider = n.Step(300)
+		t.Seam = n.Step(300)
 		t.InverseSurface = o.Step(200)
 		t.OnInverseSurface = o.Step(900)
 		t.Highlight = highlight
@@ -551,7 +551,7 @@ func defaultGolden() (light, dark tokens.ColorTokens) {
 // 700 stops sit at the default scale's 900 depth (light #131313 neutral 700
 // = defaultGolden's neutral 900; dark #eeeeee mirrors it) with 800/900
 // sliding to the axis ends (light 900 pure black, dark 900 pure white, Text
-// following in both modes), Divider is the step-500 strong border rather
+// following in both modes), Seam is the step-500 strong border rather
 // than 300, and the dark pins keep their L* 82 bases while their on-colours
 // drop to pure black (tone 0). The light pins are byte-identical to
 // defaultGolden's — White already clears the raised Lc ≥ 75 floor — so the
@@ -774,7 +774,7 @@ func hcGolden() (light, dark tokens.ColorTokens) {
 		Background:  hex(0x18, 0x18, 0x18),
 		Text:        hex(0xff, 0xff, 0xff),
 	}
-	// Surface, Divider and the inverse pair are recorded as the resolutions
+	// Surface, Seam and the inverse pair are recorded as the resolutions
 	// they are — the first two off this scheme's neutral ramp, the inverse
 	// pair off the counterpart scheme's, which is what makes a light
 	// scheme's inverse chip dark and a dark scheme's light. The highlight
@@ -783,7 +783,7 @@ func hcGolden() (light, dark tokens.ColorTokens) {
 	fill := func(t, counterpart tokens.ColorTokens, highlight color.NRGBA) tokens.ColorTokens {
 		n, o := t.Ramps.Neutral, counterpart.Ramps.Neutral
 		t.Surface = n.Step(200)
-		t.Divider = n.Step(500)
+		t.Seam = n.Step(500)
 		t.InverseSurface = o.Step(200)
 		t.OnInverseSurface = o.Step(900)
 		t.Highlight = highlight
@@ -872,7 +872,7 @@ func diffTokens(t *testing.T, scheme string, got, want tokens.ColorTokens) {
 			"Warning": c.Warning, "OnWarning": c.OnWarning,
 			"Info": c.Info, "OnInfo": c.OnInfo,
 			"Background": c.Background, "Text": c.Text,
-			"Surface": c.Surface, "Divider": c.Divider,
+			"Surface": c.Surface, "Seam": c.Seam,
 			"InverseSurface": c.InverseSurface, "OnInverseSurface": c.OnInverseSurface,
 			"Highlight": c.Highlight,
 		}

@@ -57,7 +57,7 @@ var pinRoles = []struct {
 	{"bg", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Background }},
 	{"surface", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Surface }},
 	{"text", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Text }},
-	{"divider", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Divider }},
+	{"seam", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Seam }},
 	// The inverse pair, emitted as first-class tokens for the same reason
 	// the state walk below is: it resolves off the counterpart scheme's
 	// neutral ramp, and a sheet holding only this scheme's ramps has no
@@ -1442,7 +1442,7 @@ const componentClasses = `/* ---- Component classes ----
    level is not a ramp step in both schemes and a table that named one
    would read as a mirror of itself between the two. Header and body rows are each exactly
    one control height tall — the row-height rule (list.RowHeight), so .compact
-   re-pitches the whole grid — and every row closes with a 1 dp Divider rule
+   re-pitches the whole grid — and every row closes with a 1 dp Seam rule
    drawn inside its height. Cells inset horizontally by S3 (cellPadDp,
    12 dp — static, the same inset rule the input uses); body text is body-medium at the
    Text pin (RenderTextCell). There is no zebra: rows separate by the rules
@@ -1467,7 +1467,7 @@ const componentClasses = `/* ---- Component classes ----
   box-sizing: border-box;
   height: var(--density-control-height);
   padding: 0 var(--space-3);
-  border-bottom: 1px solid var(--color-divider);
+  border-bottom: 1px solid var(--color-seam);
   text-align: left;
   vertical-align: middle;
   white-space: nowrap;

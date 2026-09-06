@@ -652,11 +652,11 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"gap: var(--space-3);",
 		// Table: the Surface fill, neutral-300 header
 		// band under neutral-700 label-large, control-height row pitch,
-		// Divider rules inside the rows, S3 cell inset, and the 10x5 dp
+		// Seam rules inside the rows, S3 cell inset, and the 10x5 dp
 		// neutral-700 sort chevron on the active column only.
 		"background: var(--color-neutral-300);",
 		"height: var(--density-control-height);",
-		"border-bottom: 1px solid var(--color-divider);",
+		"border-bottom: 1px solid var(--color-seam);",
 		"padding: 0 var(--space-3);",
 		".table th.sort-asc::after { border-bottom: 5px solid var(--color-neutral-700); }",
 		".table th.sort-desc::after { border-top: 5px solid var(--color-neutral-700); }",

@@ -53,7 +53,7 @@ import (
 //
 // Floored at graphicFloor, WCAG 1.4.11's 3:1 — an edge that is the whole of
 // what says which control this is carries meaning without being text, so it
-// is not decoration and does not get a decorative floor. [ColorTokens.Divider]
+// is not decoration and does not get a decorative floor. [ColorTokens.Seam]
 // is the token for a separator that carries none.
 func (t ColorTokens) OutlineVariant() stdcolor.NRGBA {
 	return t.neutralVariant(graphicFloor)

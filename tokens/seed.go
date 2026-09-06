@@ -37,7 +37,7 @@
 //
 //   - The neutral ramps carry no hue: chroma 0.000, measured 0.0000 at every
 //     step in both modes. A surface is not where a brand belongs. Light
-//     Background, Surface, Divider and Text measure #f6f6f6, #e8e8e8,
+//     Background, Surface, Seam and Text measure #f6f6f6, #e8e8e8,
 //     #d4d4d4 and #131313; dark #181818, #222222, #2e2e2e and #eeeeee.
 //
 //   - Accent chroma is a dial, not the seed's own measurement: 0.22 OKLCh
@@ -216,7 +216,7 @@
 //     gate clear with margin (light Lc 92.3, dark 104.4). Steps 100–600 are
 //     the default scale unchanged: the surfaces stay, the text pulls away.
 //
-//   - Divider resolves from Neutral step 500 instead of 300: the separator
+//   - Seam resolves from Neutral step 500 instead of 300: the separator
 //     moves from the subtle-border step to the strong-border step.
 //
 //   - Each pinned base's on-colour is pushed further from its base. The dark
@@ -355,14 +355,14 @@ const (
 )
 
 // derivation is the knob set that separates FromSeed from its high-contrast
-// variant: the two lightness scales, the ramp step Divider resolves from,
+// variant: the two lightness scales, the ramp step Seam resolves from,
 // and the CIELAB L* the dark pins' on-colours are realized at. Everything
 // else — hues, chromas, pin depths, the lifted light primary base — is
 // shared, which is what makes the variant a FromSeed option rather than a
 // third hand-written scheme.
 type derivation struct {
 	lightTones, darkTones [9]int
-	dividerStep           int     // ramp step Divider resolves from
+	seamStep              int     // ramp step Seam resolves from
 	darkOnTone            int     // L* of the dark pins' on-colours
 	onFloor               float64 // the ratio an on-colour has to reach over its base
 }
@@ -535,7 +535,7 @@ func FromSeed(seed stdcolor.NRGBA) (light, dark ColorTokens) {
 // FromSeedHighContrast derives the increased-contrast variant of FromSeed's
 // pair from the same seed: same roles, hues, chromas and pin depths, with
 // the tone separation widened where it counts — the 700 text step deepened
-// to the default 900 depth (Lc ≥ 90 where the default asks 60), Divider
+// to the default 900 depth (Lc ≥ 90 where the default asks 60), Seam
 // resolved from Neutral step 500 instead of 300, and the dark pins'
 // on-colours pushed to the tonal axis floor (Lc ≥ 75 over their bases; the
 // light pins keep White, which already clears that floor, so the light
@@ -632,7 +632,7 @@ func fromSeed(seed stdcolor.NRGBA, d derivation) (light, dark ColorTokens) {
 		OnInfo:      lightForeground[7],
 		Background:  contentPin(lr[0]),
 		Text:        lr[0].Step(900),
-	}, d.dividerStep, dr[0])
+	}, d.seamStep, dr[0])
 	dark = resolveAliases(ColorTokens{
 		Ramps: RampSet{
 			Neutral: dr[0], Primary: dr[1], Secondary: dr[2], Tertiary: dr[3],
@@ -654,7 +654,7 @@ func fromSeed(seed stdcolor.NRGBA, d derivation) (light, dark ColorTokens) {
 		OnInfo:      darkForeground[7],
 		Background:  contentPin(dr[0]),
 		Text:        dr[0].Step(900),
-	}, d.dividerStep, lr[0])
+	}, d.seamStep, lr[0])
 	return light, dark
 }
 

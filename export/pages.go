@@ -260,7 +260,7 @@ func colorHTML(s Snapshot) string {
 			pins: []pinChip{
 				{"--color-bg", "--color-text", "bg (pinned)", s.Light.Background, s.Dark.Background},
 				{"--color-surface", "--color-text", "surface (neutral-200)", s.Light.Surface, s.Dark.Surface},
-				{"--color-divider", "--color-text", "divider (neutral-300)", s.Light.Divider, s.Dark.Divider},
+				{"--color-seam", "--color-text", "seam (neutral-300)", s.Light.Seam, s.Dark.Seam},
 				{"--color-text", "--color-bg", "text (pinned)", s.Light.Text, s.Dark.Text},
 			},
 			pairLabel:       "text on bg",
@@ -420,7 +420,7 @@ func rampNamed(set tokens.RampSet, name string) tokens.Ramp {
 // typePageCSS is the type page's specimen scaffolding.
 const typePageCSS = `.type-role {
   margin: var(--space-8) 0;
-  border-bottom: thin solid var(--color-divider);
+  border-bottom: thin solid var(--color-seam);
   padding-bottom: var(--space-4);
 }
 .specimen {

@@ -35,7 +35,7 @@
 //     --color-<status>-on-inverse is each status role's mark on the inverse
 //     surface, which is not a fixed ramp step — which step answers depends
 //     on the hue and on the scheme; --color-bg, --color-text are the pinned
-//     background and body text; --color-surface and --color-divider are the
+//     background and body text; --color-surface and --color-seam are the
 //     semantic layer's ramp-resolved card and separator colours;
 //     --color-highlight is the reserved highlighter, the fill marking
 //     content the reader was brought to — reserved outside the roles, so
