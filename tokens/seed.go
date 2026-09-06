@@ -276,9 +276,9 @@ var toneCurve = [9]struct {
 // L*. Index i holds step (i+1)*100, matching Ramp.
 func (a toneAnchors) scale() [9]int {
 	var s [9]int
-	for i, rung := range toneCurve {
-		from, to := a[rung.run], a[rung.run+1]
-		s[i] = int(math.Round(from + (to-from)*rung.at))
+	for i, step := range toneCurve {
+		from, to := a[step.run], a[step.run+1]
+		s[i] = int(math.Round(from + (to-from)*step.at))
 	}
 	return s
 }
@@ -596,7 +596,7 @@ func fromSeed(seed stdcolor.NRGBA, d derivation) (light, dark ColorTokens) {
 	// is the far end of the tonal axis and the dark scheme's is White, so in
 	// each scheme the pair on offer is the ramp's own dark end and its light
 	// one.
-	var lightBase, darkBase, lightInk, darkInk [8]stdcolor.NRGBA
+	var lightBase, darkBase, lightForeground, darkForeground [8]stdcolor.NRGBA
 	for i := 1; i < len(roles); i++ {
 		lightBase[i] = color.Tone(roles[i].hue(roles[i].pinTone), roles[i].chroma, roles[i].pinTone)
 		darkBase[i] = color.Tone(roles[i].hue(darkPinTone), roles[i].chroma, darkPinTone)
@@ -604,8 +604,8 @@ func fromSeed(seed stdcolor.NRGBA, d derivation) (light, dark ColorTokens) {
 	lightBase[1] = primary // the lifted seed, never read off a ramp step
 	for i := 1; i < len(roles); i++ {
 		deep := color.Tone(roles[i].hue(d.darkOnTone), roles[i].chroma, d.darkOnTone)
-		lightInk[i] = onColour(lightBase[i], White, Black, d.onFloor)
-		darkInk[i] = onColour(darkBase[i], deep, White, d.onFloor)
+		lightForeground[i] = onColour(lightBase[i], White, Black, d.onFloor)
+		darkForeground[i] = onColour(darkBase[i], deep, White, d.onFloor)
 	}
 
 	// Each scheme's inverse pair resolves off the other scheme's neutral
@@ -617,19 +617,19 @@ func fromSeed(seed stdcolor.NRGBA, d derivation) (light, dark ColorTokens) {
 			Error: lr[4], Success: lr[5], Warning: lr[6], Info: lr[7],
 		},
 		Primary:     lightBase[1], // the lifted seed, never read off a ramp step
-		OnPrimary:   lightInk[1],
+		OnPrimary:   lightForeground[1],
 		Secondary:   lightBase[2],
-		OnSecondary: lightInk[2],
+		OnSecondary: lightForeground[2],
 		Tertiary:    lightBase[3],
-		OnTertiary:  lightInk[3],
+		OnTertiary:  lightForeground[3],
 		Error:       lightBase[4],
-		OnError:     lightInk[4],
+		OnError:     lightForeground[4],
 		Success:     lightBase[5],
-		OnSuccess:   lightInk[5],
+		OnSuccess:   lightForeground[5],
 		Warning:     lightBase[6],
-		OnWarning:   lightInk[6],
+		OnWarning:   lightForeground[6],
 		Info:        lightBase[7],
-		OnInfo:      lightInk[7],
+		OnInfo:      lightForeground[7],
 		Background:  contentPin(lr[0]),
 		Text:        lr[0].Step(900),
 	}, d.dividerStep, dr[0])
@@ -639,19 +639,19 @@ func fromSeed(seed stdcolor.NRGBA, d derivation) (light, dark ColorTokens) {
 			Error: dr[4], Success: dr[5], Warning: dr[6], Info: dr[7],
 		},
 		Primary:     darkBase[1],
-		OnPrimary:   darkInk[1],
+		OnPrimary:   darkForeground[1],
 		Secondary:   darkBase[2],
-		OnSecondary: darkInk[2],
+		OnSecondary: darkForeground[2],
 		Tertiary:    darkBase[3],
-		OnTertiary:  darkInk[3],
+		OnTertiary:  darkForeground[3],
 		Error:       darkBase[4],
-		OnError:     darkInk[4],
+		OnError:     darkForeground[4],
 		Success:     darkBase[5],
-		OnSuccess:   darkInk[5],
+		OnSuccess:   darkForeground[5],
 		Warning:     darkBase[6],
-		OnWarning:   darkInk[6],
+		OnWarning:   darkForeground[6],
 		Info:        darkBase[7],
-		OnInfo:      darkInk[7],
+		OnInfo:      darkForeground[7],
 		Background:  contentPin(dr[0]),
 		Text:        dr[0].Step(900),
 	}, d.dividerStep, lr[0])

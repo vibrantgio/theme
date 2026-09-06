@@ -77,7 +77,7 @@ const wcagAA = 4.5
 // and people seed a brand with one, which is a seed that reads perfectly in
 // the dark scheme and lands the light scheme's primary pin a whisper off
 // the paper. That shape is what put a 1.95:1 link on a light page (see
-// `ink.go`); the random draw covers it thinly and by accident, and a
+// `foreground.go`); the random draw covers it thinly and by accident, and a
 // regression that only a randomly drawn seed catches is one a future change
 // to the draw can lose. So the shape is in the matrix by name: a blue, a
 // mauve and a green at L* 72.8, 74.0 and 84.8.
@@ -802,12 +802,12 @@ func TestFromSeedHighContrastGoldenPalette(t *testing.T) {
 	diffTokens(t, "FromSeedHighContrast dark", dark, wantDark)
 }
 
-// TestFromSeedHighContrastSharesGrounds verifies the variant widens tone
+// TestFromSeedHighContrastSharesSurfaces verifies the variant widens tone
 // separation without moving the surfaces or the light pins: steps 100–600 of
 // every ramp are byte-identical to FromSeed's, and the light pinned bases —
 // the seed-exact Primary included — and their White on-colours carry over
 // unchanged.
-func TestFromSeedHighContrastSharesGrounds(t *testing.T) {
+func TestFromSeedHighContrastSharesSurfaces(t *testing.T) {
 	seeds := []color.NRGBA{
 		tokens.DefaultSeed,
 		{0x3b, 0x82, 0xf6, 0xff},

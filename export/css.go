@@ -159,10 +159,10 @@ var pinRoles = []struct {
 	// container chroma, at the depth that separates it from the surface
 	// (StatusContainerOn). The foreground is then derived against the FILL
 	// rather than against the surface: the role's pinned base while that base
-	// clears the text floor over it and the nearest step to the mid-value
-	// that does otherwise (InkOn). Neutral has no pinned base — the neutral
-	// ramp carries no pin — so it takes the walk directly (MarkOn), at the
-	// same floor, and its fill comes back as depth alone.
+	// clears the text floor over it and the nearest step to the mid-value that
+	// does otherwise (ForegroundOnAtFloor). Neutral has no pinned base — the
+	// neutral ramp carries no pin — so it takes the walk directly (MarkOn), at
+	// the same floor, and its fill comes back as depth alone.
 	//
 	// The floor is the text floor for all five: a sign is the same utterance
 	// at the same weight as a word. Never an inverted on-colour — a white

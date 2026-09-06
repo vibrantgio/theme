@@ -386,7 +386,7 @@ func (t ColorTokens) SurfaceAt(level ElevationLevel) color.NRGBA {
 // is feedback rather than depth. A level says how near a surface is; a
 // state says something happened.
 func (t ColorTokens) StateAt(level ElevationLevel, state State) color.NRGBA {
-	return t.washOn(t.SurfaceAt(level), state)
+	return t.stateFillOn(t.SurfaceAt(level), state)
 }
 
 // surfaceBand returns the neutral ramp's four surface steps — 100 through

@@ -37,14 +37,15 @@
 //
 // # Why the pin stands when it reads
 //
-// [ColorTokens.InkOn] answers the pin while the pin clears its floor and walks
-// the role's ramp only when it does not. Always walking would be the simpler
-// rule and it is the wrong one twice over: a brand that reads is entitled to
-// be its own colour — the same reasoning onColour applies to the foreground
-// over a base — and a rule that moved a pairing already clearing its floor
-// would move every downstream golden for nothing. The canonical seed clears in
-// both schemes and both derivations, so this gate is a no-op on the palette
-// every stored image is rendered from.
+// [ColorTokens.ForegroundOnAtFloor] answers the pin while the pin clears
+// its floor and walks the role's ramp only when it does not. Always walking
+// would be the simpler rule and it is the wrong one twice over: a brand
+// that reads is entitled to be its own colour — the same reasoning onColour
+// applies to the foreground over a base — and a rule that moved a pairing
+// already clearing its floor would move every downstream golden for
+// nothing. The canonical seed clears in both schemes and both derivations,
+// so this gate is a no-op on the palette every stored image is rendered
+// from.
 //
 // What a walk answers is [ColorTokens.MarkOn]'s step — the ramp step nearest
 // the mid-value 500 that clears the floor over the surface. The ramp is
@@ -76,9 +77,9 @@ const (
 	GraphicFloor = graphicFloor
 )
 
-// InkOn returns the colour role reads in when it is drawn on the given
-// surface: the role's pinned base while that base clears floor against it,
-// and otherwise the step [ColorTokens.MarkOn] answers.
+// ForegroundOnAtFloor returns the colour role reads in when it is drawn on
+// the given surface: the role's pinned base while that base clears floor
+// against it, and otherwise the step [ColorTokens.MarkOn] answers.
 //
 // It is what a consumer wants wherever a brand colour is the foreground
 // rather than the fill — a link in a paragraph, a blockquote's bar, a task
@@ -91,18 +92,19 @@ const (
 // RoleNeutral has no pinned base and panics, as it does everywhere else a pin
 // is asked for. A neutral foreground over the paper is the Text pin, which is
 // derived against the Background pin already.
-func (t ColorTokens) InkOn(role Role, ground stdcolor.NRGBA, floor float64) stdcolor.NRGBA {
+func (t ColorTokens) ForegroundOnAtFloor(role Role, surface stdcolor.NRGBA, floor float64) stdcolor.NRGBA {
 	pin := t.pinFor(role) // validates role
-	if color.ContrastRatio(pin, ground) >= floor {
+	if color.ContrastRatio(pin, surface) >= floor {
 		return pin
 	}
-	return t.MarkOn(role, ground, floor)
+	return t.MarkOn(role, surface, floor)
 }
 
 // ForegroundOn returns the colour a role's content — a word, a count, or a
-// sign standing in for one — reads in over surface: [ColorTokens.InkOn] at
-// [TextFloor] for the roles that carry a pinned base, and
-// [ColorTokens.MarkOn]'s walk for RoleNeutral, which carries none.
+// sign standing in for one — reads in over surface:
+// [ColorTokens.ForegroundOnAtFloor] at [TextFloor] for the roles that carry
+// a pinned base, and [ColorTokens.MarkOn]'s walk for RoleNeutral, which
+// carries none.
 //
 // It is the foreground half of the one tonal recipe, and it exists as a
 // function because more than one component draws content in a role's own
@@ -121,9 +123,9 @@ func (t ColorTokens) InkOn(role Role, ground stdcolor.NRGBA, floor float64) stdc
 // is no longer there.
 func (t ColorTokens) ForegroundOn(role Role, surface stdcolor.NRGBA) stdcolor.NRGBA {
 	if role == RoleNeutral {
-		// InkOn asks a role for its pinned base and neutral has none; the
-		// walk is the whole derivation for it.
+		// ForegroundOnAtFloor asks a role for its pinned base and neutral has
+		// none; the walk is the whole derivation for it.
 		return t.MarkOn(role, surface, TextFloor)
 	}
-	return t.InkOn(role, surface, TextFloor)
+	return t.ForegroundOnAtFloor(role, surface, TextFloor)
 }

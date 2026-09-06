@@ -12,10 +12,10 @@ import (
 // a failing log line can be pasted into a contrast checker.
 func hexOf(c color.NRGBA) string { return fmt.Sprintf("#%02X%02X%02X", c.R, c.G, c.B) }
 
-// inkRoles are the seven roles that carry a pinned base, which is every
-// role InkOn is defined for. RoleNeutral has no pin and is asserted to
-// panic separately.
-var inkRoles = []struct {
+// foregroundRoles are the seven roles that carry a pinned base, which is
+// every role ForegroundOnAtFloor is defined for. RoleNeutral has no pin and
+// is asserted to panic separately.
+var foregroundRoles = []struct {
 	name string
 	role tokens.Role
 	pin  func(tokens.ColorTokens) color.NRGBA
@@ -37,12 +37,12 @@ var inkRoles = []struct {
 		func(t tokens.ColorTokens) tokens.Ramp { return t.Ramps.Info }},
 }
 
-// inkStoreys are the four levels a brand foreground can be drawn on: the paper a
-// paragraph is set on and the three raised fills that host content above
-// it. A link in a card and a link on the page are the same link and owe
-// their own surfaces the same ratio, so the gate is read against all four
-// rather than against the page alone.
-var inkStoreys = []struct {
+// foregroundLevels are the four levels a brand foreground can be drawn on:
+// the paper a paragraph is set on and the three raised fills that host
+// content above it. A link in a card and a link on the page are the same
+// link and owe their own surfaces the same ratio, so the gate is read
+// against all four rather than against the page alone.
+var foregroundLevels = []struct {
 	name  string
 	level tokens.ElevationLevel
 }{
@@ -52,8 +52,9 @@ var inkStoreys = []struct {
 	{"level 3 (popover)", tokens.Level3},
 }
 
-// inkFloors are the two floors a foreground is gated at: words and marks.
-var inkFloors = []struct {
+// foregroundFloors are the two floors a foreground is gated at: words and
+// marks.
+var foregroundFloors = []struct {
 	name  string
 	floor float64
 }{
@@ -61,9 +62,9 @@ var inkFloors = []struct {
 	{"graphic", tokens.GraphicFloor},
 }
 
-// inkSchemes yields every palette the sweep reads a seed as: both
+// foregroundSchemes yields every palette the sweep reads a seed as: both
 // derivations, both schemes.
-func inkSchemes(seed color.NRGBA) []struct {
+func foregroundSchemes(seed color.NRGBA) []struct {
 	name  string
 	tok   tokens.ColorTokens
 	light bool
@@ -82,42 +83,43 @@ func inkSchemes(seed color.NRGBA) []struct {
 	}
 }
 
-// TestBrandInkClearsItsFloorForEverySeed is the gate the link foreground defect
-// asked for: whatever the seed, whatever the scheme, whatever the level it
-// is drawn on, a brand foreground reaches the floor its job owes its surface.
+// TestBrandForegroundClearsItsFloorForEverySeed is the gate the link
+// foreground defect asked for: whatever the seed, whatever the scheme,
+// whatever the level it is drawn on, a brand foreground reaches the floor
+// its job owes its surface.
 //
 // It is asserted for every pinned role and both floors rather than for the
 // link alone, because the rule is one rule — a fill colour used as a foreground —
 // and the six roles that never fail are worth reading as measurements
 // rather than assuming as facts.
-func TestBrandInkClearsItsFloorForEverySeed(t *testing.T) {
+func TestBrandForegroundClearsItsFloorForEverySeed(t *testing.T) {
 	worst := map[string]float64{}
 	worstAt := map[string]string{}
 	for _, seed := range sweepSeeds() {
-		for _, s := range inkSchemes(seed) {
-			for _, st := range inkStoreys {
-				ground := s.tok.SurfaceAt(st.level)
-				for _, r := range inkRoles {
-					for _, f := range inkFloors {
-						ink := s.tok.InkOn(r.role, ground, f.floor)
-						got := contrastRatio(ink, ground)
+		for _, s := range foregroundSchemes(seed) {
+			for _, st := range foregroundLevels {
+				surface := s.tok.SurfaceAt(st.level)
+				for _, r := range foregroundRoles {
+					for _, f := range foregroundFloors {
+						foreground := s.tok.ForegroundOnAtFloor(r.role, surface, f.floor)
+						got := contrastRatio(foreground, surface)
 						if got < f.floor {
 							t.Errorf("seed %v: %s %s: %s foreground %v on %v measures %.2f:1, under the %.1f:1 %s floor",
-								seed, s.name, st.name, r.name, ink, ground, got, f.floor, f.name)
+								seed, s.name, st.name, r.name, foreground, surface, got, f.floor, f.name)
 						}
 						// The answer is the brand's own colour or a step of
 						// the brand's own ramp, never something invented.
-						if ink != r.pin(s.tok) {
+						if foreground != r.pin(s.tok) {
 							found := false
-							for _, rung := range r.ramp(s.tok) {
-								if rung == ink {
+							for _, step := range r.ramp(s.tok) {
+								if step == foreground {
 									found = true
 									break
 								}
 							}
 							if !found {
 								t.Errorf("seed %v: %s %s: %s foreground %v is neither the pin nor a step of the role's ramp",
-									seed, s.name, st.name, r.name, ink)
+									seed, s.name, st.name, r.name, foreground)
 							}
 						}
 						key := f.name + " " + map[bool]string{true: "light", false: "dark"}[s.light]
@@ -136,24 +138,24 @@ func TestBrandInkClearsItsFloorForEverySeed(t *testing.T) {
 	}
 }
 
-// TestBrandInkKeepsThePinThatReads is the other half of the rule, and it is
-// what keeps this repair invisible to every stored image: a pin that clears
-// its floor is returned untouched, so nothing moves for a palette that was
-// already measuring.
-func TestBrandInkKeepsThePinThatReads(t *testing.T) {
+// TestBrandForegroundKeepsThePinThatReads is the other half of the rule,
+// and it is what keeps this repair invisible to every stored image: a pin
+// that clears its floor is returned untouched, so nothing moves for a
+// palette that was already measuring.
+func TestBrandForegroundKeepsThePinThatReads(t *testing.T) {
 	for _, seed := range sweepSeeds() {
-		for _, s := range inkSchemes(seed) {
-			for _, st := range inkStoreys {
-				ground := s.tok.SurfaceAt(st.level)
-				for _, r := range inkRoles {
-					for _, f := range inkFloors {
+		for _, s := range foregroundSchemes(seed) {
+			for _, st := range foregroundLevels {
+				surface := s.tok.SurfaceAt(st.level)
+				for _, r := range foregroundRoles {
+					for _, f := range foregroundFloors {
 						pin := r.pin(s.tok)
-						if contrastRatio(pin, ground) < f.floor {
+						if contrastRatio(pin, surface) < f.floor {
 							continue
 						}
-						if ink := s.tok.InkOn(r.role, ground, f.floor); ink != pin {
+						if foreground := s.tok.ForegroundOnAtFloor(r.role, surface, f.floor); foreground != pin {
 							t.Errorf("seed %v: %s %s: %s %s foreground moved from the pin %v to %v though the pin measured %.2f:1",
-								seed, s.name, st.name, r.name, f.name, pin, ink, contrastRatio(pin, ground))
+								seed, s.name, st.name, r.name, f.name, pin, foreground, contrastRatio(pin, surface))
 						}
 					}
 				}
@@ -162,18 +164,18 @@ func TestBrandInkKeepsThePinThatReads(t *testing.T) {
 	}
 }
 
-// TestTheCanonicalSeedsBrandInkIsItsPin states the no-op for the one
+// TestTheCanonicalSeedsBrandForegroundIsItsPin states the no-op for the one
 // palette every golden image in this design system is rendered from. If
 // this fails, a stored image somewhere else moved.
-func TestTheCanonicalSeedsBrandInkIsItsPin(t *testing.T) {
-	for _, s := range inkSchemes(tokens.DefaultSeed) {
-		for _, st := range inkStoreys {
-			ground := s.tok.SurfaceAt(st.level)
-			for _, r := range inkRoles {
-				for _, f := range inkFloors {
-					if ink := s.tok.InkOn(r.role, ground, f.floor); ink != r.pin(s.tok) {
+func TestTheCanonicalSeedsBrandForegroundIsItsPin(t *testing.T) {
+	for _, s := range foregroundSchemes(tokens.DefaultSeed) {
+		for _, st := range foregroundLevels {
+			surface := s.tok.SurfaceAt(st.level)
+			for _, r := range foregroundRoles {
+				for _, f := range foregroundFloors {
+					if foreground := s.tok.ForegroundOnAtFloor(r.role, surface, f.floor); foreground != r.pin(s.tok) {
 						t.Errorf("%s %s: %s %s foreground is %v, not the pin %v — a stored image moved",
-							s.name, st.name, r.name, f.name, ink, r.pin(s.tok))
+							s.name, st.name, r.name, f.name, foreground, r.pin(s.tok))
 					}
 				}
 			}
@@ -193,12 +195,12 @@ func TestOnlyTheLightPrimaryPinEverWalks(t *testing.T) {
 	worstPin := 99.0
 	worstPinAt := ""
 	for _, seed := range sweepSeeds() {
-		for _, s := range inkSchemes(seed) {
-			for _, st := range inkStoreys {
-				ground := s.tok.SurfaceAt(st.level)
-				for _, r := range inkRoles {
-					for _, f := range inkFloors {
-						if s.tok.InkOn(r.role, ground, f.floor) == r.pin(s.tok) {
+		for _, s := range foregroundSchemes(seed) {
+			for _, st := range foregroundLevels {
+				surface := s.tok.SurfaceAt(st.level)
+				for _, r := range foregroundRoles {
+					for _, f := range foregroundFloors {
+						if s.tok.ForegroundOnAtFloor(r.role, surface, f.floor) == r.pin(s.tok) {
 							continue
 						}
 						scheme := "dark"
@@ -217,8 +219,8 @@ func TestOnlyTheLightPrimaryPinEverWalks(t *testing.T) {
 	}
 	for _, seed := range sweepSeeds() {
 		light, _ := tokens.FromSeed(seed)
-		ground := light.SurfaceAt(tokens.Level0)
-		if got := contrastRatio(light.Primary, ground); got < worstPin {
+		surface := light.SurfaceAt(tokens.Level0)
+		if got := contrastRatio(light.Primary, surface); got < worstPin {
 			worstPin, worstPinAt = got, hexOf(seed)
 		}
 	}
@@ -226,12 +228,12 @@ func TestOnlyTheLightPrimaryPinEverWalks(t *testing.T) {
 		len(sweepSeeds()), walked["text light"], walked["graphic light"], worstPin, worstPinAt)
 }
 
-// TestAPastelSeedGetsAReadableLinkInk is the regression this file was
+// TestAPastelSeedGetsAReadableLinkForeground is the regression this file was
 // written for, read on the shape that produced it: an accent stated at a
 // dark scheme's tone, used as a light scheme's seed. Its light primary pin
 // lands a whisper off the paper, and before the gate that pin was the link
 // colour a paragraph rendered with.
-func TestAPastelSeedGetsAReadableLinkInk(t *testing.T) {
+func TestAPastelSeedGetsAReadableLinkForeground(t *testing.T) {
 	seed := color.NRGBA{0x89, 0xb4, 0xfa, 0xff}
 	light, dark := tokens.FromSeed(seed)
 
@@ -239,51 +241,52 @@ func TestAPastelSeedGetsAReadableLinkInk(t *testing.T) {
 	if bare := contrastRatio(light.Primary, lightPaper); bare >= tokens.TextFloor {
 		t.Fatalf("the pastel seed's bare light pin now measures %.2f:1 over the paper — this test no longer reads the shape it was written for", bare)
 	}
-	lightInk := light.InkOn(tokens.RolePrimary, lightPaper, tokens.TextFloor)
-	if lightInk == light.Primary {
+	lightForeground := light.ForegroundOnAtFloor(tokens.RolePrimary, lightPaper, tokens.TextFloor)
+	if lightForeground == light.Primary {
 		t.Errorf("light link foreground is still the bare pin %v", light.Primary)
 	}
-	if got := contrastRatio(lightInk, lightPaper); got < tokens.TextFloor {
+	if got := contrastRatio(lightForeground, lightPaper); got < tokens.TextFloor {
 		t.Errorf("light link foreground %v on paper %v measures %.2f:1, under %.1f:1",
-			lightInk, lightPaper, got, tokens.TextFloor)
+			lightForeground, lightPaper, got, tokens.TextFloor)
 	}
 
 	// The dark scheme was never the broken half: its pin is realized at a
 	// fixed depth, so it clears and is kept.
 	darkPaper := dark.SurfaceAt(tokens.Level0)
-	darkInk := dark.InkOn(tokens.RolePrimary, darkPaper, tokens.TextFloor)
-	if darkInk != dark.Primary {
+	darkForeground := dark.ForegroundOnAtFloor(tokens.RolePrimary, darkPaper, tokens.TextFloor)
+	if darkForeground != dark.Primary {
 		t.Errorf("dark link foreground walked to %v; the dark pin %v measures %.2f:1 and should stand",
-			darkInk, dark.Primary, contrastRatio(dark.Primary, darkPaper))
+			darkForeground, dark.Primary, contrastRatio(dark.Primary, darkPaper))
 	}
-	if got := contrastRatio(darkInk, darkPaper); got < tokens.TextFloor {
+	if got := contrastRatio(darkForeground, darkPaper); got < tokens.TextFloor {
 		t.Errorf("dark link foreground %v on paper %v measures %.2f:1, under %.1f:1",
-			darkInk, darkPaper, got, tokens.TextFloor)
+			darkForeground, darkPaper, got, tokens.TextFloor)
 	}
 	t.Logf("seed %s: light link %s on %s %.2f:1 (bare pin %s %.2f:1); dark link %s on %s %.2f:1",
-		hexOf(seed), hexOf(lightInk), hexOf(lightPaper), contrastRatio(lightInk, lightPaper),
+		hexOf(seed), hexOf(lightForeground), hexOf(lightPaper), contrastRatio(lightForeground, lightPaper),
 		hexOf(light.Primary), contrastRatio(light.Primary, lightPaper),
-		hexOf(darkInk), hexOf(darkPaper), contrastRatio(darkInk, darkPaper))
+		hexOf(darkForeground), hexOf(darkPaper), contrastRatio(darkForeground, darkPaper))
 }
 
-// TestInkOnNeutralPanics: the neutral role carries surfaces and has no
-// pinned fill, so asking it for a brand foreground is a programming error — the
-// same answer every other pin accessor gives.
-func TestInkOnNeutralPanics(t *testing.T) {
+// TestForegroundOnAtFloorNeutralPanics: the neutral role carries surfaces
+// and has no pinned fill, so asking it for a brand foreground is a
+// programming error — the same answer every other pin accessor gives.
+func TestForegroundOnAtFloorNeutralPanics(t *testing.T) {
 	defer func() {
 		if recover() == nil {
-			t.Error("InkOn(RoleNeutral, ...): expected panic")
+			t.Error("ForegroundOnAtFloor(RoleNeutral, ...): expected panic")
 		}
 	}()
-	tokens.DefaultLight.InkOn(tokens.RoleNeutral, tokens.DefaultLight.Background, tokens.TextFloor)
+	tokens.DefaultLight.ForegroundOnAtFloor(tokens.RoleNeutral, tokens.DefaultLight.Background, tokens.TextFloor)
 }
 
 // TestForegroundOnAnswersEveryRole: the shared foreground derivation is
-// [ColorTokens.InkOn] at the text floor for the roles that carry a pinned
-// base, and the walk for RoleNeutral, which carries none — so unlike InkOn
-// it answers every role rather than refusing one. A component drawing a
-// role's word over a fill of that role's hue calls this, and only this;
-// a second spelling is how two components stop matching.
+// [ColorTokens.ForegroundOnAtFloor] at the text floor for the roles that
+// carry a pinned base, and the walk for RoleNeutral, which carries none —
+// so unlike ForegroundOnAtFloor it answers every role rather than refusing
+// one. A component drawing a role's word over a fill of that role's hue
+// calls this, and only this; a second spelling is how two components stop
+// matching.
 func TestForegroundOnAnswersEveryRole(t *testing.T) {
 	for _, sc := range []struct {
 		name string
@@ -300,7 +303,7 @@ func TestForegroundOnAnswersEveryRole(t *testing.T) {
 
 			want := c.MarkOn(role, fill, tokens.TextFloor)
 			if role != tokens.RoleNeutral {
-				want = c.InkOn(role, fill, tokens.TextFloor)
+				want = c.ForegroundOnAtFloor(role, fill, tokens.TextFloor)
 			}
 			if got != want {
 				t.Errorf("%s role %d: ForegroundOn = %s, want %s",

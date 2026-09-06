@@ -400,11 +400,11 @@ func TestRoundTripMotion(t *testing.T) {
 // exactly the ramp steps button.go's constants pick (tonalGround 200 /
 // tonalText 900, ghostGround 200 / ghostText 700 / ghostTextOnWash 900) —
 // with not one literal colour in the layer.
-// rungDistance is how far a ramp index sits from step 500, the mid-value
+// stepDistance is how far a ramp index sits from step 500, the mid-value
 // depth the ring's pick is aimed at. The test measures it for itself rather
 // than importing the emitter's constant, so a drift in the aim is a
 // failure here rather than a silent agreement.
-func rungDistance(i int) int {
+func stepDistance(i int) int {
 	const mid = 4 // steps run 100…900
 	if i < mid {
 		return mid - i
@@ -460,7 +460,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 			clearing++
 			// Steps run 100…900, so index 4 is step 500. Nearest to it wins;
 			// walking upward, a tie keeps the lower step, as the sheet does.
-			if wantAt < 0 || rungDistance(r) < rungDistance(wantAt) {
+			if wantAt < 0 || stepDistance(r) < stepDistance(wantAt) {
 				wantRing, wantAt = step, r
 			}
 		}

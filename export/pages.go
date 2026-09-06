@@ -133,8 +133,8 @@ func page(title, heading, intro, style, body string) string {
 
 // lcStr formats an APCA Lc measurement in the signed convention: positive
 // dark-on-light, negative light-on-dark.
-func lcStr(text, ground stdcolor.NRGBA) string {
-	return fmt.Sprintf("%.1f", color.APCA(text, ground))
+func lcStr(text, surface stdcolor.NRGBA) string {
+	return fmt.Sprintf("%.1f", color.APCA(text, surface))
 }
 
 // wcagStr formats a WCAG 2 contrast ratio.
@@ -172,11 +172,11 @@ func modeHex(light, dark stdcolor.NRGBA) string {
 // contrastRow renders one measured text pair as a table row: APCA Lc and the
 // WCAG 2 ratio, in both modes. The Lc numbers gate the palette and the
 // ratios are reported alongside.
-func contrastRow(b *strings.Builder, label string, lightText, lightGround, darkText, darkGround stdcolor.NRGBA) {
+func contrastRow(b *strings.Builder, label string, lightText, lightSurface, darkText, darkSurface stdcolor.NRGBA) {
 	fmt.Fprintf(b, "<tr><th scope=\"row\">%s</th><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n",
 		html.EscapeString(label),
-		lcStr(lightText, lightGround), wcagStr(lightText, lightGround),
-		lcStr(darkText, darkGround), wcagStr(darkText, darkGround))
+		lcStr(lightText, lightSurface), wcagStr(lightText, lightSurface),
+		lcStr(darkText, darkSurface), wcagStr(darkText, darkSurface))
 }
 
 // colorPageCSS is the colour page's specimen scaffolding.
@@ -236,9 +236,9 @@ type colorRole struct {
 	name string
 	pins []pinChip
 	// pairLabel names the pinned text pair measured in the contrast table.
-	pairLabel                    string
-	lightPinText, lightPinGround stdcolor.NRGBA
-	darkPinText, darkPinGround   stdcolor.NRGBA
+	pairLabel                     string
+	lightPinText, lightPinSurface stdcolor.NRGBA
+	darkPinText, darkPinSurface   stdcolor.NRGBA
 }
 
 // pinChip is one pinned base rendered as a labelled chip: painted by its
@@ -263,88 +263,88 @@ func colorHTML(s Snapshot) string {
 				{"--color-divider", "--color-text", "divider (neutral-300)", s.Light.Divider, s.Dark.Divider},
 				{"--color-text", "--color-bg", "text (pinned)", s.Light.Text, s.Dark.Text},
 			},
-			pairLabel:      "text on bg",
-			lightPinText:   s.Light.Text,
-			lightPinGround: s.Light.Background,
-			darkPinText:    s.Dark.Text,
-			darkPinGround:  s.Dark.Background,
+			pairLabel:       "text on bg",
+			lightPinText:    s.Light.Text,
+			lightPinSurface: s.Light.Background,
+			darkPinText:     s.Dark.Text,
+			darkPinSurface:  s.Dark.Background,
 		},
 		{
 			name: "primary",
 			pins: []pinChip{
 				{"--color-accent", "--color-on-accent", "accent (pinned primary)", s.Light.Primary, s.Dark.Primary},
 			},
-			pairLabel:      "on-accent on accent",
-			lightPinText:   s.Light.OnPrimary,
-			lightPinGround: s.Light.Primary,
-			darkPinText:    s.Dark.OnPrimary,
-			darkPinGround:  s.Dark.Primary,
+			pairLabel:       "on-accent on accent",
+			lightPinText:    s.Light.OnPrimary,
+			lightPinSurface: s.Light.Primary,
+			darkPinText:     s.Dark.OnPrimary,
+			darkPinSurface:  s.Dark.Primary,
 		},
 		{
 			name: "secondary",
 			pins: []pinChip{
 				{"--color-secondary", "--color-on-secondary", "secondary (pinned)", s.Light.Secondary, s.Dark.Secondary},
 			},
-			pairLabel:      "on-secondary on secondary",
-			lightPinText:   s.Light.OnSecondary,
-			lightPinGround: s.Light.Secondary,
-			darkPinText:    s.Dark.OnSecondary,
-			darkPinGround:  s.Dark.Secondary,
+			pairLabel:       "on-secondary on secondary",
+			lightPinText:    s.Light.OnSecondary,
+			lightPinSurface: s.Light.Secondary,
+			darkPinText:     s.Dark.OnSecondary,
+			darkPinSurface:  s.Dark.Secondary,
 		},
 		{
 			name: "tertiary",
 			pins: []pinChip{
 				{"--color-tertiary", "--color-on-tertiary", "tertiary (pinned)", s.Light.Tertiary, s.Dark.Tertiary},
 			},
-			pairLabel:      "on-tertiary on tertiary",
-			lightPinText:   s.Light.OnTertiary,
-			lightPinGround: s.Light.Tertiary,
-			darkPinText:    s.Dark.OnTertiary,
-			darkPinGround:  s.Dark.Tertiary,
+			pairLabel:       "on-tertiary on tertiary",
+			lightPinText:    s.Light.OnTertiary,
+			lightPinSurface: s.Light.Tertiary,
+			darkPinText:     s.Dark.OnTertiary,
+			darkPinSurface:  s.Dark.Tertiary,
 		},
 		{
 			name: "error",
 			pins: []pinChip{
 				{"--color-error", "--color-on-error", "error (pinned)", s.Light.Error, s.Dark.Error},
 			},
-			pairLabel:      "on-error on error",
-			lightPinText:   s.Light.OnError,
-			lightPinGround: s.Light.Error,
-			darkPinText:    s.Dark.OnError,
-			darkPinGround:  s.Dark.Error,
+			pairLabel:       "on-error on error",
+			lightPinText:    s.Light.OnError,
+			lightPinSurface: s.Light.Error,
+			darkPinText:     s.Dark.OnError,
+			darkPinSurface:  s.Dark.Error,
 		},
 		{
 			name: "success",
 			pins: []pinChip{
 				{"--color-success", "--color-on-success", "success (pinned)", s.Light.Success, s.Dark.Success},
 			},
-			pairLabel:      "on-success on success",
-			lightPinText:   s.Light.OnSuccess,
-			lightPinGround: s.Light.Success,
-			darkPinText:    s.Dark.OnSuccess,
-			darkPinGround:  s.Dark.Success,
+			pairLabel:       "on-success on success",
+			lightPinText:    s.Light.OnSuccess,
+			lightPinSurface: s.Light.Success,
+			darkPinText:     s.Dark.OnSuccess,
+			darkPinSurface:  s.Dark.Success,
 		},
 		{
 			name: "warning",
 			pins: []pinChip{
 				{"--color-warning", "--color-on-warning", "warning (pinned)", s.Light.Warning, s.Dark.Warning},
 			},
-			pairLabel:      "on-warning on warning",
-			lightPinText:   s.Light.OnWarning,
-			lightPinGround: s.Light.Warning,
-			darkPinText:    s.Dark.OnWarning,
-			darkPinGround:  s.Dark.Warning,
+			pairLabel:       "on-warning on warning",
+			lightPinText:    s.Light.OnWarning,
+			lightPinSurface: s.Light.Warning,
+			darkPinText:     s.Dark.OnWarning,
+			darkPinSurface:  s.Dark.Warning,
 		},
 		{
 			name: "info",
 			pins: []pinChip{
 				{"--color-info", "--color-on-info", "info (pinned)", s.Light.Info, s.Dark.Info},
 			},
-			pairLabel:      "on-info on info",
-			lightPinText:   s.Light.OnInfo,
-			lightPinGround: s.Light.Info,
-			darkPinText:    s.Dark.OnInfo,
-			darkPinGround:  s.Dark.Info,
+			pairLabel:       "on-info on info",
+			lightPinText:    s.Light.OnInfo,
+			lightPinSurface: s.Light.Info,
+			darkPinText:     s.Dark.OnInfo,
+			darkPinSurface:  s.Dark.Info,
 		},
 	}
 
@@ -385,14 +385,14 @@ func colorHTML(s Snapshot) string {
 		b.WriteString("<tr><th scope=\"col\">text pair</th><th scope=\"col\">light Lc</th><th scope=\"col\">light WCAG</th><th scope=\"col\">dark Lc</th><th scope=\"col\">dark WCAG</th></tr>\n")
 		b.WriteString("</thead>\n<tbody>\n")
 		for _, pair := range [][2]int{{900, 100}, {900, 200}, {700, 100}, {700, 200}} {
-			text, ground := pair[0], pair[1]
-			contrastRow(&b, fmt.Sprintf("%d on %d", text, ground),
-				lightRamp.Step(text), lightRamp.Step(ground),
-				darkRamp.Step(text), darkRamp.Step(ground))
+			text, surface := pair[0], pair[1]
+			contrastRow(&b, fmt.Sprintf("%d on %d", text, surface),
+				lightRamp.Step(text), lightRamp.Step(surface),
+				darkRamp.Step(text), darkRamp.Step(surface))
 		}
 		contrastRow(&b, role.pairLabel,
-			role.lightPinText, role.lightPinGround,
-			role.darkPinText, role.darkPinGround)
+			role.lightPinText, role.lightPinSurface,
+			role.darkPinText, role.darkPinSurface)
 		b.WriteString("</tbody>\n</table>\n</section>\n")
 	}
 

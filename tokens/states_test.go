@@ -81,22 +81,22 @@ func TestTintedStatesStayOnRamp(t *testing.T) {
 	for _, s := range stateSchemes {
 		for _, r := range allRoles {
 			ramp := rampForRole(s.tok, r.role)
-			for ground := 100; ground <= 700; ground += 100 {
+			for step := 100; step <= 700; step += 100 {
 				checks := []struct {
 					state tokens.State
 					want  color.NRGBA
 				}{
-					{tokens.StateNormal, ramp.Step(ground)},
-					{tokens.StateFocus, ramp.Step(ground)},
-					{tokens.StateHover, ramp.Step(ground + 100)},
-					{tokens.StatePressed, ramp.Step(ground + 200)},
-					{tokens.StateSelected, ramp.Step(ground + 200)},
-					{tokens.StateDragged, ramp.Step(ground + 200)},
+					{tokens.StateNormal, ramp.Step(step)},
+					{tokens.StateFocus, ramp.Step(step)},
+					{tokens.StateHover, ramp.Step(step + 100)},
+					{tokens.StatePressed, ramp.Step(step + 200)},
+					{tokens.StateSelected, ramp.Step(step + 200)},
+					{tokens.StateDragged, ramp.Step(step + 200)},
 				}
 				for _, c := range checks {
-					if got := s.tok.StateColor(r.role, ground, c.state); got != c.want {
+					if got := s.tok.StateColor(r.role, step, c.state); got != c.want {
 						t.Errorf("%s %s: StateColor(step %d, state %d) = %v, want ramp step %v",
-							s.name, r.name, ground, c.state, got, c.want)
+							s.name, r.name, step, c.state, got, c.want)
 					}
 				}
 			}
@@ -110,9 +110,9 @@ func TestTintedWalkClampsAtRampEnd(t *testing.T) {
 	for _, s := range stateSchemes {
 		n := s.tok.Ramps.Neutral
 		checks := []struct {
-			ground int
-			state  tokens.State
-			want   color.NRGBA
+			step  int
+			state tokens.State
+			want  color.NRGBA
 		}{
 			{800, tokens.StateHover, n.Step(900)},
 			{800, tokens.StatePressed, n.Step(900)},
@@ -120,9 +120,9 @@ func TestTintedWalkClampsAtRampEnd(t *testing.T) {
 			{900, tokens.StatePressed, n.Step(900)},
 		}
 		for _, c := range checks {
-			if got := s.tok.StateColor(tokens.RoleNeutral, c.ground, c.state); got != c.want {
+			if got := s.tok.StateColor(tokens.RoleNeutral, c.step, c.state); got != c.want {
 				t.Errorf("%s: StateColor(Neutral, %d, state %d) = %v, want clamped step 900 %v",
-					s.name, c.ground, c.state, got, c.want)
+					s.name, c.step, c.state, got, c.want)
 			}
 		}
 	}
@@ -135,17 +135,17 @@ func TestTintedWalkClampsAtRampEnd(t *testing.T) {
 func TestTintedWalkMonotonic(t *testing.T) {
 	for _, s := range stateSchemes {
 		for _, r := range allRoles {
-			for ground := 100; ground <= 700; ground += 100 {
-				normal := relativeLuminance(s.tok.StateColor(r.role, ground, tokens.StateNormal))
-				hover := relativeLuminance(s.tok.StateColor(r.role, ground, tokens.StateHover))
-				pressed := relativeLuminance(s.tok.StateColor(r.role, ground, tokens.StatePressed))
+			for step := 100; step <= 700; step += 100 {
+				normal := relativeLuminance(s.tok.StateColor(r.role, step, tokens.StateNormal))
+				hover := relativeLuminance(s.tok.StateColor(r.role, step, tokens.StateHover))
+				pressed := relativeLuminance(s.tok.StateColor(r.role, step, tokens.StatePressed))
 				ok := normal > hover && hover > pressed
 				if !s.descending {
 					ok = normal < hover && hover < pressed
 				}
 				if !ok {
 					t.Errorf("%s %s step %d: luminance walk not monotonic: normal %.4f, hover %.4f, pressed %.4f",
-						s.name, r.name, ground, normal, hover, pressed)
+						s.name, r.name, step, normal, hover, pressed)
 				}
 			}
 		}
@@ -199,16 +199,16 @@ func TestDarkSolidWalkLandsOnPairedDepths(t *testing.T) {
 		for _, c := range []struct {
 			name string
 			got  color.NRGBA
-			rung int
+			step int
 		}{
 			{"hover", hover, 800},
 			{"pressed", pressed, 900},
 		} {
 			lGot, _, _ := speccolor.LabFromNRGBA(c.got)
-			lWant, _, _ := speccolor.LabFromNRGBA(ramp.Step(c.rung))
+			lWant, _, _ := speccolor.LabFromNRGBA(ramp.Step(c.step))
 			if math.Abs(lGot-lWant) > tol {
 				t.Errorf("DefaultDark %s: solid %s L* = %.2f, want step-%d depth %.2f ± %.1f",
-					r.name, c.name, lGot, c.rung, lWant, tol)
+					r.name, c.name, lGot, c.step, lWant, tol)
 			}
 		}
 	}
@@ -230,7 +230,7 @@ var offPins = []struct {
 	{"white", tokens.White},
 }
 
-// TestRoleLaddersTrackTheNeutralLadder is the evidence for the scale
+// TestRoleScalesTrackTheNeutralScale is the evidence for the scale
 // PinnedStateColor walks on. Every ramp in a scheme sweeps one shared
 // lightness scale and only the neutral sweeps it at zero chroma, so the
 // neutral ramp is the scale itself; the coloured ramps are the same scale
@@ -238,7 +238,7 @@ var offPins = []struct {
 // of an L* off target where the gamut bites. This bounds that fraction over
 // the whole seed sweep, which is what makes "walk a caller's pin on the
 // neutral ramp" cost nothing measurable against walking it on any other.
-func TestRoleLaddersTrackTheNeutralLadder(t *testing.T) {
+func TestRoleScalesTrackTheNeutralScale(t *testing.T) {
 	const tol = 1.0 // L*
 	for _, seed := range sweepSeeds() {
 		light, dark := tokens.FromSeed(seed)
@@ -357,8 +357,8 @@ func TestDisabledIsOpacity(t *testing.T) {
 		t.Errorf("Disabled(White) = %v, want alpha 0x61 with RGB untouched", got)
 	}
 	for _, s := range stateSchemes {
-		ground := s.tok.Ramps.Neutral.Step(200)
-		want := color.NRGBA{ground.R, ground.G, ground.B, 0x61}
+		surface := s.tok.Ramps.Neutral.Step(200)
+		want := color.NRGBA{surface.R, surface.G, surface.B, 0x61}
 		if got := s.tok.StateColor(tokens.RoleNeutral, 200, tokens.StateDisabled); got != want {
 			t.Errorf("%s: disabled tinted = %v, want the surface at 38%% alpha %v", s.name, got, want)
 		}
@@ -392,11 +392,11 @@ func TestFocusIsTheRing(t *testing.T) {
 func TestDraggedFollowsPressed(t *testing.T) {
 	for _, s := range stateSchemes {
 		for _, r := range allRoles {
-			for ground := 100; ground <= 900; ground += 100 {
-				dragged := s.tok.StateColor(r.role, ground, tokens.StateDragged)
-				pressed := s.tok.StateColor(r.role, ground, tokens.StatePressed)
+			for step := 100; step <= 900; step += 100 {
+				dragged := s.tok.StateColor(r.role, step, tokens.StateDragged)
+				pressed := s.tok.StateColor(r.role, step, tokens.StatePressed)
 				if dragged != pressed {
-					t.Errorf("%s %s step %d: dragged %v != pressed %v", s.name, r.name, ground, dragged, pressed)
+					t.Errorf("%s %s step %d: dragged %v != pressed %v", s.name, r.name, step, dragged, pressed)
 				}
 			}
 		}

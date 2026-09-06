@@ -156,11 +156,11 @@ func TestColorPageAnnotatesContrast(t *testing.T) {
 	for _, role := range rampRoles {
 		light, dark := role.ramp(snap.Light.Ramps), role.ramp(snap.Dark.Ramps)
 		for _, pair := range [][2]int{{900, 100}, {900, 200}, {700, 100}, {700, 200}} {
-			text, ground := pair[0], pair[1]
-			row := wantRow(fmt.Sprintf("%d on %d", text, ground),
-				light.Step(text), light.Step(ground), dark.Step(text), dark.Step(ground))
+			text, surface := pair[0], pair[1]
+			row := wantRow(fmt.Sprintf("%d on %d", text, surface),
+				light.Step(text), light.Step(surface), dark.Step(text), dark.Step(surface))
 			if !strings.Contains(src, row) {
-				t.Errorf("color.html lacks the measured row for %s %d on %d:\n%s", role.name, text, ground, row)
+				t.Errorf("color.html lacks the measured row for %s %d on %d:\n%s", role.name, text, surface, row)
 			}
 		}
 	}

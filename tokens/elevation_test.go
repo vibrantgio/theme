@@ -208,7 +208,7 @@ func TestTheChromeLevelTakesTheMeasuredStep(t *testing.T) {
 		t.Errorf("default dark chrome = %v, want the measured %v", chrome, want)
 	}
 	for step := 100; step <= 900; step += 100 {
-		if rung := tokens.DefaultDark.Ramps.Neutral.Step(step); rung == chrome {
+		if stepColor := tokens.DefaultDark.Ramps.Neutral.Step(step); stepColor == chrome {
 			t.Errorf("dark chrome %v landed on Neutral %d; the dark chrome step is measured, not a ramp step", chrome, step)
 		}
 	}
@@ -373,10 +373,10 @@ func TestSurfaceStepIsHalfTrue(t *testing.T) {
 		if step == 0 {
 			continue
 		}
-		rung := tokens.DefaultDark.Ramps.Neutral.Step(step)
-		if got := tokens.DefaultDark.SurfaceAt(level); got != rung {
+		wantFill := tokens.DefaultDark.Ramps.Neutral.Step(step)
+		if got := tokens.DefaultDark.SurfaceAt(level); got != wantFill {
 			t.Errorf("dark: SurfaceStep(%d) names Neutral %d %v, but the level fills %v",
-				level, step, rung, got)
+				level, step, wantFill, got)
 		}
 		if got := tokens.DefaultLight.SurfaceAt(level); got == tokens.DefaultLight.Ramps.Neutral.Step(step) {
 			t.Errorf("light: level %d fills Neutral %d; the light scheme is meant to be OFF the ramp above the pin",

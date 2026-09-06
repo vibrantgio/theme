@@ -125,20 +125,20 @@ func (t ColorTokens) FocusRing() stdcolor.NRGBA {
 // return that step itself (draw FocusRing for the ring); disabled returns
 // it at DisabledOpacity. An out-of-vocabulary step, role or state panics,
 // matching Ramp.Step.
-func (t ColorTokens) StateColor(role Role, ground int, state State) stdcolor.NRGBA {
+func (t ColorTokens) StateColor(role Role, step int, state State) stdcolor.NRGBA {
 	r := t.rampFor(role)
-	base := r.Step(ground) // validates the step
+	base := r.Step(step) // validates the step
 	switch state {
 	case StateNormal, StateFocus:
 		return base
 	case StateDisabled:
 		return Disabled(base)
 	}
-	step := ground + 100*stateWalk(state)
-	if step > 900 {
-		step = 900 // clamp at the ramp end
+	walked := step + 100*stateWalk(state)
+	if walked > 900 {
+		walked = 900 // clamp at the ramp end
 	}
-	return r.Step(step)
+	return r.Step(walked)
 }
 
 // SolidStateColor resolves a solid fill: the role's pinned base under the
@@ -219,7 +219,7 @@ func (t ColorTokens) PinnedStateColor(pin stdcolor.NRGBA, state State) stdcolor.
 // move on its own evidence.
 const StateFloor = 1.25
 
-// washOn resolves the state fill a state paints on surface: the neutral
+// stateFillOn resolves the state fill a state paints on surface: the neutral
 // walk of [PinnedStateColor], deepened until it clears [StateFloor].
 //
 // Hover is one step, or the shallowest depth past it that clears the floor,
@@ -232,19 +232,19 @@ const StateFloor = 1.25
 // are unevenly spaced, so rounding the floor up to the next one overshoots:
 // on the dark scheme's level-1 fill the next step is the ramp's mid-value
 // step, where no neutral label reaches the text floor over it.
-func (t ColorTokens) washOn(surface stdcolor.NRGBA, state State) stdcolor.NRGBA {
+func (t ColorTokens) stateFillOn(surface stdcolor.NRGBA, state State) stdcolor.NRGBA {
 	switch state {
 	case StateNormal, StateFocus:
 		return surface
 	case StateDisabled:
 		return Disabled(surface)
 	}
-	ladder := neutralLadder(t.Ramps.Neutral)
-	depth := floorDepth(ladder, surface, 1)
+	scale := neutralScale(t.Ramps.Neutral)
+	depth := floorDepth(scale, surface, 1)
 	if n := stateWalk(state); n > 1 {
 		depth += float64(n - 1)
 	}
-	return walkOn(ladder, surface, depth)
+	return walkOn(scale, surface, depth)
 }
 
 // floorDepth returns the shallowest walk depth at or past from whose
@@ -254,10 +254,10 @@ func (t ColorTokens) washOn(surface stdcolor.NRGBA, state State) stdcolor.NRGBA 
 // finds it. A scale whose far end cannot clear the floor yields that end,
 // which separates most: an unseparated state fill is a defect the gates
 // report, not a reason to paint nothing.
-func floorDepth(ladder [9]float64, surface stdcolor.NRGBA, from float64) float64 {
+func floorDepth(scale [9]float64, surface stdcolor.NRGBA, from float64) float64 {
 	const end = 8 // the scale's last step; walkOn clamps there
 	clears := func(d float64) bool {
-		return color.ContrastRatio(walkOn(ladder, surface, d), surface) >= StateFloor
+		return color.ContrastRatio(walkOn(scale, surface, d), surface) >= StateFloor
 	}
 	if clears(from) {
 		return from
@@ -338,31 +338,31 @@ func (t ColorTokens) pinFor(role Role) stdcolor.NRGBA {
 // solidWalk moves the pin n steps toward the 900 end of r's measured L*
 // scale and realizes the target depth at the pin's own hue and chroma.
 func solidWalk(pin stdcolor.NRGBA, r Ramp, n int) stdcolor.NRGBA {
-	return walkOn(neutralLadder(r), pin, float64(n))
+	return walkOn(neutralScale(r), pin, float64(n))
 }
 
-// neutralLadder reads a ramp's measured CIELAB L* scale, the one every
+// neutralScale reads a ramp's measured CIELAB L* scale, the one every
 // walk counts its steps on.
-func neutralLadder(r Ramp) [9]float64 {
-	var ladder [9]float64
+func neutralScale(r Ramp) [9]float64 {
+	var scale [9]float64
 	for i, c := range r {
-		ladder[i], _, _ = color.LabFromNRGBA(c)
+		scale[i], _, _ = color.LabFromNRGBA(c)
 	}
-	return ladder
+	return scale
 }
 
 // walkOn moves the pin n steps along the scale toward its 900 end and
 // realizes the target depth at the pin's own hue and chroma. n is
 // fractional so that a walk carrying a floor can stop where the floor is
-// crossed instead of at the next whole step; ladderAt interpolates between
+// crossed instead of at the next whole step; scaleAt interpolates between
 // steps.
-func walkOn(ladder [9]float64, pin stdcolor.NRGBA, n float64) stdcolor.NRGBA {
+func walkOn(scale [9]float64, pin stdcolor.NRGBA, n float64) stdcolor.NRGBA {
 	pinL, _, _ := color.LabFromNRGBA(pin)
-	idx := ladderIndex(ladder, pinL) + n
+	idx := scaleIndex(scale, pinL) + n
 	if idx > 8 {
 		idx = 8 // clamp at the step-900 end
 	}
-	targetL := ladderAt(ladder, idx)
+	targetL := scaleAt(scale, idx)
 	_, chroma, hue := color.OKLChFromNRGBA(pin)
 	if chroma < greyResidue {
 		// A walk from a grey stays grey. An exact grey round-trips through
@@ -381,33 +381,33 @@ func walkOn(ladder [9]float64, pin stdcolor.NRGBA, n float64) stdcolor.NRGBA {
 // above this, so the gap is not close.
 const greyResidue = 1e-5
 
-// ladderIndex locates L on a monotonic (ascending or descending) scale as
+// scaleIndex locates L on a monotonic (ascending or descending) scale as
 // a fractional index in [0,8], clamping beyond either end.
-func ladderIndex(ladder [9]float64, L float64) float64 {
-	descending := ladder[0] > ladder[8]
+func scaleIndex(scale [9]float64, L float64) float64 {
+	descending := scale[0] > scale[8]
 	past := func(a, b float64) bool { // b lies at or past a, toward index 8
 		if descending {
 			return b <= a
 		}
 		return b >= a
 	}
-	if past(L, ladder[0]) {
+	if past(L, scale[0]) {
 		return 0
 	}
 	for i := 0; i < 8; i++ {
-		if past(L, ladder[i+1]) {
-			return float64(i) + (L-ladder[i])/(ladder[i+1]-ladder[i])
+		if past(L, scale[i+1]) {
+			return float64(i) + (L-scale[i])/(scale[i+1]-scale[i])
 		}
 	}
 	return 8
 }
 
-// ladderAt reads the scale's L* at a fractional index by linear
+// scaleAt reads the scale's L* at a fractional index by linear
 // interpolation between adjacent steps.
-func ladderAt(ladder [9]float64, idx float64) float64 {
+func scaleAt(scale [9]float64, idx float64) float64 {
 	i := int(idx)
 	if i >= 8 {
-		return ladder[8]
+		return scale[8]
 	}
-	return ladder[i] + (idx-float64(i))*(ladder[i+1]-ladder[i])
+	return scale[i] + (idx-float64(i))*(scale[i+1]-scale[i])
 }

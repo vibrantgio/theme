@@ -269,9 +269,9 @@ func containerHueStep(r Ramp) int {
 // roles — and the worst pairing over the whole seed sweep measures 4.47:1.
 //
 // It is the floor a mark owes, so a caller setting a run of words on a
-// container asks for the text floor instead: the role's foreground derived against
-// the fill ([ColorTokens.InkOn], or [ColorTokens.MarkOn] for RoleNeutral,
-// at [TextFloor]).
+// container asks for the text floor instead: the role's foreground derived
+// against the fill ([ColorTokens.ForegroundOnAtFloor], or
+// [ColorTokens.MarkOn] for RoleNeutral, at [TextFloor]).
 func (t ColorTokens) OnContainer(role Role) stdcolor.NRGBA {
 	return t.MarkOn(role, t.Container(role), graphicFloor)
 }
@@ -282,7 +282,7 @@ func (t ColorTokens) OnStatusContainer(role Role) stdcolor.NRGBA {
 	return t.OnContainer(role)
 }
 
-// MarkOn returns the colour the role marks `ground` with: the step of the
+// MarkOn returns the colour the role marks `surface` with: the step of the
 // role's own ramp nearest the ramp's mid-value step 500 that reaches floor
 // against that surface.
 //
@@ -308,13 +308,13 @@ func (t ColorTokens) OnStatusContainer(role Role) stdcolor.NRGBA {
 // nothing, so a caller always has a colour: a mark too weak to meet its
 // floor is a contrast defect the gates report, not a reason for a component
 // to paint an unset colour.
-func (t ColorTokens) MarkOn(role Role, ground stdcolor.NRGBA, floor float64) stdcolor.NRGBA {
+func (t ColorTokens) MarkOn(role Role, surface stdcolor.NRGBA, floor float64) stdcolor.NRGBA {
 	const mid = 4        // index of step 500, the ramp's mid-value reference
 	r := t.rampFor(role) // validates role
 	pick, dist := -1, 99
 	fallback, fallbackAt := -1.0, 0
-	for i, rung := range r {
-		got := color.ContrastRatio(rung, ground)
+	for i, step := range r {
+		got := color.ContrastRatio(step, surface)
 		if got > fallback {
 			fallback, fallbackAt = got, i
 		}

@@ -37,7 +37,8 @@ var standable = []tokens.ElevationLevel{
 // raise is lighter than what it stands on, or it carries a seam. Never
 // darker, and never both unsaid.
 func TestARaiseIsLighterOrCarriesASeam(t *testing.T) {
-	worstFill, quietestSeam := 99.0, 99.0
+	// faintestSeam is a contrast reading, not prominence.
+	worstFill, faintestSeam := 99.0, 99.0
 	for _, seed := range sweepSeeds() {
 		for _, scheme := range schemes(seed) {
 			for _, level := range standable {
@@ -67,8 +68,8 @@ func TestARaiseIsLighterOrCarriesASeam(t *testing.T) {
 							t.Fatalf("seed %v %s: raise %d off level %d seams at %.3f:1 below and %.3f:1 above, under SeamRatio %.2f",
 								seed, scheme.name, depth, level, below, above, tokens.SeamRatio)
 						}
-						if q := min(below, above); q < quietestSeam {
-							quietestSeam = q
+						if q := min(below, above); q < faintestSeam {
+							faintestSeam = q
 						}
 					}
 					surface = raise.Fill
@@ -77,7 +78,7 @@ func TestARaiseIsLighterOrCarriesASeam(t *testing.T) {
 		}
 	}
 	t.Logf("over %d seeds × 4 schemes: faintest fill-told raise %.4f:1, faintest seam %.3f:1",
-		len(sweepSeeds()), worstFill, quietestSeam)
+		len(sweepSeeds()), worstFill, faintestSeam)
 }
 
 // TestARaiseOnARaiseOnAModalResolves walks the stack the ruling names — a
@@ -213,7 +214,8 @@ func TestSeamIsFilledInWhetherOrNotItIsOwed(t *testing.T) {
 // line owes SeamRatio against it. Nothing else says where a group ends, so
 // a hairline that misses the ratio is a group nobody can find.
 func TestSeamOnIsFindableAgainstTheSurfaceItPartsFromItself(t *testing.T) {
-	quietest := 99.0
+	// faintest is a contrast reading, not prominence.
+	faintest := 99.0
 	for _, seed := range sweepSeeds() {
 		for _, scheme := range schemes(seed) {
 			for _, level := range standable {
@@ -223,14 +225,14 @@ func TestSeamOnIsFindableAgainstTheSurfaceItPartsFromItself(t *testing.T) {
 					t.Fatalf("seed %v %s: the hairline on level %d measures %.3f:1 against the fill it parts, under SeamRatio %.2f:1",
 						seed, scheme.name, level, got, tokens.SeamRatio)
 				}
-				if got < quietest {
-					quietest = got
+				if got < faintest {
+					faintest = got
 				}
 			}
 		}
 	}
 	t.Logf("over %d seeds × 4 schemes × %d levels: faintest group hairline %.3f:1",
-		len(sweepSeeds()), len(standable), quietest)
+		len(sweepSeeds()), len(standable), faintest)
 }
 
 // TestSeamOnIsTheDirectionTheSchemeReads holds the direction the derivation

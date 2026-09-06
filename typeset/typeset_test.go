@@ -150,11 +150,12 @@ func TestWrappedLinesGetWholeLineBoxes(t *testing.T) {
 	}
 }
 
-// TestUncorrectedLabelStillReportsInk records the behaviour typeset wraps, so
-// that the reason this package exists stays measured rather than remembered.
-// If a future gioui.org gives the first line its whole line box, this test is
-// the one that fails, and typeset.Layout's deficit becomes zero on its own.
-func TestUncorrectedLabelStillReportsInk(t *testing.T) {
+// TestUncorrectedLabelStillReportsForeground records the behaviour typeset
+// wraps, so that the reason this package exists stays measured rather than
+// remembered. If a future gioui.org gives the first line its whole line
+// box, this test is the one that fails, and typeset.Layout's deficit
+// becomes zero on its own.
+func TestUncorrectedLabelStillReportsForeground(t *testing.T) {
 	var ops op.Ops
 	g := gtx(&ops, 1<<20)
 	sh := pinned()
@@ -308,15 +309,16 @@ func TestResultFitsTheCallersConstraints(t *testing.T) {
 	}
 }
 
-// TestFloorCentresTheInk pins where the text sits under a Min.Y floor, via the
-// baseline: Dimensions.Baseline is measured up from the bottom, so with the
-// glyphs fixed it names the text's vertical position exactly. Three cases:
-// no floor, a floor below the line box (which must change nothing), and a
-// floor above it — layout.Flex hands an exact cell height down as a minimum,
-// so this is every label in an exact-height row. The surplus splits half
-// above (rounded down) and half below; left to widget.Label it would all
-// land below and the text would pin to the top of the cell.
-func TestFloorCentresTheInk(t *testing.T) {
+// TestFloorCentresTheForeground pins where the text sits under a Min.Y
+// floor, via the baseline: Dimensions.Baseline is measured up from the
+// bottom, so with the glyphs fixed it names the text's vertical position
+// exactly. Three cases: no floor, a floor below the line box (which must
+// change nothing), and a floor above it — layout.Flex hands an exact cell
+// height down as a minimum, so this is every label in an exact-height row.
+// The surplus splits half above (rounded down) and half below; left to
+// widget.Label it would all land below and the text would pin to the top of
+// the cell.
+func TestFloorCentresTheForeground(t *testing.T) {
 	var ops op.Ops
 	sh := pinned()
 	style := styleAt(20)

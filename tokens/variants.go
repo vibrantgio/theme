@@ -81,9 +81,9 @@ func (t ColorTokens) neutralVariant(floor float64) stdcolor.NRGBA {
 	const mid = 4 // index of step 500, the ramp's mid-value reference
 	pick, dist := -1, len(t.Ramps.Neutral)
 	widest, widestAt := -1.0, 0
-	for i, rung := range t.Ramps.Neutral {
-		worst := color.ContrastRatio(rung, t.Surface)
-		if got := color.ContrastRatio(rung, t.Background); got < worst {
+	for i, step := range t.Ramps.Neutral {
+		worst := color.ContrastRatio(step, t.Surface)
+		if got := color.ContrastRatio(step, t.Background); got < worst {
 			worst = got
 		}
 		if worst > widest {

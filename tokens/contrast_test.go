@@ -43,16 +43,16 @@ func TestAPCAContrastGate(t *testing.T) {
 					{900, 90},
 					{700, 60},
 				} {
-					for _, groundStep := range []int{100, 200} {
+					for _, surfaceStep := range []int{100, 200} {
 						text := r.ramp.Step(tc.textStep)
-						ground := r.ramp.Step(groundStep)
-						lc := color.APCA(text, ground)
-						wcag := color.ContrastRatio(text, ground)
+						surface := r.ramp.Step(surfaceStep)
+						lc := color.APCA(text, surface)
+						wcag := color.ContrastRatio(text, surface)
 						t.Logf("%s %d on %d: Lc %.2f (gate ≥ %.0f), WCAG %.2f:1 (AA %.1f:1: %s, cited not gating)",
-							r.name, tc.textStep, groundStep, lc, tc.minLc, wcag, wcagAA, wcagVerdict(wcag))
+							r.name, tc.textStep, surfaceStep, lc, tc.minLc, wcag, wcagAA, wcagVerdict(wcag))
 						if math.Abs(lc) < tc.minLc {
 							t.Errorf("%s: step %d on step-%d surface: |Lc| %.2f < %.0f",
-								r.name, tc.textStep, groundStep, math.Abs(lc), tc.minLc)
+								r.name, tc.textStep, surfaceStep, math.Abs(lc), tc.minLc)
 						}
 					}
 				}
@@ -114,16 +114,16 @@ func TestAPCAContrastGateHighContrast(t *testing.T) {
 		t.Run(s.name, func(t *testing.T) {
 			for _, r := range namedRamps(s.tok) {
 				for _, textStep := range []int{900, 700} {
-					for _, groundStep := range []int{100, 200} {
+					for _, surfaceStep := range []int{100, 200} {
 						text := r.ramp.Step(textStep)
-						ground := r.ramp.Step(groundStep)
-						lc := color.APCA(text, ground)
-						wcag := color.ContrastRatio(text, ground)
+						surface := r.ramp.Step(surfaceStep)
+						lc := color.APCA(text, surface)
+						wcag := color.ContrastRatio(text, surface)
 						t.Logf("%s %d on %d: Lc %.2f (gate ≥ 90), WCAG %.2f:1 (AAA %.1f:1: %s, cited not gating)",
-							r.name, textStep, groundStep, lc, wcag, wcagAAA, wcagAAAVerdict(wcag))
+							r.name, textStep, surfaceStep, lc, wcag, wcagAAA, wcagAAAVerdict(wcag))
 						if math.Abs(lc) < 90 {
 							t.Errorf("%s: step %d on step-%d surface: |Lc| %.2f < 90",
-								r.name, textStep, groundStep, math.Abs(lc))
+								r.name, textStep, surfaceStep, math.Abs(lc))
 						}
 					}
 				}
@@ -335,14 +335,14 @@ func TestContainerAndFillPairingsClearTheFloorForEverySeed(t *testing.T) {
 		} {
 			for _, r := range namedRamps(s.tok) {
 				for _, text := range []int{700, 900} {
-					for _, ground := range []int{100, 200} {
-						got := color.ContrastRatio(r.ramp.Step(text), r.ramp.Step(ground))
+					for _, surface := range []int{100, 200} {
+						got := color.ContrastRatio(r.ramp.Step(text), r.ramp.Step(surface))
 						if got < wcagAA {
 							t.Errorf("seed %v: %s %s step %d on step %d measures %.2f:1, under the %.1f:1 floor",
-								seed, s.name, r.name, text, ground, got, wcagAA)
+								seed, s.name, r.name, text, surface, got, wcagAA)
 						}
 						if got < worst {
-							worst, worstAt = got, fmt.Sprintf("%s %s %d on %d", s.name, r.name, text, ground)
+							worst, worstAt = got, fmt.Sprintf("%s %s %d on %d", s.name, r.name, text, surface)
 						}
 					}
 				}
@@ -396,11 +396,11 @@ const statusTintBound = 1.75
 // how many they skipped rather than pretending to measure them.
 const hueReadChroma = 0.045
 
-// rungSlack is the hue-reading slack the per-step gates allow above that
+// stepSlack is the hue-reading slack the per-step gates allow above that
 // threshold: 1.7° measured, 2.0° allowed. What the sweep then reports is a
 // worst drift of 3.20° against a 3.75° allowance (1.75° of tint plus this)
 // — the whole of that margin being the eight bits, not the derivation.
-const rungSlack = 2.0
+const stepSlack = 2.0
 
 // paleTintStep is the step a container reads its hue at, restated here so
 // the gate reads it off the ramp rather than off the code under test: the
@@ -436,9 +436,9 @@ func roleRamp(t tokens.ColorTokens, role tokens.Role) tokens.Ramp {
 	}
 }
 
-// rungTone reads back the CIELAB depth a realized step sits at, which is
+// stepTone reads back the CIELAB depth a realized step sits at, which is
 // what the warning family's hue rule keys on.
-func rungTone(c stdcolor.NRGBA) int {
+func stepTone(c stdcolor.NRGBA) int {
 	l, _, _ := color.LabFromNRGBA(c)
 	return int(math.Round(l))
 }
@@ -543,16 +543,16 @@ func TestStatusAnchorsHoldTheirFamiliesForEverySeed(t *testing.T) {
 				hues := make([]float64, len(statusRoles))
 				legible := make([]bool, len(statusRoles))
 				for i, r := range statusRoles {
-					rung := roleRamp(s.tok, r.role)[step]
-					_, chroma, hue := color.OKLChFromNRGBA(rung)
+					stepColor := roleRamp(s.tok, r.role)[step]
+					_, chroma, hue := color.OKLChFromNRGBA(stepColor)
 					if chroma < hueReadChroma {
 						skipped++
 						continue
 					}
 					measured++
 					hues[i], legible[i] = hue, true
-					tone := rungTone(rung)
-					if drift := hueGap(hue, r.anchor); drift > statusTintBound+rungSlack {
+					tone := stepTone(stepColor)
+					if drift := hueGap(hue, r.anchor); drift > statusTintBound+stepSlack {
 						t.Errorf("seed %v: %s %s step %d (L* %d) sits at hue %.1f°, %.1f° off its %.1f° anchor — past the %.1f° tint bound",
 							seed, s.name, r.name, (step+1)*100, tone, hue, drift, r.anchor, statusTintBound)
 					} else if drift > worstTint {
@@ -646,7 +646,7 @@ func TestStatusContainersKeepTheirParentsHue(t *testing.T) {
 				} else if drift > worstHue {
 					worstHue = drift
 				}
-				if got, want := rungTone(container), rungTone(parent); got != want {
+				if got, want := stepTone(container), stepTone(parent); got != want {
 					t.Errorf("seed %v: %s %s container %v realizes at L* %d, not its step-300 L* %d",
 						seed, s.name, r.name, container, got, want)
 				}
@@ -746,7 +746,8 @@ func TestContainersSeparateFromEveryLevelItStandsOn(t *testing.T) {
 	levels := []tokens.ElevationLevel{
 		tokens.LevelBackdrop, tokens.LevelChrome, tokens.Level0, tokens.Level1, tokens.Level2, tokens.Level3,
 	}
-	worst, loudest := 99.0, 0.0
+	// strongest and faintest are contrast readings, not prominence.
+	worst, strongest := 99.0, 0.0
 	for _, seed := range sweepSeeds() {
 		light, dark := tokens.FromSeed(seed)
 		hcLight, hcDark := tokens.FromSeedHighContrast(seed)
@@ -759,30 +760,30 @@ func TestContainersSeparateFromEveryLevelItStandsOn(t *testing.T) {
 		} {
 			for _, r := range roles {
 				for _, lv := range levels {
-					ground := s.tok.SurfaceAt(lv)
-					fill := s.tok.StatusContainerOn(r.role, ground)
-					got := color.ContrastRatio(fill, ground)
+					surface := s.tok.SurfaceAt(lv)
+					fill := s.tok.StatusContainerOn(r.role, surface)
+					got := color.ContrastRatio(fill, surface)
 					if got < tokens.ContainerFloor {
 						t.Errorf("seed %v: %s %s container %v on the level-%d fill %v measures %.3f:1, under the %.2f:1 seam floor",
-							seed, s.name, r.name, fill, lv, ground, got, tokens.ContainerFloor)
+							seed, s.name, r.name, fill, lv, surface, got, tokens.ContainerFloor)
 					} else if got < worst {
 						worst = got
 					}
 					if got > solid {
 						t.Errorf("seed %v: %s %s container %v on the level-%d fill %v measures %.3f:1 — that is a fill, not a tint",
-							seed, s.name, r.name, fill, lv, ground, got)
-					} else if got > loudest {
-						loudest = got
+							seed, s.name, r.name, fill, lv, surface, got)
+					} else if got > strongest {
+						strongest = got
 					}
 				}
 			}
 		}
 	}
 	t.Logf("over %d seeds, both derivations, both schemes, six levels: worst seam %.3f:1 (floor %.2f), best %.3f:1",
-		len(sweepSeeds()), worst, tokens.ContainerFloor, loudest)
+		len(sweepSeeds()), worst, tokens.ContainerFloor, strongest)
 }
 
-// TestStatusWashesKeepTheirHuesApartOnEveryLevel is the whole-population
+// TestStatusFillsKeepTheirHuesApartOnEveryLevel is the whole-population
 // gate on the status set as a set. Three floors are read together because a
 // container owes all three at once and trading one away for another is the
 // defect they exist to catch: it must be a visible field on the surface it
@@ -795,7 +796,7 @@ func TestContainersSeparateFromEveryLevelItStandsOn(t *testing.T) {
 // pairing, and the dark scheme measured 0.0183 against it while a container
 // read its hue off the step it was realized at — the bent warning beside the
 // error, two browns.
-func TestStatusWashesKeepTheirHuesApartOnEveryLevel(t *testing.T) {
+func TestStatusFillsKeepTheirHuesApartOnEveryLevel(t *testing.T) {
 	// The threshold TestContainersSeparateFromEveryLevelItStandsOn reads a
 	// container against: past this a container is a control's fill, not the
 	// surface something else stands on.
@@ -803,45 +804,46 @@ func TestStatusWashesKeepTheirHuesApartOnEveryLevel(t *testing.T) {
 	levels := []tokens.ElevationLevel{
 		tokens.LevelBackdrop, tokens.LevelChrome, tokens.Level0, tokens.Level1, tokens.Level2, tokens.Level3,
 	}
-	worstSeam, loudestSeam, worstText := 99.0, 0.0, 99.0
+	// strongestSeam is a contrast reading, not prominence.
+	worstSeam, strongestSeam, worstText := 99.0, 0.0, 99.0
 	worstSep, worstSepAt := 99.0, ""
 	worstHue := 999.0
 	for _, seed := range sweepSeeds() {
 		for _, s := range schemesOf(seed) {
 			for _, lv := range levels {
 				surface := s.tok.SurfaceAt(lv)
-				washes := make([]stdcolor.NRGBA, len(statusRoles))
+				fills := make([]stdcolor.NRGBA, len(statusRoles))
 				for i, r := range statusRoles {
-					washes[i] = s.tok.StatusContainerOn(r.role, surface)
-					got := color.ContrastRatio(washes[i], surface)
+					fills[i] = s.tok.StatusContainerOn(r.role, surface)
+					got := color.ContrastRatio(fills[i], surface)
 					if got < tokens.ContainerFloor {
 						t.Errorf("seed %v: %s %s container %v on the level-%d surface %v measures %.3f:1, under the %.2f:1 seam floor",
-							seed, s.name, r.name, washes[i], lv, surface, got, tokens.ContainerFloor)
+							seed, s.name, r.name, fills[i], lv, surface, got, tokens.ContainerFloor)
 					} else if got < worstSeam {
 						worstSeam = got
 					}
 					if got > solid {
 						t.Errorf("seed %v: %s %s container %v on the level-%d surface %v measures %.3f:1 — that is a control's fill, not a container",
-							seed, s.name, r.name, washes[i], lv, surface, got)
-					} else if got > loudestSeam {
-						loudestSeam = got
+							seed, s.name, r.name, fills[i], lv, surface, got)
+					} else if got > strongestSeam {
+						strongestSeam = got
 					}
-					fg := s.tok.ForegroundOn(r.role, washes[i])
-					if got := color.ContrastRatio(fg, washes[i]); got < tokens.TextFloor {
+					fg := s.tok.ForegroundOn(r.role, fills[i])
+					if got := color.ContrastRatio(fg, fills[i]); got < tokens.TextFloor {
 						t.Errorf("seed %v: %s %s foreground %v over its own container %v measures %.3f:1, under the %.1f:1 text floor",
-							seed, s.name, r.name, fg, washes[i], got, tokens.TextFloor)
+							seed, s.name, r.name, fg, fills[i], got, tokens.TextFloor)
 					} else if got < worstText {
 						worstText = got
 					}
 				}
-				for i := range washes {
-					for j := i + 1; j < len(washes); j++ {
-						got := oklabDistance(washes[i], washes[j])
-						_, _, hi := color.OKLChFromNRGBA(washes[i])
-						_, _, hj := color.OKLChFromNRGBA(washes[j])
+				for i := range fills {
+					for j := i + 1; j < len(fills); j++ {
+						got := oklabDistance(fills[i], fills[j])
+						_, _, hi := color.OKLChFromNRGBA(fills[i])
+						_, _, hj := color.OKLChFromNRGBA(fills[j])
 						if got < tokens.ContainerSeparation {
 							t.Errorf("seed %v: %s on the level-%d surface the %s container %v and the %s container %v are %.4f apart in OKLab (%.2f° of hue), under the %.3f the set owes",
-								seed, s.name, lv, statusRoles[i].name, washes[i], statusRoles[j].name, washes[j], got, hueGap(hi, hj), tokens.ContainerSeparation)
+								seed, s.name, lv, statusRoles[i].name, fills[i], statusRoles[j].name, fills[j], got, hueGap(hi, hj), tokens.ContainerSeparation)
 						} else if got < worstSep {
 							worstSep = got
 							worstSepAt = fmt.Sprintf("%s beside %s, %s level %d", statusRoles[i].name, statusRoles[j].name, s.name, lv)
@@ -855,16 +857,16 @@ func TestStatusWashesKeepTheirHuesApartOnEveryLevel(t *testing.T) {
 		}
 	}
 	t.Logf("over %d seeds, both derivations, both schemes, five levels: closest two containers %.4f in OKLab (floor %.3f, %s) at %.2f° of hue; seam worst %.3f:1 best %.3f:1; worst foreground over a container %.3f:1",
-		len(sweepSeeds()), worstSep, tokens.ContainerSeparation, worstSepAt, worstHue, worstSeam, loudestSeam, worstText)
+		len(sweepSeeds()), worstSep, tokens.ContainerSeparation, worstSepAt, worstHue, worstSeam, strongestSeam, worstText)
 }
 
-// TestTheGroundAwareContainerHoldsTheFixedOneWhereItAlreadyWorks pins the
+// TestTheSurfaceAwareContainerHoldsTheFixedOneWhereItAlreadyWorks pins the
 // relationship between the two members: StatusContainerOn moves off
 // StatusContainer's depth only where the fixed depth has collided with the
 // level. Everywhere else the two are one colour, so a component that names
 // its level and one that fills the page do not draw the same role in two
 // different tints beside each other.
-func TestTheGroundAwareContainerHoldsTheFixedOneWhereItAlreadyWorks(t *testing.T) {
+func TestTheSurfaceAwareContainerHoldsTheFixedOneWhereItAlreadyWorks(t *testing.T) {
 	for _, seed := range sweepSeeds() {
 		light, dark := tokens.FromSeed(seed)
 		for _, s := range []struct {
@@ -875,12 +877,12 @@ func TestTheGroundAwareContainerHoldsTheFixedOneWhereItAlreadyWorks(t *testing.T
 				for _, lv := range []tokens.ElevationLevel{
 					tokens.LevelBackdrop, tokens.LevelChrome, tokens.Level0, tokens.Level1, tokens.Level2, tokens.Level3,
 				} {
-					ground := s.tok.SurfaceAt(lv)
+					surface := s.tok.SurfaceAt(lv)
 					fixed := s.tok.StatusContainer(r.role)
-					if color.ContrastRatio(fixed, ground) < tokens.ContainerFloor {
+					if color.ContrastRatio(fixed, surface) < tokens.ContainerFloor {
 						continue // the collision case: moving is the point
 					}
-					if got := s.tok.StatusContainerOn(r.role, ground); got != fixed {
+					if got := s.tok.StatusContainerOn(r.role, surface); got != fixed {
 						t.Errorf("seed %v: %s %s on the level-%d fill: the surface-aware container %v left the fixed one %v while the fixed one still cleared the seam floor",
 							seed, s.name, r.name, lv, got, fixed)
 					}
@@ -916,7 +918,7 @@ const (
 	// 6.478:1.
 	boundaryBand = 3.0
 	textBand     = 4.5
-	loudBand     = 7.0
+	strongBand   = 7.0
 )
 
 // TestRampsCoverTheirRange gates the tone curve itself, in every ramp of
@@ -941,7 +943,7 @@ func TestRampsCoverTheirRange(t *testing.T) {
 			tok  tokens.ColorTokens
 		}{{"light", light}, {"dark", dark}} {
 			for _, r := range namedRamps(s.tok) {
-				ground := r.ramp.Step(100)
+				surface := r.ramp.Step(100)
 				var boundary, text int
 				for step := 200; step <= 900; step += 100 {
 					below, at := r.ramp.Step(step-100), r.ramp.Step(step)
@@ -955,10 +957,10 @@ func TestRampsCoverTheirRange(t *testing.T) {
 						t.Errorf("seed %v: %s %s steps %d–%d measure %.4f:1 against each other, under the %.2f floor",
 							seed, s.name, r.name, step-100, step, got, adjacencyFloor)
 					}
-					switch got := color.ContrastRatio(at, ground); {
+					switch got := color.ContrastRatio(at, surface); {
 					case got >= boundaryBand && got < textBand && boundary == 0:
 						boundary = step
-					case got >= textBand && got < loudBand && text == 0:
+					case got >= textBand && got < strongBand && text == 0:
 						text = step
 					}
 				}
@@ -968,7 +970,7 @@ func TestRampsCoverTheirRange(t *testing.T) {
 				}
 				if text == 0 {
 					t.Errorf("seed %v: %s %s has no step between %.1f:1 and %.1f:1 over its own surface — no text tone",
-						seed, s.name, r.name, textBand, loudBand)
+						seed, s.name, r.name, textBand, strongBand)
 				}
 				if seed == tokens.DefaultSeed {
 					t.Logf("default seed, %s %s: boundary tone step %d, text tone step %d",
@@ -979,7 +981,7 @@ func TestRampsCoverTheirRange(t *testing.T) {
 	}
 }
 
-// TestWashesClearThePerceptibilityFloor gates the state fill a control with no
+// TestFillsClearThePerceptibilityFloor gates the state fill a control with no
 // fill of its own paints on the surface it stands on: over the seed sweep,
 // both derivations, both schemes and every level, hover and press each
 // separate from that surface by at least tokens.StateFloor, and press lies
@@ -989,8 +991,9 @@ func TestRampsCoverTheirRange(t *testing.T) {
 // is the only one in the package whose own step can be too small to see —
 // before the floor, the dark scheme's paper hovered at 1.12:1, which is a
 // signal that has stopped signalling.
-func TestWashesClearThePerceptibilityFloor(t *testing.T) {
-	worst, worstAt, loudest := 99.0, "", 0.0
+func TestFillsClearThePerceptibilityFloor(t *testing.T) {
+	// strongest and faintest are contrast readings, not prominence.
+	worst, worstAt, strongest := 99.0, "", 0.0
 	worstStep, worstStepAt := 99.0, ""
 	for _, seed := range sweepSeeds() {
 		light, dark := tokens.FromSeed(seed)
@@ -1018,8 +1021,8 @@ func TestWashesClearThePerceptibilityFloor(t *testing.T) {
 					} else if got < worst {
 						worst, worstAt = got, where
 					}
-					if got > loudest {
-						loudest = got
+					if got > strongest {
+						strongest = got
 					}
 				}
 				step := color.ContrastRatio(press, hover)
@@ -1033,5 +1036,5 @@ func TestWashesClearThePerceptibilityFloor(t *testing.T) {
 		}
 	}
 	t.Logf("over %d seeds, both derivations, both schemes, five levels: worst state fill %.3f:1 (floor %.2f, %s), best %.3f:1; worst press-over-hover %.3f:1 (%s)",
-		len(sweepSeeds()), worst, tokens.StateFloor, worstAt, loudest, worstStep, worstStepAt)
+		len(sweepSeeds()), worst, tokens.StateFloor, worstAt, strongest, worstStep, worstStepAt)
 }

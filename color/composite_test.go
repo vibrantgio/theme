@@ -39,13 +39,13 @@ func TestOverBlendsInLinearLight(t *testing.T) {
 // is the foreground, both exactly, so a caller can hand Over any alpha without
 // special-casing either end.
 func TestOverAtTheEndsOfCoverage(t *testing.T) {
-	ground := nrgba(0x1E293B, 0xff)
-	for _, ink := range []uint32{0x000000, 0xFFFFFF, 0x5C5C5C, 0x3B82F6} {
-		if got := color.Over(nrgba(ink, 0), ground); got != ground {
-			t.Errorf("Over(%06X@0, surface) = %v, want the surface %v", ink, got, ground)
+	surface := nrgba(0x1E293B, 0xff)
+	for _, foreground := range []uint32{0x000000, 0xFFFFFF, 0x5C5C5C, 0x3B82F6} {
+		if got := color.Over(nrgba(foreground, 0), surface); got != surface {
+			t.Errorf("Over(%06X@0, surface) = %v, want the surface %v", foreground, got, surface)
 		}
-		if got, want := color.Over(nrgba(ink, 0xff), ground), nrgba(ink, 0xff); got != want {
-			t.Errorf("Over(%06X@255, surface) = %v, want the foreground %v", ink, got, want)
+		if got, want := color.Over(nrgba(foreground, 0xff), surface), nrgba(foreground, 0xff); got != want {
+			t.Errorf("Over(%06X@255, surface) = %v, want the foreground %v", foreground, got, want)
 		}
 	}
 }
@@ -56,17 +56,17 @@ func TestOverAtTheEndsOfCoverage(t *testing.T) {
 // stop at the first value that clears a floor, which is only the least such
 // value if the walk is monotonic.
 func TestOverIsMonotonicInCoverage(t *testing.T) {
-	for _, tc := range []struct{ ink, ground uint32 }{
+	for _, tc := range []struct{ foreground, surface uint32 }{
 		{0x131313, 0xF6F6F6}, {0xEEEEEE, 0x181818}, {0x5C5C5C, 0xE8E8E8},
 	} {
-		ground := nrgba(tc.ground, 0xff)
-		prev := color.RelativeLuminance(ground)
-		toward := color.RelativeLuminance(nrgba(tc.ink, 0xff)) - prev
+		surface := nrgba(tc.surface, 0xff)
+		prev := color.RelativeLuminance(surface)
+		toward := color.RelativeLuminance(nrgba(tc.foreground, 0xff)) - prev
 		for a := 1; a <= 255; a++ {
-			l := color.RelativeLuminance(color.Over(nrgba(tc.ink, uint8(a)), ground))
+			l := color.RelativeLuminance(color.Over(nrgba(tc.foreground, uint8(a)), surface))
 			if (toward < 0 && l > prev) || (toward > 0 && l < prev) {
 				t.Fatalf("foreground %06X over %06X: coverage %d moved the composite away from the foreground (%.6f from %.6f)",
-					tc.ink, tc.ground, a, l, prev)
+					tc.foreground, tc.surface, a, l, prev)
 			}
 			prev = l
 		}

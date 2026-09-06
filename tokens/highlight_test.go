@@ -76,7 +76,8 @@ func TestTheHighlightClearsTheSeamFloorOnEveryLevel(t *testing.T) {
 	// container against: past this a fill is a control's fill, not a mark
 	// on content.
 	const solid = 2.5
-	worst, loudest := 99.0, 0.0
+	// strongest and faintest are contrast readings, not prominence.
+	worst, strongest := 99.0, 0.0
 	for _, seed := range sweepSeeds() {
 		for _, s := range schemesOf(seed) {
 			for _, lv := range highlightLevels {
@@ -92,22 +93,22 @@ func TestTheHighlightClearsTheSeamFloorOnEveryLevel(t *testing.T) {
 				if got > solid {
 					t.Errorf("seed %v: %s highlight %v on the level-%d fill %v measures %.3f:1 — that is a fill, not a mark on content",
 						seed, s.name, fill, lv, surface, got)
-				} else if got > loudest {
-					loudest = got
+				} else if got > strongest {
+					strongest = got
 				}
 			}
 		}
 	}
 	t.Logf("over %d seeds, both derivations, both schemes, five levels: worst seam %.3f:1 (floor %.2f), best %.3f:1",
-		len(sweepSeeds()), worst, tokens.ContainerFloor, loudest)
+		len(sweepSeeds()), worst, tokens.ContainerFloor, strongest)
 }
 
-// TestContentInkClearsItsFloorOverTheHighlight verifies a highlight never
-// costs the content it marks its legibility: the scheme's own body foreground
-// clears TextFloor over every fill the walk returns, on every level, in
-// both schemes of both derivations. A highlight is applied to content, so
-// the words it covers are the whole point of it.
-func TestContentInkClearsItsFloorOverTheHighlight(t *testing.T) {
+// TestContentForegroundClearsItsFloorOverTheHighlight verifies a highlight
+// never costs the content it marks its legibility: the scheme's own body
+// foreground clears TextFloor over every fill the walk returns, on every
+// level, in both schemes of both derivations. A highlight is applied to
+// content, so the words it covers are the whole point of it.
+func TestContentForegroundClearsItsFloorOverTheHighlight(t *testing.T) {
 	worst := 99.0
 	for _, seed := range sweepSeeds() {
 		for _, s := range schemesOf(seed) {
