@@ -706,10 +706,10 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"padding: calc(var(--space-3) - 1px);",
 		"border-top: 6px solid var(--elevation-3);",
 		"border-bottom: 6px solid var(--elevation-3);",
-		// Tooltip: inverse-video — Text as the fill under a Surface label,
-		// radius Sm, S2/S1 padding.
-		"background: var(--color-text);",
-		"color: var(--color-surface);",
+		// Tooltip: the inverse pair — InverseSurface as the fill under an
+		// OnInverseSurface label, radius Sm, S2/S1 padding.
+		"background: var(--color-inverse-surface);",
+		"color: var(--color-on-inverse-surface);",
 		"border-radius: var(--radius-sm);",
 		"padding: var(--space-1) var(--space-2);",
 		// Toast: the inverse pair — the counterpart scheme's surface under
