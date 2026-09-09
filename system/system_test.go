@@ -893,3 +893,64 @@ func TestFromSourceThemeHighContrastOffSkipsHook(t *testing.T) {
 		t.Error("HighContrastVariant must not run while the preference is off")
 	}
 }
+
+// TestPlatformColorIsWhatAnUnchosenStreamDerivesFrom walks the accessor down
+// the same fallthrough the stream applies, and pins the per-platform end of
+// it: an application that offers this colour as a choice and a stream that
+// derives from it must never disagree about what it is.
+func TestPlatformColorIsWhatAnUnchosenStreamDerivesFrom(t *testing.T) {
+	desktop := color.NRGBA{R: 0x35, G: 0x84, B: 0xE4, A: 0xFF}
+	for _, tc := range []struct {
+		name string
+		app  system.Appearance
+		want color.NRGBA
+		ok   bool
+	}{
+		{"a desktop reporting a colour of its own", system.Appearance{AccentSeed: desktop, AccentSeedSet: true}, desktop, true},
+		{"a macOS accent colour chosen by name", system.Appearance{Accent: system.AccentPink}, seedOf(t, system.AccentPink), true},
+		// The raw colour wins where a source ever reports both, which is the
+		// order the stream resolves them in.
+		{"both", system.Appearance{AccentSeed: desktop, AccentSeedSet: true, Accent: system.AccentPink}, desktop, true},
+		// Multicolour, an unsupported desktop, a failed read: the platform's
+		// own colour, where it has one.
+		{"nothing chosen", system.Appearance{}, platformDefaultSeed(), runtime.GOOS == "darwin"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got, ok := system.PlatformColor(tc.app)
+			if ok != tc.ok {
+				t.Fatalf("PlatformColor reported ok=%v on %s, want %v", ok, runtime.GOOS, tc.ok)
+			}
+			if ok && got != tc.want {
+				t.Errorf("PlatformColor reported %v, want %v", got, tc.want)
+			}
+			// Whatever it reports is what the stream draws: a colour derives
+			// its pair, and none leaves the package's own pair standing.
+			want := tokens.DefaultLight
+			if ok {
+				want, _ = tokens.FromSeed(got)
+			}
+			src := &fakeSource{vals: []system.Appearance{tc.app}}
+			themes, err := collect(system.FromSourceTheme(src, time.Hour).Take(1))
+			if err != nil {
+				t.Fatalf("theme observe: %v", err)
+			}
+			colors, err := collect(themes[0].Color)
+			if err != nil {
+				t.Fatalf("color observe: %v", err)
+			}
+			if len(colors) != 1 || colors[0] != want {
+				t.Error("the stream did not derive from the colour the accessor reports")
+			}
+		})
+	}
+}
+
+// seedOf is the colour one named macOS accent carries.
+func seedOf(t *testing.T, a system.Accent) color.NRGBA {
+	t.Helper()
+	seed, ok := a.Seed()
+	if !ok {
+		t.Fatalf("%v carries no seed", a)
+	}
+	return seed
+}

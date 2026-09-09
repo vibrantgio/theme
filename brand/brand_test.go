@@ -683,3 +683,112 @@ func assertDefaults(t *testing.T, b brand.Brand) {
 type fixed struct{ a system.Appearance }
 
 func (f fixed) Read() (system.Appearance, error) { return f.a, nil }
+
+// TestABrandCanFollowTheSystem is the whole of the second thing this file can
+// say: a keep that pins no colour, with the choices that are not a colour
+// kept beside it, and a stream built from it that derives from the desktop
+// rather than from anything on disk.
+func TestABrandCanFollowTheSystem(t *testing.T) {
+	path := file(t)
+	pair := brand.BasePair{Light: "catppuccin-latte", Dark: "catppuccin-mocha"}
+	if err := brand.SaveTo(path, brand.Brand{FollowSystem: true, Base: pair, Mono: "JetBrains Mono"}); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+	got, ok, err := brand.LoadFrom(path)
+	if err != nil || !ok {
+		t.Fatalf("load: got (%v, %v), want a brand and no error", ok, err)
+	}
+	if !got.FollowSystem {
+		t.Error("the brand came back pinning a colour, want one that follows the system")
+	}
+	if got.Seed != (color.NRGBA{}) {
+		t.Errorf("a brand that follows the system came back carrying %v, want no colour", got.Seed)
+	}
+	if got.Base != pair {
+		t.Errorf("the base came back as %+v, want %+v", got.Base, pair)
+	}
+	if got.Mono != "JetBrains Mono" {
+		t.Errorf("the mono came back as %q, want the one that was kept", got.Mono)
+	}
+
+	// The seam that matters: the options carry the face and no seed, so the
+	// stream is the one an application with no brand at all builds.
+	opts := got.Options()
+	green := color.NRGBA{R: 0x00, G: 0x80, B: 0x00, A: 0xff}
+	desktop := system.Appearance{AccentSeed: green, AccentSeedSet: true}
+	colors := schemeOf(t, desktop, opts...)
+	want, _ := tokens.FromSeed(green)
+	if colors != want {
+		t.Error("a brand that follows the system did not derive from the colour the desktop reports")
+	}
+	if colors != schemeOf(t, desktop) {
+		t.Error("following the system is not the stream an application with no brand builds")
+	}
+	if typ, err := system.FromSourceTheme(fixed{desktop}, time.Hour, opts...).First(); err != nil {
+		t.Fatalf("theme: %v", err)
+	} else if faces, err := typ.Typography.First(); err != nil {
+		t.Fatalf("typography: %v", err)
+	} else if faces.Code.Typeface != "JetBrains Mono" {
+		t.Errorf("the stream wears %q, want the kept face", faces.Code.Typeface)
+	}
+}
+
+// TestAFileWithASeedAndNoFlagStillPins: the flag is absent from every file
+// written before it existed, and such a file means what it always meant.
+func TestAFileWithASeedAndNoFlagStillPins(t *testing.T) {
+	path := file(t)
+	if err := os.WriteFile(path, []byte(`{"seed":"#e8112d","source":"harbour.jpg"}`), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	got := brand.KeptFrom(path)
+	if got.FollowSystem {
+		t.Error("a file with a seed and no flag came back following the system")
+	}
+	if got.Seed != harbourRed {
+		t.Errorf("the seed came back as %v, want %v", got.Seed, harbourRed)
+	}
+	light, _ := tokens.FromSeed(harbourRed)
+	green := system.Appearance{AccentSeed: color.NRGBA{R: 0x00, G: 0x80, B: 0x00, A: 0xff}, AccentSeedSet: true}
+	if schemeOf(t, green, got.Options()...) != light {
+		t.Error("the kept seed no longer outranks the colour the desktop reports")
+	}
+}
+
+// TestAFollowingBrandWritesNoSeed: the file says which colour was kept, and
+// none was — so a reader written before the flag finds nothing to pin and
+// falls back to the platform's own colour, which is what the flag asks for.
+func TestAFollowingBrandWritesNoSeed(t *testing.T) {
+	path := file(t)
+	if err := brand.SaveTo(path, brand.Brand{FollowSystem: true}); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	var raw map[string]any
+	if err := json.Unmarshal(data, &raw); err != nil {
+		t.Fatalf("the file is not JSON: %v", err)
+	}
+	if _, ok := raw["seed"]; ok {
+		t.Errorf("a brand that follows the system wrote a seed key: %s", data)
+	}
+	if raw["followSystem"] != true {
+		t.Errorf("the file does not say it follows the system: %s", data)
+	}
+}
+
+// schemeOf is the light-side palette a stream built with these options emits
+// for one desktop state.
+func schemeOf(t *testing.T, a system.Appearance, opts ...system.Option) tokens.ColorTokens {
+	t.Helper()
+	got, err := system.FromSourceTheme(fixed{a}, time.Hour, opts...).First()
+	if err != nil {
+		t.Fatalf("theme: %v", err)
+	}
+	colors, err := got.Color.First()
+	if err != nil {
+		t.Fatalf("colours: %v", err)
+	}
+	return colors
+}

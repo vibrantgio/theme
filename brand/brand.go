@@ -26,6 +26,26 @@
 //	  "saved": "2026-08-19T11:04:31Z"
 //	}
 //
+// A brand may say instead that the theme colour follows the system, which is
+// the one thing kept here that is not a colour:
+//
+//	{
+//	  "followSystem": true,
+//	  "base": {
+//	    "light": "catppuccin-latte",
+//	    "dark": "catppuccin-mocha"
+//	  },
+//	  "mono": "JetBrains Mono",
+//	  "saved": "2026-09-09T09:12:00Z"
+//	}
+//
+// The flag is a key beside "seed" rather than a word in "source", because
+// "source" is free text a chooser fills in and a picture may honestly be
+// called anything at all. Such a file carries no "seed" key, so a reader
+// written before the flag existed reads it as a file whose seed will not
+// parse and falls back to the platform's own colour — which is what the flag
+// asks for. A file with a seed and no flag pins that seed, as it always did.
+//
 // It sits in an OS-appropriate config directory:
 //
 //   - darwin:  ~/Library/Application Support/vibrantgio/theme.json
@@ -164,6 +184,16 @@ type Brand struct {
 	// means the chooser had nothing to say.
 	Source string
 
+	// FollowSystem says the theme colour follows the system: nothing is
+	// pinned, and the live theme derives from the colour the platform
+	// reports exactly as it does with no brand at all
+	// ([system.PlatformColor]). It is a state of its own and not an absent
+	// seed — a file that keeps nothing is not the same answer as a person
+	// choosing the platform's colour — and Seed is the zero colour while it
+	// is set. Base and Mono are kept alongside it as they are alongside a
+	// seed.
+	FollowSystem bool
+
 	// Saved is when the colour was kept. [Save] fills it with the current
 	// time when it is zero, so a caller that does not care about the clock
 	// still writes an honest file.
@@ -205,7 +235,9 @@ func (p BasePair) Chosen() bool { return p.Light != "" || p.Dark != "" }
 func (b Brand) Chosen() bool { return b.Seed.A != 0 }
 
 // Colors returns the pair of schemes the brand generates, or the package
-// defaults when nothing was kept. It is what a caller needs before a theme
+// defaults when no colour was kept — including for a brand that follows the
+// system, which pins nothing to snapshot and whose first frame is therefore
+// the one an application with no brand draws. It is what a caller needs before a theme
 // stream has emitted anything — the palette to draw the first frame in, so
 // that frame is already wearing the kept brand rather than flashing the
 // default one at the person who chose against it.
@@ -234,18 +266,22 @@ func (b Brand) Typography() tokens.Typography {
 //
 // The seed option pins the palette pair, so the OS accent colour does not
 // override it: a deliberately chosen brand outranks the desktop's. Light
-// and dark still follow the OS. A [system.WithTypography] option always
+// and dark still follow the OS. A brand that follows the system contributes
+// no seed option at all, so the stream derives from the colour the platform
+// reports and keeps following it as it changes — the same stream an
+// application with no brand builds. A [system.WithTypography] option always
 // rides along so the stream wears the same value [Brand.Typography]
 // snapshots — CodeFace of Mono, then WithEmoji, including when Mono is
 // empty.
 func (b Brand) Options() []system.Option {
-	if !b.Chosen() {
+	if !b.Chosen() && !b.FollowSystem {
 		return nil
 	}
-	return []system.Option{
-		system.WithSeed(b.Seed),
-		system.WithTypography(tokens.CodeFace(b.Mono).WithEmoji()),
+	opts := make([]system.Option, 0, 2)
+	if !b.FollowSystem {
+		opts = append(opts, system.WithSeed(b.Seed))
 	}
+	return append(opts, system.WithTypography(tokens.CodeFace(b.Mono).WithEmoji()))
 }
 
 // Path returns the file's path for this user. It creates nothing.
@@ -316,11 +352,17 @@ func LoadFrom(path string) (Brand, bool, error) {
 	if err := json.Unmarshal(data, &f); err != nil {
 		return Brand{}, false, fmt.Errorf("brand: load %s: %w", path, err)
 	}
-	seed, err := parseHex(f.Seed)
-	if err != nil {
-		return Brand{}, false, fmt.Errorf("brand: load %s: %w", path, err)
+	b := Brand{Base: f.Base.pair(), Mono: strings.TrimSpace(f.Mono), Source: f.Source, FollowSystem: f.FollowSystem}
+	if !f.FollowSystem {
+		// A file that follows the system carries no colour, so there is
+		// none to hold against it; a file that does not is the seed and
+		// nothing without it.
+		seed, err := parseHex(f.Seed)
+		if err != nil {
+			return Brand{}, false, fmt.Errorf("brand: load %s: %w", path, err)
+		}
+		b.Seed = seed
 	}
-	b := Brand{Seed: seed, Base: f.Base.pair(), Mono: strings.TrimSpace(f.Mono), Source: f.Source}
 	if f.Saved != "" {
 		// An unreadable timestamp costs the provenance, not the brand: the
 		// colour is what the file is for, and it parsed.
@@ -332,8 +374,9 @@ func LoadFrom(path string) (Brand, bool, error) {
 }
 
 // Save writes the brand to this user's file, creating the directory. A
-// brand with no colour is refused: writing one would leave a file that
-// [Kept] reads back as nothing kept, which is a slower way of deleting it.
+// brand that neither carries a colour nor follows the system is refused:
+// writing one would leave a file that [Kept] reads back as nothing kept,
+// which is a slower way of deleting it.
 func Save(b Brand) error {
 	path, err := Path()
 	if err != nil {
@@ -344,18 +387,25 @@ func Save(b Brand) error {
 
 // SaveTo is [Save] against an explicit path.
 func SaveTo(path string, b Brand) error {
-	if !b.Chosen() {
+	if !b.Chosen() && !b.FollowSystem {
 		return errors.New("brand: save: the brand carries no colour")
 	}
 	if b.Saved.IsZero() {
 		b.Saved = time.Now()
 	}
+	// A brand that follows the system writes no seed: the file says which
+	// colour was kept, and no colour was.
+	seed := hexRGB(b.Seed)
+	if b.FollowSystem {
+		seed = ""
+	}
 	data, err := json.MarshalIndent(file{
-		Seed:   hexRGB(b.Seed),
-		Base:   baseFrom(b.Base),
-		Mono:   strings.TrimSpace(b.Mono),
-		Source: b.Source,
-		Saved:  b.Saved.UTC().Format(time.RFC3339),
+		Seed:         seed,
+		Base:         baseFrom(b.Base),
+		Mono:         strings.TrimSpace(b.Mono),
+		Source:       b.Source,
+		FollowSystem: b.FollowSystem,
+		Saved:        b.Saved.UTC().Format(time.RFC3339),
 	}, "", "  ")
 	if err != nil {
 		return fmt.Errorf("brand: save: %w", err)
@@ -374,11 +424,14 @@ func SaveTo(path string, b Brand) error {
 // package makes once rather than a shape every caller has to hold a colour
 // in.
 type file struct {
-	Seed   string     `json:"seed"`
+	Seed   string     `json:"seed,omitempty"`
 	Base   *baseField `json:"base,omitempty"`
 	Mono   string     `json:"mono,omitempty"`
 	Source string     `json:"source,omitempty"`
-	Saved  string     `json:"saved,omitempty"`
+	// FollowSystem is absent from every file that pins a seed, so a file
+	// written before the flag existed reads as one that pins.
+	FollowSystem bool   `json:"followSystem,omitempty"`
+	Saved        string `json:"saved,omitempty"`
 }
 
 // baseField is how the pair is spelled on disk, and the only place the two

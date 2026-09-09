@@ -74,7 +74,9 @@
 // tokens.FromSeed of that seed, derived once per accent value and cached.
 // An explicit [WithSeed] or [WithPalette] beats the OS accent: the app
 // chose its brand, so the accent is ignored entirely; with neither, and no
-// colour reported, the platform's own colour above stands.
+// colour reported, the platform's own colour above stands. [PlatformColor]
+// answers that last question on its own, for an application that offers the
+// colour it would derive from as a choice.
 package system
 
 import (
@@ -398,27 +400,41 @@ func (c *config) theme(v rx.Tuple2[Appearance, a11y.A11yPrefs]) theme.Theme {
 
 // pair resolves the light/dark pair for an appearance, applying the
 // precedence rule: a pinned palette (explicit WithSeed/WithPalette) always
-// wins; then a raw AccentSeed (Windows registry colour, GNOME/KDE colour)
-// yields its derived pair; then a non-default accent enum yields its
-// seed's derived pair; then — AccentDefault, any unknown enum value, no raw
-// seed — the platform's own colour for an application that has chosen none,
-// where the platform has one; and last the palette's own pair. Derived
-// pairs are cached per seed colour — tokens.FromSeed runs on first sight of
-// a seed, not on every emission.
+// wins; then the colour [PlatformColor] resolves for the appearance yields
+// its derived pair; and last, where that colour does not exist, the
+// palette's own pair. Derived pairs are cached per seed colour —
+// tokens.FromSeed runs on first sight of a seed, not on every emission.
 func (p *palette) pair(a Appearance) (light, dark tokens.ColorTokens) {
 	if p.pinned {
 		return p.light, p.dark
 	}
-	if a.AccentSeedSet {
-		return p.seedPair(a.AccentSeed)
-	}
-	if seed, ok := a.Accent.Seed(); ok {
-		return p.seedPair(seed)
-	}
-	if seed, ok := platformSeed(); ok {
+	if seed, ok := PlatformColor(a); ok {
 		return p.seedPair(seed)
 	}
 	return p.light, p.dark
+}
+
+// PlatformColor is the colour a stream with nothing chosen derives its pair
+// from for this appearance, and false where there is nothing to derive from:
+// a raw Appearance.AccentSeed (the arbitrary colour a Windows or Linux
+// desktop reports), else the seed the [Accent] enum carries, else the colour
+// this platform paints an application that has chosen none — systemBlue on
+// macOS, nothing on Windows and Linux, where such a stream keeps the
+// package's own pair.
+//
+// It is the fallthrough a stream with no palette option applies, exported so
+// an application can offer that colour as a choice and draw it. Reading
+// Appearance.Accent alone is not the same question and answers it wrongly on
+// the setting most Macs are on: Multicolour is AccentDefault, which carries
+// no seed of its own.
+func PlatformColor(a Appearance) (seed color.NRGBA, ok bool) {
+	if a.AccentSeedSet {
+		return a.AccentSeed, true
+	}
+	if seed, ok := a.Accent.Seed(); ok {
+		return seed, true
+	}
+	return platformSeed()
 }
 
 // seedPair returns the memoized tokens.FromSeed derivation for one seed
