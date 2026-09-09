@@ -3,16 +3,17 @@ package system
 import "image/color"
 
 // Accent identifies the OS accent colour, normalized across platforms. The
-// zero value, AccentDefault, means "no accent override": the multicolour
+// zero value, AccentDefault, means "no accent override": the Multicolour
 // setting on macOS, every platform whose shim has no live accent source,
 // and a Source whose Read failed. That choice is what keeps the package's
 // error contract honest — the zero Appearance really is "light mode with
-// no accent", never a spurious red.
+// no accent", never a spurious red. Which colour a stream then derives
+// from is the platform's, not the enum's (see the package doc).
 //
 // On macOS the raw AppleAccentColor key is an integer the darwin shim maps
 // onto this enum (see accentFromIndex): -1 graphite, 0 red, 1 orange,
 // 2 yellow, 3 green, 4 blue, 5 purple, 6 pink; an absent key means
-// multicolour → AccentDefault.
+// Multicolour → AccentDefault.
 type Accent int
 
 const (

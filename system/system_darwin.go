@@ -2,6 +2,7 @@ package system
 
 import (
 	"errors"
+	"image/color"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -84,10 +85,11 @@ func readDark() bool {
 }
 
 // readAccent reads the AppleAccentColor key and maps it onto the Accent
-// enum. A missing key means the user never chose an accent — macOS's
-// multicolour default — and folds to AccentDefault, as does a parse
-// failure. The enum's zero value carries the "no accent" meaning: a raw
-// integer would conflate "absent" with red.
+// enum. A missing key means no colour was ever chosen — macOS's
+// Multicolour default — and folds to AccentDefault, as does a parse
+// failure and a read that could not run at all. The enum's zero value
+// carries the "no accent" meaning: a raw integer would conflate "absent"
+// with red.
 func readAccent() Accent {
 	out, err := exec.Command("defaults", "read", "-g", "AppleAccentColor").Output()
 	if err != nil {
@@ -102,7 +104,7 @@ func readAccent() Accent {
 
 // accentFromIndex maps the raw AppleAccentColor integer onto the Accent
 // enum, per the mapping macOS has used since accent colours appeared in
-// 10.14 (and unchanged through the multicolour default Big Sur added,
+// 10.14 (and unchanged through the Multicolour default Big Sur added,
 // which is the absent key, handled in readAccent):
 //
 //	-1 graphite · 0 red · 1 orange · 2 yellow · 3 green · 4 blue ·
@@ -131,5 +133,12 @@ func accentFromIndex(n int) Accent {
 	}
 	return AccentDefault
 }
+
+// platformSeed is the colour macOS paints an application that has chosen
+// none of its own: systemBlue, the seed AccentBlue carries. Multicolour —
+// the absent AppleAccentColor key — and a failed read both report "no
+// accent override", and a stream with no palette option derives from this
+// rather than from the package's own default seed.
+func platformSeed() (color.NRGBA, bool) { return AccentBlue.Seed() }
 
 func defaultSource() Source { return newDarwinSource() }

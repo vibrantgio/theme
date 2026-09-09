@@ -56,4 +56,10 @@ func readAccentColor() (color.NRGBA, bool) {
 	return nrgbaFromABGR(uint32(v)), true
 }
 
+// platformSeed reports no colour: Windows publishes nothing an application
+// that has chosen none should paint itself with — the DWM AccentColor is
+// the user's own choice and arrives as Appearance.AccentSeed — so a stream
+// with no palette option keeps the package's own default pair.
+func platformSeed() (color.NRGBA, bool) { return color.NRGBA{}, false }
+
 func defaultSource() Source { return newWindowsSource() }

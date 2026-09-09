@@ -35,8 +35,18 @@
 //	                                       AccentColor r,g,b → AccentSeed
 //	                                       other desktops, older GNOME, or a
 //	                                       KDE scheme with no explicit accent:
-//	                                       none — the default seed's palette
+//	                                       none
 //	other     no (always light)            no
+//
+// With nothing chosen at all — no [WithSeed] or [WithPalette], and a
+// platform reporting no colour — the pair a stream emits is the platform's
+// own. On macOS that is systemBlue, the colour the system paints an
+// application that has chosen none: the Multicolour setting (the absent
+// AppleAccentColor key) and a failed read of the macOS accent colour both
+// report "no accent override" and derive from it, so tokens.DefaultLight/
+// DefaultDark are reached there only through [WithSeed], [WithPalette], or
+// a brand that pins one. On Windows and Linux, whose desktops publish no
+// such colour, they are what an unchosen stream emits.
 //
 // Dark-mode sources for Windows and Linux are a later milestone. The two
 // accent shapes are deliberate: macOS's accent is one of eight named
@@ -63,7 +73,8 @@
 // maps to Apple's published seed colour and the emitted palette is
 // tokens.FromSeed of that seed, derived once per accent value and cached.
 // An explicit [WithSeed] or [WithPalette] beats the OS accent: the app
-// chose its brand, so the accent is ignored entirely.
+// chose its brand, so the accent is ignored entirely; with neither, and no
+// colour reported, the platform's own colour above stands.
 package system
 
 import (
@@ -150,11 +161,11 @@ func Live(interval time.Duration) rx.Observable[Appearance] {
 
 // Option customizes a theme stream. The palette options ([WithSeed],
 // [WithPalette]) choose the light/dark pair the stream flips between; the
-// default — no palette option — is tokens.DefaultLight/DefaultDark, except
-// that with no option the stream also follows the OS accent: a non-default
-// [Accent] swaps in tokens.FromSeed of that accent's seed colour. Giving
-// any palette option pins the pair — the app chose its brand, so the OS
-// accent is ignored. Palette options choose which light/dark pair is
+// default — no palette option — is the platform's own pair (the package
+// doc's table), except that with no option the stream also follows the OS
+// accent: a non-default [Accent] swaps in tokens.FromSeed of that accent's
+// seed colour. Giving any palette option pins the pair — the app chose its
+// brand, so the OS accent is ignored. Palette options choose which light/dark pair is
 // emitted; they never affect when emissions happen, so OS dark-mode
 // tracking keeps working with a branded palette. [WithTypography] chooses
 // the type roles the stream emits; the default is tokens.EmojiTypography().
@@ -202,7 +213,8 @@ func (c *config) a11yStream(interval time.Duration, fallback rx.Observable[a11y.
 
 // palette is the light/dark pair an Appearance flips between. When pinned
 // is false (no palette option given) an OS accent — a raw AccentSeed or a
-// non-default Accent — overrides the pair with the seed's derived pair;
+// non-default Accent — overrides the pair with the seed's derived pair, and
+// with no accent reported the platform's own colour ([platformSeed]) does;
 // bySeed caches those derivations so tokens.FromSeed runs once per
 // distinct seed colour, not once per emission.
 type palette struct {
@@ -318,9 +330,10 @@ var (
 // non-default [Accent] (macOS) emits tokens.FromSeed of that seed colour
 // (the light primary pins that colour), the raw seed beating the enum if a
 // source ever sets both. No accent at all —
-// AccentDefault with no AccentSeed: multicolour on macOS, an unsupported
-// desktop, or a failed read — emits tokens.DefaultLight/DefaultDark. An
-// accent change re-emits the theme with the new pair; each pair is derived
+// AccentDefault with no AccentSeed: Multicolour on macOS, an unsupported
+// desktop, or a failed read — emits the platform's own pair: on macOS
+// tokens.FromSeed of systemBlue, elsewhere tokens.DefaultLight/DefaultDark.
+// An accent change re-emits the theme with the new pair; each pair is derived
 // once per seed colour and cached.
 //
 // The stream also composes the OS accessibility preferences
@@ -387,10 +400,11 @@ func (c *config) theme(v rx.Tuple2[Appearance, a11y.A11yPrefs]) theme.Theme {
 // precedence rule: a pinned palette (explicit WithSeed/WithPalette) always
 // wins; then a raw AccentSeed (Windows registry colour, GNOME/KDE colour)
 // yields its derived pair; then a non-default accent enum yields its
-// seed's derived pair; the rest — AccentDefault, any unknown enum value,
-// no raw seed — falls back to the palette's own pair. Derived pairs are
-// cached per seed colour — tokens.FromSeed runs on first sight of a seed,
-// not on every emission.
+// seed's derived pair; then — AccentDefault, any unknown enum value, no raw
+// seed — the platform's own colour for an application that has chosen none,
+// where the platform has one; and last the palette's own pair. Derived
+// pairs are cached per seed colour — tokens.FromSeed runs on first sight of
+// a seed, not on every emission.
 func (p *palette) pair(a Appearance) (light, dark tokens.ColorTokens) {
 	if p.pinned {
 		return p.light, p.dark
@@ -398,11 +412,13 @@ func (p *palette) pair(a Appearance) (light, dark tokens.ColorTokens) {
 	if a.AccentSeedSet {
 		return p.seedPair(a.AccentSeed)
 	}
-	seed, ok := a.Accent.Seed()
-	if !ok {
-		return p.light, p.dark
+	if seed, ok := a.Accent.Seed(); ok {
+		return p.seedPair(seed)
 	}
-	return p.seedPair(seed)
+	if seed, ok := platformSeed(); ok {
+		return p.seedPair(seed)
+	}
+	return p.light, p.dark
 }
 
 // seedPair returns the memoized tokens.FromSeed derivation for one seed

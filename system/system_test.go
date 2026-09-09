@@ -3,6 +3,7 @@ package system_test
 import (
 	"context"
 	"image/color"
+	"runtime"
 	"testing"
 	"time"
 
@@ -36,6 +37,57 @@ func collect[T any](obs rx.Observable[T]) ([]T, error) {
 		}
 	}).Wait()
 	return out, err
+}
+
+// platformDefaultSeed is the colour a stream with no palette option derives
+// from when nothing is chosen and the source reports no colour: on macOS
+// the colour the system paints an application that has chosen none,
+// elsewhere the package's own default seed. Spelled out here rather than
+// read back from the package, so a silent edit to the fallback fails.
+func platformDefaultSeed() color.NRGBA {
+	if runtime.GOOS == "darwin" {
+		return color.NRGBA{R: 0x00, G: 0x7A, B: 0xFF, A: 0xFF} // systemBlue
+	}
+	return tokens.DefaultSeed
+}
+
+// platformDefaultPair is the light/dark pair that colour derives.
+func platformDefaultPair() (light, dark tokens.ColorTokens) {
+	if runtime.GOOS == "darwin" {
+		return tokens.FromSeed(platformDefaultSeed())
+	}
+	return tokens.DefaultLight, tokens.DefaultDark
+}
+
+// TestFromSourceThemeWithNothingChosenDerivesFromThePlatformsColour pins the
+// per-platform fallback for an Appearance carrying no colour at all —
+// Multicolour or a failed read on macOS, an unsupported desktop elsewhere:
+// macOS derives from systemBlue, and no other platform's fallback moves.
+func TestFromSourceThemeWithNothingChosenDerivesFromThePlatformsColour(t *testing.T) {
+	wantLight, wantDark := platformDefaultPair()
+	for _, tc := range []struct {
+		name string
+		app  system.Appearance
+		want tokens.ColorTokens
+	}{
+		{"light", system.Appearance{}, wantLight},
+		{"dark", system.Appearance{Dark: true}, wantDark},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			src := &fakeSource{vals: []system.Appearance{tc.app}}
+			themes, err := collect(system.FromSourceTheme(src, time.Hour).Take(1))
+			if err != nil {
+				t.Fatalf("theme observe: %v", err)
+			}
+			colors, err := collect(themes[0].Color)
+			if err != nil {
+				t.Fatalf("color observe: %v", err)
+			}
+			if len(colors) != 1 || colors[0] != tc.want {
+				t.Errorf("nothing chosen on %s did not derive from the platform's colour", runtime.GOOS)
+			}
+		})
+	}
 }
 
 func TestFromSourceEmitsInitialValue(t *testing.T) {
@@ -122,8 +174,9 @@ func TestFromSourceThemeBridgesDarkToDarkColors(t *testing.T) {
 	if err != nil {
 		t.Fatalf("color observe: %v", err)
 	}
-	if len(colors) != 1 || colors[0] != tokens.DefaultDark {
-		t.Errorf("dark appearance must yield DefaultDark; got %+v", colors)
+	_, wantDark := platformDefaultPair()
+	if len(colors) != 1 || colors[0] != wantDark {
+		t.Errorf("dark appearance must yield the platform's dark side; got %+v", colors)
 	}
 }
 
@@ -138,8 +191,9 @@ func TestFromSourceThemeBridgesLightToLightColors(t *testing.T) {
 	if err != nil {
 		t.Fatalf("color observe: %v", err)
 	}
-	if len(colors) != 1 || colors[0] != tokens.DefaultLight {
-		t.Errorf("light appearance must yield DefaultLight; got %+v", colors)
+	wantLight, _ := platformDefaultPair()
+	if len(colors) != 1 || colors[0] != wantLight {
+		t.Errorf("light appearance must yield the platform's light side; got %+v", colors)
 	}
 }
 
@@ -155,7 +209,8 @@ func TestFromSourceThemeReemitsOnChange(t *testing.T) {
 	if len(themes) != 2 {
 		t.Fatalf("expected 2 themes, got %d", len(themes))
 	}
-	for i, want := range []tokens.ColorTokens{tokens.DefaultLight, tokens.DefaultDark} {
+	wantLight, wantDark := platformDefaultPair()
+	for i, want := range []tokens.ColorTokens{wantLight, wantDark} {
 		colors, err := collect(themes[i].Color)
 		if err != nil {
 			t.Fatalf("theme[%d] color observe: %v", i, err)
@@ -233,13 +288,13 @@ func TestFromSourceThemeSeedSurvivesLightToDark(t *testing.T) {
 // accentCases pins the accent → seed table independently of the
 // implementation: literal Apple HIG system-colour sRGB values, so a silent
 // edit to the package's own table fails here. AccentDefault expects the
-// default palette (no accent override).
+// platform's own colour (no accent override).
 var accentCases = []struct {
 	name   string
 	accent system.Accent
 	seed   color.NRGBA
 }{
-	{"default", system.AccentDefault, tokens.DefaultSeed},
+	{"default", system.AccentDefault, platformDefaultSeed()},
 	{"red", system.AccentRed, color.NRGBA{R: 0xFF, G: 0x3B, B: 0x30, A: 0xFF}},
 	{"orange", system.AccentOrange, color.NRGBA{R: 0xFF, G: 0x95, B: 0x00, A: 0xFF}},
 	{"yellow", system.AccentYellow, color.NRGBA{R: 0xFF, G: 0xCC, B: 0x00, A: 0xFF}},
@@ -256,7 +311,7 @@ func TestFromSourceThemeFollowsEachAccent(t *testing.T) {
 			src := &fakeSource{vals: []system.Appearance{{Dark: false, Accent: tc.accent}}}
 			wantLight, _ := tokens.FromSeed(tc.seed)
 			if tc.accent == system.AccentDefault {
-				wantLight = tokens.DefaultLight
+				wantLight, _ = platformDefaultPair()
 			}
 
 			themes, err := collect(system.FromSourceTheme(src, time.Hour).Take(1))
@@ -452,8 +507,8 @@ func TestFromSourceThemeAccentSeedBeatsEnumAccent(t *testing.T) {
 }
 
 func TestFromSourceThemeUnsetAccentSeedIgnored(t *testing.T) {
-	// AccentSeed without AccentSeedSet carries no meaning: the default
-	// palette holds. Guards against a source leaving a stale colour behind.
+	// AccentSeed without AccentSeedSet carries no meaning: the platform's
+	// own colour holds. Guards against a source leaving a stale colour behind.
 	src := &fakeSource{vals: []system.Appearance{{AccentSeed: rawAccent, AccentSeedSet: false}}}
 
 	themes, err := collect(system.FromSourceTheme(src, time.Hour).Take(1))
@@ -464,8 +519,9 @@ func TestFromSourceThemeUnsetAccentSeedIgnored(t *testing.T) {
 	if err != nil {
 		t.Fatalf("color observe: %v", err)
 	}
-	if len(colors) != 1 || colors[0] != tokens.DefaultLight {
-		t.Errorf("unset AccentSeed must leave the default palette; got %+v", colors)
+	wantLight, _ := platformDefaultPair()
+	if len(colors) != 1 || colors[0] != wantLight {
+		t.Errorf("unset AccentSeed must leave the platform's own pair; got %+v", colors)
 	}
 }
 
@@ -680,7 +736,8 @@ func TestFromSourceThemeDefaultA11yIsHermetic(t *testing.T) {
 	if err != nil {
 		t.Fatalf("color observe: %v", err)
 	}
-	if len(colors) != 1 || colors[0] != tokens.DefaultLight {
+	wantLight, _ := platformDefaultPair()
+	if len(colors) != 1 || colors[0] != wantLight {
 		t.Errorf("default a11y stream must be all-off: got colors %+v", colors)
 	}
 }
@@ -739,12 +796,12 @@ func TestFromSourceThemeReduceMotionComposesOnSeededPalette(t *testing.T) {
 }
 
 func TestFromSourceThemeHighContrastDefaultDerivesVariant(t *testing.T) {
-	// The default hook: high contrast on with the default palette emits
+	// The default hook: high contrast on with no palette option emits
 	// tokens.FromSeedHighContrast of the resolved pair's light Primary
 	// base, and deriving from that base reproduces the seed's own variant.
 	appearance := &fakeSource{vals: []system.Appearance{{}}}
 	prefs := &fakeA11ySource{vals: []a11y.A11yPrefs{{HighContrast: true}}}
-	wantLight, _ := tokens.FromSeedHighContrast(tokens.DefaultSeed)
+	wantLight, _ := tokens.FromSeedHighContrast(platformDefaultSeed())
 
 	themes, err := collect(system.FromSourceTheme(appearance, time.Hour, system.WithA11ySource(prefs)).Take(1))
 	if err != nil {
@@ -755,7 +812,7 @@ func TestFromSourceThemeHighContrastDefaultDerivesVariant(t *testing.T) {
 		t.Fatalf("color observe: %v", err)
 	}
 	if len(colors) != 1 || colors[0] != wantLight {
-		t.Errorf("high contrast must emit the default seed's high-contrast variant; got %+v", colors)
+		t.Errorf("high contrast must emit the platform colour's high-contrast variant; got %+v", colors)
 	}
 }
 

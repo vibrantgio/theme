@@ -237,8 +237,19 @@ func TestWithNothingKeptTheStreamIsTheOneItAlwaysWas(t *testing.T) {
 	if err != nil {
 		t.Fatalf("colours: %v", err)
 	}
-	if colors != tokens.DefaultLight {
-		t.Error("with nothing kept the stream did not emit the default palette")
+	// What an unbranded stream emits is the platform's business — macOS
+	// derives from the colour it paints an application that has chosen
+	// none — so the assertion is that nothing kept changes nothing.
+	unbranded, err := system.FromSourceTheme(fixed{}, time.Hour).First()
+	if err != nil {
+		t.Fatalf("theme: %v", err)
+	}
+	want, err := unbranded.Color.First()
+	if err != nil {
+		t.Fatalf("colours: %v", err)
+	}
+	if colors != want {
+		t.Error("with nothing kept the stream is not the one it always was")
 	}
 }
 

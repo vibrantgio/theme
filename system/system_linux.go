@@ -123,4 +123,9 @@ func configHome() string {
 	return filepath.Join(home, ".config")
 }
 
+// platformSeed reports no colour: a Linux desktop publishes nothing an
+// application that has chosen none should paint itself with, so a stream
+// with no palette option keeps the package's own default pair.
+func platformSeed() (color.NRGBA, bool) { return color.NRGBA{}, false }
+
 func defaultSource() Source { return newLinuxSource() }
