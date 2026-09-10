@@ -182,20 +182,21 @@ type ColorTokens struct {
 	InverseSurface   color.NRGBA // counterpart Neutral.Step(200)
 	OnInverseSurface color.NRGBA // text/icon over it — counterpart Neutral.Step(900)
 
-	// Highlight is the reserved highlighter: the fill marking content the
-	// user was brought to. It is not a colour role and reports no status,
-	// so its hue is reserved outside the role table and no status hue may
-	// serve it; highlight.go carries the reservation and the distances
-	// that hold it. This is the fill resolved against the Background pin,
-	// the surface content stands on;
-	// [ColorTokens.HighlightOn] answers for any other surface.
+	// Highlight is the fill marking content the user was brought to: one
+	// yellow, the same in both schemes, laid over the surface it marks at
+	// less than full strength; highlight.go carries the colour, the
+	// coverage and where they are read from. It is not a colour role and
+	// reports no status, and no status hue may serve it. This is the fill
+	// laid over the Background pin, the surface content stands on;
+	// [ColorTokens.HighlightOn] answers for any other surface, and
+	// [ColorTokens.CurrentMatchOn] for the current match among many.
 	Highlight color.NRGBA
 }
 
 // resolveAliases fills every field defined as a resolution of a ramp step:
 // Surface and Seam off this scheme's own neutral ramp, the inverse
-// pair off the counterpart scheme's, and Highlight off the reserved hue
-// against the Background pin. seamStep is the Neutral step
+// pair off the counterpart scheme's, and Highlight off the marker yellow
+// laid over the Background pin. seamStep is the Neutral step
 // Seam resolves from: 300 in the default derivation, 500 in the
 // high-contrast variant. counterpart is the other scheme's neutral ramp —
 // the dark one while building the light scheme and the light one while

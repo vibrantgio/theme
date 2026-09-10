@@ -1,6 +1,7 @@
 package tokens
 
 import (
+	stdcolor "image/color"
 	"math"
 	"sort"
 	"testing"
@@ -8,97 +9,59 @@ import (
 	"github.com/vibrantgio/theme/color"
 )
 
-// markerYellow is the OKLCh hue of Material Yellow 500 #FFEB3B, the
-// canonical anchor of the yellow family. It is the witness the derivation
-// below picks its arc with, and nothing derives from it.
-const markerYellow = 102.50
-
-// TestHighlightHueIsTheMidpointOfTheArcTheYellowsOccupy recomputes the
-// reserved hue from the four status anchors themselves: sort them around
-// the OKLCh hue circle, take the run between two neighbours that the
-// yellows fall in, and the reserved hue is its midpoint — the point in the
-// yellow furthest from either status beside it. Pinning the constant
-// against its own derivation is what keeps the reservation true if an
-// anchor ever moves: the constant would stop matching rather than quietly
-// drift toward a status.
-func TestHighlightHueIsTheMidpointOfTheArcTheYellowsOccupy(t *testing.T) {
+// TestTheMarkerYellowFallsInTheRunTheStatusesLeaveOpen recomputes, from the
+// four status anchors themselves, the run of the hue circle the yellows
+// occupy — sort the anchors, take the gap between the warning's orange and
+// the success's green — and places the marker's own hue inside it. Deriving
+// the run rather than asserting the colour is what keeps the reservation true
+// if an anchor ever moves: the run would stop holding the yellow rather than
+// quietly closing on it.
+func TestTheMarkerYellowFallsInTheRunTheStatusesLeaveOpen(t *testing.T) {
+	_, _, yellow := color.OKLChFromNRGBA(markerYellow)
 	anchors := []float64{errorHue, successHue, warningHue, infoHue}
 	sort.Float64s(anchors)
-	run, midpoint := 0.0, 0.0
+	run, from := 0.0, 0.0
 	found := false
 	for i, a := range anchors {
 		b := anchors[(i+1)%len(anchors)]
 		length := math.Mod(b-a+360, 360)
-		if math.Mod(markerYellow-a+360, 360) >= length {
-			continue // the yellow is not in this run
+		if math.Mod(yellow-a+360, 360) >= length {
+			continue // the marker is not in this run
 		}
-		run, midpoint, found = length, math.Mod(a+length/2, 360), true
+		run, from, found = length, a, true
 	}
 	if !found {
-		t.Fatalf("no run between two status anchors holds the marker's yellow at %.2f° — a status anchor has moved into it", markerYellow)
+		t.Fatalf("no run between two status anchors holds the marker's yellow at %.2f° — a status anchor has moved into it", yellow)
 	}
 	if math.Abs(run-80.15) > 0.01 {
 		t.Errorf("the run the yellows occupy measures %.4f°, want 80.15° (warning %.2f° to success %.2f°)",
 			run, warningHue, successHue)
 	}
-	if math.Abs(midpoint-highlightHue) > 0.005 {
-		t.Errorf("highlightHue = %.4f°, want %.4f° — the midpoint of the run the yellows occupy",
-			highlightHue, midpoint)
+	// The marker stands clear of both ends of the run, not merely inside it:
+	// a yellow a few degrees off the warning's orange would report a status.
+	const clearance = 20.0
+	if gap := math.Mod(yellow-from+360, 360); gap < clearance || run-gap < clearance {
+		t.Errorf("the marker's yellow at %.2f° stands %.2f° past the warning and %.2f° short of the success — under the %.1f° it is reserved by",
+			yellow, gap, run-gap, clearance)
 	}
-	if gap := math.Abs(highlightHue - markerYellow); gap > 2.0 {
-		t.Errorf("the reserved hue sits %.2f° from Material Yellow 500's %.2f° — that is no longer the yellow a palette would have named",
-			gap, markerYellow)
-	}
+	t.Logf("the marker's yellow measures %.2f° in the %.2f° run the statuses leave open", yellow, run)
 }
 
-// TestTheFillTakesAllTheChromaItsDepthHolds verifies the two halves of the
-// marker's chroma: the depth the fill is realized at is the shallowest step
-// that holds markerChroma, and the fill realized there carries all the
-// chroma sRGB holds at that depth — a highlighter owes its own chroma, not
-// a dial borrowed from the containers. The margin is eight-bit
-// quantization: the realization is rounded to a byte per channel, which
-// costs the measured chroma a little of what the solver found.
-func TestTheFillTakesAllTheChromaItsDepthHolds(t *testing.T) {
-	light, dark := FromSeed(DefaultSeed)
-	for _, d := range []struct {
-		name string
-		tok  ColorTokens
-		step int     // the depth the fill is realized at
-		tone float64 // that depth's L*
-		held float64 // the most chroma sRGB holds at highlightHue there
-	}{
-		{"light", light, 300, 84.91, 0.1845},
-		{"dark", dark, 400, 30.16, 0.0850},
+// TestTheCoverageIsTheWholeOfTheBlend pins the two ends of yellowOver: no
+// coverage is the surface untouched and full coverage is the marker yellow
+// itself, so the coverage is the only thing between them and a highlight can
+// never land on a colour that is neither.
+func TestTheCoverageIsTheWholeOfTheBlend(t *testing.T) {
+	for _, surface := range []stdcolor.NRGBA{
+		{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
+		{R: 0x1e, G: 0x1e, B: 0x1e, A: 0xff},
+		{R: 0x67, G: 0x50, B: 0xa4, A: 0xff},
 	} {
-		if got := d.tok.highlightStep(); got != d.step {
-			t.Errorf("%s: the fill is realized at step %d, want step %d — the shallowest depth that holds the marker's chroma", d.name, got, d.step)
+		if got := yellowOver(0, surface); got != surface {
+			t.Errorf("no coverage over %v landed on %v, want the surface itself", surface, got)
 		}
-		tone, _, _ := color.LabFromNRGBA(d.tok.Ramps.Neutral.Step(d.step))
-		if math.Abs(tone-d.tone) > 0.01 {
-			t.Errorf("%s: step %d stands at L* %.2f, want %.2f", d.name, d.step, tone, d.tone)
-		}
-		held := 0.0
-		for c := 0.0; c < highlightChroma; c += 0.0005 {
-			_, realized, _ := color.OKLChFromNRGBA(color.NRGBAFromToneChromaHue(tone, c, highlightHue))
-			if realized < c-0.002 { // past the gamut the solver reduces chroma
-				break
-			}
-			held = c
-		}
-		if math.Abs(held-d.held) > 0.001 {
-			t.Errorf("%s: sRGB holds chroma %.4f at hue %.2f° at L* %.2f, want %.4f", d.name, held, highlightHue, tone, d.held)
-		}
-		if held < markerChroma {
-			t.Errorf("%s: the depth the fill is realized at holds only chroma %.4f, under the %.3f a marker's yellow asks for",
-				d.name, held, markerChroma)
-		}
-		_, chroma, hue := color.OKLChFromNRGBA(d.tok.Highlight)
-		if chroma < held-0.002 {
-			t.Errorf("%s: the fill %v carries chroma %.4f where sRGB holds %.4f — it is not taking the yellow its depth can hold",
-				d.name, d.tok.Highlight, chroma, held)
-		}
-		if math.Abs(hue-highlightHue) > 0.5 {
-			t.Errorf("%s: the fill %v wears hue %.2f°, want the reserved %.2f°", d.name, d.tok.Highlight, hue, highlightHue)
+		if got := yellowOver(1, surface); got != markerYellow {
+			t.Errorf("full coverage over %v landed on %v, want the marker yellow %v", surface, got, markerYellow)
 		}
 	}
 }

@@ -204,9 +204,7 @@ func (t ColorTokens) ContainerOn(role Role, surface stdcolor.NRGBA) stdcolor.NRG
 // past containerStep whose realization clears [ContainerFloor] against
 // surface, and otherwise the step that separates most. at realizes one step
 // of the fill being walked. See [ColorTokens.ContainerOn] for why the walk
-// only ever deepens and why an unseparated fill still returns a colour, and
-// [ColorTokens.HighlightOn] for the reserved highlighter's own walk, which
-// is bounded differently.
+// only ever deepens and why an unseparated fill still returns a colour.
 func fillToFloor(at func(step int) stdcolor.NRGBA, surface stdcolor.NRGBA) stdcolor.NRGBA {
 	best, bestAt := -1.0, containerStep
 	for step := containerStep; step <= 900; step += 100 {

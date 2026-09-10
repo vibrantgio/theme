@@ -530,8 +530,9 @@ func defaultGolden() (light, dark tokens.ColorTokens) {
 	// they are — the first two off this scheme's neutral ramp, the inverse
 	// pair off the counterpart scheme's, which is what makes a light
 	// scheme's inverse chip dark and a dark scheme's light. The highlight
-	// is recorded as the colour it is: it is reserved outside the roles,
-	// so no ramp resolves it and no seed moves it.
+	// is recorded as the colour it lands on: the marker yellow laid over
+	// the surface content stands on at its own coverage, which no ramp
+	// resolves.
 	fill := func(t, counterpart tokens.ColorTokens, highlight color.NRGBA) tokens.ColorTokens {
 		n, o := t.Ramps.Neutral, counterpart.Ramps.Neutral
 		t.Surface = n.Step(200)
@@ -541,7 +542,7 @@ func defaultGolden() (light, dark tokens.ColorTokens) {
 		t.Highlight = highlight
 		return t
 	}
-	return fill(light, dark, hex(0xe7, 0xd7, 0x00)), fill(dark, light, hex(0x4e, 0x48, 0x00))
+	return fill(light, dark, hex(0xf7, 0xe4, 0x91)), fill(dark, light, hex(0x74, 0x62, 0x0e))
 }
 
 // hcGolden returns the recorded palette FromSeedHighContrast derives from
@@ -778,8 +779,9 @@ func hcGolden() (light, dark tokens.ColorTokens) {
 	// they are — the first two off this scheme's neutral ramp, the inverse
 	// pair off the counterpart scheme's, which is what makes a light
 	// scheme's inverse chip dark and a dark scheme's light. The highlight
-	// is recorded as the colour it is: it is reserved outside the roles,
-	// so no ramp resolves it and no seed moves it.
+	// is recorded as the colour it lands on: the marker yellow laid over
+	// the surface content stands on at its own coverage, which no ramp
+	// resolves.
 	fill := func(t, counterpart tokens.ColorTokens, highlight color.NRGBA) tokens.ColorTokens {
 		n, o := t.Ramps.Neutral, counterpart.Ramps.Neutral
 		t.Surface = n.Step(200)
@@ -789,7 +791,7 @@ func hcGolden() (light, dark tokens.ColorTokens) {
 		t.Highlight = highlight
 		return t
 	}
-	return fill(light, dark, hex(0xe7, 0xd7, 0x00)), fill(dark, light, hex(0x4e, 0x48, 0x00))
+	return fill(light, dark, hex(0xf7, 0xe4, 0x91)), fill(dark, light, hex(0x74, 0x62, 0x0e))
 }
 
 // TestFromSeedHighContrastGoldenPalette pins the high-contrast variant

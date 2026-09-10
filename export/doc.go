@@ -37,9 +37,9 @@
 //     on the hue and on the scheme; --color-bg, --color-text are the pinned
 //     background and body text; --color-surface and --color-seam are the
 //     semantic layer's ramp-resolved card and separator colours;
-//     --color-highlight is the reserved highlighter, the fill marking
-//     content the reader was brought to — reserved outside the roles, so
-//     it belongs to no ramp, does not rotate with the seed and carries no
+//     --color-highlight is the fill marking content the reader was brought
+//     to — one reserved yellow laid over the surface content stands on at
+//     less than full strength, so it belongs to no ramp and carries no
 //     status hue.
 //
 // The remaining families, all emitted in :root only because they do not
