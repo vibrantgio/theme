@@ -3,26 +3,20 @@
 //
 // A pinned base and a foreground are two jobs, and the derivation solves only
 // the first. FromSeed pins each role's solid fill and then chooses the
-// foreground that reads over that fill (see onColour), so every pin carries a
-// measured guarantee about text laid on TOP of it — and none at all about
-// itself laid on the page. For six of the seven pinned roles that gap costs
-// nothing, because their bases are realized at fixed perceptual depths
-// (lightPinTone, statusPinTone, darkPinTone): whatever the seed, a secondary,
-// tertiary or status pin measures 5.94:1 or better over the light content and
-// 10.99:1 or better over the dark one. The light primary base is the one
-// exception in the whole palette, and it is an exception by design — it is the
-// brand colour itself, at the brand's own CIELAB depth (see liftSeed), so
-// whether it reads over the content is a property of the seed and of nothing
-// else.
+// foreground that reads over that fill, so every pin carries a measured
+// guarantee about text laid on TOP of it — and none at all about itself laid
+// on the page. Under APCA's own body-text level, Lc 75, that gap is wide:
+// the light pins are realized at L* 40 or 39 and the dark ones at L* 82, and
+// none of those depths reaches Lc 75 over the content plane. So the pin
+// stands as a foreground only where the surface happens to be far enough
+// away — the light scheme's white raised fills — and walks everywhere else.
 //
-// So the family this file gates has exactly one member that can fail, and
-// naming it is worth more than counting it: the light primary pin, used as a
-// foreground. Over the seed sweep 280 of 414 light schemes put that pin under
-// the 4.5:1 text floor against their own content, bottoming out at 1.01:1, and
-// 208 of 414 put it under the 3:1 graphic floor. The canonical seed #6750A4
-// sits at L* 51 and measures 5.94:1; a pastel accent of the kind a dark-scheme
-// palette publishes sits near L* 73 and puts a 1.95:1 link on a near-white
-// page.
+// Over the 414-seed sweep 346 of the light schemes put the primary pin under
+// [TextFloor] against their own content and 175 put it under [GraphicFloor],
+// bottoming out at |Lc| 0.00 where the seed IS the content's own colour. The
+// canonical seed #6750A4 realizes at L* 41 and measures |Lc| 72.71 over the
+// content; a pastel accent of the kind a dark-scheme palette publishes sits
+// near L* 73 and puts an |Lc| 32.73 link on a near-white page.
 //
 // # Why the gate is here and not in the derivation
 //
@@ -40,20 +34,18 @@
 // [ColorTokens.ForegroundOnAtFloor] answers the pin while the pin clears
 // its floor and walks the role's ramp only when it does not. Always walking
 // would be the simpler rule and it is the wrong one twice over: a brand
-// that reads is entitled to be its own colour — the same reasoning onColour
-// applies to the foreground over a base — and a rule that moved a pairing
-// already clearing its floor would move every downstream golden for
-// nothing. The canonical seed clears in both schemes and both derivations,
-// so this gate is a no-op on the palette every stored image is rendered
-// from.
+// that reads is entitled to be its own colour — the same reasoning
+// [color.BestOn] applies to the foreground over a base — and a rule that
+// moved a pairing already clearing its floor would move every downstream
+// golden for nothing.
 //
 // What a walk answers is [ColorTokens.MarkOn]'s step — the ramp step nearest
 // the mid-value 500 that clears the floor over the surface. The ramp is
 // realized at fixed depths, so the answer is unmistakably the brand hue and
 // never too close to the surface beneath: over the sweep, both schemes, both
 // derivations and all four levels a brand foreground can be drawn on, the
-// worst pairing any seed produces measures 4.50:1 where the floor is 4.5 and
-// 3.01:1 where it is 3.
+// worst pairing any seed produces measures |Lc| 75.15 where the floor is 75
+// and 45.15 where it is 45.
 package tokens
 
 import (
@@ -62,19 +54,26 @@ import (
 	"github.com/vibrantgio/theme/color"
 )
 
-// The two floors a foreground is gated at, named for the consumers that draw
-// with them. They are the derivation's own numbers under exported names
-// rather than a second spelling of them: TextFloor is the ratio FromSeed
-// holds every on-colour to, and GraphicFloor the one every status mark is
-// chosen against.
+// The floors a foreground is gated at, named for the consumers that draw
+// with them. Each is a floor on |Lc| — [color.Magnitude] — and each is
+// APCA's own published level for the job, so a consumer that imports one
+// and a derivation that gates on it are reading the same number:
+// [color.APCA] is the system's one contrast measure and these are the
+// levels it is read against.
 const (
-	// TextFloor is WCAG 1.4.3 AA for body text, 4.5:1 — what a link, a
+	// TextFloor is APCA's minimum for body text, Lc 75 — what a link, a
 	// label or any run of words owes the surface it is set on.
 	TextFloor = onFloor
-	// GraphicFloor is WCAG 1.4.11 non-text contrast, 3:1 — what a rule, a
-	// bar, a tick or any other mark that carries meaning without being
-	// text owes the surface it is drawn on.
+	// GraphicFloor is APCA's level for a mark that carries meaning without
+	// being text, Lc 45 — what a rule, a bar, a tick or any other such
+	// mark owes the surface it is drawn on.
 	GraphicFloor = graphicFloor
+	// IncreasedTextFloor is APCA's preferred level for body text, Lc 90:
+	// the floor the increased-contrast variant asks of the same pairing.
+	IncreasedTextFloor = hcOnFloor
+	// IncreasedGraphicFloor is the increased step of the mark level,
+	// Lc 60 — a mark under the increased-contrast variant.
+	IncreasedGraphicFloor = hcGraphicFloor
 )
 
 // ForegroundOnAtFloor returns the colour role reads in when it is drawn on
@@ -94,7 +93,7 @@ const (
 // derived against the Background pin already.
 func (t ColorTokens) ForegroundOnAtFloor(role Role, surface stdcolor.NRGBA, floor float64) stdcolor.NRGBA {
 	pin := t.pinFor(role) // validates role
-	if color.ContrastRatio(pin, surface) >= floor {
+	if color.Magnitude(pin, surface) >= floor {
 		return pin
 	}
 	return t.MarkOn(role, surface, floor)

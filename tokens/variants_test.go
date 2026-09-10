@@ -48,14 +48,14 @@ func TestVariantStepsClearTheirFloors(t *testing.T) {
 			{"FromSeedHighContrast light", hcLight}, {"FromSeedHighContrast dark", hcDark},
 		} {
 			for _, g := range variantSurfaces(s.tok) {
-				if got := color.ContrastRatio(s.tok.OutlineVariant(), g.surface); got < tokens.GraphicFloor {
-					t.Errorf("seed %v: %s OutlineVariant on %s measures %.2f:1, under the %.1f:1 boundary floor",
+				if got := color.Magnitude(s.tok.OutlineVariant(), g.surface); got < tokens.GraphicFloor {
+					t.Errorf("seed %v: %s OutlineVariant on %s measures |Lc| %.2f, under the %.0f boundary floor",
 						seed, s.name, g.name, got, tokens.GraphicFloor)
 				} else if got < worstOutline {
 					worstOutline, worstOutlineAt = got, fmt.Sprintf("%s on %s", s.name, g.name)
 				}
-				if got := color.ContrastRatio(s.tok.OnSurfaceVariant(), g.surface); got < tokens.TextFloor {
-					t.Errorf("seed %v: %s OnSurfaceVariant on %s measures %.2f:1, under the %.1f:1 text floor",
+				if got := color.Magnitude(s.tok.OnSurfaceVariant(), g.surface); got < tokens.TextFloor {
+					t.Errorf("seed %v: %s OnSurfaceVariant on %s measures |Lc| %.2f, under the %.0f text floor",
 						seed, s.name, g.name, got, tokens.TextFloor)
 				} else if got < worstForeground {
 					worstForeground, worstForegroundAt = got, fmt.Sprintf("%s on %s", s.name, g.name)
@@ -63,7 +63,7 @@ func TestVariantStepsClearTheirFloors(t *testing.T) {
 			}
 		}
 	}
-	t.Logf("over %d seeds: worst OutlineVariant %.2f:1 (%s), worst OnSurfaceVariant %.2f:1 (%s)",
+	t.Logf("over %d seeds: worst OutlineVariant |Lc| %.2f (%s), worst OnSurfaceVariant |Lc| %.2f (%s)",
 		len(sweepSeeds()), worstOutline, worstOutlineAt, worstForeground, worstForegroundAt)
 }
 
@@ -85,15 +85,15 @@ func TestVariantStepsStayMuted(t *testing.T) {
 			{"FromSeedHighContrast light", hcLight}, {"FromSeedHighContrast dark", hcDark},
 		} {
 			for _, g := range variantSurfaces(s.tok) {
-				outline := color.ContrastRatio(s.tok.OutlineVariant(), g.surface)
-				foreground := color.ContrastRatio(s.tok.OnSurfaceVariant(), g.surface)
-				text := color.ContrastRatio(s.tok.Text, g.surface)
+				outline := color.Magnitude(s.tok.OutlineVariant(), g.surface)
+				foreground := color.Magnitude(s.tok.OnSurfaceVariant(), g.surface)
+				text := color.Magnitude(s.tok.Text, g.surface)
 				if outline > foreground {
-					t.Errorf("seed %v: %s OutlineVariant on %s measures %.2f:1, more pronounced than OnSurfaceVariant's %.2f:1",
+					t.Errorf("seed %v: %s OutlineVariant on %s measures |Lc| %.2f, more pronounced than OnSurfaceVariant's %.2f",
 						seed, s.name, g.name, outline, foreground)
 				}
 				if foreground >= text {
-					t.Errorf("seed %v: %s OnSurfaceVariant on %s measures %.2f:1, at or past Text's %.2f:1 — a muted foreground that is not muted",
+					t.Errorf("seed %v: %s OnSurfaceVariant on %s measures |Lc| %.2f, at or past Text's %.2f — a muted foreground that is not muted",
 						seed, s.name, g.name, foreground, text)
 				}
 			}
@@ -106,8 +106,8 @@ func TestVariantStepsStayMuted(t *testing.T) {
 // role, and what this sheet's borders once did — reads under the boundary
 // floor in the light scheme, and the derived token does not.
 //
-// The numbers are the file header's: step 500 measures 2.35:1 over the harder
-// of the two light surfaces and 3.07:1 over the harder dark one, so the fixed
+// Step 500 falls short of the boundary floor over the harder of the two
+// light surfaces and clears it over the harder dark one, so the fixed
 // naming fails in the scheme most people read in and passes in the other. The
 // test asserts the shape rather than the digits — that the fixed step falls
 // short somewhere the derived step does not — so a re-derived ramp moves the
@@ -123,9 +123,9 @@ func TestVariantStepsBeatTheFixedStep(t *testing.T) {
 	} {
 		fixed := s.tok.Ramps.Neutral.Step(500)
 		for _, g := range variantSurfaces(s.tok) {
-			got := color.ContrastRatio(fixed, g.surface)
-			t.Logf("%s: fixed step 500 on %s measures %.2f:1; OutlineVariant %.2f:1",
-				s.name, g.name, got, color.ContrastRatio(s.tok.OutlineVariant(), g.surface))
+			got := color.Magnitude(fixed, g.surface)
+			t.Logf("%s: fixed step 500 on %s measures |Lc| %.2f; OutlineVariant |Lc| %.2f",
+				s.name, g.name, got, color.Magnitude(s.tok.OutlineVariant(), g.surface))
 			if got < tokens.GraphicFloor {
 				fixedFails = true
 			}
@@ -177,8 +177,8 @@ func TestContainerSpellingsAgree(t *testing.T) {
 					t.Errorf("%s %s on %v: StatusContainerOn = %v, ContainerOn = %v", s.name, r.name, lv, got, want)
 				}
 			}
-			if got := color.ContrastRatio(s.tok.OnContainer(r.role), s.tok.Container(r.role)); got < tokens.GraphicFloor {
-				t.Errorf("%s %s: OnContainer on Container measures %.2f:1, under the %.1f:1 mark floor",
+			if got := color.Magnitude(s.tok.OnContainer(r.role), s.tok.Container(r.role)); got < tokens.GraphicFloor {
+				t.Errorf("%s %s: OnContainer on Container measures |Lc| %.2f, under the %.0f mark floor",
 					s.name, r.name, got, tokens.GraphicFloor)
 			}
 		}

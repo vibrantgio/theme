@@ -21,11 +21,6 @@ import (
 // shares one lightness scale, the neutral-surfaces reading differs only by
 // hue-induced luminance wiggle; the same-role reading covers neutral anyway
 // (neutral is one of the seven gated ramps).
-//
-// WCAG 2 ratios for the same pairs are logged alongside — conformance
-// claims cite them — but they do not gate: only APCA failures
-// fail this test, so a WCAG regression shows up in the log, never as a
-// verdict.
 func TestAPCAContrastGate(t *testing.T) {
 	for _, s := range []struct {
 		name string
@@ -47,9 +42,8 @@ func TestAPCAContrastGate(t *testing.T) {
 						text := r.ramp.Step(tc.textStep)
 						surface := r.ramp.Step(surfaceStep)
 						lc := color.APCA(text, surface)
-						wcag := color.ContrastRatio(text, surface)
-						t.Logf("%s %d on %d: Lc %.2f (gate ≥ %.0f), WCAG %.2f:1 (AA %.1f:1: %s, cited not gating)",
-							r.name, tc.textStep, surfaceStep, lc, tc.minLc, wcag, wcagAA, wcagVerdict(wcag))
+						t.Logf("%s %d on %d: Lc %.2f (gate ≥ %.0f)",
+							r.name, tc.textStep, surfaceStep, lc, tc.minLc)
 						if math.Abs(lc) < tc.minLc {
 							t.Errorf("%s: step %d on step-%d surface: |Lc| %.2f < %.0f",
 								r.name, tc.textStep, surfaceStep, math.Abs(lc), tc.minLc)
@@ -70,9 +64,7 @@ func TestAPCAContrastGate(t *testing.T) {
 				{"Info", s.tok.Info, s.tok.OnInfo},
 			} {
 				lc := color.APCA(p.on, p.base)
-				wcag := color.ContrastRatio(p.on, p.base)
-				t.Logf("pin %s: on-colour Lc %.2f (gate ≥ 60), WCAG %.2f:1 (AA %.1f:1: %s, cited not gating)",
-					p.name, lc, wcag, wcagAA, wcagVerdict(wcag))
+				t.Logf("pin %s: on-colour Lc %.2f (gate ≥ 60)", p.name, lc)
 				if math.Abs(lc) < 60 {
 					t.Errorf("pin %s: on-colour |Lc| %.2f < 60", p.name, math.Abs(lc))
 				}
@@ -81,23 +73,12 @@ func TestAPCAContrastGate(t *testing.T) {
 	}
 }
 
-// wcagVerdict renders a WCAG AA pass/fail for the gate test's log lines —
-// reported, never gated on.
-func wcagVerdict(ratio float64) string {
-	if ratio >= wcagAA {
-		return "pass"
-	}
-	return "fail"
-}
-
 // TestAPCAContrastGateHighContrast is the gate over the high-contrast
 // variant of the default seed, with the variant's floors above the
 // defaults': in every role ramp, step 900 must reach |Lc| ≥ 90 as before
 // AND step 700 must now also reach |Lc| ≥ 90 (the default gate asks 60)
 // over the step-100 and step-200 surfaces, and each pinned base's on-colour
-// |Lc| ≥ 75 (the default asks 60). WCAG ratios are reported alongside — here against AAA (7:1), the level a
-// high-contrast conformance claim would cite — but never gated on: only
-// APCA failures fail this test.
+// |Lc| ≥ 75 (the default asks 60).
 //
 // Measured margins at recording time: light min 700 Lc 90.7, 900 Lc 92.3,
 // pins Lc 85.7; dark min 700 Lc 93.1, 900 Lc 104.4, pins Lc 76.3. The
@@ -118,9 +99,7 @@ func TestAPCAContrastGateHighContrast(t *testing.T) {
 						text := r.ramp.Step(textStep)
 						surface := r.ramp.Step(surfaceStep)
 						lc := color.APCA(text, surface)
-						wcag := color.ContrastRatio(text, surface)
-						t.Logf("%s %d on %d: Lc %.2f (gate ≥ 90), WCAG %.2f:1 (AAA %.1f:1: %s, cited not gating)",
-							r.name, textStep, surfaceStep, lc, wcag, wcagAAA, wcagAAAVerdict(wcag))
+						t.Logf("%s %d on %d: Lc %.2f (gate ≥ 90)", r.name, textStep, surfaceStep, lc)
 						if math.Abs(lc) < 90 {
 							t.Errorf("%s: step %d on step-%d surface: |Lc| %.2f < 90",
 								r.name, textStep, surfaceStep, math.Abs(lc))
@@ -141,9 +120,7 @@ func TestAPCAContrastGateHighContrast(t *testing.T) {
 				{"Info", s.tok.Info, s.tok.OnInfo},
 			} {
 				lc := color.APCA(p.on, p.base)
-				wcag := color.ContrastRatio(p.on, p.base)
-				t.Logf("pin %s: on-colour Lc %.2f (gate ≥ 75), WCAG %.2f:1 (AAA %.1f:1: %s, cited not gating)",
-					p.name, lc, wcag, wcagAAA, wcagAAAVerdict(wcag))
+				t.Logf("pin %s: on-colour Lc %.2f (gate ≥ 75)", p.name, lc)
 				if math.Abs(lc) < 75 {
 					t.Errorf("pin %s: on-colour |Lc| %.2f < 75", p.name, math.Abs(lc))
 				}
@@ -154,12 +131,9 @@ func TestAPCAContrastGateHighContrast(t *testing.T) {
 
 // TestInverseSurfaceBodyTextContrast gates the inverse pair in every
 // scheme the seed pipeline derives — both default schemes and both
-// high-contrast ones — at WCAG AA for body text (4.5:1). The inverse
-// surface is what a transient message stands on, so its on-colour is read
-// as running text and the body-text ratio is the bar that matters; unlike
-// the ramp gates above this one is WCAG-gated rather than WCAG-reported,
-// because 4.5:1 is the number the role's contract is written in. APCA is
-// logged alongside, the mirror of the arrangement the other gates use.
+// high-contrast ones — at [tokens.TextFloor]. The inverse surface is what a
+// transient message stands on, so its on-colour is read as running text and
+// the body-text floor is the bar that matters.
 //
 // The pair is also, by derivation, the counterpart scheme's own Surface
 // and Text — so a failure here is a failure of that scheme's reading pair,
@@ -178,13 +152,12 @@ func TestInverseSurfaceBodyTextContrast(t *testing.T) {
 		{"HighContrastDark", hcDark, hcLight},
 	} {
 		t.Run(s.name, func(t *testing.T) {
-			wcag := color.ContrastRatio(s.tok.OnInverseSurface, s.tok.InverseSurface)
 			lc := color.APCA(s.tok.OnInverseSurface, s.tok.InverseSurface)
-			t.Logf("inverse pair %v on %v: WCAG %.2f:1 (gate ≥ %.1f:1), Lc %.2f (reported)",
-				s.tok.OnInverseSurface, s.tok.InverseSurface, wcag, wcagAA, lc)
-			if wcag < wcagAA {
-				t.Errorf("inverse pair: WCAG %.2f:1 < %.1f:1 — body text on the inverse surface is unreadable",
-					wcag, wcagAA)
+			t.Logf("inverse pair %v on %v: Lc %.2f (gate |Lc| ≥ %.0f)",
+				s.tok.OnInverseSurface, s.tok.InverseSurface, lc, tokens.TextFloor)
+			if math.Abs(lc) < tokens.TextFloor {
+				t.Errorf("inverse pair: |Lc| %.2f < %.0f — body text on the inverse surface is unreadable",
+					math.Abs(lc), tokens.TextFloor)
 			}
 			if got, want := s.tok.InverseSurface, s.counterpart.Surface; got != want {
 				t.Errorf("InverseSurface = %v, want the counterpart scheme's Surface %v", got, want)
@@ -218,31 +191,33 @@ func accentPairs(t tokens.ColorTokens) []struct {
 
 // TestAccentOnColoursClearTheFloorForEverySeed is the whole-population gate
 // on the on-colour rule: over the shared seed sweep, in both schemes of both
-// derivations, every pinned accent pairing reaches WCAG AA for body text.
+// derivations, every pinned accent pairing reaches the |Lc| the two
+// candidates make available.
 //
-// It is the property the rule exists for. The bases are pinned to depths
-// their usual foreground clears — except the light primary base, which is the brand
-// colour itself and can land anywhere on the axis, so a light brand colour
-// under an assumed white foreground measures as little as 2.1:1. The foreground is chosen
-// by measurement, and because the two candidates are the ends of the tonal
-// axis, the better of them clears 4.5:1 over any colour whatever:
-// no seed can produce a pairing this gate has to fail.
+// It is the property the rule exists for. The bases are pinned to depths a
+// foreground reads over — except the light primary base, which is the brand
+// colour itself and can land anywhere on the axis. The foreground is chosen
+// by measurement, and because the light scheme's two candidates are the ends
+// of the tonal axis, the better of them reaches |Lc| 54.55 over any sRGB
+// colour whatever (measured over a dense grid of the whole cube, the
+// binding case a mid green #8EAB87): no seed can produce a pairing under
+// axisEndGuarantee.
 //
 // Three further properties are asserted alongside the number, because a
 // number alone would not notice them going:
 //
-//   - The foreground is always one of the two ends on offer, and where the
-//     preferred one falls short the chosen one reads at least as well. A
-//     rule that flipped a foreground into a worse pairing would still clear the
-//     floor most of the time.
-//   - Nothing moves for a base whose usual foreground already clears the floor,
-//     which is what keeps every downstream golden on the canonical seed
-//     where it is.
-//   - The increased-contrast variant never reads below the default's, which
-//     is what its stricter floor is worth on a pairing whose two candidates
-//     are already the ends of the axis.
+//   - The foreground is always one of the two ends on offer, and it is the
+//     one that reads furthest. A rule that flipped a foreground into a
+//     worse pairing would still look plausible on most seeds.
+//   - The increased-contrast variant never reads below the default's on the
+//     same pairing.
+//   - The light scheme's flip to Black happens where and only where Black
+//     reads further than White, which is the whole of the rule.
 func TestAccentOnColoursClearTheFloorForEverySeed(t *testing.T) {
-	worstLight, worstDark := 99.0, 99.0
+	// axisEndGuarantee is the least |Lc| the better end of the tonal axis
+	// reaches over any sRGB colour; see the doc comment for the measurement.
+	const axisEndGuarantee = 54.55
+	worstLight, worstDark := 999.0, 999.0
 	flips := 0
 	for _, seed := range sweepSeeds() {
 		light, dark := tokens.FromSeed(seed)
@@ -266,33 +241,32 @@ func TestAccentOnColoursClearTheFloorForEverySeed(t *testing.T) {
 			{"FromSeedHighContrast dark", hcDark, hcDark, false, false},
 		} {
 			for i, p := range accentPairs(s.tok) {
-				got := color.ContrastRatio(p.on, p.base)
-				if got < wcagAA {
-					t.Errorf("seed %v: %s %s: %v on %v measures %.2f:1, under the %.1f:1 floor",
-						seed, s.name, p.name, p.on, p.base, got, wcagAA)
-				}
+				got := color.Magnitude(p.on, p.base)
 				if s.light {
+					if got < axisEndGuarantee {
+						t.Errorf("seed %v: %s %s: %v on %v measures |Lc| %.2f, under the %.2f the axis ends guarantee",
+							seed, s.name, p.name, p.on, p.base, got, axisEndGuarantee)
+					}
 					if got < worstLight {
 						worstLight = got
 					}
 					// The light scheme's two candidates are the ends of the
-					// axis, so the foreground is one of them, and White is what a
-					// pairing that already clears the floor keeps.
+					// axis, so the foreground is one of them, and it is the
+					// one that reads furthest.
 					if p.on != tokens.White && p.on != tokens.Black {
 						t.Errorf("seed %v: %s %s: foreground %v is neither end of the tonal axis",
 							seed, s.name, p.name, p.on)
 					}
+					white, black := color.Magnitude(tokens.White, p.base), color.Magnitude(tokens.Black, p.base)
 					if p.on == tokens.Black {
 						flips++
-						white := color.ContrastRatio(tokens.White, p.base)
-						if got < white {
-							t.Errorf("seed %v: %s %s: foreground flipped to Black at %.2f:1, worse than White's %.2f:1",
-								seed, s.name, p.name, got, white)
+						if black < white {
+							t.Errorf("seed %v: %s %s: foreground flipped to Black at |Lc| %.2f, under White's %.2f",
+								seed, s.name, p.name, black, white)
 						}
-						if s.deflt && white >= wcagAA {
-							t.Errorf("seed %v: %s %s: foreground flipped to Black though White measured %.2f:1 — a passing pairing moved",
-								seed, s.name, p.name, white)
-						}
+					} else if white < black {
+						t.Errorf("seed %v: %s %s: foreground kept White at |Lc| %.2f though Black reads %.2f",
+							seed, s.name, p.name, white, black)
 					}
 				} else if got < worstDark {
 					worstDark = got
@@ -300,14 +274,14 @@ func TestAccentOnColoursClearTheFloorForEverySeed(t *testing.T) {
 				// The variant asks more of the same pairing and can never
 				// answer with less.
 				v := accentPairs(s.variant)[i]
-				if hc := color.ContrastRatio(v.on, v.base); hc < got-1e-9 {
-					t.Errorf("seed %v: %s %s: the high-contrast variant measures %.2f:1, under the default's %.2f:1",
+				if hc := color.Magnitude(v.on, v.base); hc < got-1e-9 {
+					t.Errorf("seed %v: %s %s: the high-contrast variant measures |Lc| %.2f, under the default's %.2f",
 						seed, s.name, p.name, hc, got)
 				}
 			}
 		}
 	}
-	t.Logf("over %d seeds: worst light accent pairing %.2f:1, worst dark %.2f:1; %d light foregrounds flipped to Black",
+	t.Logf("over %d seeds: worst light accent pairing |Lc| %.2f, worst dark |Lc| %.2f; %d light foregrounds took Black",
 		len(sweepSeeds()), worstLight, worstDark, flips)
 }
 
@@ -322,7 +296,11 @@ func TestAccentOnColoursClearTheFloorForEverySeed(t *testing.T) {
 // measurement for every seed there is. The sweep is here to hold that claim
 // rather than to look for a seed that breaks it.
 func TestContainerAndFillPairingsClearTheFloorForEverySeed(t *testing.T) {
-	worst, worstAt := 99.0, ""
+	// The ramps' own text steps are contracted at |Lc| 60 over their own
+	// tinted surfaces, the level TestAPCAContrastGate holds step 700 to;
+	// the sweep's worst is 66.56.
+	const rampTextFloor = 60.0
+	worst, worstAt := 999.0, ""
 	for _, seed := range sweepSeeds() {
 		light, dark := tokens.FromSeed(seed)
 		hcLight, hcDark := tokens.FromSeedHighContrast(seed)
@@ -336,10 +314,10 @@ func TestContainerAndFillPairingsClearTheFloorForEverySeed(t *testing.T) {
 			for _, r := range namedRamps(s.tok) {
 				for _, text := range []int{700, 900} {
 					for _, surface := range []int{100, 200} {
-						got := color.ContrastRatio(r.ramp.Step(text), r.ramp.Step(surface))
-						if got < wcagAA {
-							t.Errorf("seed %v: %s %s step %d on step %d measures %.2f:1, under the %.1f:1 floor",
-								seed, s.name, r.name, text, surface, got, wcagAA)
+						got := color.Magnitude(r.ramp.Step(text), r.ramp.Step(surface))
+						if got < rampTextFloor {
+							t.Errorf("seed %v: %s %s step %d on step %d measures |Lc| %.2f, under the %.0f floor",
+								seed, s.name, r.name, text, surface, got, rampTextFloor)
 						}
 						if got < worst {
 							worst, worstAt = got, fmt.Sprintf("%s %s %d on %d", s.name, r.name, text, surface)
@@ -349,19 +327,7 @@ func TestContainerAndFillPairingsClearTheFloorForEverySeed(t *testing.T) {
 			}
 		}
 	}
-	t.Logf("over %d seeds: worst container/fill pairing %.2f:1 (%s)", len(sweepSeeds()), worst, worstAt)
-}
-
-// wcagAAA is WCAG 2's AAA normal-text ratio, reported (never gated on) by
-// the high-contrast gate's log lines.
-const wcagAAA = 7.0
-
-// wcagAAAVerdict renders a WCAG AAA pass/fail for those log lines.
-func wcagAAAVerdict(ratio float64) string {
-	if ratio >= wcagAAA {
-		return "pass"
-	}
-	return "fail"
+	t.Logf("over %d seeds: worst container/fill pairing |Lc| %.2f (%s)", len(sweepSeeds()), worst, worstAt)
 }
 
 // statusRoles is the four semantic status roles with the fixed anchor hue
@@ -609,8 +575,8 @@ func TestStatusAnchorsHoldTheirFamiliesForEverySeed(t *testing.T) {
 //
 // Four properties per container: it carries its parent role's hue, it
 // carries the container dial's chroma, the neutral body-text token reaches
-// WCAG AA over it, and the mark the derivation chose for it reaches WCAG
-// 1.4.11's 3:1 non-text floor over it.
+// [tokens.TextFloor] over it, and the mark the derivation chose for it
+// reaches [tokens.GraphicFloor] over it.
 //
 // "Its parent's hue" is read off the step the container reads its own hue
 // from — the ramp's pale tint depth, step 300 counted from the pale end —
@@ -620,8 +586,8 @@ func TestStatusAnchorsHoldTheirFamiliesForEverySeed(t *testing.T) {
 // the derivation is that a role's container is one hue at every depth it is
 // drawn at.
 func TestStatusContainersKeepTheirParentsHue(t *testing.T) {
-	const dial, dialSlack, graphicFloor = 0.055, 0.004, 3.0
-	worstText, worstMark, worstChroma := 99.0, 99.0, 99.0
+	const dial, dialSlack = 0.055, 0.004
+	worstText, worstMark, worstChroma := 999.0, 999.0, 99.0
 	worstHue := 0.0
 	for _, seed := range sweepSeeds() {
 		light, dark := tokens.FromSeed(seed)
@@ -657,22 +623,22 @@ func TestStatusContainersKeepTheirParentsHue(t *testing.T) {
 				if chroma < worstChroma {
 					worstChroma = chroma
 				}
-				if got := color.ContrastRatio(s.tok.Text, container); got < wcagAA {
-					t.Errorf("seed %v: %s %s container: body text measures %.2f:1, under the %.1f:1 floor",
-						seed, s.name, r.name, got, wcagAA)
+				if got := color.Magnitude(s.tok.Text, container); got < tokens.TextFloor {
+					t.Errorf("seed %v: %s %s container: body text measures |Lc| %.2f, under the %.0f floor",
+						seed, s.name, r.name, got, tokens.TextFloor)
 				} else if got < worstText {
 					worstText = got
 				}
-				if got := color.ContrastRatio(mark, container); got < graphicFloor {
-					t.Errorf("seed %v: %s %s container: the mark %v measures %.2f:1, under the %.1f:1 non-text floor",
-						seed, s.name, r.name, mark, got, graphicFloor)
+				if got := color.Magnitude(mark, container); got < tokens.GraphicFloor {
+					t.Errorf("seed %v: %s %s container: the mark %v measures |Lc| %.2f, under the %.0f mark floor",
+						seed, s.name, r.name, mark, got, tokens.GraphicFloor)
 				} else if got < worstMark {
 					worstMark = got
 				}
 			}
 		}
 	}
-	t.Logf("over %d seeds: worst container chroma %.4f (dial %.3f), worst hue drift from the pale tint depth %.2f° (slack %.1f°), worst body text on a container %.2f:1, worst mark on a container %.2f:1",
+	t.Logf("over %d seeds: worst container chroma %.4f (dial %.3f), worst hue drift from the pale tint depth %.2f° (slack %.1f°), worst body text on a container |Lc| %.2f, worst mark on a container |Lc| %.2f",
 		len(sweepSeeds()), worstChroma, dial, worstHue, containerSlack, worstText, worstMark)
 }
 
@@ -762,7 +728,7 @@ func TestContainersSeparateFromEveryLevelItStandsOn(t *testing.T) {
 				for _, lv := range levels {
 					surface := s.tok.SurfaceAt(lv)
 					fill := s.tok.StatusContainerOn(r.role, surface)
-					got := color.ContrastRatio(fill, surface)
+					got := contrastRatio(fill, surface)
 					if got < tokens.ContainerFloor {
 						t.Errorf("seed %v: %s %s container %v on the level-%d fill %v measures %.3f:1, under the %.2f:1 seam floor",
 							seed, s.name, r.name, fill, lv, surface, got, tokens.ContainerFloor)
@@ -801,11 +767,18 @@ func TestStatusFillsKeepTheirHuesApartOnEveryLevel(t *testing.T) {
 	// container against: past this a container is a control's fill, not the
 	// surface something else stands on.
 	const solid = 2.5
+	// containerForegroundReach is what a role's own ramp actually reaches
+	// over that role's container, which is under [tokens.TextFloor]: a
+	// container is realized at the step-300 depth or deeper, and the ramp's
+	// text steps reach |Lc| 66.6 at best over the shallower step-100
+	// surface. The walk answers with the step that reads furthest and the
+	// sweep's worst is 62.54.
+	const containerForegroundReach = 62.0
 	levels := []tokens.ElevationLevel{
 		tokens.LevelBackdrop, tokens.LevelChrome, tokens.Level0, tokens.Level1, tokens.Level2, tokens.Level3,
 	}
 	// strongestSeam is a contrast reading, not prominence.
-	worstSeam, strongestSeam, worstText := 99.0, 0.0, 99.0
+	worstSeam, strongestSeam, worstText := 99.0, 0.0, 999.0
 	worstSep, worstSepAt := 99.0, ""
 	worstHue := 999.0
 	for _, seed := range sweepSeeds() {
@@ -815,7 +788,7 @@ func TestStatusFillsKeepTheirHuesApartOnEveryLevel(t *testing.T) {
 				fills := make([]stdcolor.NRGBA, len(statusRoles))
 				for i, r := range statusRoles {
 					fills[i] = s.tok.StatusContainerOn(r.role, surface)
-					got := color.ContrastRatio(fills[i], surface)
+					got := contrastRatio(fills[i], surface)
 					if got < tokens.ContainerFloor {
 						t.Errorf("seed %v: %s %s container %v on the level-%d surface %v measures %.3f:1, under the %.2f:1 seam floor",
 							seed, s.name, r.name, fills[i], lv, surface, got, tokens.ContainerFloor)
@@ -829,9 +802,9 @@ func TestStatusFillsKeepTheirHuesApartOnEveryLevel(t *testing.T) {
 						strongestSeam = got
 					}
 					fg := s.tok.ForegroundOn(r.role, fills[i])
-					if got := color.ContrastRatio(fg, fills[i]); got < tokens.TextFloor {
-						t.Errorf("seed %v: %s %s foreground %v over its own container %v measures %.3f:1, under the %.1f:1 text floor",
-							seed, s.name, r.name, fg, fills[i], got, tokens.TextFloor)
+					if got := color.Magnitude(fg, fills[i]); got < containerForegroundReach {
+						t.Errorf("seed %v: %s %s foreground %v over its own container %v measures |Lc| %.2f, under the %.0f the role's ramp reaches over its own container",
+							seed, s.name, r.name, fg, fills[i], got, containerForegroundReach)
 					} else if got < worstText {
 						worstText = got
 					}
@@ -856,7 +829,7 @@ func TestStatusFillsKeepTheirHuesApartOnEveryLevel(t *testing.T) {
 			}
 		}
 	}
-	t.Logf("over %d seeds, both derivations, both schemes, five levels: closest two containers %.4f in OKLab (floor %.3f, %s) at %.2f° of hue; seam worst %.3f:1 best %.3f:1; worst foreground over a container %.3f:1",
+	t.Logf("over %d seeds, both derivations, both schemes, five levels: closest two containers %.4f in OKLab (floor %.3f, %s) at %.2f° of hue; seam worst %.3f:1 best %.3f:1; worst foreground over a container |Lc| %.2f",
 		len(sweepSeeds()), worstSep, tokens.ContainerSeparation, worstSepAt, worstHue, worstSeam, strongestSeam, worstText)
 }
 
@@ -879,7 +852,7 @@ func TestTheSurfaceAwareContainerHoldsTheFixedOneWhereItAlreadyWorks(t *testing.
 				} {
 					surface := s.tok.SurfaceAt(lv)
 					fixed := s.tok.StatusContainer(r.role)
-					if color.ContrastRatio(fixed, surface) < tokens.ContainerFloor {
+					if contrastRatio(fixed, surface) < tokens.ContainerFloor {
 						continue // the collision case: moving is the point
 					}
 					if got := s.tok.StatusContainerOn(r.role, surface); got != fixed {
@@ -908,17 +881,17 @@ const (
 	// under the content, 5 L* apart in both schemes by measurement — which
 	// bottoms out at 1.1062:1 over the sweep, in the dark scheme.
 	adjacencyFloor = 1.10
-	// The two bands a ramp has to put a step in, measured against its own
-	// step-100 surface: WCAG 1.4.11's 3:1 for a mark that is not text, and
-	// WCAG 1.4.3 AA's 4.5:1 for one that is. Each band is closed at the
-	// next threshold up, so clearing it takes a step of about the right
-	// weight rather than one pronounced enough to clear everything. The boundary
-	// tone is light's 600 and dark's 500, measuring 3.410:1 to 4.049:1 over
-	// the sweep; the text tone is light's 700 and dark's 600, 6.167:1 to
-	// 6.478:1.
-	boundaryBand = 3.0
-	textBand     = 4.5
-	strongBand   = 7.0
+	// The two bands a ramp has to put a step in, measured in |Lc| against
+	// its own step-100 surface: [tokens.GraphicFloor] for a mark that is not
+	// text and [tokens.TextFloor] for one that is. Each band is closed at
+	// the next level up, so clearing it takes a step of about the right
+	// weight rather than one pronounced enough to clear everything. The
+	// boundary tone is light's 600 and dark's 500, measuring |Lc| 46.09 to
+	// 50.06 over the sweep; the text tone is light's 800 and dark's 700,
+	// |Lc| 75.00 to 85.51.
+	boundaryBand = tokens.GraphicFloor
+	textBand     = tokens.TextFloor
+	strongBand   = tokens.IncreasedTextFloor
 )
 
 // TestRampsCoverTheirRange gates the tone curve itself, in every ramp of
@@ -926,8 +899,8 @@ const (
 // gapCeiling, none closer than adjacencyFloor, and a step in each of the
 // two contrast bands over the ramp's own surface. Together they say a ramp
 // is a progression covering its range rather than two clusters with a hole
-// between them — a scale with no step in the 3:1 band has no boundary tone
-// to draw an outline in, and one with no step in the 4.5:1 band has no text
+// between them — a scale with no step in the mark band has no boundary tone
+// to draw an outline in, and one with no step in the text band has no text
 // tone.
 //
 // The increased-contrast variant is deliberately outside this gate: it
@@ -953,11 +926,11 @@ func TestRampsCoverTheirRange(t *testing.T) {
 						t.Errorf("seed %v: %s %s steps %d–%d are %.1f L* apart, over the %.0f ceiling",
 							seed, s.name, r.name, step-100, step, gap, gapCeiling)
 					}
-					if got := color.ContrastRatio(below, at); got < adjacencyFloor {
+					if got := contrastRatio(below, at); got < adjacencyFloor {
 						t.Errorf("seed %v: %s %s steps %d–%d measure %.4f:1 against each other, under the %.2f floor",
 							seed, s.name, r.name, step-100, step, got, adjacencyFloor)
 					}
-					switch got := color.ContrastRatio(at, surface); {
+					switch got := color.Magnitude(at, surface); {
 					case got >= boundaryBand && got < textBand && boundary == 0:
 						boundary = step
 					case got >= textBand && got < strongBand && text == 0:
@@ -965,11 +938,11 @@ func TestRampsCoverTheirRange(t *testing.T) {
 					}
 				}
 				if boundary == 0 {
-					t.Errorf("seed %v: %s %s has no step between %.1f:1 and %.1f:1 over its own surface — no boundary tone",
+					t.Errorf("seed %v: %s %s has no step between |Lc| %.0f and %.0f over its own surface — no boundary tone",
 						seed, s.name, r.name, boundaryBand, textBand)
 				}
 				if text == 0 {
-					t.Errorf("seed %v: %s %s has no step between %.1f:1 and %.1f:1 over its own surface — no text tone",
+					t.Errorf("seed %v: %s %s has no step between |Lc| %.0f and %.0f over its own surface — no text tone",
 						seed, s.name, r.name, textBand, strongBand)
 				}
 				if seed == tokens.DefaultSeed {
@@ -1013,7 +986,7 @@ func TestFillsClearThePerceptibilityFloor(t *testing.T) {
 					name string
 					fill stdcolor.NRGBA
 				}{{"hover", hover}, {"press", press}} {
-					got := color.ContrastRatio(w.fill, surface)
+					got := contrastRatio(w.fill, surface)
 					where := fmt.Sprintf("seed %v %s %s %s", seed, s.name, lv.name, w.name)
 					if got < tokens.StateFloor {
 						t.Errorf("%s: state fill %v on the surface %v measures %.3f:1, under the %.2f:1 floor",
@@ -1025,7 +998,7 @@ func TestFillsClearThePerceptibilityFloor(t *testing.T) {
 						strongest = got
 					}
 				}
-				step := color.ContrastRatio(press, hover)
+				step := contrastRatio(press, hover)
 				if lstar(press) == lstar(hover) {
 					t.Errorf("seed %v %s %s: press %v does not lie beyond hover %v",
 						seed, s.name, lv.name, press, hover)

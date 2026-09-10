@@ -94,7 +94,7 @@
 // styled colour, size, radius, shadow and font value is a var() reference
 // into ../styles.css, so regenerating the sheet from another seed reflows
 // every page. Literal token values appear only as annotation text — hexes,
-// px numbers, and the measured APCA Lc and WCAG 2 ratio of each text pair —
+// px numbers, and the measured APCA Lc of each text pair —
 // printed for both modes (labelled L and D) because text cannot flip with a
 // class the way painted specimens do. Each page carries a light/dark toggle
 // flipping the .dark class on the root element. The page test enforces the

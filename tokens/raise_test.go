@@ -5,7 +5,6 @@ import (
 	"math"
 	"testing"
 
-	vgcolor "github.com/vibrantgio/theme/color"
 	"github.com/vibrantgio/theme/tokens"
 )
 
@@ -49,7 +48,7 @@ func TestARaiseIsLighterOrCarriesASeam(t *testing.T) {
 						t.Fatalf("seed %v %s: raise %d off level %d fills L*%.2f under the L*%.2f it stands on — the walk inverted",
 							seed, scheme.name, depth, level, lstar(raise.Fill), lstar(surface))
 					}
-					got := vgcolor.ContrastRatio(raise.Fill, surface)
+					got := contrastRatio(raise.Fill, surface)
 					if !raise.Seamed {
 						if got < tokens.RaiseFloor {
 							t.Fatalf("seed %v %s: raise %d off level %d measures %.4f:1, under RaiseFloor, and reports no seam",
@@ -62,8 +61,8 @@ func TestARaiseIsLighterOrCarriesASeam(t *testing.T) {
 						// A seam is only discharged if it is findable
 						// against BOTH fills, which is the whole of what
 						// the Seam entry asks of it.
-						below := vgcolor.ContrastRatio(raise.Seam, surface)
-						above := vgcolor.ContrastRatio(raise.Seam, raise.Fill)
+						below := contrastRatio(raise.Seam, surface)
+						above := contrastRatio(raise.Seam, raise.Fill)
 						if min(below, above) < tokens.SeamRatio {
 							t.Fatalf("seed %v %s: raise %d off level %d seams at %.3f:1 below and %.3f:1 above, under SeamRatio %.2f",
 								seed, scheme.name, depth, level, below, above, tokens.SeamRatio)
@@ -97,7 +96,7 @@ func TestARaiseOnARaiseOnAModalResolves(t *testing.T) {
 				raise   tokens.Raise
 			}{{"card on the modal", modal, card}, {"field in the card", card.Fill, field}} {
 				told := !step.raise.Seamed ||
-					vgcolor.ContrastRatio(step.raise.Seam, step.beneath) >= tokens.SeamRatio
+					contrastRatio(step.raise.Seam, step.beneath) >= tokens.SeamRatio
 				if !told {
 					t.Fatalf("seed %v %s: the %s is told by nothing", seed, scheme.name, step.name)
 				}
@@ -125,7 +124,7 @@ func TestACardOnTheContentIsToldByItsFill(t *testing.T) {
 			raise := scheme.tok.RaisedOn(scheme.tok.Background)
 			if raise.Seamed {
 				t.Fatalf("seed %v %s: a card on the content is seamed at %.4f:1 — the content owes its first raise a whole step",
-					seed, scheme.name, vgcolor.ContrastRatio(raise.Fill, scheme.tok.Background))
+					seed, scheme.name, contrastRatio(raise.Fill, scheme.tok.Background))
 			}
 		}
 	}
@@ -220,7 +219,7 @@ func TestSeamOnIsFindableAgainstTheSurfaceItPartsFromItself(t *testing.T) {
 		for _, scheme := range schemes(seed) {
 			for _, level := range standable {
 				surface := scheme.tok.SurfaceAt(level)
-				got := vgcolor.ContrastRatio(scheme.tok.SeamOn(surface), surface)
+				got := contrastRatio(scheme.tok.SeamOn(surface), surface)
 				if got < tokens.SeamRatio {
 					t.Fatalf("seed %v %s: the hairline on level %d measures %.3f:1 against the fill it parts, under SeamRatio %.2f:1",
 						seed, scheme.name, level, got, tokens.SeamRatio)

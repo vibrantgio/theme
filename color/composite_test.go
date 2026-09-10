@@ -30,8 +30,8 @@ func TestOverBlendsInLinearLight(t *testing.T) {
 	if want := nrgba(0xCCCCCC, 0xff); comp != want {
 		t.Errorf("Over(#5C5C5C@100, #F6F6F6) = %v, want %v", comp, want)
 	}
-	if got := color.ContrastRatio(comp, page); math.Abs(got-1.49) > 0.005 {
-		t.Errorf("the composited thumb measures %.2f:1 against the page, want 1.49:1", got)
+	if got := color.Magnitude(comp, page); math.Abs(got-21.9) > 0.05 {
+		t.Errorf("the composited thumb measures Lc %.1f against the page, want Lc 21.9", got)
 	}
 }
 

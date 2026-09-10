@@ -269,12 +269,11 @@ func TestTheBackdropTakesTheDerivedStep(t *testing.T) {
 // strategy held to its own bargain. Above the content the light scheme's
 // steps are whispers — a fraction of an L* — so the derived hairline has
 // to be what says where a raised surface is. This asserts that MarkOn's
-// answer against every level clears WCAG 1.4.11's 3:1 in both schemes
+// answer against every level clears [tokens.GraphicFloor] in both schemes
 // over the whole sweep, which is the condition under which the whisper is
 // affordable, and it records how thin the fill step actually gets.
 func TestTheHairlineCarriesTheWhisperStep(t *testing.T) {
-	const graphicFloor = 3.0
-	worst, worstAt := 99.0, ""
+	worst, worstAt := 999.0, ""
 	for _, seed := range sweepSeeds() {
 		light, dark := tokens.FromSeed(seed)
 		for _, scheme := range []struct {
@@ -283,10 +282,10 @@ func TestTheHairlineCarriesTheWhisperStep(t *testing.T) {
 		}{{"light", light}, {"dark", dark}} {
 			for _, level := range levels {
 				fill := scheme.tok.SurfaceAt(level.level)
-				got := contrastRatio(scheme.tok.MarkOn(tokens.RoleNeutral, fill, graphicFloor), fill)
-				if got < graphicFloor {
-					t.Errorf("seed %v %s %s: hairline reads %.2f:1 on the fill, want %.1f:1",
-						seed, scheme.name, level.name, got, graphicFloor)
+				got := vgcolor.Magnitude(scheme.tok.MarkOn(tokens.RoleNeutral, fill, tokens.GraphicFloor), fill)
+				if got < tokens.GraphicFloor {
+					t.Errorf("seed %v %s %s: hairline reads |Lc| %.2f on the fill, want %.0f",
+						seed, scheme.name, level.name, got, tokens.GraphicFloor)
 				}
 				if got < worst {
 					worst, worstAt = got, scheme.name+" "+level.name
@@ -301,7 +300,7 @@ func TestTheHairlineCarriesTheWhisperStep(t *testing.T) {
 		above := lstar(tokens.DefaultLight.SurfaceAt(levels[i].level))
 		t.Logf("light %s→%s: %.2f L*", levels[i-1].name, levels[i].name, above-below)
 	}
-	t.Logf("over %d seeds: worst hairline on a level %.2f:1 (%s)", len(sweepSeeds()), worst, worstAt)
+	t.Logf("over %d seeds: worst hairline on a level |Lc| %.2f (%s)", len(sweepSeeds()), worst, worstAt)
 }
 
 // TestStateAtWalksFromTheLevel asserts the state walks compose on top of
@@ -340,7 +339,7 @@ func TestStateAtWalksFromTheLevel(t *testing.T) {
 						scheme.name, level.name, hover, pinned)
 				}
 			}
-			if got := vgcolor.ContrastRatio(hover, fill); got < tokens.StateFloor {
+			if got := contrastRatio(hover, fill); got < tokens.StateFloor {
 				t.Errorf("%s %s: hover state fill %v on the fill %v measures %.3f:1, under the %.2f:1 minimum",
 					scheme.name, level.name, hover, fill, got, tokens.StateFloor)
 			}

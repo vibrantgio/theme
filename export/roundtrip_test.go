@@ -432,10 +432,11 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		// The ring: one per mode, restated here from the rule rather than
 		// called out of the emitter, so the sheet and its generator cannot
 		// agree on a wrong answer. The rule is the step of the primary ramp
-		// nearest step 500 that reaches 3:1 against EVERY level a control
-		// can stand on — every level but the backdrop, which nothing is
-		// drawn at — 1.25:1 against every one of those levels' neutral
-		// resting borders, and is not the accent fill — the property the Gio side
+		// nearest step 500 that reaches [tokens.GraphicFloor] against EVERY
+		// level a control can stand on — every level but the backdrop, which
+		// nothing is drawn at — 1.25:1 in luminance against every one of
+		// those levels' neutral resting borders, and is not the accent fill
+		// — the property the Gio side
 		// derives by, and the reason no per-level ring token exists to pin.
 		// The second floor is what keeps focus from being spelled in hue
 		// alone: the resting border is the line a focused field swaps for its
@@ -447,9 +448,9 @@ func TestRoundTripButtonClasses(t *testing.T) {
 			clears := true
 			for _, level := range standableLevels {
 				surface := mode.tok.SurfaceAt(level.level)
-				border := mode.tok.MarkOn(tokens.RoleNeutral, surface, 3.0)
-				if color.ContrastRatio(step, surface) < 3.0 ||
-					color.ContrastRatio(step, border) < 1.25 {
+				border := mode.tok.MarkOn(tokens.RoleNeutral, surface, tokens.GraphicFloor)
+				if color.Magnitude(step, surface) < tokens.GraphicFloor ||
+					luminanceRatio(step, border) < 1.25 {
 					clears = false
 					break
 				}
@@ -477,8 +478,8 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		// walked against the fill instead.
 		fill := mode.tok.SolidStateColor(tokens.RolePrimary, tokens.StateFocus)
 		onAccent := wantRing
-		if color.ContrastRatio(wantRing, fill) < 3.0 {
-			onAccent = mode.tok.MarkOn(tokens.RolePrimary, fill, 3.0)
+		if color.Magnitude(wantRing, fill) < tokens.GraphicFloor {
+			onAccent = mode.tok.MarkOn(tokens.RolePrimary, fill, tokens.GraphicFloor)
 		}
 		if got, want := mode.vars["--color-focus-ring-on-accent"], wantHex(onAccent); got != want {
 			t.Errorf("--color-focus-ring-on-accent (mode %d) = %q, want the ring the filled button's own fill can carry %q", i, got, want)
@@ -498,7 +499,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		// own edges against, and the edge any control standing on those
 		// levels wears. Level 1 has none: a card draws no line of its own,
 		// and a control on a card takes control-border unchanged.
-		if got, want := mode.vars["--color-control-border"], wantHex(mode.tok.MarkOn(tokens.RoleNeutral, mode.tok.SurfaceAt(tokens.Level0), 3.0)); got != want {
+		if got, want := mode.vars["--color-control-border"], wantHex(mode.tok.MarkOn(tokens.RoleNeutral, mode.tok.SurfaceAt(tokens.Level0), tokens.GraphicFloor)); got != want {
 			t.Errorf("--color-control-border (mode %d) = %q, want the neutral step that reads on the window surface %q", i, got, want)
 		}
 		for _, edge := range []struct {
@@ -509,7 +510,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 			{"--color-dialog-border", tokens.Level2, "the dialog's level-2 fill"},
 			{"--color-popover-border", tokens.Level3, "the popover's level-3 fill"},
 		} {
-			want := wantHex(mode.tok.MarkOn(tokens.RoleNeutral, mode.tok.SurfaceAt(edge.level), 3.0))
+			want := wantHex(mode.tok.MarkOn(tokens.RoleNeutral, mode.tok.SurfaceAt(edge.level), tokens.GraphicFloor))
 			if got := mode.vars[edge.name]; got != want {
 				t.Errorf("%s (mode %d) = %q, want the neutral step that reads on %s %q", edge.name, i, got, edge.what, want)
 			}

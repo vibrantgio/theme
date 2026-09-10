@@ -15,14 +15,14 @@ import (
 // eight-bit average of the two hex codes is a different colour altogether.
 // The design system's own overlay scrollbar is the demonstration — the
 // low-contrast-text step at 39% coverage over the light page lands on
-// #CCCCCC by this route and on #BABABA by the naive one, 1.49:1 against the
-// page rather than 1.80:1. Measuring a translucent foreground against the
+// #CCCCCC by this route and on #BABABA by the naive one, Lc 21.9 against
+// the page rather than Lc 31.9. Measuring a translucent foreground against the
 // wrong composite is how a foreground no reader can find comes to be believed
 // legible.
 //
 // src's alpha is its coverage. dst is a surface — what is already on the
 // screen when the fill is drawn on it — so its alpha is ignored and the
-// result is opaque, which is what makes the result something [ContrastRatio]
+// result is opaque, which is what makes the result something [APCA]
 // can be handed. Coverage 0 returns dst and coverage 255 returns src, both
 // exactly.
 func Over(src, dst stdcolor.NRGBA) stdcolor.NRGBA {

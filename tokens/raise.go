@@ -23,17 +23,36 @@
 // seam on the side the surface beneath it shows around.
 //
 // A caller that already draws an edge of its own has discharged the seam
-// with it: a text field's resting border is a 3:1 mark around exactly this
-// pairing, and a second hairline inside it would be two lines saying one
-// thing.
+// with it: a text field's resting border is a mark at [GraphicFloor] around
+// exactly this pairing, and a second hairline inside it would be two lines
+// saying one thing.
 package tokens
 
 import (
-	"image/color"
+	stdcolor "image/color"
 	"math"
 
 	vgcolor "github.com/vibrantgio/theme/color"
 )
+
+// luminanceRatio is the dials' own arithmetic: (L1+0.05)/(L2+0.05) over the
+// two relative luminances, lighter first, so the result is order-independent
+// and runs from 1 to 21.
+//
+// It is NOT a contrast measure and nothing legible is gated on it — contrast
+// is APCA ([vgcolor.Magnitude]) throughout. It is the scale [RaiseFloor],
+// [SeamRatio], [ContainerFloor] and [StateFloor] were measured in, each of
+// them a threshold on whether one fill reads as a different surface from the
+// one under it, and each sitting in an empty stretch of this package's own
+// measured population. Restating them in another scale would move every one
+// of those measurements and settle nothing they answer.
+func luminanceRatio(a, b stdcolor.NRGBA) float64 {
+	la, lb := vgcolor.RelativeLuminance(a), vgcolor.RelativeLuminance(b)
+	if la < lb {
+		la, lb = lb, la
+	}
+	return (la + 0.05) / (lb + 0.05)
+}
 
 // RaiseFloor is the least contrast a raise owes the surface beneath it for
 // its FILL to be doing the telling: below it the step is there but nobody
@@ -69,12 +88,12 @@ const RaiseFloor = 1.09
 // clear. The platform draws this hairline and draws it quietly — Voice Memos
 // outlines its inset panel at #3A3A3A on a #1B1B1B panel, 1.514:1.
 //
-// It is deliberately NOT the 3:1 graphic floor a mark derives to: a 3:1 mark
-// carries meaning by itself and owes WCAG 1.4.11, while a seam only says
-// where one region ends and the next begins, read alongside the corner
-// radius and the shadow that say the same thing. At 3:1 every card in a
-// light window would wear a line more pronounced than anything the platform
-// draws.
+// It is deliberately NOT [GraphicFloor], and not stated in |Lc| at all: a
+// mark carries meaning by itself and owes a contrast floor, while a seam
+// only says where one region ends and the next begins, read alongside the
+// corner radius and the shadow that say the same thing. At a mark's floor
+// every card in a light window would wear a line more pronounced than
+// anything the platform draws.
 const SeamRatio = 1.51
 
 // Raise is what a thing standing on a surface is drawn with: the surface one
@@ -85,10 +104,10 @@ const SeamRatio = 1.51
 type Raise struct {
 	// Fill is the surface one step above the one the thing stands on,
 	// clamped at the scheme's ceiling.
-	Fill color.NRGBA
+	Fill stdcolor.NRGBA
 	// Seam is the hairline the raise draws at its own edge: findable
 	// against both fills, in either scheme.
-	Seam color.NRGBA
+	Seam stdcolor.NRGBA
 	// Seamed reports that Fill alone does not clear [RaiseFloor] against
 	// the surface beneath, so the raise is owed its Seam.
 	Seamed bool
@@ -107,7 +126,7 @@ type Raise struct {
 // its own; a depth that coincides with one of the band's own steps answers
 // with that step verbatim, which is what makes the dark scheme's first raise
 // Neutral 200 byte-for-byte rather than approximately.
-func (t ColorTokens) RaisedOn(surface color.NRGBA) Raise {
+func (t ColorTokens) RaisedOn(surface stdcolor.NRGBA) Raise {
 	band, tone := t.surfaceBand()
 	standing, _, _ := vgcolor.LabFromNRGBA(surface)
 	target := math.Min(standing+raiseStep(tone), ceiling(tone))
@@ -118,7 +137,7 @@ func (t ColorTokens) RaisedOn(surface color.NRGBA) Raise {
 	return Raise{
 		Fill:   fill,
 		Seam:   t.seamBetween(surface, fill),
-		Seamed: vgcolor.ContrastRatio(fill, surface) < RaiseFloor,
+		Seamed: luminanceRatio(fill, surface) < RaiseFloor,
 	}
 }
 
@@ -131,7 +150,7 @@ func (t ColorTokens) RaisedOn(surface color.NRGBA) Raise {
 // because a group takes the fill of the surface it is in and raises
 // nothing. [ColorTokens.RaisedOn]'s Seam answers the other case, where the
 // two sides of the line are a surface and the raise standing on it.
-func (t ColorTokens) SeamOn(surface color.NRGBA) color.NRGBA {
+func (t ColorTokens) SeamOn(surface stdcolor.NRGBA) stdcolor.NRGBA {
 	return t.seamBetween(surface, surface)
 }
 
@@ -147,7 +166,7 @@ func (t ColorTokens) SeamOn(surface color.NRGBA) color.NRGBA {
 // dark scheme's seam is lighter than the surfaces it parts, as the platform
 // draws it, and a light scheme's is darker, which is the only direction a
 // light seam has room in when the surface above it is already white.
-func (t ColorTokens) seamBetween(below, above color.NRGBA) color.NRGBA {
+func (t ColorTokens) seamBetween(below, above stdcolor.NRGBA) stdcolor.NRGBA {
 	yb := vgcolor.RelativeLuminance(below)
 	ya := vgcolor.RelativeLuminance(above)
 	toward := 1.0 // the scheme's foreground is lighter than its content
@@ -164,7 +183,7 @@ func (t ColorTokens) seamBetween(below, above color.NRGBA) color.NRGBA {
 	// against both fills and steps once more toward the foreground rather
 	// than shipping a seam that misses by a rounding.
 	for i := 0; i < 8; i++ {
-		if vgcolor.ContrastRatio(seam, below) >= SeamRatio && vgcolor.ContrastRatio(seam, above) >= SeamRatio {
+		if luminanceRatio(seam, below) >= SeamRatio && luminanceRatio(seam, above) >= SeamRatio {
 			break
 		}
 		if tone += toward * 0.5; tone < 0 || tone > axisTop {
@@ -178,15 +197,15 @@ func (t ColorTokens) seamBetween(below, above color.NRGBA) color.NRGBA {
 // lightnessOf is a colour's CIELAB L*, which is what "toward the
 // foreground" compares: a seam's direction is a question about lightness and
 // nothing else.
-func lightnessOf(c color.NRGBA) float64 {
+func lightnessOf(c stdcolor.NRGBA) float64 {
 	l, _, _ := vgcolor.LabFromNRGBA(c)
 	return l
 }
 
 // toneOfLuminance is the CIELAB lightness of a relative luminance — the
-// inverse of the Y a WCAG contrast ratio is taken on. A distance stated as a
-// ratio is solved in Y; the toolkit realizes a colour from a tone, a chroma
-// and a hue; this is the one step between them.
+// inverse of the Y luminanceRatio is taken on. A distance stated as a ratio
+// is solved in Y; the toolkit realizes a colour from a tone, a chroma and a
+// hue; this is the one step between them.
 func toneOfLuminance(y float64) float64 {
 	if y <= 216.0/24389.0 {
 		return y * 24389.0 / 27.0

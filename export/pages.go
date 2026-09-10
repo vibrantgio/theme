@@ -137,11 +137,6 @@ func lcStr(text, surface stdcolor.NRGBA) string {
 	return fmt.Sprintf("%.1f", color.APCA(text, surface))
 }
 
-// wcagStr formats a WCAG 2 contrast ratio.
-func wcagStr(a, b stdcolor.NRGBA) string {
-	return fmt.Sprintf("%.2f:1", color.ContrastRatio(a, b))
-}
-
 // stepPurpose is the job per ramp step: the step number carries the
 // meaning, identically in both modes.
 func stepPurpose(step int) string {
@@ -169,14 +164,12 @@ func modeHex(light, dark stdcolor.NRGBA) string {
 	return fmt.Sprintf("L %s · D %s", hexRGB(light), hexRGB(dark))
 }
 
-// contrastRow renders one measured text pair as a table row: APCA Lc and the
-// WCAG 2 ratio, in both modes. The Lc numbers gate the palette and the
-// ratios are reported alongside.
+// contrastRow renders one measured text pair as a table row: the pair's APCA
+// Lc in both modes, which is the whole of what the palette is gated on.
 func contrastRow(b *strings.Builder, label string, lightText, lightSurface, darkText, darkSurface stdcolor.NRGBA) {
-	fmt.Fprintf(b, "<tr><th scope=\"row\">%s</th><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n",
+	fmt.Fprintf(b, "<tr><th scope=\"row\">%s</th><td>%s</td><td>%s</td></tr>\n",
 		html.EscapeString(label),
-		lcStr(lightText, lightSurface), wcagStr(lightText, lightSurface),
-		lcStr(darkText, darkSurface), wcagStr(darkText, darkSurface))
+		lcStr(lightText, lightSurface), lcStr(darkText, darkSurface))
 }
 
 // colorPageCSS is the colour page's specimen scaffolding.
@@ -252,7 +245,7 @@ type pinChip struct {
 
 // colorHTML renders foundations/color.html: eight roles, each with its full
 // nine-step ramp, its pinned base(s), the step purposes, and the
-// measured APCA Lc (WCAG 2 ratio alongside) of each text pair in both modes.
+// measured APCA Lc of each text pair in both modes.
 func colorHTML(s Snapshot) string {
 	roles := []colorRole{
 		{
@@ -379,10 +372,9 @@ func colorHTML(s Snapshot) string {
 		}
 		b.WriteString("</div>\n")
 
-		// The measured text pairs: the gates, both modes, Lc first and
-		// the WCAG ratio reported alongside.
+		// The measured text pairs: the gates, both modes.
 		b.WriteString("<h3>Measured contrast</h3>\n<table class=\"contrast\">\n<thead>\n")
-		b.WriteString("<tr><th scope=\"col\">text pair</th><th scope=\"col\">light Lc</th><th scope=\"col\">light WCAG</th><th scope=\"col\">dark Lc</th><th scope=\"col\">dark WCAG</th></tr>\n")
+		b.WriteString("<tr><th scope=\"col\">text pair</th><th scope=\"col\">light Lc</th><th scope=\"col\">dark Lc</th></tr>\n")
 		b.WriteString("</thead>\n<tbody>\n")
 		for _, pair := range [][2]int{{900, 100}, {900, 200}, {700, 100}, {700, 200}} {
 			text, surface := pair[0], pair[1]
@@ -401,7 +393,7 @@ func colorHTML(s Snapshot) string {
 		"plus a pinned base. Dark mode is the paired ramp: the same step keeps the same job. " +
 		"Swatches are painted through the token sheet, so the toggle restyles them; " +
 		"annotation values are printed for both modes, labelled L and D. " +
-		"APCA Lc is the gating metric (signed: negative means light-on-dark); WCAG 2 ratios are reported alongside."
+		"APCA Lc is the one contrast measure (signed: negative means light-on-dark)."
 	return page("Colour — Vibrant Gio foundations", "Colour", intro, colorPageCSS, b.String())
 }
 

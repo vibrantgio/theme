@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"testing"
 
+	vgcolor "github.com/vibrantgio/theme/color"
 	"github.com/vibrantgio/theme/tokens"
 )
 
@@ -40,7 +41,7 @@ var foregroundRoles = []struct {
 // foregroundLevels are the four levels a brand foreground can be drawn on:
 // the content a paragraph is set on and the three raised fills that host
 // content above it. A link in a card and a link on the page are the same
-// link and owe their own surfaces the same ratio, so the gate is read
+// link and owe their own surfaces the same floor, so the gate is read
 // against all four rather than against the page alone.
 var foregroundLevels = []struct {
 	name  string
@@ -102,9 +103,9 @@ func TestBrandForegroundClearsItsFloorForEverySeed(t *testing.T) {
 				for _, r := range foregroundRoles {
 					for _, f := range foregroundFloors {
 						foreground := s.tok.ForegroundOnAtFloor(r.role, surface, f.floor)
-						got := contrastRatio(foreground, surface)
+						got := vgcolor.Magnitude(foreground, surface)
 						if got < f.floor {
-							t.Errorf("seed %v: %s %s: %s foreground %v on %v measures %.2f:1, under the %.1f:1 %s floor",
+							t.Errorf("seed %v: %s %s: %s foreground %v on %v measures |Lc| %.2f, under the %.0f %s floor",
 								seed, s.name, st.name, r.name, foreground, surface, got, f.floor, f.name)
 						}
 						// The answer is the brand's own colour or a step of
@@ -133,7 +134,7 @@ func TestBrandForegroundClearsItsFloorForEverySeed(t *testing.T) {
 		}
 	}
 	for _, key := range []string{"text light", "text dark", "graphic light", "graphic dark"} {
-		t.Logf("over %d seeds: worst %s brand foreground %.2f:1 (%s)",
+		t.Logf("over %d seeds: worst %s brand foreground |Lc| %.2f (%s)",
 			len(sweepSeeds()), key, worst[key], worstAt[key])
 	}
 }
@@ -150,12 +151,12 @@ func TestBrandForegroundKeepsThePinThatReads(t *testing.T) {
 				for _, r := range foregroundRoles {
 					for _, f := range foregroundFloors {
 						pin := r.pin(s.tok)
-						if contrastRatio(pin, surface) < f.floor {
+						if vgcolor.Magnitude(pin, surface) < f.floor {
 							continue
 						}
 						if foreground := s.tok.ForegroundOnAtFloor(r.role, surface, f.floor); foreground != pin {
-							t.Errorf("seed %v: %s %s: %s %s foreground moved from the pin %v to %v though the pin measured %.2f:1",
-								seed, s.name, st.name, r.name, f.name, pin, foreground, contrastRatio(pin, surface))
+							t.Errorf("seed %v: %s %s: %s %s foreground moved from the pin %v to %v though the pin measured |Lc| %.2f",
+								seed, s.name, st.name, r.name, f.name, pin, foreground, vgcolor.Magnitude(pin, surface))
 						}
 					}
 				}
@@ -164,35 +165,56 @@ func TestBrandForegroundKeepsThePinThatReads(t *testing.T) {
 	}
 }
 
-// TestTheCanonicalSeedsBrandForegroundIsItsPin states the no-op for the one
-// palette every golden image in this design system is rendered from. If
-// this fails, a stored image somewhere else moved.
-func TestTheCanonicalSeedsBrandForegroundIsItsPin(t *testing.T) {
+// TestTheCanonicalSeedsBrandForegroundWalksForWordsAndStandsForMarks states
+// what each floor costs the one palette every golden image in this design
+// system is rendered from.
+//
+// At [tokens.GraphicFloor] every pinned base stands on every level, in both
+// schemes and both derivations: a mark drawn in a role's colour is the
+// role's own colour. At [tokens.TextFloor] the pin stands only where Lc 75
+// is inside its reach — on the light scheme's white raised fills it is, on
+// the content beneath them it is not, and in the dark scheme it never is —
+// so a word in a brand colour is a step of that brand's ramp wherever the
+// pin falls short, and the answer reaches the floor either way.
+func TestTheCanonicalSeedsBrandForegroundWalksForWordsAndStandsForMarks(t *testing.T) {
 	for _, s := range foregroundSchemes(tokens.DefaultSeed) {
 		for _, st := range foregroundLevels {
 			surface := s.tok.SurfaceAt(st.level)
 			for _, r := range foregroundRoles {
-				for _, f := range foregroundFloors {
-					if foreground := s.tok.ForegroundOnAtFloor(r.role, surface, f.floor); foreground != r.pin(s.tok) {
-						t.Errorf("%s %s: %s %s foreground is %v, not the pin %v — a stored image moved",
-							s.name, st.name, r.name, f.name, foreground, r.pin(s.tok))
-					}
+				pin := r.pin(s.tok)
+				if foreground := s.tok.ForegroundOnAtFloor(r.role, surface, tokens.GraphicFloor); foreground != pin {
+					t.Errorf("%s %s: %s mark foreground is %v, not the pin %v",
+						s.name, st.name, r.name, foreground, pin)
+				}
+				foreground := s.tok.ForegroundOnAtFloor(r.role, surface, tokens.TextFloor)
+				if bare := vgcolor.Magnitude(pin, surface); (foreground == pin) != (bare >= tokens.TextFloor) {
+					t.Errorf("%s %s: %s text foreground is %v while the pin %v measures |Lc| %.2f on %v",
+						s.name, st.name, r.name, foreground, pin, bare, surface)
+				}
+				if got := vgcolor.Magnitude(foreground, surface); got < tokens.TextFloor {
+					t.Errorf("%s %s: %s text foreground %v on %v measures |Lc| %.2f, under the %.0f text floor",
+						s.name, st.name, r.name, foreground, surface, got, tokens.TextFloor)
 				}
 			}
 		}
 	}
 }
 
-// TestOnlyTheLightPrimaryPinEverWalks records why the defect existed at all
-// and bounds what the gate can touch. Six of the seven pinned bases are
-// realized at fixed perceptual depths, so their contrast against the content
-// is a property of the derivation rather than of the brand and they never
-// need the walk. The light primary base is the brand colour itself at the
-// brand's own depth, which is the one place a seed can put a foreground too near
-// its surface — and the one place this gate ever answers with a step.
-func TestOnlyTheLightPrimaryPinEverWalks(t *testing.T) {
+// TestOnlyTheLightPrimaryPinEverWalksForAMark bounds what the mark floor can
+// touch. Six of the seven pinned bases are realized at fixed perceptual
+// depths, so their reading against the content is a property of the
+// derivation rather than of the brand and they never need the walk at
+// [tokens.GraphicFloor]. The light primary base is the brand colour itself at
+// the brand's own depth, which is the one place a seed can put a mark too
+// near its surface.
+//
+// [tokens.TextFloor] is a different matter and the counts record it: Lc 75
+// over a level is outside most pins' reach, so a pin walks for words far
+// more often than it walks for a mark.
+func TestOnlyTheLightPrimaryPinEverWalksForAMark(t *testing.T) {
 	walked := map[string]int{}
-	worstPin := 99.0
+	stood := map[string]int{}
+	worstPin := 999.0
 	worstPinAt := ""
 	for _, seed := range sweepSeeds() {
 		for _, s := range foregroundSchemes(seed) {
@@ -200,16 +222,17 @@ func TestOnlyTheLightPrimaryPinEverWalks(t *testing.T) {
 				surface := s.tok.SurfaceAt(st.level)
 				for _, r := range foregroundRoles {
 					for _, f := range foregroundFloors {
-						if s.tok.ForegroundOnAtFloor(r.role, surface, f.floor) == r.pin(s.tok) {
-							continue
-						}
 						scheme := "dark"
 						if s.light {
 							scheme = "light"
 						}
-						if r.role != tokens.RolePrimary || !s.light {
-							t.Errorf("seed %v: %s %s: the %s %s pin walked, but only the light primary pin follows the seed's own depth",
-								seed, s.name, st.name, r.name, f.name)
+						if s.tok.ForegroundOnAtFloor(r.role, surface, f.floor) == r.pin(s.tok) {
+							stood[f.name+" "+scheme]++
+							continue
+						}
+						if f.floor == tokens.GraphicFloor && (r.role != tokens.RolePrimary || !s.light) {
+							t.Errorf("seed %v: %s %s: the %s mark pin walked, but only the light primary pin follows the seed's own depth",
+								seed, s.name, st.name, r.name)
 						}
 						walked[f.name+" "+scheme]++
 					}
@@ -220,12 +243,13 @@ func TestOnlyTheLightPrimaryPinEverWalks(t *testing.T) {
 	for _, seed := range sweepSeeds() {
 		light, _ := tokens.FromSeed(seed)
 		surface := light.SurfaceAt(tokens.Level0)
-		if got := contrastRatio(light.Primary, surface); got < worstPin {
+		if got := vgcolor.Magnitude(light.Primary, surface); got < worstPin {
 			worstPin, worstPinAt = got, hexOf(seed)
 		}
 	}
-	t.Logf("over %d seeds, four palettes and four levels: %d text walks and %d graphic walks, all of them the light primary pin; bare light pin over the content bottoms out at %.2f:1 (%s)",
-		len(sweepSeeds()), walked["text light"], walked["graphic light"], worstPin, worstPinAt)
+	t.Logf("over %d seeds, four palettes and four levels: %d light and %d dark mark walks, %d light and %d dark text walks (%d light and %d dark text pins stood); bare light pin over the content bottoms out at |Lc| %.2f (%s)",
+		len(sweepSeeds()), walked["graphic light"], walked["graphic dark"],
+		walked["text light"], walked["text dark"], stood["text light"], stood["text dark"], worstPin, worstPinAt)
 }
 
 // TestAPastelSeedGetsAReadableLinkForeground is the regression this file was
@@ -238,34 +262,31 @@ func TestAPastelSeedGetsAReadableLinkForeground(t *testing.T) {
 	light, dark := tokens.FromSeed(seed)
 
 	lightContent := light.SurfaceAt(tokens.Level0)
-	if bare := contrastRatio(light.Primary, lightContent); bare >= tokens.TextFloor {
-		t.Fatalf("the pastel seed's bare light pin now measures %.2f:1 over the content — this test no longer reads the shape it was written for", bare)
+	if bare := vgcolor.Magnitude(light.Primary, lightContent); bare >= tokens.TextFloor {
+		t.Fatalf("the pastel seed's bare light pin now measures |Lc| %.2f over the content — this test no longer reads the shape it was written for", bare)
 	}
 	lightForeground := light.ForegroundOnAtFloor(tokens.RolePrimary, lightContent, tokens.TextFloor)
 	if lightForeground == light.Primary {
 		t.Errorf("light link foreground is still the bare pin %v", light.Primary)
 	}
-	if got := contrastRatio(lightForeground, lightContent); got < tokens.TextFloor {
-		t.Errorf("light link foreground %v on the content %v measures %.2f:1, under %.1f:1",
+	if got := vgcolor.Magnitude(lightForeground, lightContent); got < tokens.TextFloor {
+		t.Errorf("light link foreground %v on the content %v measures |Lc| %.2f, under %.0f",
 			lightForeground, lightContent, got, tokens.TextFloor)
 	}
 
-	// The dark scheme was never the broken half: its pin is realized at a
-	// fixed depth, so it clears and is kept.
+	// The dark scheme was never the broken half — its pin is realized at a
+	// fixed depth — but Lc 75 is further than that depth reaches, so it walks
+	// one step and it is the walk that has to read.
 	darkContent := dark.SurfaceAt(tokens.Level0)
 	darkForeground := dark.ForegroundOnAtFloor(tokens.RolePrimary, darkContent, tokens.TextFloor)
-	if darkForeground != dark.Primary {
-		t.Errorf("dark link foreground walked to %v; the dark pin %v measures %.2f:1 and should stand",
-			darkForeground, dark.Primary, contrastRatio(dark.Primary, darkContent))
-	}
-	if got := contrastRatio(darkForeground, darkContent); got < tokens.TextFloor {
-		t.Errorf("dark link foreground %v on the content %v measures %.2f:1, under %.1f:1",
+	if got := vgcolor.Magnitude(darkForeground, darkContent); got < tokens.TextFloor {
+		t.Errorf("dark link foreground %v on the content %v measures |Lc| %.2f, under %.0f",
 			darkForeground, darkContent, got, tokens.TextFloor)
 	}
-	t.Logf("seed %s: light link %s on %s %.2f:1 (bare pin %s %.2f:1); dark link %s on %s %.2f:1",
-		hexOf(seed), hexOf(lightForeground), hexOf(lightContent), contrastRatio(lightForeground, lightContent),
-		hexOf(light.Primary), contrastRatio(light.Primary, lightContent),
-		hexOf(darkForeground), hexOf(darkContent), contrastRatio(darkForeground, darkContent))
+	t.Logf("seed %s: light link %s on %s |Lc| %.2f (bare pin %s |Lc| %.2f); dark link %s on %s |Lc| %.2f",
+		hexOf(seed), hexOf(lightForeground), hexOf(lightContent), vgcolor.Magnitude(lightForeground, lightContent),
+		hexOf(light.Primary), vgcolor.Magnitude(light.Primary, lightContent),
+		hexOf(darkForeground), hexOf(darkContent), vgcolor.Magnitude(darkForeground, darkContent))
 }
 
 // TestForegroundOnAtFloorNeutralPanics: the neutral role carries surfaces
@@ -309,8 +330,8 @@ func TestForegroundOnAnswersEveryRole(t *testing.T) {
 				t.Errorf("%s role %d: ForegroundOn = %s, want %s",
 					sc.name, role, hexOf(got), hexOf(want))
 			}
-			if ratio := contrastRatio(got, fill); ratio < tokens.TextFloor {
-				t.Errorf("%s role %d: foreground %s on its own container %s = %.2f:1, under %.1f:1",
+			if ratio := vgcolor.Magnitude(got, fill); ratio < tokens.TextFloor {
+				t.Errorf("%s role %d: foreground %s on its own container %s = |Lc| %.2f, under %.0f",
 					sc.name, role, hexOf(got), hexOf(fill), ratio, tokens.TextFloor)
 			}
 		}

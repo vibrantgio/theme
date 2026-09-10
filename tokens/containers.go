@@ -39,7 +39,7 @@
 // saturated red only at mid depths and a saturated orange only at high
 // ones, so a fixed step would serve one hue at the cost of the others. It
 // is one rule for two jobs: a status container's own mark takes it against
-// the container at WCAG 1.4.11's 3:1 non-text floor, and a component that
+// the container at [GraphicFloor], and a component that
 // marks some other surface — a transient chip's leading edge over the
 // inverse surface, say — takes it against that surface at whatever floor
 // that job owes.
@@ -75,11 +75,11 @@ import (
 // floor is a floor on being a field at all, and the ceiling is left to
 // whatever draws it.
 //
-// It is not a WCAG criterion, because WCAG has none for this. 1.4.11's 3:1
+// It is not a contrast floor and not stated in |Lc|: a contrast measure
 // governs a mark that has to be resolved as a shape; a container carries no
 // shape and no information of its own — it is a place, and what it owes is
-// only that its edge be findable. Gating a container at 3:1 would make every
-// tonal fill in the system as pronounced as the marks on it.
+// only that its edge be findable. Gating a container at a mark's floor would
+// make every tonal fill in the system as pronounced as the marks on it.
 //
 // 1.25:1 is measured rather than picked. Over the seed sweep — ten seeds,
 // both schemes, both contrast variants, five roles, every level — the fixed
@@ -186,7 +186,8 @@ func (t ColorTokens) StatusContainer(role Role) stdcolor.NRGBA {
 // is step 900, and a caller that asked for a tint gets a white block.
 //
 // ContainerFloor, not GraphicFloor: a container is a region and not a mark
-// on one, and 3:1 would make the four statuses read as four filled controls.
+// on one, and a mark's floor would make the four statuses read as four
+// filled controls.
 // What a fill owes is to be a different surface from the one it stands on,
 // which is a threshold about seeing a seam and not about resolving a shape.
 //
@@ -209,7 +210,7 @@ func fillToFloor(at func(step int) stdcolor.NRGBA, surface stdcolor.NRGBA) stdco
 	best, bestAt := -1.0, containerStep
 	for step := containerStep; step <= 900; step += 100 {
 		fill := at(step)
-		got := color.ContrastRatio(fill, surface)
+		got := luminanceRatio(fill, surface)
 		if got >= ContainerFloor {
 			return fill
 		}
@@ -261,10 +262,9 @@ func containerHueStep(r Ramp) int {
 }
 
 // OnContainer returns the colour of the role's mark over its own
-// container: MarkOn against Container(role) at graphicFloor, WCAG
-// 1.4.11's 3:1 for a non-text graphic. Every light scheme lands on step 700
-// and every dark scheme on step 500 — one depth per scheme for all four
-// roles — and the worst pairing over the whole seed sweep measures 4.47:1.
+// container: MarkOn against Container(role) at graphicFloor, APCA's Lc 45
+// for a non-text mark. The worst pairing over the whole seed sweep measures
+// |Lc| 45.00.
 //
 // It is the floor a mark owes, so a caller setting a run of words on a
 // container asks for the text floor instead: the role's foreground derived
@@ -297,8 +297,8 @@ func (t ColorTokens) OnStatusContainer(role Role) stdcolor.NRGBA {
 // Reaching for the most chromatic step instead does not hold that. Chroma
 // peaks at a different depth for every hue — the green's peaks two steps
 // deeper on the dark scale than its siblings' do — so the green mark comes
-// back at 9.45:1 beside three siblings at 4.87:1 and pulls the eye across an
-// alert stack for a reason no one reading it could infer. What a mark owes
+// back a whole band stronger than its three siblings and pulls the eye
+// across an alert stack for a reason no one reading it could infer. What a mark owes
 // the surface it is drawn on is legibility, and past that, agreement with
 // the other marks.
 //
@@ -312,7 +312,7 @@ func (t ColorTokens) MarkOn(role Role, surface stdcolor.NRGBA, floor float64) st
 	pick, dist := -1, 99
 	fallback, fallbackAt := -1.0, 0
 	for i, step := range r {
-		got := color.ContrastRatio(step, surface)
+		got := color.Magnitude(step, surface)
 		if got > fallback {
 			fallback, fallbackAt = got, i
 		}

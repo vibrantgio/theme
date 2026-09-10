@@ -215,12 +215,13 @@ var pinRoles = []struct {
 	// control-border is the level-0 answer for the row of controls that
 	// says what it is with a line — the unchecked box, the unselected radio,
 	// the text field, the dropdown trigger (components/input controlBorder):
-	// the neutral step nearest step 500 that reaches 3:1 against the level-0
-	// surface a control on the page is guaranteed against. Naming step 500 in
-	// both schemes — which this sheet did, at every one of those four sites —
-	// measured 6.63:1 in the dark and 2.67:1 in the light, under the floor in
-	// the scheme most people read in. The walk answers 600 in the light
-	// scheme and 500 in the dark and needs to know nothing about either.
+	// the neutral step nearest step 500 that reaches graphicFloor against the
+	// level-0 surface a control on the page is guaranteed against. Naming
+	// step 500 in both schemes — which this sheet did, at every one of those
+	// four sites — measures |Lc| 46.80 in the light scheme and 24.95 in the
+	// dark, under the floor in the scheme most people read in at night. The
+	// walk answers 500 in the light scheme and 600 in the dark and needs to
+	// know nothing about either.
 	//
 	// dialog-border and popover-border are the same walk taken against a
 	// deeper level, and each serves both readings of "edge on that level":
@@ -344,17 +345,18 @@ func focusRing(t tokens.ColorTokens) stdcolor.NRGBA {
 	pick, dist := -1, len(t.Ramps.Primary)
 	widest, widestAt := -1.0, 0
 	for i, step := range t.Ramps.Primary {
-		// maxContrast is the ceiling of the WCAG ratio — black on white —
-		// so the first level always lowers it.
-		const maxContrast = 21.0
-		worst, worstBorder := maxContrast, maxContrast
+		// Both ceilings sit above anything a pairing can reach — |Lc| tops
+		// out near 106 and the luminance ratio at 21 — so the first level
+		// always lowers them.
+		const maxLc, maxRatio = 110.0, 21.0
+		worst, worstBorder := maxLc, maxRatio
 		for _, lvl := range standableLevels {
 			surface := t.SurfaceAt(lvl.level)
-			if got := vgcolor.ContrastRatio(step, surface); got < worst {
+			if got := vgcolor.Magnitude(step, surface); got < worst {
 				worst = got
 			}
 			border := t.MarkOn(tokens.RoleNeutral, surface, graphicFloor)
-			if got := vgcolor.ContrastRatio(step, border); got < worstBorder {
+			if got := luminanceRatio(step, border); got < worstBorder {
 				worstBorder = got
 			}
 		}
@@ -388,7 +390,7 @@ func focusRing(t tokens.ColorTokens) stdcolor.NRGBA {
 // level showing through it, which the scheme's ring already answers.
 func focusRingOn(t tokens.ColorTokens, fill stdcolor.NRGBA) stdcolor.NRGBA {
 	ring := focusRing(t)
-	if fill.A == 0 || vgcolor.ContrastRatio(ring, fill) >= graphicFloor {
+	if fill.A == 0 || vgcolor.Magnitude(ring, fill) >= graphicFloor {
 		return ring
 	}
 	return t.MarkOn(tokens.RolePrimary, fill, graphicFloor)
@@ -429,20 +431,30 @@ func tonalForeground(state tokens.State) func(tokens.ColorTokens) stdcolor.NRGBA
 	}
 }
 
-// onFloor is WCAG AA for body text, the floor a mark on the inverse surface
-// is chosen against: a toast's leading edge is the only thing that says
+// The floors this sheet derives against are the theme's own, not a second
+// spelling of them: onFloor is the text floor a mark on the inverse surface
+// is chosen against — a toast's leading edge is the only thing that says
 // which level the toast is, so it is held to the text floor rather than to
-// the 3:1 a non-text graphic owes the surface it stands on. The floor does
-// not bind — over the seed sweep, 3.0 picks the same steps — it states what
-// the mark owes.
-const onFloor = 4.5
+// what a non-text graphic owes — and graphicFloor is what a control's edge
+// and its focus ring owe the surface they are drawn on, neither being
+// decoration.
+const (
+	onFloor      = tokens.TextFloor
+	graphicFloor = tokens.GraphicFloor
+)
 
-// graphicFloor is WCAG 1.4.11's floor for a graphic that carries meaning
-// without being text — 3:1 — the floor components/input measures a
-// checkbox's edge to and components/internal/focus measures every focus
-// ring to. A control's edge and its ring are the whole of what says which
-// control it is and where the keyboard is, so neither is decoration.
-const graphicFloor = 3.0
+// luminanceRatio is the arithmetic [focusRingBorderSeparation] is measured
+// in: (L1+0.05)/(L2+0.05) over the two relative luminances, lighter first.
+// It is not a contrast measure — contrast is APCA
+// ([vgcolor.Magnitude]) throughout — but the scale on which one grey stops
+// being another grey.
+func luminanceRatio(a, b stdcolor.NRGBA) float64 {
+	la, lb := vgcolor.RelativeLuminance(a), vgcolor.RelativeLuminance(b)
+	if la < lb {
+		la, lb = lb, la
+	}
+	return (la + 0.05) / (lb + 0.05)
+}
 
 // typeRoles orders the fifteen MD3 type roles under their CSS names, plus
 // code — the sixteenth style outside the MD3 grid, the mono face at
@@ -926,7 +938,7 @@ const componentClasses = `/* ---- Component classes ----
 /* Keyboard focus keeps the resting fill and adds the ring — a stroke
    centred on the control's edge, as the Gio side draws it. One width, one
    hue, one value: var(--color-focus-ring) is the step of the primary ramp
-   nearest its mid-value step that reaches 3:1 against every level at once
+   nearest its mid-value step that reaches the mark floor against every level at once
    and parts from every level's resting border in luminance, so a control
    wears the same ring wherever it was put, no rule here asks where that is,
    and focus survives a display that removes the colour. The one surface
@@ -968,8 +980,8 @@ const componentClasses = `/* ---- Component classes ----
    one colour per scheme, measured against every level at once, so a raised
    host has nothing to hand down. A resting edge is the boundary of one
    surface and may differ per level — in the dark scheme the level-0 neutral
-   step reads 2.62:1 over a level-2 fill and 1.80:1 over a level-3 one, under
-   the 3:1 a graphic owes the surface it stands on, which is why a checkbox in
+   step reads |Lc| 43.56 over a level-2 fill and 36.14 over a level-3 one,
+   under what a mark owes the surface it stands on, which is why a checkbox in
    a dialog wears the edge the dialog's own outline wears. The light scheme's
    levels climb less far from its backdrop and its level-0 step already clears
    every level, so the handed-down token repeats there and nothing moves — the
@@ -1270,8 +1282,8 @@ const componentClasses = `/* ---- Component classes ----
 /* Checkbox (components/input checkbox.go): a 20 dp glyph (checkboxBoxSize
    — a component constant, not a token; it does not follow density) over its
    own raised fill. Unchecked, its 2 dp edge is the neutral step the ramp answers
-   with for a 3:1 graphic on the level the box stands on — the surface
-   floor's --color-control-border (600 in the light scheme, 500 in the dark)
+   with for a mark at the graphic floor on the level the box stands on — the
+   surface floor's --color-control-border (500 in the light scheme, 600 in the dark)
    unless a raised host has re-pointed --surface-border. The radio, the text
    field and the dropdown trigger wear that same edge, all four asking the
    ramp the one question rather than naming a step between them.

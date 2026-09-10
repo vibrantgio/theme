@@ -1,9 +1,8 @@
-// APCA (Accessible Perceptual Contrast Algorithm), the contrast metric the
-// palette is gated on. This implements the published APCA-W3 version
-// 0.0.98G-4g formula — the version documented in the apca-w3 reference
-// implementation (github.com/Myndex/apca-w3) and used by WCAG 3 drafts —
-// with its standard constants, verbatim. WCAG 2 ratios (wcag.go) are
-// reported alongside.
+// APCA (Accessible Perceptual Contrast Algorithm), the one contrast metric
+// the palette is gated on and reported in. This implements the published
+// APCA-W3 version 0.0.98G-4g formula — the version documented in the apca-w3
+// reference implementation (github.com/Myndex/apca-w3) and used by WCAG 3
+// drafts — with its standard constants, verbatim.
 package color
 
 import (
@@ -44,8 +43,8 @@ const (
 
 // apcaLuminance is APCA's estimated screen luminance Ys of an sRGB colour:
 // per-channel 2.4-exponent linearization weighted by APCA's coefficients.
-// This is deliberately not WCAG 2's RelativeLuminance — APCA specifies its
-// own transfer curve and coefficients.
+// This is deliberately not [RelativeLuminance] — APCA specifies its own
+// transfer curve and coefficients.
 func apcaLuminance(c stdcolor.NRGBA) float64 {
 	ch := func(v uint8) float64 {
 		return math.Pow(float64(v)/255.0, apcaTRC)
@@ -64,13 +63,14 @@ func apcaClamp(y float64) float64 {
 // APCA returns the APCA-W3 (0.0.98G-4g) lightness contrast Lc between text
 // and background colours, in the published signed convention: positive for
 // dark text on a light background, negative for light text on a dark
-// background, with |Lc| the magnitude — body text wants |Lc| ≥ 90,
-// large/secondary text |Lc| ≥ 60. Alpha is ignored (NRGBA channels are
-// non-premultiplied); pairs too close to distinguish return 0.
+// background. Alpha is ignored (NRGBA channels are non-premultiplied);
+// pairs too close to distinguish return 0.
 //
-// This is the palette's gating metric: step 900 must reach
-// |Lc| 90 and step 700 |Lc| 60 over the step-100/200 surfaces, and each
-// pinned base's on-colour |Lc| 60 over the base.
+// The sign is polarity and not strength, so a floor is a floor on the
+// magnitude: [Magnitude] answers that, and the theme's floors are stated
+// in it. APCA's own published levels are Lc 75 for body text and Lc 45 for
+// a mark that carries meaning without being text, each with a higher
+// increased-contrast step.
 func APCA(text, background stdcolor.NRGBA) float64 {
 	ytxt := apcaClamp(apcaLuminance(text))
 	ybg := apcaClamp(apcaLuminance(background))
@@ -91,4 +91,35 @@ func APCA(text, background stdcolor.NRGBA) float64 {
 		return 0
 	}
 	return (sapc + apcaOffset) * 100
+}
+
+// Magnitude returns |Lc|: [APCA]'s reading with the polarity dropped, which
+// is what a floor is compared against. A pairing is legible or not by how
+// far apart it reads, not by which of the two is the lighter.
+func Magnitude(text, background stdcolor.NRGBA) float64 {
+	return math.Abs(APCA(text, background))
+}
+
+// BestOn returns the candidate foreground that reads furthest over fill:
+// the one with the greatest [Magnitude], the first of equals when two tie.
+// Candidates are offered in preference order, so a fill that two colours
+// serve equally keeps the one its derivation named first.
+//
+// This is how every on-colour in the palette is chosen. Measuring both ends
+// of the available axis and keeping the better one — rather than taking one
+// end while it clears a floor — is what puts white on a saturated mid-tone
+// blue, where a luminance-only measure ranks black above it and every eye
+// disagrees.
+//
+// No candidates yields the zero NRGBA; a caller with none to offer has
+// nothing to choose.
+func BestOn(fill stdcolor.NRGBA, candidates ...stdcolor.NRGBA) stdcolor.NRGBA {
+	var best stdcolor.NRGBA
+	bestLc := -1.0
+	for _, c := range candidates {
+		if lc := Magnitude(c, fill); lc > bestLc {
+			best, bestLc = c, lc
+		}
+	}
+	return best
 }

@@ -136,17 +136,14 @@ func TestPagesDarkToggle(t *testing.T) {
 
 // wantRow renders a contrast table row the way the colour page must,
 // written out independently so the page and the test cannot drift together:
-// APCA Lc (signed, one decimal) and the WCAG 2 ratio (two decimals), light
-// then dark.
+// APCA Lc, signed, one decimal, light then dark.
 func wantRow(label string, lt, lg, dt, dg stdcolor.NRGBA) string {
-	return fmt.Sprintf(`<tr><th scope="row">%s</th><td>%.1f</td><td>%.2f:1</td><td>%.1f</td><td>%.2f:1</td></tr>`,
-		label,
-		color.APCA(lt, lg), color.ContrastRatio(lt, lg),
-		color.APCA(dt, dg), color.ContrastRatio(dt, dg))
+	return fmt.Sprintf(`<tr><th scope="row">%s</th><td>%.1f</td><td>%.1f</td></tr>`,
+		label, color.APCA(lt, lg), color.APCA(dt, dg))
 }
 
 // TestColorPageAnnotatesContrast asserts the colour page carries the
-// measured APCA Lc and WCAG ratio, in both modes, for every gated text pair:
+// measured APCA Lc, in both modes, for every gated text pair:
 // the four ramp pairs per role (900/700 on 100/200) and each role's pinned
 // pair.
 func TestColorPageAnnotatesContrast(t *testing.T) {

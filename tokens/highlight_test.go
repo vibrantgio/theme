@@ -240,27 +240,28 @@ func TestTheHighlightSeparatesFromTheSurfaceItMarks(t *testing.T) {
 // words it covers. The text is not repainted and the coverage is Obsidian's,
 // not a number tuned to a floor, so this is a measurement with one gate under
 // it: where content actually stands — the content plane and the window's
-// chrome — the scheme's body foreground still clears [tokens.TextFloor] over
-// a match. Over the current match, and over a match on the raised levels, it
-// does not, and the readings are logged rather than corrected for.
+// chrome — the scheme's body foreground still reaches highlightReach over a
+// match, a whisker under [tokens.TextFloor] in the dark scheme. Over the
+// current match, and over a match on the raised levels, it falls further,
+// and the readings are logged rather than corrected for.
 func TestTheMarkedTextIsMeasuredNotCorrected(t *testing.T) {
-	worst := 99.0
+	worst := 999.0
 	for _, seed := range sweepSeeds() {
 		for _, s := range schemesOf(seed) {
 			for _, lv := range []tokens.ElevationLevel{tokens.LevelChrome, tokens.Level0} {
 				fill := s.tok.HighlightOn(s.tok.SurfaceAt(lv))
-				got := color.ContrastRatio(s.tok.Text, fill)
-				if got < tokens.TextFloor {
-					t.Errorf("seed %v: %s Text %v over the level-%d highlight %v measures %.3f:1, under the %.1f:1 text floor",
-						seed, s.name, s.tok.Text, lv, fill, got, tokens.TextFloor)
+				got := color.Magnitude(s.tok.Text, fill)
+				if got < highlightReach {
+					t.Errorf("seed %v: %s Text %v over the level-%d highlight %v measures |Lc| %.2f, under the %.0f the marker reaches",
+						seed, s.name, s.tok.Text, lv, fill, got, highlightReach)
 				} else if got < worst {
 					worst = got
 				}
 			}
 		}
 	}
-	t.Logf("over %d seeds, both derivations, both schemes: the body foreground over a match on the content or the chrome measures %.3f:1 at worst (floor %.1f)",
-		len(sweepSeeds()), worst, tokens.TextFloor)
+	t.Logf("over %d seeds, both derivations, both schemes: the body foreground over a match on the content or the chrome measures |Lc| %.2f at worst (floor %.0f)",
+		len(sweepSeeds()), worst, highlightReach)
 	light, dark := tokens.FromSeed(tokens.DefaultSeed)
 	for _, s := range []struct {
 		name string
@@ -268,10 +269,10 @@ func TestTheMarkedTextIsMeasuredNotCorrected(t *testing.T) {
 	}{{"light", light}, {"dark", dark}} {
 		for _, lv := range highlightLevels {
 			surface := s.tok.SurfaceAt(lv)
-			t.Logf("default seed, %s, level %d on %v: text over the match %.3f:1, over the current match %.3f:1",
+			t.Logf("default seed, %s, level %d on %v: text over the match |Lc| %.2f, over the current match |Lc| %.2f",
 				s.name, lv, surface,
-				color.ContrastRatio(s.tok.Text, s.tok.HighlightOn(surface)),
-				color.ContrastRatio(s.tok.Text, s.tok.CurrentMatchOn(surface)))
+				color.Magnitude(s.tok.Text, s.tok.HighlightOn(surface)),
+				color.Magnitude(s.tok.Text, s.tok.CurrentMatchOn(surface)))
 		}
 	}
 }

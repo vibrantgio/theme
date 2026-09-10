@@ -198,7 +198,7 @@ func (t ColorTokens) PinnedStateColor(pin stdcolor.NRGBA, state State) stdcolor.
 // A state fill is the least pronounced form a state takes — the surface
 // itself, a step along the same neutral scale — so what it owes is only
 // that its edge be findable, and the ceiling is left to whatever draws it.
-// It is not a WCAG criterion, because WCAG has none for this: 1.4.11's 3:1
+// It is not a contrast floor and not stated in |Lc|: a contrast measure
 // governs a mark that has to be resolved as a shape, and a state fill
 // carries no shape.
 //
@@ -257,7 +257,7 @@ func (t ColorTokens) stateFillOn(surface stdcolor.NRGBA, state State) stdcolor.N
 func floorDepth(scale [9]float64, surface stdcolor.NRGBA, from float64) float64 {
 	const end = 8 // the scale's last step; walkOn clamps there
 	clears := func(d float64) bool {
-		return color.ContrastRatio(walkOn(scale, surface, d), surface) >= StateFloor
+		return luminanceRatio(walkOn(scale, surface, d), surface) >= StateFloor
 	}
 	if clears(from) {
 		return from

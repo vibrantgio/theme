@@ -62,3 +62,54 @@ func TestAPCAConventions(t *testing.T) {
 		t.Errorf("APCA with alpha 0x40 = %.4f, want alpha-independent %.4f", got, want)
 	}
 }
+
+// TestMagnitudeDropsPolarity pins |Lc| against the same published pairs: the
+// magnitude of a pairing is the same number whichever of the two is set on
+// the other, up to the curve's own polarity difference.
+func TestMagnitudeDropsPolarity(t *testing.T) {
+	hex := func(r, g, b uint8) stdcolor.NRGBA { return stdcolor.NRGBA{r, g, b, 0xff} }
+	cases := []struct {
+		name     string
+		text, bg stdcolor.NRGBA
+		want     float64
+	}{
+		{"#888 on #fff", hex(0x88, 0x88, 0x88), hex(0xff, 0xff, 0xff), 63.056469930209424},
+		{"#fff on #888", hex(0xff, 0xff, 0xff), hex(0x88, 0x88, 0x88), 68.54146436644962},
+		{"#000 on #aaa", hex(0x00, 0x00, 0x00), hex(0xaa, 0xaa, 0xaa), 58.146262578561334},
+		{"#aaa on #000", hex(0xaa, 0xaa, 0xaa), hex(0x00, 0x00, 0x00), 56.24113336839742},
+	}
+	for _, c := range cases {
+		if got := Magnitude(c.text, c.bg); math.Abs(got-c.want) > 1e-6 {
+			t.Errorf("Magnitude(%s) = %.12f, want %.12f", c.name, got, c.want)
+		}
+	}
+}
+
+// TestBestOnTakesTheGreaterMagnitude verifies the choice rule on the pairing
+// that forced it: over the platform's own blue #007AFF, white reads at
+// |Lc| 72.0 and black at 37.6, so the label is white — the reverse of what a
+// luminance ratio ranks. Ties keep the first candidate offered.
+func TestBestOnTakesTheGreaterMagnitude(t *testing.T) {
+	white := stdcolor.NRGBA{0xff, 0xff, 0xff, 0xff}
+	black := stdcolor.NRGBA{0x00, 0x00, 0x00, 0xff}
+	blue := stdcolor.NRGBA{0x00, 0x7a, 0xff, 0xff}
+	if got := BestOn(blue, white, black); got != white {
+		t.Errorf("BestOn(#007AFF, white, black) = %v, want white (|Lc| %.1f over %.1f)",
+			got, Magnitude(white, blue), Magnitude(black, blue))
+	}
+	if got := BestOn(blue, black, white); got != white {
+		t.Errorf("BestOn is order-dependent: got %v, want white", got)
+	}
+	// A deep fill takes white; the order of the candidates does not decide it.
+	deep := stdcolor.NRGBA{0x22, 0x00, 0x4e, 0xff}
+	if got := BestOn(deep, black, white); got != white {
+		t.Errorf("BestOn(#22004E, black, white) = %v, want white", got)
+	}
+	// Equals keep the first offered.
+	if got := BestOn(blue, white, white); got != white {
+		t.Errorf("BestOn with two equal candidates = %v, want the first", got)
+	}
+	if got := BestOn(blue); got != (stdcolor.NRGBA{}) {
+		t.Errorf("BestOn with no candidates = %v, want the zero value", got)
+	}
+}

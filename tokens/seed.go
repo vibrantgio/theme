@@ -26,11 +26,11 @@
 //     between 400 and 500, and a ramp with no mid tones has neither a
 //     boundary tone nor a text tone to offer. Derived, the dark scale's
 //     worst gap is 18 L* against light's
-//     22, its closest neighbours measure 1.11:1 against each other, and its
-//     500 and 600 steps measure 3.4:1 and 6.4:1 over the dark page — one
-//     step in the 3:1 non-text band and one in the 4.5:1 text band, where
-//     light's 600 and 700 sit at 4.0:1 and 6.2:1 over the light page. Every
-//     one of those is gated in this package's contrast tests.
+//     22, its closest neighbours measure 1.11:1 in luminance against each
+//     other, and its 600 and 800 steps measure |Lc| 47.1 and 79.9 over the
+//     dark page — one step in the mark band and one in the text band, where
+//     light's 600 and 800 sit at |Lc| 64.8 and 79.8 over the light page.
+//     Every one of those is gated in this package's contrast tests.
 //
 //     Both scales are swept at constant OKLCh hue and chroma via
 //     color.Tone, which gamut-maps by chroma reduction.
@@ -53,8 +53,7 @@
 //
 //     Measured on the canonical seed: the light primary base goes 0.1305 →
 //     0.2196 (#6750a4 → #723ad4) at the same depth and the same white
-//     on-colour, so the pair's contrast is unmoved (Lc 86.9 → 86.5, WCAG
-//     6.44 → 6.46). Light steps 500 → 800 go 0.131 → 0.176/0.220/0.220/0.220
+//     on-colour, so the pair's contrast is unmoved (Lc 86.9 → 86.5). Light steps 500 → 800 go 0.131 → 0.176/0.220/0.220/0.220
 //     and dark 200 → 400 go 0.130 → 0.150/0.181/0.220. Light 100–400 and
 //     dark 700–900 are gamut-limited at this hue and do not move.
 //
@@ -126,16 +125,16 @@
 //     one container and not another.
 //
 //     OnStatusContainer takes the most chromatic step of the role's own ramp
-//     that reaches graphicFloor over the container — WCAG 1.4.11's 3:1 for a
-//     non-text graphic, which is what a status mark is (MarkOn, in
+//     that reaches graphicFloor over the container — APCA's Lc 45 for a
+//     non-text mark, which is what a status mark is (MarkOn, in
 //     containers.go, is the general form). Asking for the most chromatic step
 //     rather than naming one is what keeps four hues equally saturated: sRGB
 //     holds a red only at mid depths and an orange only at high ones, so a
 //     fixed step serves one hue at the cost of the others. The worst
-//     mark-on-container pairing over the whole seed sweep measures 4.47:1 and
-//     the default seed's eight measure 4.52 and up.
+//     mark-on-container pairing over the whole seed sweep measures |Lc| 45.00
+//     and the default seed's seven measure 56.5 and up.
 //     Body text on a container is not this pairing — the neutral Text token
-//     measures 11.6:1 or better over all eight containers.
+//     measures |Lc| 79.8 or better over every container in the sweep.
 //
 //   - Pins. The light primary base is the seed at its own hue and CIELAB
 //     depth with the accent dial applied to its chroma; only its alpha is
@@ -167,32 +166,30 @@
 //   - The inverse pair. Each scheme's InverseSurface and OnInverseSurface are
 //     the *other* scheme's Surface and Text — its neutral ramp's steps 200
 //     and 900 — so the pair's separation is the counterpart scheme's own
-//     body-text separation rather than a second measurement (WCAG 13.75:1
-//     light, 15.06:1 dark on the default seed; the high-contrast variant
-//     widens both to 15.99:1 and 17.11:1). Both schemes are derived in one
+//     body-text separation rather than a second measurement. Both schemes are derived in one
 //     pass here, so neither needs anything the other has not computed.
 //
-//   - On-colours are measured, not assumed. Each pinned base is read in the
-//     foreground that reaches 4.5:1 over it — WCAG AA for body text — with
-//     the scheme's usual foreground preferred and the other end of the tonal
-//     axis taken
-//     when the usual one falls short (see onColour). In the light scheme the
-//     pair on offer is White and Black; in the dark scheme the role's own
-//     step-100 depth and White.
+//   - On-colours are measured, not assumed. Each pinned base is read in
+//     whichever of its two candidates reaches the greater |Lc| over it
+//     ([color.BestOn]), the scheme's usual foreground first so a tie keeps
+//     it. In the light scheme the pair on offer is White and Black; in the
+//     dark scheme the role's own step-100 depth and White.
 //
-//     The rule is a no-op for almost every base: a light base at tone 40
-//     carries White at Lc ≥ 85 (WCAG ≈ 6.4:1) and a dark base at L* 82
-//     carries its deep foreground at Lc ≥ 73 (WCAG ≈ 11:1). It exists for
-//     the one
+//     The rule answers with the usual foreground for almost every base: a
+//     light base at tone 40 carries White at |Lc| ≥ 85 and a dark base at
+//     L* 82 carries its deep foreground at |Lc| ≥ 73. It exists for the one
 //     base pinned to no depth — the primary base is the brand colour itself,
-//     and a light brand colour under white text measures as little as 2.1:1.
+//     and over a saturated mid-tone the two candidates can rank the opposite
+//     way a luminance ratio ranks them: white on the platform's own blue
+//     #007AFF reads |Lc| 72.0 where black reads 37.6.
 //     Its foreground flips and the colour does not move, so the accent stays
 //     true to
-//     the seed. Across a 414-seed sweep 269 of the light schemes' primary
-//     foregrounds flip, nothing else in either scheme does, and no pinned
-//     pairing any seed produces measures under the floor. Ramp-step pairings
-//     are unaffected: a step is realized at a fixed depth, so 700-and-900
-//     text over 100 and 200 surfaces measures 5.4:1 and up whatever the seed.
+//     the seed. Across a 414-seed sweep 164 of the light schemes' primary
+//     foregrounds flip, nothing else in either scheme does, and the better
+//     of the two candidates reaches |Lc| 54.55 over any sRGB colour there
+//     is. Ramp-step pairings are unaffected: a step is realized at a fixed
+//     depth, so 700-and-900 text over 100 and 200 surfaces measures |Lc|
+//     66.6 and up whatever the seed.
 //
 //     The state walk under a solid fill is not part of this and cannot be: a
 //     fill walks toward its ramp's 900 end whichever depth its pin sits at
@@ -226,14 +223,12 @@
 //     already the far end of the axis and already clears the floor
 //     (Lc ≥ 85.7).
 //
-//     The on-colour rule follows the variant to a stricter floor: the light
-//     foreground stands only while it reaches 7:1 rather than 4.5:1. What it
-//     can do with the answer is bounded by the axis, which has no foreground
-//     further out than its two ends — where neither reaches the floor the
-//     better of the two stands in both derivations, so the variant's flipped
-//     set is the default's plus the sliver where the light foreground clears
-//     AA and the dark one still reads higher. Every variant pairing therefore measures at
-//     least what the default's does, which is the property its gate holds.
+//     The on-colour rule itself is the same in both derivations — the
+//     candidate that reads furthest — and it is bounded by the axis, which
+//     has no foreground further out than its two ends. What the variant
+//     changes is the candidates: its dark on-colour is realized at tone 0
+//     rather than 8. Every variant pairing therefore measures at least what
+//     the default's does, which is the property its gate holds.
 package tokens
 
 import (
@@ -342,16 +337,17 @@ const (
 	// no on-colour reaches Lc 60 over an L* 65 mid-tone, and the
 	// increased-contrast variant's Lc ≥ 75 floor allows nothing shallower
 	// (L* 80 reaches only 73.5 against pure black)
-	darkOnTone   = 8   // dark pins' on-colour depth: the dark scale's step-100 L*
-	hcDarkOnTone = 0   // high contrast pushes the dark on-colours to the axis floor
-	onFloor      = 4.5 // WCAG AA body text: the ratio an on-colour has to reach
-	hcOnFloor    = 7.0 // the increased-contrast variant asks AAA of the same pair
+	darkOnTone   = 8    // dark pins' on-colour depth: the dark scale's step-100 L*
+	hcDarkOnTone = 0    // high contrast pushes the dark on-colours to the axis floor
+	onFloor      = 75.0 // APCA's published body-text level: the |Lc| an on-colour has to reach
+	hcOnFloor    = 90.0 // APCA's preferred body-text level, which the increased-contrast variant asks
 
 	// The status container dial and the floor its mark is chosen against;
 	// see the file header for both derivations and their measurements.
 	containerChroma = 0.055 // every status container's measured OKLCh chroma
 	containerStep   = 300   // the ramp step a status container is realized at
-	graphicFloor    = 3.0   // WCAG 1.4.11 non-text contrast: what a status mark owes its container
+	graphicFloor    = 45.0  // APCA's published level for a non-text mark: what a status mark owes its container
+	hcGraphicFloor  = 60.0  // the increased step of the same level
 )
 
 // derivation is the knob set that separates FromSeed from its high-contrast
@@ -362,38 +358,14 @@ const (
 // third hand-written scheme.
 type derivation struct {
 	lightTones, darkTones [9]int
-	seamStep              int     // ramp step Seam resolves from
-	darkOnTone            int     // L* of the dark pins' on-colours
-	onFloor               float64 // the ratio an on-colour has to reach over its base
+	seamStep              int // ramp step Seam resolves from
+	darkOnTone            int // L* of the dark pins' on-colours
 }
 
 var (
-	defaultDerivation = derivation{lightTones, darkTones, 300, darkOnTone, onFloor}
-	hcDerivation      = derivation{hcLightTones, hcDarkTones, 500, hcDarkOnTone, hcOnFloor}
+	defaultDerivation = derivation{lightTones, darkTones, 300, darkOnTone}
+	hcDerivation      = derivation{hcLightTones, hcDarkTones, 500, hcDarkOnTone}
 )
-
-// onColour picks the foreground one pinned base is read in. The preferred one
-// stands while it reaches the floor over that base; below it the foreground
-// flips to the other end of the tonal axis, unless that end reads worse still
-// — a base no foreground can carry keeps the better of the two rather than the
-// darker of the two. Flipping the foreground rather than deepening the colour
-// is what keeps a palette true to the colour it was seeded with.
-//
-// The two ends are pure White and pure Black, and that is load-bearing: over
-// any colour whatever, the better of white and black reaches 4.58:1, so no
-// seed can produce a pinned pairing under the floor. A foreground one step
-// short of the axis end — the ramp's own 900 stop — gives that guarantee up
-// (it bottoms out at 4.31:1 across a seed sweep).
-func onColour(base, preferred, other stdcolor.NRGBA, floor float64) stdcolor.NRGBA {
-	got := color.ContrastRatio(preferred, base)
-	if got >= floor {
-		return preferred
-	}
-	if color.ContrastRatio(other, base) > got {
-		return other
-	}
-	return preferred
-}
 
 // liftChroma turns a brand colour's own measured chroma into the chroma
 // the accent family is rendered at. A brand colour under greyChroma is
@@ -592,7 +564,7 @@ func fromSeed(seed stdcolor.NRGBA, d derivation) (light, dark ColorTokens) {
 	// The pinned bases and the foreground each is read in. Index 0 is the
 	// neutral role, which carries surfaces rather than a solid fill and has no
 	// pin. Every foreground is measured over the base it sits on rather than
-	// assumed from the scheme (see onColour); the light scheme's alternative
+	// assumed from the scheme; the light scheme's alternative
 	// is the far end of the tonal axis and the dark scheme's is White, so in
 	// each scheme the pair on offer is the ramp's own dark end and its light
 	// one.
@@ -604,8 +576,11 @@ func fromSeed(seed stdcolor.NRGBA, d derivation) (light, dark ColorTokens) {
 	lightBase[1] = primary // the lifted seed, never read off a ramp step
 	for i := 1; i < len(roles); i++ {
 		deep := color.Tone(roles[i].hue(d.darkOnTone), roles[i].chroma, d.darkOnTone)
-		lightForeground[i] = onColour(lightBase[i], White, Black, d.onFloor)
-		darkForeground[i] = onColour(darkBase[i], deep, White, d.onFloor)
+		// Whichever end of the axis reads furthest over the base, measured
+		// rather than assumed; the candidates are offered in the order a tie
+		// keeps (see [color.BestOn]).
+		lightForeground[i] = color.BestOn(lightBase[i], White, Black)
+		darkForeground[i] = color.BestOn(darkBase[i], deep, White)
 	}
 
 	// Each scheme's inverse pair resolves off the other scheme's neutral

@@ -7,8 +7,8 @@
 // naming a level ([ColorTokens.Surface] and [ColorTokens.Background]) sit at
 // different depths in the light scheme and the dark one. Naming step 500 as
 // "the outline" therefore states one colour and two measurements: over the two
-// surfaces it reads 3.07:1 in the dark scheme and 2.35:1 in the light, under
-// the floor a boundary owes in the scheme most people read in. That is the
+// surfaces it reads |Lc| 41.53 in the light scheme and 23.64 in the dark, under
+// the floor a boundary owes in both. That is the
 // failure this file exists to make impossible — the step is chosen against the
 // floor, so the token cannot vanish on a surface.
 //
@@ -29,12 +29,12 @@
 // What the walk answers, over the seed sweep — 414 seeds, both schemes, both
 // derivations:
 //
-//	token               scheme   step   ratio over the harder surface
-//	-----               ------   ----   ----------------------------
-//	OutlineVariant      light    600    3.55:1
-//	OutlineVariant      dark     500    3.07:1
-//	OnSurfaceVariant    light    700    5.46:1 (high contrast: 15.16:1)
-//	OnSurfaceVariant    dark     600    5.72:1
+//	token               scheme   step   |Lc| over the harder surface
+//	-----               ------   ----   ---------------------------
+//	OutlineVariant      light    600    56.58
+//	OutlineVariant      dark     600    45.81
+//	OnSurfaceVariant    light    800    79.76 (increased contrast: 700, 91.57)
+//	OnSurfaceVariant    dark     800    79.90 (increased contrast: 700, 94.34)
 //
 // The step does not move with the seed: the neutral ramp is realized on the
 // shared lightness scale and both surfaces come off it, so a brand changes the
@@ -51,7 +51,7 @@ import (
 // faint line that says a region or a control is there without claiming to be
 // its content.
 //
-// Floored at graphicFloor, WCAG 1.4.11's 3:1 — an edge that is the whole of
+// Floored at graphicFloor, APCA's Lc 45 for a mark — an edge that is the whole of
 // what says which control this is carries meaning without being text, so it
 // is not decoration and does not get a decorative floor. [ColorTokens.Seam]
 // is the token for a separator that carries none.
@@ -63,7 +63,7 @@ func (t ColorTokens) OutlineVariant() stdcolor.NRGBA {
 // run of words is set in — less pronounced than [ColorTokens.Text], and still
 // a colour text may legally be set in.
 //
-// Floored at onFloor, WCAG 1.4.3 AA's 4.5:1, because it is text. Muted is a
+// Floored at onFloor, APCA's Lc 75 for body text, because it is text. Muted is a
 // property of the walk and not a second rule: the floor picks the least
 // pronounced step that reads, and Text is a pin derived against Background
 // with far more room than the floor asks for, so the two are never one colour.
@@ -82,8 +82,8 @@ func (t ColorTokens) neutralVariant(floor float64) stdcolor.NRGBA {
 	pick, dist := -1, len(t.Ramps.Neutral)
 	widest, widestAt := -1.0, 0
 	for i, step := range t.Ramps.Neutral {
-		worst := color.ContrastRatio(step, t.Surface)
-		if got := color.ContrastRatio(step, t.Background); got < worst {
+		worst := color.Magnitude(step, t.Surface)
+		if got := color.Magnitude(step, t.Background); got < worst {
 			worst = got
 		}
 		if worst > widest {
