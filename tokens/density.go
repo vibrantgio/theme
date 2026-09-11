@@ -74,9 +74,11 @@ package tokens
 // the same difference, 27 against 24.
 //
 // A stacked row is not a control, and takes [Density.RowHeight] rather than
-// the control height: list rows, table rows, header cells and sidebar items
-// are RowHeight tall exactly (see the row table below), so a change there
-// re-pitches every dense list and table in the system. The platform draws a
+// the control height: list rows, table rows and header cells are RowHeight
+// tall exactly (see the row table below), so a change there re-pitches every
+// dense list and table in the system. A chrome rail's row is not one of
+// them — the platform draws a sidebar row 12 px taller than a list row, and
+// patterns/sidebar carries that number. The platform draws a
 // list row shorter than it draws a button — 20 px against 24 — which is why
 // the row height is a number of its own and not the control's.
 //
@@ -109,7 +111,6 @@ package tokens
 //	---                              -----------   -------   ------
 //	list row                         20            19        pinned to RowHeight
 //	table body row and header cell   20            19        pinned to RowHeight
-//	sidebar item                     20            19        pinned to RowHeight
 //	picker option row                28            24        floor formula, BodyLarge
 //
 // A pinned row is 20 dp Comfortable and 19 dp Compact, and neither meets
@@ -148,7 +149,7 @@ const (
 	// holds a small field. It is the number a capture of one replaces.
 	CompactFieldHeight float32 = 21
 	// ComfortableRowHeight is the height of a stacked row in dp — a list
-	// row, a table row, a header cell, a sidebar item — and a pin rather
+	// row, a table row, a header cell — and a pin rather
 	// than a floor: the row is drawn exactly this tall. It is the
 	// platform's own list row, measured off Finder's list view in
 	// .github/reference/macos/finder-window-light.png, whose stripes
@@ -206,7 +207,8 @@ type Density struct {
 	FieldHeight float32
 	// RowHeight is the height of a stacked row in dp
 	// ([ComfortableRowHeight] or [CompactRowHeight]) — a list row, a table
-	// row, a header cell, a sidebar item. Unlike ControlHeight it is a pin,
+	// row, a header cell. A chrome rail's row is patterns/sidebar's own
+	// number, not this one. Unlike ControlHeight it is a pin,
 	// not a floor: rows tile, and a row that grew with its content would
 	// cost the virtualised list the constant-time look-ahead that lets it
 	// lay out only what is on screen.
