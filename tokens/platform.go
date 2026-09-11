@@ -19,9 +19,10 @@
 // gap: it asks AppKit for every one of these names itself, and these
 // recorded sets are what the other platforms — and every test — read.
 //
-// Five fields are not AppKit's. The platform paints a sidebar, a grouped
-// box, a hovered and a pressed control, and the shadow under a floating
-// pane without giving any of them an NSColor name, so those fills were read
+// Seven fields are not AppKit's. The platform paints a sidebar, a grouped
+// box, a hovered and a pressed control, the shadow under a floating pane,
+// a text field's hairline and an overlay scrollbar's knob without giving
+// any of them an NSColor name, so those fills were read
 // off the stored captures in the organization's macOS reference. Each
 // carries the struct tag `appkit:"-"`, which is the whole of the rule the
 // live reader and the tests use: a field so tagged has no name to ask
@@ -35,6 +36,8 @@
 //	HoverOverlay     #000000 a0.051 #ffffff a0.094 measured: a toolbar button under the pointer
 //	PressOverlay     #000000 a0.098 #ffffff a0.098 measured: a push button held down
 //	FloatingShadow   #000000 a0.075 #000000 a0.075 measured: the sidebar shadow's peak coverage, 24 px of reach
+//	FieldEdge        #f3f3f3        #2c3338        measured: the unfocused text field's hairline in the Save dialog
+//	ScrollbarThumb   #000000 a0.337 #ffffff a0.337 measured: the overlay scrollbar's knob over its track
 //
 // Every one of these was read on a desktop whose "Tint window background
 // with wallpaper colour" is on, which is what carries the chrome material
@@ -183,6 +186,28 @@ type PlatformColors struct {
 	// falling to nothing 24 px out; this field carries the peak and the
 	// caller spreads it.
 	FloatingShadow color.NRGBA `appkit:"-"`
+
+	// FieldEdge is the hairline a text field draws around itself,
+	// unfocused: #f3f3f3 light and #2c3338 dark, the single border row of
+	// the "Tags:" field in save-dialog-light.png and save-dialog-dark.png
+	// (y 243 and y 269), read over that sheet's own fill — #ffffff light
+	// and #232a2f dark, since the field's interior is the sheet's there.
+	// The light value is Separator laid over that white exactly, to the
+	// byte; the dark one is not, and nothing near it — Separator over the
+	// dark sheet reads #606264, six times the step the platform draws — so
+	// the edge is recorded as the pixel rather than as a coverage.
+	FieldEdge color.NRGBA `appkit:"-"`
+
+	// ScrollbarThumb is the overlay scrollbar's thumb: Label's own black
+	// or white at the coverage the platform's knob measures, laid over the
+	// track. The coverage is 0.337, read off textedit-scrollbar.png — the
+	// knob reads #9d9fa1 over a #1a2124 track, which white at 0.337
+	// reproduces within one 255th on every channel. No stored capture
+	// holds a light-appearance overlay scrollbar (the platform hides the
+	// overlay bar unless it is being operated, and the light window
+	// captures caught none), so the light row carries the dark row's
+	// coverage under Label's black until one does.
+	ScrollbarThumb color.NRGBA `appkit:"-"`
 }
 
 // PlatformLight and PlatformDark are the recorded sets, aqua and darkAqua,
@@ -249,6 +274,8 @@ var (
 		HoverOverlay:    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x0d},
 		PressOverlay:    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x19},
 		FloatingShadow:  color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13},
+		FieldEdge:       color.NRGBA{R: 0xf3, G: 0xf3, B: 0xf3, A: 0xff},
+		ScrollbarThumb:  color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x56},
 	}
 
 	PlatformDark = PlatformColors{
@@ -310,6 +337,8 @@ var (
 		HoverOverlay:    color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x18},
 		PressOverlay:    color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x19},
 		FloatingShadow:  color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13},
+		FieldEdge:       color.NRGBA{R: 0x2c, G: 0x33, B: 0x38, A: 0xff},
+		ScrollbarThumb:  color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x56},
 	}
 )
 
