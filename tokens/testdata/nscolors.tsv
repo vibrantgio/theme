@@ -42,9 +42,9 @@ systemBrown	#ac7f5e	#b78a66
 systemGray	#8e8e93	#98989d
 shadowColor	#000000	#000000
 highlightColor	#ffffff	#b4b4b4
-# measured materials: the fills the platform gives no NSColor name, read off the stored captures in reference/macos or, where no capture shows the state, taken from what the platform publishes. Four columns: name, light, dark, provenance — MEASURED, PUBLISHED, DERIVED or STAND-IN, naming the capture. Alpha is carried to the precision the reading supports, not the catalogue's two decimals.
-sidebarMaterial	#efefef	#232a2e	dark MEASURED: flat-region samples of mail-window.png (the toolbar band at y 1-31 and the flush mailbox list below its hairline) and finder-window.png (the window's plane behind the floating pane); light PUBLISHED: the reference holds no light-appearance window capture
-cardFill	#ffffff	#1e1e1e	STAND-IN: controlBackgroundColor, until system-settings-grouped-box.png lands in both appearances
-hoverOverlay	#000000 a0.06	#ffffff a0.06	DERIVED: half pressOverlay; no capture shows a hovered control
-pressOverlay	#000000 a0.12	#ffffff a0.12	PUBLISHED: the midpoint of a pressed push button's 10-15% darkening; no capture shows a pressed control
+# measured materials: the fills the platform gives no NSColor name, read off the stored captures in reference/macos. Four columns: name, light, dark, provenance — MEASURED, naming the capture and the region. Alpha is carried to the precision the reading supports, not the catalogue's two decimals.
+sidebarMaterial	#ffffff	#232a2e	MEASURED: flat-region samples of the chrome band and of the list flush below its hairline — mail-window.png and finder-window.png dark, mail-window-light.png and finder-window-light.png light; System Settings' own plane agrees in both schemes (system-settings-grouped-box-{light,dark}.png)
+cardFill	#f7f7f7	#2a3034	MEASURED: flat-region samples of the Appearance pane's grouped boxes in system-settings-grouped-box-light.png over a #ffffff plane and system-settings-grouped-box-dark.png over a #232a2e plane; the box carries no hairline and no shadow, its edge a 2-3 px antialiased ramp
+hoverOverlay	#000000 a0.051	#ffffff a0.094	MEASURED: a Finder toolbar button under the pointer — control-hover-light.png #ffffff to #f2f2f2, control-hover-dark.png #242d32 to #384146; black at 0.051 reproduces the light reading on every channel, white at 0.094 the dark reading on green and within one 255th on red and blue
+pressOverlay	#000000 a0.098	#ffffff a0.098	MEASURED: a Save dialog's push button held down — control-pressed-light.png #ececec to #d5d5d5, control-pressed-dark.png #333a3f to #474d52; black and white at 0.098 reproduce both readings on every channel
 floatingShadow	#000000 a0.075	#000000 a0.075	MEASURED: finder-sidebar-shadow.png and reminders-sidebar-shadow.png agree — the #232a2e plane reads #20272b against the pane's edge stroke and recovers over 24 px; black at 0.075 reproduces that pixel on every channel

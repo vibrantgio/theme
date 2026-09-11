@@ -353,25 +353,35 @@ func TestMeasuredMaterialsMatchTheCatalogue(t *testing.T) {
 	}
 }
 
-// TestCardFillStandsInForTheContentsFill pins the stand-in the card's fill
-// is until the System Settings grouped-box capture lands: it is the
-// content's fill exactly, in both schemes, and nothing has quietly invented
-// a number for it. When that capture lands and CardFill is read off its
-// pixels, this test goes with the stand-in.
-func TestCardFillStandsInForTheContentsFill(t *testing.T) {
-	if tokens.PlatformLight.CardFill != tokens.PlatformLight.ControlBackground {
-		t.Errorf("light CardFill = %v, want the content's fill %v", tokens.PlatformLight.CardFill, tokens.PlatformLight.ControlBackground)
-	}
-	if tokens.PlatformDark.CardFill != tokens.PlatformDark.ControlBackground {
-		t.Errorf("dark CardFill = %v, want the content's fill %v", tokens.PlatformDark.CardFill, tokens.PlatformDark.ControlBackground)
+// TestCardFillIsTheMeasuredGroupedBox pins the card's fill to the pixels of
+// the System Settings grouped-box captures rather than to another token: the
+// platform's box is a fill of its own in both schemes, one step off the
+// plane it sits on, so it is neither the content's fill nor the chrome's.
+func TestCardFillIsTheMeasuredGroupedBox(t *testing.T) {
+	for _, c := range []struct {
+		name string
+		in   tokens.PlatformColors
+		want color.NRGBA
+	}{
+		{"light", tokens.PlatformLight, color.NRGBA{R: 0xf7, G: 0xf7, B: 0xf7, A: 0xff}},
+		{"dark", tokens.PlatformDark, color.NRGBA{R: 0x2a, G: 0x30, B: 0x34, A: 0xff}},
+	} {
+		if c.in.CardFill != c.want {
+			t.Errorf("%s CardFill = %v, want the measured grouped box %v", c.name, c.in.CardFill, c.want)
+		}
+		if c.in.CardFill == c.in.ControlBackground {
+			t.Errorf("%s CardFill = %v, the content's fill; the box was measured apart from it", c.name, c.in.CardFill)
+		}
+		if c.in.CardFill == c.in.SidebarMaterial {
+			t.Errorf("%s CardFill = %v, the chrome material; the box was measured apart from it", c.name, c.in.CardFill)
+		}
 	}
 }
 
 // TestTheStateOverlaysAreBlackOnLightAndWhiteOnDark pins the shape of the
-// two overlays rather than their coverage, which is published and not
-// measured: each is the scheme's extreme at an alpha below 1, so it
-// composites over whatever fill a control carries, and the press is the
-// heavier of the two.
+// two overlays rather than their coverage, which the catalogue holds: each
+// is the scheme's extreme at an alpha below 1, so it composites over
+// whatever fill a control carries, and the press is the heavier of the two.
 func TestTheStateOverlaysAreBlackOnLightAndWhiteOnDark(t *testing.T) {
 	for _, set := range []struct {
 		name  string
