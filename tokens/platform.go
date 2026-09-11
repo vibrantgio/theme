@@ -19,10 +19,10 @@
 // gap: it asks AppKit for every one of these names itself, and these
 // recorded sets are what the other platforms — and every test — read.
 //
-// Seven fields are not AppKit's. The platform paints a sidebar, a grouped
-// box, a hovered and a pressed control, the shadow under a floating pane,
-// a text field's hairline and an overlay scrollbar's knob without giving
-// any of them an NSColor name, so those fills were read
+// Eight fields are not AppKit's. The platform paints a sidebar, a grouped
+// box, a push button, a hovered and a pressed control, the shadow under a
+// floating pane, a text field's hairline and an overlay scrollbar's knob
+// without giving any of them an NSColor name, so those fills were read
 // off the stored captures in the organization's macOS reference. Each
 // carries the struct tag `appkit:"-"`, which is the whole of the rule the
 // live reader and the tests use: a field so tagged has no name to ask
@@ -33,6 +33,7 @@
 //	-----            -----          ----           ----------
 //	SidebarMaterial  #ffffff        #232a2e        measured: the chrome band and the list below it
 //	CardFill         #f7f7f7        #2a3034        measured: the System Settings grouped box
+//	PushButtonFill   #ececec        #333a3f        measured: the Save dialog's push button at rest
 //	HoverOverlay     #000000 a0.051 #ffffff a0.094 measured: a toolbar button under the pointer
 //	PressOverlay     #000000 a0.098 #ffffff a0.098 measured: a push button held down
 //	FloatingShadow   #000000 a0.075 #000000 a0.075 measured: the sidebar shadow's peak coverage, 24 px of reach
@@ -160,6 +161,21 @@ type PlatformColors struct {
 	// white in dark.
 	CardFill color.NRGBA `appkit:"-"`
 
+	// PushButtonFill is what an ordinary push button is actually filled
+	// with: #ececec light and #333a3f dark, flat-region samples of the
+	// "Cancel" button in save-dialog-light.png and save-dialog-dark.png
+	// (x 362-430, y 504-521), the button the sheet does not fill with the
+	// accent.
+	//
+	// It is not Control. AppKit's controlColor reports #ffffff light and
+	// white at a quarter dark, which is the bezel's own backing rather
+	// than the fill the platform draws: on the light sheet a push button
+	// reads eight percent off the white behind it, and on the dark one it
+	// reads lighter than the sheet by a fixed pixel rather than by a
+	// coverage. So the fill is recorded as the pixel and Control is left
+	// answering for what AppKit says it answers for.
+	PushButtonFill color.NRGBA `appkit:"-"`
+
 	// HoverOverlay and PressOverlay are what a control lays over its own
 	// fill while the pointer is on it and while it is held: black in
 	// light, white in dark, at the coverage that reproduces the captured
@@ -271,6 +287,7 @@ var (
 
 		SidebarMaterial: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
 		CardFill:        color.NRGBA{R: 0xf7, G: 0xf7, B: 0xf7, A: 0xff},
+		PushButtonFill:  color.NRGBA{R: 0xec, G: 0xec, B: 0xec, A: 0xff},
 		HoverOverlay:    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x0d},
 		PressOverlay:    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x19},
 		FloatingShadow:  color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13},
@@ -334,6 +351,7 @@ var (
 
 		SidebarMaterial: color.NRGBA{R: 0x23, G: 0x2a, B: 0x2e, A: 0xff},
 		CardFill:        color.NRGBA{R: 0x2a, G: 0x30, B: 0x34, A: 0xff},
+		PushButtonFill:  color.NRGBA{R: 0x33, G: 0x3a, B: 0x3f, A: 0xff},
 		HoverOverlay:    color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x18},
 		PressOverlay:    color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x19},
 		FloatingShadow:  color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13},

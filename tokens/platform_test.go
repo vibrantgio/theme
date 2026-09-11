@@ -305,9 +305,8 @@ func min3(a, b, c uint8) uint8 {
 	return a
 }
 
-// TestMeasuredMaterialsMatchTheCatalogue pins the five fills the platform
-// gives no NSColor name — the chrome material, the card's fill, the hover
-// and press overlays, the floating shadow — against the catalogue's
+// TestMeasuredMaterialsMatchTheCatalogue pins every fill the platform gives
+// no NSColor name against the catalogue's
 // measured-materials section in both schemes, and holds the two sections
 // disjoint: a field tagged `appkit:"-"` has a measured row and no AppKit
 // one, and every measured row has a field.
@@ -374,6 +373,33 @@ func TestCardFillIsTheMeasuredGroupedBox(t *testing.T) {
 		}
 		if c.in.CardFill == c.in.SidebarMaterial {
 			t.Errorf("%s CardFill = %v, the chrome material; the box was measured apart from it", c.name, c.in.CardFill)
+		}
+	}
+}
+
+// TestPushButtonFillIsTheMeasuredPushButton pins the push button's fill to
+// the pixels of the Save dialog captures rather than to controlColor, which
+// reports a different colour in both appearances: the platform draws the
+// ordinary push button at a fill of its own, and a consumer that wore
+// controlColor would paint white on the light sheet where the platform
+// paints #ececec.
+func TestPushButtonFillIsTheMeasuredPushButton(t *testing.T) {
+	for _, c := range []struct {
+		name string
+		in   tokens.PlatformColors
+		want color.NRGBA
+	}{
+		{"light", tokens.PlatformLight, color.NRGBA{R: 0xec, G: 0xec, B: 0xec, A: 0xff}},
+		{"dark", tokens.PlatformDark, color.NRGBA{R: 0x33, G: 0x3a, B: 0x3f, A: 0xff}},
+	} {
+		if c.in.PushButtonFill != c.want {
+			t.Errorf("%s PushButtonFill = %v, want the measured push button %v", c.name, c.in.PushButtonFill, c.want)
+		}
+		if c.in.PushButtonFill == c.in.Control {
+			t.Errorf("%s PushButtonFill = %v, controlColor's own value; the button was measured apart from it", c.name, c.in.PushButtonFill)
+		}
+		if c.in.PushButtonFill.A != 0xff {
+			t.Errorf("%s PushButtonFill = %v; the fill was read as a pixel, so it is opaque", c.name, c.in.PushButtonFill)
 		}
 	}
 }
