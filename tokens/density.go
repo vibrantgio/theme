@@ -23,6 +23,8 @@ package tokens
 //	Comfortable PaddingY         2 dp   DERIVED: (24 − LabelLarge's 20 dp line box) / 2, which lands a button exactly on 24
 //	Compact PaddingY             0 dp   DERIVED: LabelLarge's line box is already over 19, so there is nothing to pad with
 //	checkbox                    16 dp   MEASURED: 16 px square in the same pair. Not a token here: the checkbox carries its own side length in components/input, which is where this number lands when a consumer takes it.
+//	Comfortable row height      20 dp   MEASURED: Finder's list view in finder-window-light.png — the stripes alternate on a 20 px pitch with no row seam between them (x=965, rows at y 85, 105, 125 … 284)
+//	Compact row height          19 dp   PUBLISHED: the platform's small control, carried until a capture holds a list drawn dense — no stored capture does
 //
 // What is measured and what is not. One Save panel, captured at 1x in both
 // appearances, holds the regular push button, pop-up button, text field and
@@ -71,10 +73,12 @@ package tokens
 // changes the roles or the padding, not the measurement. The platform draws
 // the same difference, 27 against 24.
 //
-// ControlHeight is a floor for controls but a *pin* for stacked rows: list
-// rows, table rows, header cells and sidebar items are ControlHeight tall
-// exactly (see the row table below), so a change here re-pitches every dense
-// list and table in the system.
+// A stacked row is not a control, and takes [Density.RowHeight] rather than
+// the control height: list rows, table rows, header cells and sidebar items
+// are RowHeight tall exactly (see the row table below), so a change there
+// re-pitches every dense list and table in the system. The platform draws a
+// list row shorter than it draws a button — 20 px against 24 — which is why
+// the row height is a number of its own and not the control's.
 //
 // # Pointer targets: which WCAG level actually governs
 //
@@ -103,20 +107,19 @@ package tokens
 //
 //	row                              Comfortable   Compact   sizing
 //	---                              -----------   -------   ------
-//	list row                         24            19        pinned to ControlHeight
-//	table body row and header cell   24            19        pinned to ControlHeight
-//	sidebar item                     24            19        pinned to ControlHeight
+//	list row                         20            19        pinned to RowHeight
+//	table body row and header cell   20            19        pinned to RowHeight
+//	sidebar item                     20            19        pinned to RowHeight
 //	picker option row                28            24        floor formula, BodyLarge
 //
-// At the platform's measured regular control a Comfortable pinned row is 24
-// dp and so meets WCAG 2.5.8 Target Size (Minimum) exactly, the 24 dp
-// criterion that governs at AA; a Compact pinned row is 19 and does not, and
-// a row's pointer target is the row itself. That is what taking the
-// platform's small control costs, and it is recorded here rather than left to
-// be discovered; the standalone floor is untouched, so a button, a checkbox,
-// a chip and a closed picker still extend to 44 dp at every density. An
-// application that must claim 2.5.8 for its Compact rows sets a taller row of
-// its own.
+// A pinned row is 20 dp Comfortable and 19 dp Compact, and neither meets
+// WCAG 2.5.8 Target Size (Minimum), the 24 dp criterion that governs at AA.
+// That is what conforming to the platform costs: the platform draws its list
+// rows at 20 px, and a row's pointer target is the row itself. It is
+// recorded here rather than left to be discovered; the standalone floor is
+// untouched, so a button, a checkbox, a chip and a closed picker still extend
+// to 44 dp at every density. An application that must claim 2.5.8 for its
+// rows sets a taller row of its own.
 
 const (
 	// ComfortableControlHeight is the default desktop control-height floor in
@@ -144,6 +147,19 @@ const (
 	// field-to-control ratio applied to the small control, since no capture
 	// holds a small field. It is the number a capture of one replaces.
 	CompactFieldHeight float32 = 21
+	// ComfortableRowHeight is the height of a stacked row in dp — a list
+	// row, a table row, a header cell, a sidebar item — and a pin rather
+	// than a floor: the row is drawn exactly this tall. It is the
+	// platform's own list row, measured off Finder's list view in
+	// .github/reference/macos/finder-window-light.png, whose stripes
+	// alternate on a 20 px pitch with no seam between them. A row is
+	// shorter than a button on this platform, which is why it is a number
+	// of its own.
+	ComfortableRowHeight float32 = 20
+	// CompactRowHeight is the dense-mode stacked row in dp. No stored
+	// capture holds a list drawn dense, so it carries the platform's small
+	// control height until one does; ADR-019 has the gap row.
+	CompactRowHeight float32 = 19
 	// MinHitTarget is the pointer-target floor in dp for a *standalone*
 	// control — one with space around it: button, checkbox, radio, text
 	// field, a picker's closed trigger. Those extend their pointer area to at
@@ -188,6 +204,13 @@ type Density struct {
 	// so a field that took the control height would be 3 dp short of the
 	// platform at Comfortable.
 	FieldHeight float32
+	// RowHeight is the height of a stacked row in dp
+	// ([ComfortableRowHeight] or [CompactRowHeight]) — a list row, a table
+	// row, a header cell, a sidebar item. Unlike ControlHeight it is a pin,
+	// not a floor: rows tile, and a row that grew with its content would
+	// cost the virtualised list the constant-time look-ahead that lets it
+	// lay out only what is on screen.
+	RowHeight float32
 	// PaddingX is the horizontal inner padding of a control in dp.
 	PaddingX float32
 	// PaddingY is the vertical inner padding of a control in dp.
@@ -225,7 +248,7 @@ func (d Density) ChipHeight() float32 { return d.ControlHeight - ChipDrop }
 // provenance table at the top of this file.
 var (
 	// Comfortable is the default desktop density.
-	Comfortable = Density{ControlHeight: ComfortableControlHeight, FieldHeight: ComfortableFieldHeight, PaddingX: 8, PaddingY: 2}
+	Comfortable = Density{ControlHeight: ComfortableControlHeight, FieldHeight: ComfortableFieldHeight, RowHeight: ComfortableRowHeight, PaddingX: 8, PaddingY: 2}
 	// Compact is the dense mode: smaller drawn controls, same hit target.
-	Compact = Density{ControlHeight: CompactControlHeight, FieldHeight: CompactFieldHeight, PaddingX: 7, PaddingY: 0}
+	Compact = Density{ControlHeight: CompactControlHeight, FieldHeight: CompactFieldHeight, RowHeight: CompactRowHeight, PaddingX: 7, PaddingY: 0}
 )

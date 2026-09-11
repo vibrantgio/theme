@@ -19,11 +19,14 @@
 // gap: it asks AppKit for every one of these names itself, and these
 // recorded sets are what the other platforms — and every test — read.
 //
-// Eight fields are not AppKit's. The platform paints a sidebar, a grouped
+// Ten fields are not AppKit's. The platform paints a sidebar, a grouped
 // box, a push button, a hovered and a pressed control, the shadow under a
-// floating pane, a text field's hairline and an overlay scrollbar's knob
-// without giving any of them an NSColor name, so those fills were read
-// off the stored captures in the organization's macOS reference. Each
+// floating pane, a text field's hairline, an overlay scrollbar's knob, a
+// list's alternating row and the dim a sheet lays over the window it
+// interrupts without giving any of them an NSColor name, so those fills
+// were read off the stored captures in the organization's macOS
+// reference — the alternating row off the array AppKit answers with
+// instead of a name, and confirmed against the capture. Each
 // carries the struct tag `appkit:"-"`, which is the whole of the rule the
 // live reader and the tests use: a field so tagged has no name to ask
 // AppKit for and is pinned against the catalogue's "measured materials"
@@ -39,6 +42,8 @@
 //	FloatingShadow   #000000 a0.075 #000000 a0.075 measured: the sidebar shadow's peak coverage, 24 px of reach
 //	FieldEdge        #f3f3f3        #2c3338        measured: the unfocused text field's hairline in the Save dialog
 //	ScrollbarThumb   #000000 a0.337 #ffffff a0.337 measured: the overlay scrollbar's knob over its track
+//	AlternatingContentBackground  #f4f5f5  #ffffff a0.05  measured: the second of alternatingContentBackgroundColors, and Finder's list stripes
+//	Scrim            #000000 a0.20  #000000 a0.26  measured: the dim under a Save sheet in save-dialog-{light,dark}.png
 //
 // Every one of these was read on a desktop whose "Tint window background
 // with wallpaper colour" is on, which is what carries the chrome material
@@ -224,6 +229,33 @@ type PlatformColors struct {
 	// captures caught none), so the light row carries the dark row's
 	// coverage under Label's black until one does.
 	ScrollbarThumb color.NRGBA `appkit:"-"`
+
+	// AlternatingContentBackground is the fill a list lays under every
+	// second row where the platform stripes one: #f4f5f5 light and white
+	// at 0.05 dark, the second entry of AppKit's
+	// alternatingContentBackgroundColors, read 2026-09-11 by the same
+	// command-line program that read the catalogue. It carries no NSColor
+	// name of its own — AppKit answers for the pair as an array — so it is
+	// recorded here rather than asked for by name. The light value is what
+	// Finder's list view draws to the byte: the stripes in
+	// finder-window-light.png alternate #ffffff and #f4f5f5 on a 20 px
+	// pitch. No stored capture holds a dark list view, so the dark row is
+	// the array's answer alone, and it is a coverage rather than a pixel.
+	AlternatingContentBackground color.NRGBA `appkit:"-"`
+
+	// Scrim is the dim a modal lays over everything it interrupts: black
+	// at 0.20 light and at 0.26 dark, measured off the window standing
+	// behind the sheet in save-dialog-light.png and save-dialog-dark.png.
+	// The light window's plane reads #cccccc against the #ffffff the sheet
+	// itself carries, which is black at 0.20 exactly; the dark window's
+	// chrome band reads #1a1f22 against the measured #232a2e chrome
+	// material, which black at 0.26 reproduces on every channel (0.255 to
+	// 0.275 all do; 0.25 does not).
+	//
+	// It is the one alpha in this set a caller may hand the rasterizer as
+	// it stands: a scrim covers whatever the window happens to be showing,
+	// so there is no one surface to flatten it onto.
+	Scrim color.NRGBA `appkit:"-"`
 }
 
 // PlatformLight and PlatformDark are the recorded sets, aqua and darkAqua,
@@ -293,6 +325,9 @@ var (
 		FloatingShadow:  color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13},
 		FieldEdge:       color.NRGBA{R: 0xf3, G: 0xf3, B: 0xf3, A: 0xff},
 		ScrollbarThumb:  color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x56},
+
+		AlternatingContentBackground: color.NRGBA{R: 0xf4, G: 0xf5, B: 0xf5, A: 0xff},
+		Scrim:                        color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x33},
 	}
 
 	PlatformDark = PlatformColors{
@@ -357,6 +392,9 @@ var (
 		FloatingShadow:  color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13},
 		FieldEdge:       color.NRGBA{R: 0x2c, G: 0x33, B: 0x38, A: 0xff},
 		ScrollbarThumb:  color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x56},
+
+		AlternatingContentBackground: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x0d},
+		Scrim:                        color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x42},
 	}
 )
 
