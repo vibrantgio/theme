@@ -1522,7 +1522,7 @@ const componentClasses = `/* ---- Component classes ----
 
 /* Navbar (patterns/navbar navbar.go): a horizontal Surface bar —
    drawNavbar fills Surface, insets PaddingY vertically and S4 horizontally,
-   and patterns/shell pins the bar to ControlHeight + 2*PaddingY (24 dp
+   and patterns/shell pins the bar to ControlHeight + 2*PaddingY (28 dp
    comfortable, 19 compact). Slots run brand, centred links, actions; the
    links row centres in the space brand and actions leave over (that space
    halved), which margin-inline auto reproduces exactly, including the
