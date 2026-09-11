@@ -123,11 +123,22 @@ func TestRoundTripColors(t *testing.T) {
 	}
 
 	schemes := []struct {
-		vars   map[string]string
-		tokens tokens.ColorTokens
-	}{{root, snap.Light}, {dark, snap.Dark}}
+		vars     map[string]string
+		tokens   tokens.ColorTokens
+		platform tokens.PlatformColors
+	}{{root, snap.Light, snap.PlatformLight}, {dark, snap.Dark, snap.PlatformDark}}
 
 	for _, scheme := range schemes {
+		// The platform's own set, one property per field of
+		// tokens.PlatformColors, its coverage written out where it carries
+		// one — a label or a seam is a colour AT a coverage and a sheet
+		// that dropped it would state a colour the platform never paints.
+		for _, n := range platformNames {
+			name := "--platform-" + n.name
+			if got, want := scheme.vars[name], hexRGBA(n.pick(scheme.platform)); got != want {
+				t.Errorf("%s = %q, want %q", name, got, want)
+			}
+		}
 		for _, role := range rampRoles {
 			ramp := role.ramp(scheme.tokens.Ramps)
 			for step := 100; step <= 900; step += 100 {
@@ -155,7 +166,7 @@ func TestRoundTripColors(t *testing.T) {
 		if _, ok := root[name]; !ok {
 			t.Errorf(".dark declares %s which :root does not", name)
 		}
-		if !strings.HasPrefix(name, "--color-") && !strings.HasPrefix(name, "--elevation-") {
+		if !strings.HasPrefix(name, "--color-") && !strings.HasPrefix(name, "--elevation-") && !strings.HasPrefix(name, "--platform-") {
 			t.Errorf(".dark declares non-scheme variable %s", name)
 		}
 	}
@@ -164,7 +175,7 @@ func TestRoundTripColors(t *testing.T) {
 	// carries: the seam it owes what stands on it, and the line two regions
 	// sharing its own fill are parted by. All resolve per scheme for the
 	// same reason.
-	if want := len(rampRoles)*9 + len(pinRoles) + 3*len(elevationLevels) + 2*len(standableLevels); len(dark) != want {
+	if want := len(rampRoles)*9 + len(pinRoles) + 3*len(elevationLevels) + 2*len(standableLevels) + len(platformNames); len(dark) != want {
 		t.Errorf(".dark declares %d variables, want %d", len(dark), want)
 	}
 }

@@ -66,6 +66,11 @@ func readmeMD(s Snapshot) string {
 		pinNames[i] = "`--color-" + pin.name + "`"
 	}
 	fmt.Fprintf(&b, "| pins & semantic layer | %s | pinned bases, their on-colours, the ramp-resolved surface/seam, the inverse pair the counterpart scheme's ramp resolves, the reserved highlighter no status hue may serve, and the edges and rings each ramp measures for itself — a resting border for the page, the dialog and the popover, and one focus ring for the whole scheme, measured against every level at once, plus the accent fill a filled button's ring lies on, which belongs to no level at all |\n", strings.Join(pinNames, ", "))
+	platformVarNames := make([]string, len(platformNames))
+	for i, n := range platformNames {
+		platformVarNames[i] = "`--platform-" + n.name + "`"
+	}
+	fmt.Fprintf(&b, "| `--platform-<name>` | %s | the platform's own colour set: AppKit's semantic colours under their own names, kebab-cased, plus the ten fills the platform draws without naming, measured. Both schemes state their own. A coverage is written out as `#rrggbbaa`, because the platform's answer for a label, a seam, an overlay or the focus ring IS a colour at a coverage over whatever lies beneath it |\n", strings.Join(platformVarNames, ", "))
 	b.WriteString("| `--font-family` | `--font-family` | the typeface every prose role uses |\n")
 	b.WriteString("| `--font-family-code` | `--font-family-code` | the monospace typeface the code role uses |\n")
 	typeNames := make([]string, len(typeRoles))
@@ -222,7 +227,10 @@ func readmeMD(s Snapshot) string {
 		"controls, 15 dp chips, 7/0 dp padding) is the `.compact` class override,\n" +
 		"scoping to any subtree the way `.dark` scopes colours. The chip height is\n" +
 		"the control height less 4 dp in both settings — one relation, not a second\n" +
-		"scale. `--density-min-hit-target` (44 dp, WCAG 2.5.5) is deliberately not\n" +
+		"scale. A text field and a stacked row are not controls and carry their own\n" +
+		"measured heights: `--density-field-height` (27 dp comfortable, 21 compact)\n" +
+		"and `--density-row-height` (20 dp, 19 compact).\n" +
+		"`--density-min-hit-target` (44 dp, WCAG 2.5.5) is deliberately not\n" +
 		"overridden: compact shrinks the drawn control, never the clickable area.\n" +
 		"`theme.json` records both settings' metrics plus which one the theme runs.\n\n")
 

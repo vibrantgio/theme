@@ -173,7 +173,21 @@ func contrastRow(b *strings.Builder, label string, lightText, lightSurface, dark
 }
 
 // colorPageCSS is the colour page's specimen scaffolding.
-const colorPageCSS = `.ramp {
+const colorPageCSS = `.platform-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: var(--space-4);
+  margin: var(--space-4) 0;
+}
+.platform-swatch {
+  height: var(--space-12);
+  border: thin solid var(--platform-separator);
+  border-radius: var(--radius-sm);
+}
+.platform-name .annot {
+  margin: var(--space-1) 0 0;
+}
+.ramp {
   display: grid;
   grid-template-columns: repeat(9, 1fr);
   gap: var(--space-2);
@@ -388,6 +402,21 @@ func colorHTML(s Snapshot) string {
 		b.WriteString("</tbody>\n</table>\n</section>\n")
 	}
 
+	// The platform's own set, one swatch per name, both schemes printed. It
+	// is a listing and not a system: the values are read off the platform,
+	// so there is nothing to explain about how one was derived from another.
+	b.WriteString("<section>\n<h2>The platform's colour set</h2>\n")
+	b.WriteString("<p class=\"intro\">AppKit's semantic colours under their own names, plus the ten fills the platform draws without naming one, measured. " +
+		"Each swatch is painted through <code>var(--platform-&lt;name&gt;)</code>, so the toggle restyles it; the hexes beside it are printed for both schemes, labelled L and D. " +
+		"A name that carries a coverage is printed and painted as <code>#rrggbbaa</code> &mdash; the platform's answer for a label, a seam, an overlay or the focus ring is a colour AT a coverage over whatever lies beneath, and the swatch shows it over the page it is on.</p>\n")
+	b.WriteString("<div class=\"platform-grid\">\n")
+	for _, n := range platformNames {
+		fmt.Fprintf(&b, "<div class=\"platform-name\">\n<div class=\"platform-swatch\" style=\"background: var(--platform-%s)\"></div>\n", n.name)
+		fmt.Fprintf(&b, "<p class=\"annot\"><code>--platform-%s</code><br>L %s &middot; D %s</p>\n</div>\n",
+			n.name, hexRGBA(n.pick(s.PlatformLight)), hexRGBA(n.pick(s.PlatformDark)))
+	}
+	b.WriteString("</div>\n</section>\n")
+
 	intro := "Each role carries a nine-step functional ramp (100&ndash;900) where the step is the meaning &mdash; " +
 		"100&ndash;300 tinted fills, hovers and subtle borders, 500 the mid-value reference, 700&ndash;900 text and pressed states &mdash; " +
 		"plus a pinned base. Dark mode is the paired ramp: the same step keeps the same job. " +
@@ -526,6 +555,26 @@ const layoutPageCSS = `.space-row {
   font-size: var(--font-label-large-size);
   font-weight: var(--font-label-large-weight);
 }
+.field-bar {
+  height: var(--density-field-height);
+  padding: 0 var(--density-padding-x);
+  display: inline-flex;
+  align-items: center;
+  background: var(--platform-text-background);
+  color: var(--platform-placeholder-text);
+  border: thin solid var(--platform-field-edge);
+  border-radius: var(--radius-md);
+  font-size: var(--font-body-large-size);
+}
+.row-bar {
+  height: var(--density-row-height);
+  padding: 0 var(--space-2);
+  display: flex;
+  align-items: center;
+  background: var(--platform-alternating-content-background);
+  color: var(--platform-label);
+  font-size: var(--font-body-large-size);
+}
 .pad-box {
   display: inline-block;
   padding: var(--density-padding-y) var(--density-padding-x);
@@ -588,6 +637,12 @@ func layoutHTML(s Snapshot) string {
 		b.WriteString("<div class=\"hit-target\">\n<span class=\"control-bar\">Control</span>\n<span class=\"chip-bar\">Chip</span>\n</div>\n")
 		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-control-height</code> &middot; %s &middot; <code>--density-chip-height</code> &middot; %s &middot; hit target &ge; %s</p>\n",
 			px(setting.d.ControlHeight), px(setting.d.ChipHeight()), px(setting.d.MinHitTarget()))
+		b.WriteString("<div><span class=\"field-bar\">Text field</span></div>\n")
+		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-field-height</code> &middot; %s &mdash; the platform draws a field taller than a button</p>\n",
+			px(setting.d.FieldHeight))
+		b.WriteString("<div class=\"row-bar\">Stacked row</div>\n")
+		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-row-height</code> &middot; %s &mdash; a pin, not a floor: rows tile</p>\n",
+			px(setting.d.RowHeight))
 		b.WriteString("<div class=\"pad-box\">padding</div>\n")
 		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-padding-x</code> %s &middot; <code>--density-padding-y</code> %s</p>\n",
 			px(setting.d.PaddingX), px(setting.d.PaddingY))

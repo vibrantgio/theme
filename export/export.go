@@ -24,6 +24,14 @@ type Snapshot struct {
 	// scheme, FromSeed(Seed)'s dark half.
 	Light, Dark tokens.ColorTokens
 
+	// PlatformLight and PlatformDark are the platform's own colour set in
+	// the two appearances: the set the theme emitted, and its counterpart
+	// under the same accent. The accent is the only row a machine's own
+	// settings move, so the pair is the two recorded sets carrying the
+	// emitted set's accent — which on the default accent is the two recorded
+	// sets exactly.
+	PlatformLight, PlatformDark tokens.PlatformColors
+
 	Typography tokens.Typography
 	Density    tokens.Density
 	Motion     tokens.MotionScale
@@ -47,13 +55,17 @@ type Snapshot struct {
 // as a named setting plus both settings' metrics, not as free-form numbers.
 func Capture(th theme.Theme) (Snapshot, error) {
 	var s Snapshot
-	if th.Color == nil || th.Typography == nil || th.Density == nil || th.Motion == nil || th.Spacing == nil || th.Radius == nil || th.Elevation == nil {
+	if th.Color == nil || th.Platform == nil || th.Typography == nil || th.Density == nil || th.Motion == nil || th.Spacing == nil || th.Radius == nil || th.Elevation == nil {
 		return s, fmt.Errorf("export: Capture: theme has nil observables; every consumed field of theme.Theme must be set")
 	}
 	var err error
 	if s.Light, err = th.Color.First(); err != nil {
 		return s, fmt.Errorf("export: Capture: Color: %w", err)
 	}
+	if s.PlatformLight, err = th.Platform.First(); err != nil {
+		return s, fmt.Errorf("export: Capture: Platform: %w", err)
+	}
+	s.PlatformDark = tokens.PlatformDark.WithAccent(s.PlatformLight.ControlAccent)
 	if s.Typography, err = th.Typography.First(); err != nil {
 		return s, fmt.Errorf("export: Capture: Typography: %w", err)
 	}

@@ -22,6 +22,17 @@ func hexRGB(c stdcolor.NRGBA) string {
 	return fmt.Sprintf("#%02x%02x%02x", c.R, c.G, c.B)
 }
 
+// hexRGBA formats a colour as lowercase #rrggbb, or #rrggbbaa where it
+// carries a coverage: the platform's labels, seams, overlays and focus ring
+// are a colour at a coverage over whatever is beneath them, and a sheet that
+// dropped the coverage would state a colour the platform never paints.
+func hexRGBA(c stdcolor.NRGBA) string {
+	if c.A == 0xff {
+		return hexRGB(c)
+	}
+	return fmt.Sprintf("#%02x%02x%02x%02x", c.R, c.G, c.B, c.A)
+}
+
 // fnum formats a float32 with no trailing zeros: 16 → "16", 0.15 → "0.15".
 func fnum(v float32) string {
 	return strconv.FormatFloat(float64(v), 'f', -1, 32)
@@ -31,6 +42,92 @@ func fnum(v float32) string {
 // 1:1 onto CSS px, both being density-abstract logical pixels.
 func px(v float32) string {
 	return fnum(v) + "px"
+}
+
+// platformNames orders the platform's colour set under its CSS names, one
+// entry per field of tokens.PlatformColors, in the struct's own order.
+//
+// The naming rule is mechanical and has no table of exceptions: the AppKit
+// name the field carries, kebab-cased, under a --platform- prefix. So
+// windowBackgroundColor is --platform-window-background and systemRed is
+// --platform-system-red, exactly as the Go field drops AppKit's trailing
+// "Color" and nothing else. The ten fields AppKit has no name for are spelled
+// the same way from the name the token set gives them.
+var platformNames = []struct {
+	name string
+	pick func(tokens.PlatformColors) stdcolor.NRGBA
+}{
+	{"window-background", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.WindowBackground }},
+	{"under-page-background", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.UnderPageBackground }},
+	{"control-background", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ControlBackground }},
+	{"text-background", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.TextBackground }},
+	{"selected-content-background", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SelectedContentBackground }},
+	{"unemphasized-selected-content-background", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.UnemphasizedSelectedContentBackground }},
+	{"selected-text-background", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SelectedTextBackground }},
+	{"unemphasized-selected-text-background", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.UnemphasizedSelectedTextBackground }},
+	{"find-highlight", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.FindHighlight }},
+	{"separator", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Separator }},
+	{"grid", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Grid }},
+	{"label", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Label }},
+	{"secondary-label", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SecondaryLabel }},
+	{"tertiary-label", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.TertiaryLabel }},
+	{"quaternary-label", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.QuaternaryLabel }},
+	{"text", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Text }},
+	{"placeholder-text", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.PlaceholderText }},
+	{"selected-text", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SelectedText }},
+	{"link", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Link }},
+	{"header-text", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.HeaderText }},
+	{"control", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Control }},
+	{"control-text", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ControlText }},
+	{"disabled-control-text", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.DisabledControlText }},
+	{"selected-control", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SelectedControl }},
+	{"selected-control-text", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SelectedControlText }},
+	{"alternate-selected-control-text", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.AlternateSelectedControlText }},
+	{"control-accent", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ControlAccent }},
+	{"keyboard-focus-indicator", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.KeyboardFocusIndicator }},
+	{"system-red", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SystemRed }},
+	{"system-orange", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SystemOrange }},
+	{"system-yellow", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SystemYellow }},
+	{"system-green", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SystemGreen }},
+	{"system-mint", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SystemMint }},
+	{"system-teal", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SystemTeal }},
+	{"system-cyan", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SystemCyan }},
+	{"system-blue", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SystemBlue }},
+	{"system-indigo", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SystemIndigo }},
+	{"system-purple", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SystemPurple }},
+	{"system-pink", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SystemPink }},
+	{"system-brown", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SystemBrown }},
+	{"system-gray", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SystemGray }},
+	{"shadow", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Shadow }},
+	{"highlight", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Highlight }},
+	{"sidebar-material", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarMaterial }},
+	{"card-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.CardFill }},
+	{"push-button-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.PushButtonFill }},
+	{"hover-overlay", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.HoverOverlay }},
+	{"press-overlay", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.PressOverlay }},
+	{"floating-shadow", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.FloatingShadow }},
+	{"field-edge", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.FieldEdge }},
+	{"scrollbar-thumb", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ScrollbarThumb }},
+	{"alternating-content-background", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.AlternatingContentBackground }},
+	{"scrim", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Scrim }},
+}
+
+// platformVars is the platform's colour set as custom properties, one per
+// field.
+//
+// A coverage is written out. Everywhere else in this sheet a colour is opaque
+// and #rrggbb says all of it, but the platform's answer for a label, a seam,
+// an overlay or the focus ring IS a coverage over whatever lies beneath, so
+// those are emitted as #rrggbbaa and a rule that lays one over a fill gets
+// what the platform gets. A browser composites #rrggbbaa in encoded sRGB,
+// which is the space the platform composites in and the space theme/color's
+// Flatten takes, so the two sides land on the same pixel.
+func platformVars(p tokens.PlatformColors) []cssVar {
+	vars := make([]cssVar, 0, len(platformNames))
+	for _, n := range platformNames {
+		vars = append(vars, cssVar{"--platform-" + n.name, hexRGBA(n.pick(p))})
+	}
+	return vars
 }
 
 // rampRoles orders the colour roles under their CSS names.
@@ -561,6 +658,12 @@ var densityMetrics = []struct {
 	// var() subtraction would put the system's one statement of the relation
 	// in a stylesheet instead of in the token layer.
 	{"chip-height", func(d tokens.Density) float32 { return d.ChipHeight() }},
+	// The field's own height and the stacked row's pitch. The platform draws
+	// a text field taller than a push button and a list row shorter than
+	// both, all three measured, so each is stated rather than derived from
+	// the control height.
+	{"field-height", func(d tokens.Density) float32 { return d.FieldHeight }},
+	{"row-height", func(d tokens.Density) float32 { return d.RowHeight }},
 	{"padding-x", func(d tokens.Density) float32 { return d.PaddingX }},
 	{"padding-y", func(d tokens.Density) float32 { return d.PaddingY }},
 }
@@ -834,9 +937,12 @@ func stylesCSS(s Snapshot) string {
 	fontFace("Roboto", "500", "roboto-medium.ttf")
 	fontFace("Roboto Mono", "400", "robotomono-regular.ttf")
 	b.WriteString("\n")
-	block(&b, ":root", append(colorVars(s.Light), scaleVars(s)...))
+	// The platform's set stands beside the derived one in both blocks, under
+	// its own prefix, so a rule may name either while the consumers convert.
+	root := append(colorVars(s.Light), platformVars(s.PlatformLight)...)
+	block(&b, ":root", append(root, scaleVars(s)...))
 	b.WriteString("\n")
-	block(&b, ".dark", colorVars(s.Dark))
+	block(&b, ".dark", append(colorVars(s.Dark), platformVars(s.PlatformDark)...))
 	b.WriteString("\n")
 	block(&b, ".compact", densityVars(tokens.Compact))
 	b.WriteString("\n")
