@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	vgcolor "github.com/vibrantgio/theme/color"
 	"github.com/vibrantgio/theme/tokens"
 )
 
@@ -428,5 +429,46 @@ func TestTheStateOverlaysAreBlackOnLightAndWhiteOnDark(t *testing.T) {
 		if set.in.PressOverlay.A <= set.in.HoverOverlay.A {
 			t.Errorf("%s PressOverlay covers %d and HoverOverlay %d; a press is the heavier of the two", set.name, set.in.PressOverlay.A, set.in.HoverOverlay.A)
 		}
+	}
+}
+
+// TestAlphaNamesFlattenToTheCapturedBytes: an alpha name in this set is
+// painted by flattening it over the surface it stands on in encoded sRGB,
+// which is where the platform composites. These are the composites the Save
+// dialog captures in the organization's macOS reference actually show, at
+// the glyph cores of the sheet's own wording and of the Cancel button's
+// title.
+//
+// The label rows land one 255th light of the capture because the catalogue
+// records alpha to two decimals: Label carries round(0.85×255) = 217 where
+// the platform's own coverage byte is 216. That is the rounding this
+// package's doc comment records, and it is the whole of the difference — the
+// blend is exact, and on macOS the live reader closes it.
+func TestAlphaNamesFlattenToTheCapturedBytes(t *testing.T) {
+	for _, tc := range []struct {
+		name          string
+		fg, surface   color.NRGBA
+		want, capture color.NRGBA
+	}{
+		{"Label on the light sheet", tokens.PlatformLight.Label, tokens.PlatformLight.WindowBackground,
+			color.NRGBA{0x26, 0x26, 0x26, 0xff}, color.NRGBA{0x27, 0x27, 0x27, 0xff}},
+		{"Label on the light push button", tokens.PlatformLight.Label, tokens.PlatformLight.PushButtonFill,
+			color.NRGBA{0x23, 0x23, 0x23, 0xff}, color.NRGBA{0x24, 0x24, 0x24, 0xff}},
+		{"Label on the dark push button", tokens.PlatformDark.Label, tokens.PlatformDark.PushButtonFill,
+			color.NRGBA{0xe1, 0xe2, 0xe2, 0xff}, color.NRGBA{0xe0, 0xe1, 0xe2, 0xff}},
+		{"SecondaryLabel on the dark sheet", tokens.PlatformDark.SecondaryLabel, color.NRGBA{0x23, 0x2a, 0x2f, 0xff},
+			color.NRGBA{0x9c, 0x9f, 0xa1, 0xff}, color.NRGBA{0x9c, 0x9f, 0xa1, 0xff}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got := vgcolor.Flatten(tc.fg, tc.surface)
+			if got != tc.want {
+				t.Errorf("Flatten(%v, %v) = %v, want %v", tc.fg, tc.surface, got, tc.want)
+			}
+			for _, d := range []int{int(got.R) - int(tc.capture.R), int(got.G) - int(tc.capture.G), int(got.B) - int(tc.capture.B)} {
+				if d < -1 || d > 1 {
+					t.Errorf("Flatten(%v, %v) = %v, more than one 255th from the captured %v", tc.fg, tc.surface, got, tc.capture)
+				}
+			}
+		})
 	}
 }

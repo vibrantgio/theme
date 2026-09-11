@@ -7,10 +7,10 @@
 //
 // The answer is an opaque colour, because the token contract is that no fill
 // is translucent: the blend happens here and the caller paints what it is
-// handed. It is blended in the eight-bit sRGB space rather than in linear
-// light ([color.Over]) because the reference is what a browser puts on the
-// screen and a browser composites there — over white the yellow lands on
-// #ffec99 and over #1e1e1e on #786512, which is the reference as it reads.
+// handed. It is blended in the eight-bit sRGB space ([color.Flatten]'s
+// space) because the reference is what a browser puts on the screen and a
+// browser composites there — over white the yellow lands on #ffec99 and over
+// #1e1e1e on #786512, which is the reference as it reads.
 //
 // The text the highlight covers is not repainted, and the coverage is not
 // tuned to a text floor: the marked words keep the colour they had, and what

@@ -5,31 +5,39 @@ package color
 
 import (
 	stdcolor "image/color"
+	"math"
 )
 
-// Over returns src composited over dst, blended in linear light.
+// Flatten returns src laid over the opaque surface dst, composited per
+// channel in the encoded sRGB space — a·src + (1−a)·dst on the eight-bit
+// channels, rounded — and opaque.
 //
-// Linear light is not a refinement here, it is where the blend happens: Gio
-// converts every colour to premultiplied *linear* RGBA before it reaches the
-// rasterizer, so the pixel written is the linear mix of the two and the
-// eight-bit average of the two hex codes is a different colour altogether.
-// The design system's own overlay scrollbar is the demonstration — the
-// low-contrast-text step at 39% coverage over the light page lands on
-// #CCCCCC by this route and on #BABABA by the naive one, Lc 21.9 against
-// the page rather than Lc 31.9. Measuring a translucent foreground against the
-// wrong composite is how a foreground no reader can find comes to be believed
-// legible.
+// Encoded sRGB is where the platform composites an alpha colour, measured
+// off the Save dialog captures in the organization's macOS reference:
+// labelColor, black at 0.85, lands on #242424 over a push button's #ececec
+// fill and its white lands on #e0e1e2 over the dark button's #333a3f, and
+// secondaryLabelColor's white lands on #9c9fa1 over the dark sheet's
+// #232a2f — every channel of every one reproduced by this blend and by no
+// other. Gio's rasterizer mixes a translucent fill it is handed in linear
+// light instead, which puts that same label on #6c6c6c over white where the
+// platform puts #272727: not a shade off, a different colour. So a caller
+// flattens the platform's alpha here and hands the rasterizer an opaque
+// fill.
 //
 // src's alpha is its coverage. dst is a surface — what is already on the
 // screen when the fill is drawn on it — so its alpha is ignored and the
-// result is opaque, which is what makes the result something [APCA]
-// can be handed. Coverage 0 returns dst and coverage 255 returns src, both
+// result is opaque, which is also what makes the result something [APCA] can
+// be handed. Coverage 0 returns dst and coverage 255 returns src, both
 // exactly.
-func Over(src, dst stdcolor.NRGBA) stdcolor.NRGBA {
+func Flatten(src, dst stdcolor.NRGBA) stdcolor.NRGBA {
 	a := float64(src.A) / 255
-	mix := func(s, d uint8) float64 {
-		return a*LinearFromSRGB(float64(s)/255) + (1-a)*LinearFromSRGB(float64(d)/255)
+	mix := func(s, d uint8) uint8 {
+		return uint8(math.Round(a*float64(s) + (1-a)*float64(d)))
 	}
-	r, g, b := quantizeLinear(mix(src.R, dst.R), mix(src.G, dst.G), mix(src.B, dst.B))
-	return stdcolor.NRGBA{R: r, G: g, B: b, A: 0xff}
+	return stdcolor.NRGBA{
+		R: mix(src.R, dst.R),
+		G: mix(src.G, dst.G),
+		B: mix(src.B, dst.B),
+		A: 0xff,
+	}
 }
