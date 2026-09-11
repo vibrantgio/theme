@@ -1,0 +1,44 @@
+# macOS 26.5.2 (build 25F84), read 2026-09-10 by nscolors.swift under aqua then darkAqua; sRGB, alpha to two decimals where below 1
+windowBackgroundColor	#ffffff	#1e1e1e
+underPageBackgroundColor	#969696 a0.90	#282828
+controlBackgroundColor	#ffffff	#1e1e1e
+textBackgroundColor	#ffffff	#1e1e1e
+selectedContentBackgroundColor	#0064e1	#0059d1
+unemphasizedSelectedContentBackgroundColor	#dcdcdc	#464646
+selectedTextBackgroundColor	#b3d7ff	#3f638b
+unemphasizedSelectedTextBackgroundColor	#dcdcdc	#464646
+findHighlightColor	#ffff00	#ffff00
+separatorColor	#000000 a0.10	#ffffff a0.10
+gridColor	#e6e6e6	#1a1a1a
+labelColor	#000000 a0.85	#ffffff a0.85
+secondaryLabelColor	#000000 a0.50	#ffffff a0.55
+tertiaryLabelColor	#000000 a0.26	#ffffff a0.25
+quaternaryLabelColor	#000000 a0.10	#ffffff a0.10
+textColor	#000000	#ffffff
+placeholderTextColor	#000000 a0.50	#ffffff a0.55
+selectedTextColor	#000000	#ffffff
+linkColor	#0068da	#419cff
+headerTextColor	#000000 a0.85	#ffffff
+controlColor	#ffffff	#ffffff a0.25
+controlTextColor	#000000 a0.85	#ffffff a0.85
+disabledControlTextColor	#000000 a0.25	#ffffff a0.25
+selectedControlColor	#b3d7ff	#3f638b
+selectedControlTextColor	#000000 a0.85	#ffffff a0.85
+alternateSelectedControlTextColor	#ffffff	#ffffff
+controlAccentColor	#007aff	#007aff
+keyboardFocusIndicatorColor	#0067f4 a0.50	#1aa9ff a0.50
+systemRed	#ff383c	#ff4245
+systemOrange	#ff8d28	#ff9230
+systemYellow	#ffcc00	#ffd600
+systemGreen	#34c759	#30d158
+systemMint	#00c8b3	#00dac3
+systemTeal	#00c3d0	#00d2e0
+systemCyan	#00c0e8	#3cd3fe
+systemBlue	#0088ff	#0091ff
+systemIndigo	#6155f5	#6d7cff
+systemPurple	#cb30e0	#db34f2
+systemPink	#ff2d55	#ff375f
+systemBrown	#ac7f5e	#b78a66
+systemGray	#8e8e93	#98989d
+shadowColor	#000000	#000000
+highlightColor	#ffffff	#b4b4b4

@@ -1,0 +1,341 @@
+// The platform's colour set: AppKit's semantic colours, one field per name.
+//
+// The values were read off AppKit on macOS 26.5.2 (build 25F84) on
+// 2026-09-10 by a command-line program — no application was launched — under
+// the aqua and darkAqua appearances, converted to sRGB, alpha kept. That
+// catalogue and the program that produced it are stored in the
+// organization's macOS reference; a copy of the catalogue is this package's
+// testdata, and a test pins both recorded sets against it, field by field.
+//
+// Alpha is part of the platform's answer. A label, a seam, a disabled
+// control's text is black or white at a coverage and composites over
+// whatever lies beneath it, which is how one recorded value reads correctly
+// on every fill. Nothing here is pre-composited: a caller that paints one of
+// these over something else composites it there.
+//
+// The catalogue records alpha to two decimals, so each field stores
+// round(a × 255) of what was written down — at most one 255th away from what
+// AppKit reported. The live reader removes that gap.
+package tokens
+
+import (
+	"image/color"
+	"math"
+)
+
+// PlatformColors is the platform's colour set: one field per AppKit
+// semantic colour name, in Go casing, with the value that name reports for
+// one appearance. [PlatformLight] and [PlatformDark] are the two recorded
+// sets; [PlatformColors.WithAccent] substitutes the rows the platform
+// derives from the accent colour.
+//
+// Field names drop AppKit's trailing "Color" and nothing else, so
+// windowBackgroundColor is WindowBackground and systemRed is SystemRed. The
+// one field whose value is not AppKit's own is FindHighlight; see its
+// comment.
+type PlatformColors struct {
+	// The planes. WindowBackground is the window's own; ControlBackground
+	// and TextBackground are the content, the lists, the tables and the
+	// fields; UnderPageBackground is the backdrop showing around a pane.
+	WindowBackground    color.NRGBA
+	UnderPageBackground color.NRGBA
+	ControlBackground   color.NRGBA
+	TextBackground      color.NRGBA
+
+	// Selection. The emphasized rows are the active window's and follow
+	// the accent; the unemphasized pair is the inactive window's grey and
+	// does not.
+	SelectedContentBackground             color.NRGBA
+	UnemphasizedSelectedContentBackground color.NRGBA
+	SelectedTextBackground                color.NRGBA
+	UnemphasizedSelectedTextBackground    color.NRGBA
+
+	// FindHighlight is the find highlight as Mail paints it, measured off
+	// the stored captures of Mail's find bar in both appearances. It is
+	// deliberately not AppKit's findHighlightColor, which reports a
+	// saturated yellow the platform's own applications do not paint. The
+	// text the highlight covers keeps its colour.
+	FindHighlight color.NRGBA
+
+	// Separator is every seam, laid over whatever is beneath it. Grid is
+	// the line a table rules its cells with.
+	Separator color.NRGBA
+	Grid      color.NRGBA
+
+	// Text, at four strengths, over whatever it stands on.
+	Label           color.NRGBA
+	SecondaryLabel  color.NRGBA
+	TertiaryLabel   color.NRGBA
+	QuaternaryLabel color.NRGBA
+
+	// The text-system colours: a text view's own, its placeholder, the
+	// text under a selection, a link, and a header row's.
+	Text            color.NRGBA
+	PlaceholderText color.NRGBA
+	SelectedText    color.NRGBA
+	Link            color.NRGBA
+	HeaderText      color.NRGBA
+
+	// Controls: an ordinary control's fill and text, the disabled text,
+	// the selected control's fill and text, and the text that reads on a
+	// fill the accent paints.
+	Control                      color.NRGBA
+	ControlText                  color.NRGBA
+	DisabledControlText          color.NRGBA
+	SelectedControl              color.NRGBA
+	SelectedControlText          color.NRGBA
+	AlternateSelectedControlText color.NRGBA
+
+	// The accent itself, and the ring a focused control wears.
+	ControlAccent          color.NRGBA
+	KeyboardFocusIndicator color.NRGBA
+
+	// The system colours, available by name. Error, Success, Warning and
+	// Info are SystemRed, SystemGreen, SystemOrange and SystemBlue.
+	SystemRed    color.NRGBA
+	SystemOrange color.NRGBA
+	SystemYellow color.NRGBA
+	SystemGreen  color.NRGBA
+	SystemMint   color.NRGBA
+	SystemTeal   color.NRGBA
+	SystemCyan   color.NRGBA
+	SystemBlue   color.NRGBA
+	SystemIndigo color.NRGBA
+	SystemPurple color.NRGBA
+	SystemPink   color.NRGBA
+	SystemBrown  color.NRGBA
+	SystemGray   color.NRGBA
+
+	// Shadow is what a shadow is drawn in; Highlight is the light edge a
+	// bezel catches.
+	Shadow    color.NRGBA
+	Highlight color.NRGBA
+}
+
+// PlatformLight and PlatformDark are the recorded sets, aqua and darkAqua,
+// with the platform's own accent — systemBlue — in the accent rows. Treat
+// them as read-only, like every package-level value here: take a copy, or
+// [PlatformColors.WithAccent], rather than assigning into one.
+var (
+	PlatformLight = PlatformColors{
+		WindowBackground:    color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
+		UnderPageBackground: color.NRGBA{R: 0x96, G: 0x96, B: 0x96, A: 0xe6},
+		ControlBackground:   color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
+		TextBackground:      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
+
+		SelectedContentBackground:             color.NRGBA{R: 0x00, G: 0x64, B: 0xe1, A: 0xff},
+		UnemphasizedSelectedContentBackground: color.NRGBA{R: 0xdc, G: 0xdc, B: 0xdc, A: 0xff},
+		SelectedTextBackground:                color.NRGBA{R: 0xb3, G: 0xd7, B: 0xff, A: 0xff},
+		UnemphasizedSelectedTextBackground:    color.NRGBA{R: 0xdc, G: 0xdc, B: 0xdc, A: 0xff},
+
+		FindHighlight: color.NRGBA{R: 0xfa, G: 0xef, B: 0xbd, A: 0xff},
+
+		Separator: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x1a},
+		Grid:      color.NRGBA{R: 0xe6, G: 0xe6, B: 0xe6, A: 0xff},
+
+		Label:           color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xd9},
+		SecondaryLabel:  color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x80},
+		TertiaryLabel:   color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x42},
+		QuaternaryLabel: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x1a},
+
+		Text:            color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
+		PlaceholderText: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x80},
+		SelectedText:    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
+		Link:            color.NRGBA{R: 0x00, G: 0x68, B: 0xda, A: 0xff},
+		HeaderText:      color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xd9},
+
+		Control:                      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
+		ControlText:                  color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xd9},
+		DisabledControlText:          color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x40},
+		SelectedControl:              color.NRGBA{R: 0xb3, G: 0xd7, B: 0xff, A: 0xff},
+		SelectedControlText:          color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xd9},
+		AlternateSelectedControlText: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
+
+		ControlAccent:          color.NRGBA{R: 0x00, G: 0x7a, B: 0xff, A: 0xff},
+		KeyboardFocusIndicator: color.NRGBA{R: 0x00, G: 0x67, B: 0xf4, A: 0x80},
+
+		SystemRed:    color.NRGBA{R: 0xff, G: 0x38, B: 0x3c, A: 0xff},
+		SystemOrange: color.NRGBA{R: 0xff, G: 0x8d, B: 0x28, A: 0xff},
+		SystemYellow: color.NRGBA{R: 0xff, G: 0xcc, B: 0x00, A: 0xff},
+		SystemGreen:  color.NRGBA{R: 0x34, G: 0xc7, B: 0x59, A: 0xff},
+		SystemMint:   color.NRGBA{R: 0x00, G: 0xc8, B: 0xb3, A: 0xff},
+		SystemTeal:   color.NRGBA{R: 0x00, G: 0xc3, B: 0xd0, A: 0xff},
+		SystemCyan:   color.NRGBA{R: 0x00, G: 0xc0, B: 0xe8, A: 0xff},
+		SystemBlue:   color.NRGBA{R: 0x00, G: 0x88, B: 0xff, A: 0xff},
+		SystemIndigo: color.NRGBA{R: 0x61, G: 0x55, B: 0xf5, A: 0xff},
+		SystemPurple: color.NRGBA{R: 0xcb, G: 0x30, B: 0xe0, A: 0xff},
+		SystemPink:   color.NRGBA{R: 0xff, G: 0x2d, B: 0x55, A: 0xff},
+		SystemBrown:  color.NRGBA{R: 0xac, G: 0x7f, B: 0x5e, A: 0xff},
+		SystemGray:   color.NRGBA{R: 0x8e, G: 0x8e, B: 0x93, A: 0xff},
+
+		Shadow:    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
+		Highlight: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
+	}
+
+	PlatformDark = PlatformColors{
+		WindowBackground:    color.NRGBA{R: 0x1e, G: 0x1e, B: 0x1e, A: 0xff},
+		UnderPageBackground: color.NRGBA{R: 0x28, G: 0x28, B: 0x28, A: 0xff},
+		ControlBackground:   color.NRGBA{R: 0x1e, G: 0x1e, B: 0x1e, A: 0xff},
+		TextBackground:      color.NRGBA{R: 0x1e, G: 0x1e, B: 0x1e, A: 0xff},
+
+		SelectedContentBackground:             color.NRGBA{R: 0x00, G: 0x59, B: 0xd1, A: 0xff},
+		UnemphasizedSelectedContentBackground: color.NRGBA{R: 0x46, G: 0x46, B: 0x46, A: 0xff},
+		SelectedTextBackground:                color.NRGBA{R: 0x3f, G: 0x63, B: 0x8b, A: 0xff},
+		UnemphasizedSelectedTextBackground:    color.NRGBA{R: 0x46, G: 0x46, B: 0x46, A: 0xff},
+
+		FindHighlight: color.NRGBA{R: 0x6e, G: 0x6e, B: 0x4d, A: 0xff},
+
+		Separator: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x1a},
+		Grid:      color.NRGBA{R: 0x1a, G: 0x1a, B: 0x1a, A: 0xff},
+
+		Label:           color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xd9},
+		SecondaryLabel:  color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x8c},
+		TertiaryLabel:   color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x40},
+		QuaternaryLabel: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x1a},
+
+		Text:            color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
+		PlaceholderText: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x8c},
+		SelectedText:    color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
+		Link:            color.NRGBA{R: 0x41, G: 0x9c, B: 0xff, A: 0xff},
+		HeaderText:      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
+
+		Control:                      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x40},
+		ControlText:                  color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xd9},
+		DisabledControlText:          color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x40},
+		SelectedControl:              color.NRGBA{R: 0x3f, G: 0x63, B: 0x8b, A: 0xff},
+		SelectedControlText:          color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xd9},
+		AlternateSelectedControlText: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
+
+		ControlAccent:          color.NRGBA{R: 0x00, G: 0x7a, B: 0xff, A: 0xff},
+		KeyboardFocusIndicator: color.NRGBA{R: 0x1a, G: 0xa9, B: 0xff, A: 0x80},
+
+		SystemRed:    color.NRGBA{R: 0xff, G: 0x42, B: 0x45, A: 0xff},
+		SystemOrange: color.NRGBA{R: 0xff, G: 0x92, B: 0x30, A: 0xff},
+		SystemYellow: color.NRGBA{R: 0xff, G: 0xd6, B: 0x00, A: 0xff},
+		SystemGreen:  color.NRGBA{R: 0x30, G: 0xd1, B: 0x58, A: 0xff},
+		SystemMint:   color.NRGBA{R: 0x00, G: 0xda, B: 0xc3, A: 0xff},
+		SystemTeal:   color.NRGBA{R: 0x00, G: 0xd2, B: 0xe0, A: 0xff},
+		SystemCyan:   color.NRGBA{R: 0x3c, G: 0xd3, B: 0xfe, A: 0xff},
+		SystemBlue:   color.NRGBA{R: 0x00, G: 0x91, B: 0xff, A: 0xff},
+		SystemIndigo: color.NRGBA{R: 0x6d, G: 0x7c, B: 0xff, A: 0xff},
+		SystemPurple: color.NRGBA{R: 0xdb, G: 0x34, B: 0xf2, A: 0xff},
+		SystemPink:   color.NRGBA{R: 0xff, G: 0x37, B: 0x5f, A: 0xff},
+		SystemBrown:  color.NRGBA{R: 0xb7, G: 0x8a, B: 0x66, A: 0xff},
+		SystemGray:   color.NRGBA{R: 0x98, G: 0x98, B: 0x9d, A: 0xff},
+
+		Shadow:    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
+		Highlight: color.NRGBA{R: 0xb4, G: 0xb4, B: 0xb4, A: 0xff},
+	}
+)
+
+// WithAccent returns the set with the five rows the platform derives from
+// the accent colour rebuilt for accent. Every other field is untouched: the
+// unemphasized selection pair is the inactive window's grey, Link is a fixed
+// blue, and the system colours are a fixed catalogue — none of them moves
+// when the user changes the accent.
+//
+// The five rows and their rule:
+//
+//   - ControlAccent is the accent itself, at the recorded row's alpha.
+//   - SelectedContentBackground, SelectedTextBackground, SelectedControl
+//     and KeyboardFocusIndicator keep the accent's hue and saturation and
+//     take the recorded row's HSL lightness and alpha. In the catalogue all
+//     four are the platform's blue at a lightness of their own — the
+//     emphasized selection darker than the accent, the text selection and
+//     the selected control much lighter, the focus ring a shade darker at
+//     half coverage — and that lightness is what carries over.
+//
+// The rule is an APPROXIMATION of what AppKit does, not a reproduction of
+// it: the platform derives these in its own colour space, and rebuilding
+// the catalogue's blue rows through this rule lands within a few units per
+// channel rather than on the byte. It stands until the live reader asks
+// AppKit for each name directly. Where accent is the platform's own blue —
+// the accent already in the recorded rows — the set is returned unchanged,
+// so a machine on the default accent gets the catalogue exactly.
+func (p PlatformColors) WithAccent(accent color.NRGBA) PlatformColors {
+	if accent.R == p.ControlAccent.R && accent.G == p.ControlAccent.G && accent.B == p.ControlAccent.B {
+		return p
+	}
+	hue, sat, _ := hsl(accent)
+	p.ControlAccent = color.NRGBA{R: accent.R, G: accent.G, B: accent.B, A: p.ControlAccent.A}
+	p.SelectedContentBackground = atAccentHue(hue, sat, p.SelectedContentBackground)
+	p.SelectedTextBackground = atAccentHue(hue, sat, p.SelectedTextBackground)
+	p.SelectedControl = atAccentHue(hue, sat, p.SelectedControl)
+	p.KeyboardFocusIndicator = atAccentHue(hue, sat, p.KeyboardFocusIndicator)
+	return p
+}
+
+// atAccentHue rebuilds one recorded row at the accent's hue and saturation,
+// keeping the row's own lightness and alpha.
+func atAccentHue(hue, sat float64, recorded color.NRGBA) color.NRGBA {
+	_, _, light := hsl(recorded)
+	out := fromHSL(hue, sat, light)
+	out.A = recorded.A
+	return out
+}
+
+// hsl reads a colour's hue in degrees, saturation and lightness, ignoring
+// alpha. Saturation and lightness run 0..1.
+func hsl(c color.NRGBA) (hue, sat, light float64) {
+	r, g, b := float64(c.R)/255, float64(c.G)/255, float64(c.B)/255
+	high := math.Max(r, math.Max(g, b))
+	low := math.Min(r, math.Min(g, b))
+	light = (high + low) / 2
+	span := high - low
+	if span == 0 {
+		return 0, 0, light
+	}
+	sat = span / (1 - math.Abs(2*light-1))
+	if sat > 1 {
+		sat = 1
+	}
+	switch high {
+	case r:
+		hue = math.Mod((g-b)/span, 6)
+	case g:
+		hue = (b-r)/span + 2
+	default:
+		hue = (r-g)/span + 4
+	}
+	hue *= 60
+	if hue < 0 {
+		hue += 360
+	}
+	return hue, sat, light
+}
+
+// fromHSL is hsl's inverse, returning an opaque colour.
+func fromHSL(hue, sat, light float64) color.NRGBA {
+	span := (1 - math.Abs(2*light-1)) * sat
+	sector := hue / 60
+	mid := span * (1 - math.Abs(math.Mod(sector, 2)-1))
+	var r, g, b float64
+	switch {
+	case sector < 1:
+		r, g, b = span, mid, 0
+	case sector < 2:
+		r, g, b = mid, span, 0
+	case sector < 3:
+		r, g, b = 0, span, mid
+	case sector < 4:
+		r, g, b = 0, mid, span
+	case sector < 5:
+		r, g, b = mid, 0, span
+	default:
+		r, g, b = span, 0, mid
+	}
+	base := light - span/2
+	return color.NRGBA{R: eightBit(r + base), G: eightBit(g + base), B: eightBit(b + base), A: 0xff}
+}
+
+// eightBit quantizes a 0..1 channel to a byte, clamping out-of-range input.
+func eightBit(v float64) uint8 {
+	n := math.Round(v * 255)
+	if n < 0 {
+		n = 0
+	}
+	if n > 255 {
+		n = 255
+	}
+	return uint8(n)
+}

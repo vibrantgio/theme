@@ -11,12 +11,13 @@ import (
 // Hours 7–17 (inclusive) use DefaultLight; all other hours use DefaultDark.
 func AutoLightDark() rx.Observable[Theme] {
 	return rx.Map(rx.Ticker(0, time.Minute), func(t time.Time) Theme {
-		colors := tokens.DefaultLight
+		colors, platform := tokens.DefaultLight, tokens.PlatformLight
 		if t.Hour() <= 6 || t.Hour() >= 18 {
-			colors = tokens.DefaultDark
+			colors, platform = tokens.DefaultDark, tokens.PlatformDark
 		}
 		return Theme{
 			Color:      rx.Of(colors),
+			Platform:   rx.Of(platform),
 			Typography: rx.Of(tokens.DefaultTypography),
 			Density:    rx.Of(tokens.Comfortable),
 			Motion:     rx.Of(tokens.Motion),

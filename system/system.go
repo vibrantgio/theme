@@ -389,6 +389,7 @@ func (c *config) theme(v rx.Tuple2[Appearance, a11y.A11yPrefs]) theme.Theme {
 	}
 	return theme.Theme{
 		Color:      rx.Of(colors),
+		Platform:   rx.Of(platformColors(a)),
 		Typography: rx.Of(c.typ),
 		Density:    rx.Of(tokens.Comfortable),
 		Motion:     rx.Of(motion),
@@ -396,6 +397,26 @@ func (c *config) theme(v rx.Tuple2[Appearance, a11y.A11yPrefs]) theme.Theme {
 		Radius:     rx.Of(tokens.Radius),
 		Elevation:  rx.Of(tokens.Elevation),
 	}
+}
+
+// platformColors builds the platform's own colour set for an appearance:
+// the recorded set for the appearance's side, with the accent-following
+// rows taken from the colour [PlatformColor] resolves. Where the platform
+// reports no colour to derive from — Windows and Linux today — the recorded
+// rows stand, which is the platform's own blue.
+//
+// It is deliberately independent of the palette precedence above: this set
+// is the platform's answer, not the application's brand, so [WithSeed] and
+// [WithPalette] do not reach it.
+func platformColors(a Appearance) tokens.PlatformColors {
+	p := tokens.PlatformLight
+	if a.Dark {
+		p = tokens.PlatformDark
+	}
+	if accent, ok := PlatformColor(a); ok {
+		p = p.WithAccent(accent)
+	}
+	return p
 }
 
 // pair resolves the light/dark pair for an appearance, applying the

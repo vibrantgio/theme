@@ -8,7 +8,15 @@ import (
 // Theme carries an rx.Observable for each token category. Consumers subscribe
 // to the fields they need and react to updates without polling.
 type Theme struct {
-	Color      rx.Observable[tokens.ColorTokens]
+	Color rx.Observable[tokens.ColorTokens]
+
+	// Platform carries the platform's own colour set — AppKit's semantic
+	// colours under the emitted appearance, with the accent rows following
+	// the accent the OS reports. It stands beside Color while the
+	// consumers move onto it; theme/system builds it, and a theme built
+	// by hand may leave it nil.
+	Platform rx.Observable[tokens.PlatformColors]
+
 	Typography rx.Observable[tokens.Typography]
 	Density    rx.Observable[tokens.Density]
 	Motion     rx.Observable[tokens.MotionScale]
@@ -23,6 +31,7 @@ type Theme struct {
 func Default() Theme {
 	return Theme{
 		Color:      rx.Of(tokens.DefaultLight),
+		Platform:   rx.Of(tokens.PlatformLight),
 		Typography: rx.Of(tokens.DefaultTypography),
 		Density:    rx.Of(tokens.Comfortable),
 		Motion:     rx.Of(tokens.Motion),
