@@ -71,6 +71,10 @@ func TestTheLivePlatformDarkSetMatchesTheCatalogue(t *testing.T) {
 func liveSetMatchesCatalogue(t *testing.T, dark bool) {
 	t.Helper()
 	rows, recordedOn := readCatalogue(t)
+	recorded := tokens.PlatformLight
+	if dark {
+		recorded = tokens.PlatformDark
+	}
 	if running := productVersion(t); running != recordedOn {
 		t.Skipf("the catalogue was read on macOS %s; this machine runs macOS %s", recordedOn, running)
 	}
@@ -85,6 +89,14 @@ func liveSetMatchesCatalogue(t *testing.T, dark bool) {
 	for i := range typ.NumField() {
 		field := typ.Field(i).Name
 		got := set.Field(i).Interface().(color.NRGBA)
+		if typ.Field(i).Tag.Get("appkit") == "-" {
+			// A measured material: the platform gives it no NSColor
+			// name, so the reader leaves the recorded value standing.
+			if want := reflect.ValueOf(recorded).Field(i).Interface().(color.NRGBA); got != want {
+				t.Errorf("%s = %s, want the measured %s: the live reader must not touch a field tagged `appkit:\"-\"`", field, hex(got), hex(want))
+			}
+			continue
+		}
 		if field == "FindHighlight" {
 			// The one field that is not AppKit's answer: the reader does
 			// not ask for findHighlightColor, so Mail's measured pair
@@ -181,6 +193,10 @@ func TestTheLiveSetRefreshesAfterTheInterval(t *testing.T) {
 	}
 }
 
+// measuredSection marks where the catalogue's AppKit rows stop and the
+// fills read off the stored captures begin.
+const measuredSection = "# measured materials"
+
 // catalogueRow is one row of the catalogue: what AppKit answered for that
 // name under each appearance.
 type catalogueRow struct{ light, dark color.NRGBA }
@@ -206,6 +222,13 @@ func readCatalogue(t *testing.T) (rows map[string]catalogueRow, recordedOn strin
 	sc := bufio.NewScanner(f)
 	for line := 1; sc.Scan(); line++ {
 		text := sc.Text()
+		if strings.HasPrefix(text, measuredSection) {
+			// The catalogue's second section: fills read off the stored
+			// captures, which carry a fourth column and no AppKit name.
+			// The live reader has nothing to ask for them, so the rows
+			// stop here.
+			break
+		}
 		if strings.HasPrefix(text, "#") {
 			recordedOn = headerVersion(text)
 			continue

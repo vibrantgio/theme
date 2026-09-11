@@ -18,6 +18,24 @@
 // AppKit reported. On macOS the live reader in theme/system removes that
 // gap: it asks AppKit for every one of these names itself, and these
 // recorded sets are what the other platforms — and every test — read.
+//
+// Five fields are not AppKit's. The platform paints a sidebar, a grouped
+// box, a hovered and a pressed control, and the shadow under a floating
+// pane without giving any of them an NSColor name, so those fills were read
+// off the stored captures in the organization's macOS reference — or, where
+// no capture shows the state, taken from what the platform publishes, with
+// the gap recorded there. Each carries the struct tag `appkit:"-"`, which is
+// the whole of the rule the live reader and the tests use: a field so tagged
+// has no name to ask AppKit for and is pinned against the catalogue's
+// "measured materials" section instead of its AppKit rows.
+//
+//	field            light          dark           provenance
+//	-----            -----          ----           ----------
+//	SidebarMaterial  #efefef        #232a2e        dark measured, light published: the reference holds no light-appearance window capture
+//	CardFill         #ffffff        #1e1e1e        stand-in: the content's fill until the grouped-box capture lands
+//	HoverOverlay     #000000 a0.06  #ffffff a0.06  derived: half the press overlay; no capture shows a hovered control
+//	PressOverlay     #000000 a0.12  #ffffff a0.12  published: the midpoint of a pressed push button's 10–15% darkening
+//	FloatingShadow   #000000 a0.075 #000000 a0.075 measured: the sidebar shadow's peak coverage, 24 px of reach
 package tokens
 
 import (
@@ -112,6 +130,45 @@ type PlatformColors struct {
 	// bezel catches.
 	Shadow    color.NRGBA
 	Highlight color.NRGBA
+
+	// SidebarMaterial is the chrome regions' fill: sidebars, toolbars,
+	// navbars, inspectors, status bars. Dark is #232a2e, a flat-region
+	// sample of mail-window.png — the toolbar band at y 1–31 and the
+	// flush mailbox list below the band's hairline carry the same value,
+	// and finder-window.png carries it again as the window's own plane
+	// behind the floating pane. Light is #efefef and is NOT measured:
+	// no capture in the reference is in the light appearance.
+	SidebarMaterial color.NRGBA `appkit:"-"`
+
+	// CardFill is the fill of the platform's box — a card, a grouped
+	// box, a filled inset. It is the content's fill, ControlBackground,
+	// until the System Settings grouped-box capture lands
+	// (system-settings-grouped-box.png, both appearances); when it does,
+	// this row is read off those pixels and stops being a stand-in.
+	CardFill color.NRGBA `appkit:"-"`
+
+	// HoverOverlay and PressOverlay are what a control lays over its own
+	// fill while the pointer is on it and while it is held: black in
+	// light, white in dark, at a coverage. Neither is measured — no
+	// capture in the reference shows a control in either state.
+	// PressOverlay's 0.12 is the midpoint of the 10–15% the platform
+	// publishes for a pressed push button's darkening; HoverOverlay is
+	// half of it, the platform's hover tint being visible but well short
+	// of a press. The platform tints a toolbar button on hover and a
+	// list row not at all, so a caller applies HoverOverlay only where
+	// the platform does.
+	HoverOverlay color.NRGBA `appkit:"-"`
+	PressOverlay color.NRGBA `appkit:"-"`
+
+	// FloatingShadow is the shadow a floating surface casts, black at
+	// its peak coverage. Measured off finder-sidebar-shadow.png and
+	// reminders-sidebar-shadow.png, which agree: outward from the pane's
+	// 1 px edge stroke the window's #232a2e plane reads #20272b, then
+	// recovers to #232a2e over 24 px. Black at 0.075 reproduces that
+	// darkest pixel on every channel, so the shadow is 0.075 at the edge
+	// falling to nothing 24 px out; this field carries the peak and the
+	// caller spreads it.
+	FloatingShadow color.NRGBA `appkit:"-"`
 }
 
 // PlatformLight and PlatformDark are the recorded sets, aqua and darkAqua,
@@ -172,6 +229,12 @@ var (
 
 		Shadow:    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
 		Highlight: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
+
+		SidebarMaterial: color.NRGBA{R: 0xef, G: 0xef, B: 0xef, A: 0xff},
+		CardFill:        color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
+		HoverOverlay:    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x0f},
+		PressOverlay:    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x1f},
+		FloatingShadow:  color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13},
 	}
 
 	PlatformDark = PlatformColors{
@@ -227,6 +290,12 @@ var (
 
 		Shadow:    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
 		Highlight: color.NRGBA{R: 0xb4, G: 0xb4, B: 0xb4, A: 0xff},
+
+		SidebarMaterial: color.NRGBA{R: 0x23, G: 0x2a, B: 0x2e, A: 0xff},
+		CardFill:        color.NRGBA{R: 0x1e, G: 0x1e, B: 0x1e, A: 0xff},
+		HoverOverlay:    color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x0f},
+		PressOverlay:    color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x1f},
+		FloatingShadow:  color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13},
 	}
 )
 

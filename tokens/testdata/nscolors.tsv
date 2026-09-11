@@ -42,3 +42,9 @@ systemBrown	#ac7f5e	#b78a66
 systemGray	#8e8e93	#98989d
 shadowColor	#000000	#000000
 highlightColor	#ffffff	#b4b4b4
+# measured materials: the fills the platform gives no NSColor name, read off the stored captures in reference/macos or, where no capture shows the state, taken from what the platform publishes. Four columns: name, light, dark, provenance — MEASURED, PUBLISHED, DERIVED or STAND-IN, naming the capture. Alpha is carried to the precision the reading supports, not the catalogue's two decimals.
+sidebarMaterial	#efefef	#232a2e	dark MEASURED: flat-region samples of mail-window.png (the toolbar band at y 1-31 and the flush mailbox list below its hairline) and finder-window.png (the window's plane behind the floating pane); light PUBLISHED: the reference holds no light-appearance window capture
+cardFill	#ffffff	#1e1e1e	STAND-IN: controlBackgroundColor, until system-settings-grouped-box.png lands in both appearances
+hoverOverlay	#000000 a0.06	#ffffff a0.06	DERIVED: half pressOverlay; no capture shows a hovered control
+pressOverlay	#000000 a0.12	#ffffff a0.12	PUBLISHED: the midpoint of a pressed push button's 10-15% darkening; no capture shows a pressed control
+floatingShadow	#000000 a0.075	#000000 a0.075	MEASURED: finder-sidebar-shadow.png and reminders-sidebar-shadow.png agree — the #232a2e plane reads #20272b against the pane's edge stroke and recovers over 24 px; black at 0.075 reproduces that pixel on every channel

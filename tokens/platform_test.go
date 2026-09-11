@@ -29,25 +29,43 @@ var mailFindHighlight = struct{ light, dark color.NRGBA }{
 	dark:  color.NRGBA{R: 0x6e, G: 0x6e, B: 0x4d, A: 0xff},
 }
 
-// catalogueEntry is one row: the two appearances AppKit reported.
-type catalogueEntry struct{ light, dark color.NRGBA }
+// catalogueEntry is one row: the two appearances AppKit reported. A row of
+// the measured-materials section carries its provenance as well, which the
+// AppKit rows have no column for.
+type catalogueEntry struct {
+	light, dark color.NRGBA
+	provenance  string
+}
 
-// readCatalogue parses the tab-separated catalogue: a leading "#" header
-// naming the OS it was read on, then "<appKitName>\t<light>\t<dark>", each
-// value "#rrggbb" with an optional " a0.NN" alpha. Alpha becomes
-// round(a*255), which is the quantization PlatformColors records.
-func readCatalogue(t *testing.T) map[string]catalogueEntry {
+// measuredSection marks where the catalogue's AppKit rows stop and the
+// measured materials begin.
+const measuredSection = "# measured materials"
+
+// readCatalogue parses the tab-separated catalogue into its two sections.
+// The first is what AppKit answered: a leading "#" header naming the OS it
+// was read on, then "<appKitName>\t<light>\t<dark>", each value "#rrggbb"
+// with an optional " a0.NNN" alpha. The [measuredSection] comment opens the
+// second, whose rows carry a fourth column naming the capture the value was
+// read from or the reason it is published rather than measured. Alpha
+// becomes round(a*255), which is the quantization PlatformColors records.
+func readCatalogue(t *testing.T) (appKit, measured map[string]catalogueEntry) {
 	t.Helper()
 	f, err := os.Open(cataloguePath)
 	if err != nil {
 		t.Fatalf("open catalogue: %v", err)
 	}
 	defer f.Close()
-	rows := make(map[string]catalogueEntry)
+	appKit = make(map[string]catalogueEntry)
+	measured = make(map[string]catalogueEntry)
 	sc := bufio.NewScanner(f)
 	header := false
+	inMeasured := false
 	for line := 1; sc.Scan(); line++ {
 		text := sc.Text()
+		if strings.HasPrefix(text, measuredSection) {
+			inMeasured = true
+			continue
+		}
 		if strings.HasPrefix(text, "#") {
 			header = true
 			if !strings.Contains(text, "macOS") {
@@ -59,8 +77,12 @@ func readCatalogue(t *testing.T) map[string]catalogueEntry {
 			continue
 		}
 		cols := strings.Split(text, "\t")
-		if len(cols) != 3 {
-			t.Fatalf("catalogue line %d: want 3 tab-separated columns, got %d", line, len(cols))
+		want := 3
+		if inMeasured {
+			want = 4
+		}
+		if len(cols) != want {
+			t.Fatalf("catalogue line %d: want %d tab-separated columns, got %d", line, want, len(cols))
 		}
 		light, err := parseCatalogueColor(cols[1])
 		if err != nil {
@@ -70,7 +92,11 @@ func readCatalogue(t *testing.T) map[string]catalogueEntry {
 		if err != nil {
 			t.Fatalf("catalogue line %d, dark: %v", line, err)
 		}
-		rows[cols[0]] = catalogueEntry{light: light, dark: dark}
+		if inMeasured {
+			measured[cols[0]] = catalogueEntry{light: light, dark: dark, provenance: cols[3]}
+			continue
+		}
+		appKit[cols[0]] = catalogueEntry{light: light, dark: dark}
 	}
 	if err := sc.Err(); err != nil {
 		t.Fatalf("read catalogue: %v", err)
@@ -78,7 +104,25 @@ func readCatalogue(t *testing.T) map[string]catalogueEntry {
 	if !header {
 		t.Error("the catalogue carries no header naming the macOS version it was read on")
 	}
-	return rows
+	if !inMeasured {
+		t.Errorf("the catalogue carries no %q section", measuredSection)
+	}
+	return appKit, measured
+}
+
+// measuredName is the naming rule for the measured materials, which have no
+// AppKit name to invert: the field's own name with its first letter
+// lowered, so SidebarMaterial is sidebarMaterial.
+func measuredName(field string) string {
+	return strings.ToLower(field[:1]) + field[1:]
+}
+
+// noAppKitName reports whether a field carries the `appkit:"-"` tag — the
+// rule that says the platform gives this fill no NSColor name, so the live
+// reader must not ask for one and the catalogue pins it from its measured
+// materials instead.
+func noAppKitName(f reflect.StructField) bool {
+	return f.Tag.Get("appkit") == "-"
 }
 
 func parseCatalogueColor(s string) (color.NRGBA, error) {
@@ -121,13 +165,16 @@ func appKitName(field string) string {
 // carries its name's recorded value, every recorded row has a field, and
 // FindHighlight carries Mail's measurement rather than the AppKit answer.
 func TestPlatformColorsMatchCatalogue(t *testing.T) {
-	rows := readCatalogue(t)
+	rows, _ := readCatalogue(t)
 	light := reflect.ValueOf(tokens.PlatformLight)
 	dark := reflect.ValueOf(tokens.PlatformDark)
 	typ := light.Type()
 
 	seen := make(map[string]bool, typ.NumField())
 	for i := 0; i < typ.NumField(); i++ {
+		if noAppKitName(typ.Field(i)) {
+			continue
+		}
 		field := typ.Field(i).Name
 		name := appKitName(field)
 		seen[name] = true
@@ -256,4 +303,94 @@ func min3(a, b, c uint8) uint8 {
 		a = c
 	}
 	return a
+}
+
+// TestMeasuredMaterialsMatchTheCatalogue pins the five fills the platform
+// gives no NSColor name — the chrome material, the card's fill, the hover
+// and press overlays, the floating shadow — against the catalogue's
+// measured-materials section in both schemes, and holds the two sections
+// disjoint: a field tagged `appkit:"-"` has a measured row and no AppKit
+// one, and every measured row has a field.
+func TestMeasuredMaterialsMatchTheCatalogue(t *testing.T) {
+	appKit, measured := readCatalogue(t)
+	light := reflect.ValueOf(tokens.PlatformLight)
+	dark := reflect.ValueOf(tokens.PlatformDark)
+	typ := light.Type()
+
+	seen := make(map[string]bool, len(measured))
+	for i := 0; i < typ.NumField(); i++ {
+		if !noAppKitName(typ.Field(i)) {
+			continue
+		}
+		field := typ.Field(i).Name
+		name := measuredName(field)
+		seen[name] = true
+		row, ok := measured[name]
+		if !ok {
+			t.Errorf("%s: the catalogue's measured materials hold no row named %q", field, name)
+			continue
+		}
+		if row.provenance == "" {
+			t.Errorf("%s: the row %q names no provenance", field, name)
+		}
+		if _, clash := appKit[appKitName(field)]; clash {
+			t.Errorf("%s carries `appkit:\"-\"` but the catalogue answers for %q; it belongs in the AppKit rows", field, appKitName(field))
+		}
+		if got := light.Field(i).Interface().(color.NRGBA); got != row.light {
+			t.Errorf("%s light = %v, catalogue %s = %v", field, got, name, row.light)
+		}
+		if got := dark.Field(i).Interface().(color.NRGBA); got != row.dark {
+			t.Errorf("%s dark = %v, catalogue %s = %v", field, got, name, row.dark)
+		}
+	}
+	for name := range measured {
+		if !seen[name] {
+			t.Errorf("the measured row %q has no field on PlatformColors carrying `appkit:\"-\"`", name)
+		}
+	}
+	if len(seen) == 0 {
+		t.Error("no field carries `appkit:\"-\"`; the measured materials have lost their rule")
+	}
+}
+
+// TestCardFillStandsInForTheContentsFill pins the stand-in the card's fill
+// is until the System Settings grouped-box capture lands: it is the
+// content's fill exactly, in both schemes, and nothing has quietly invented
+// a number for it. When that capture lands and CardFill is read off its
+// pixels, this test goes with the stand-in.
+func TestCardFillStandsInForTheContentsFill(t *testing.T) {
+	if tokens.PlatformLight.CardFill != tokens.PlatformLight.ControlBackground {
+		t.Errorf("light CardFill = %v, want the content's fill %v", tokens.PlatformLight.CardFill, tokens.PlatformLight.ControlBackground)
+	}
+	if tokens.PlatformDark.CardFill != tokens.PlatformDark.ControlBackground {
+		t.Errorf("dark CardFill = %v, want the content's fill %v", tokens.PlatformDark.CardFill, tokens.PlatformDark.ControlBackground)
+	}
+}
+
+// TestTheStateOverlaysAreBlackOnLightAndWhiteOnDark pins the shape of the
+// two overlays rather than their coverage, which is published and not
+// measured: each is the scheme's extreme at an alpha below 1, so it
+// composites over whatever fill a control carries, and the press is the
+// heavier of the two.
+func TestTheStateOverlaysAreBlackOnLightAndWhiteOnDark(t *testing.T) {
+	for _, set := range []struct {
+		name  string
+		in    tokens.PlatformColors
+		level uint8
+	}{{"light", tokens.PlatformLight, 0x00}, {"dark", tokens.PlatformDark, 0xff}} {
+		for _, o := range []struct {
+			field string
+			c     color.NRGBA
+		}{{"HoverOverlay", set.in.HoverOverlay}, {"PressOverlay", set.in.PressOverlay}} {
+			if o.c.R != set.level || o.c.G != set.level || o.c.B != set.level {
+				t.Errorf("%s %s = %v, want %#02x on every channel", set.name, o.field, o.c, set.level)
+			}
+			if o.c.A == 0 || o.c.A == 0xff {
+				t.Errorf("%s %s alpha = %d; an overlay composites, so it is neither absent nor opaque", set.name, o.field, o.c.A)
+			}
+		}
+		if set.in.PressOverlay.A <= set.in.HoverOverlay.A {
+			t.Errorf("%s PressOverlay covers %d and HoverOverlay %d; a press is the heavier of the two", set.name, set.in.PressOverlay.A, set.in.HoverOverlay.A)
+		}
+	}
 }
