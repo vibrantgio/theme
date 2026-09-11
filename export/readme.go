@@ -106,81 +106,95 @@ func readmeMD(s Snapshot) string {
 	b.WriteString("## Component classes\n\n" +
 		"`styles.css` ends with the component class layer, defined over the tokens\n" +
 		"above — no literal colours anywhere, the only literal lengths being the\n" +
-		"component constants the Gio side also hardcodes (the 20 dp checkbox/radio\n" +
-		"glyph, its 10 dp dot, the 16 dp dropdown chevron, the 1/2 dp input\n" +
-		"borders) — so it re-brands, flips to `.dark` and densifies to `.compact`\n" +
-		"with the sheet. Every pointer/keyboard state rule carries a forcing twin\n" +
-		"class (`.is-hover`, `.is-active`, `.is-focus`, `.is-checked`) grouped into\n" +
-		"the same rule, so a static page can show a state with exactly the live\n" +
-		"declarations; disabled is forced with the native attribute.\n\n" +
-		"`.btn` is the button, **filled** by default: the accent pin under its\n" +
-		"on-colour. Two modifier classes select the less pronounced emphasis\n" +
-		"variants — `.btn.tonal` (the accent's tint, `--color-btn-tonal-fill` under\n" +
-		"`--color-btn-tonal`: the same recipe `.badge` wears, one hue at two\n" +
-		"strengths) and `.btn.ghost` (no fill at rest; neutral 700 text).\n" +
-		"Interaction states resolve as the step walks above: hover walks one step\n" +
-		"(`:hover`), pressed and selected two (`:active`, `.selected`); a filled\n" +
-		"button's solid fill walks via the emitted `--color-accent-hover` /\n" +
-		"`--color-accent-pressed` stops, and a tonal button through its own\n" +
-		"`-hover` and `-active` pairs, whose foreground moves with the fill.\n" +
-		"Keyboard focus (`:focus-visible`) keeps the resting fill and draws the\n" +
-		"ring: `--focus-ring-width` of `--color-focus-ring`, the one ring the\n" +
-		"scheme carries — the step of the primary ramp nearest its mid-value step\n" +
-		"that reaches 3:1 against every level at once, so a control wears the same\n" +
-		"ring wherever it is put. It also parts from every resting border in\n" +
-		"luminance rather than in hue alone, so focus stays findable where a\n" +
-		"display or a system setting takes the colour away, and it is never the\n" +
-		"accent fill itself, which is what a checked control already paints.\n" +
-		"`--color-focus-ring-on-accent` is the sole exception, for the ring a\n" +
-		"filled button insets in its own fill: that fill is a step of the primary\n" +
-		"ramp too, and the scheme's ring cannot read on it. Same ring, same width,\n" +
-		"same 3:1 floor in every variant. Disabled (`:disabled`) fades each colour\n" +
-		"to `--state-disabled-opacity` of its alpha. A ghost has no selected\n" +
-		"treatment: it stays the least pronounced. `.btn.icon` is the icon-only\n" +
-		"form: a square the density's control height on a side, the glyph (an\n" +
-		"inline SVG on `currentColor`) inset by the density's vertical\n" +
-		"padding.\n\n" +
-		"`.badge` is the inline annotation: `label-medium` text over a tinted field\n" +
-		"of its own hue. One hue at two strengths — a pale fill for the field and\n" +
-		"the same hue at reading strength for the word — and never the inverted\n" +
-		"pairing, which is what `.btn` uses and what a badge must not claim to be.\n" +
-		"No boundary and no vertical padding, so its height is the role's line box;\n" +
-		"the side padding is `--space-2` and the corner is `--radius-base`,\n" +
-		"deliberately not the pill `.chip` wears. The default is the plain category\n" +
-		"label; `.badge.success` / `.badge.warning` / `.badge.error` /\n" +
-		"`.badge.info` are the four statuses, differing in hue alone. Both halves\n" +
-		"are tokens because both are derived against a surface rather than named on\n" +
-		"a ramp — the fill against the page, the foreground against the fill.\n" +
-		"Compose them for status; never inline-style a status colour. A badge is\n" +
+		"component constants the Gio side also hardcodes (the 16 dp\n" +
+		"checkbox/radio glyph, its 8 dp dot, the 16 dp dropdown chevron, the\n" +
+		"1/2 dp input borders) — so it flips to `.dark` and densifies to\n" +
+		"`.compact` with the sheet. Every colour in it is the platform's own\n" +
+		"name for what that element is on the platform, the same mapping the Gio\n" +
+		"components take: no role, no ramp step, no level, no derivation. Every\n" +
+		"pointer/keyboard state rule carries a forcing twin class (`.is-hover`,\n" +
+		"`.is-active`, `.is-focus`, `.is-checked`) grouped into the same rule, so\n" +
+		"a static page can show a state with exactly the live declarations;\n" +
+		"disabled is forced with the native attribute.\n\n" +
+		"A coverage composites the same on both sides, and that is what lets a\n" +
+		"rule name a platform colour and stop: the platform's labels, seams,\n" +
+		"overlays and focus ring are a colour at a coverage over whatever lies\n" +
+		"beneath, a browser composites `#rrggbbaa` in encoded sRGB, and so does\n" +
+		"`theme/color.Flatten` on the Gio side. Where the Gio component flattens\n" +
+		"a name onto its own fill, the CSS lets the element's background paint\n" +
+		"under the border, as it does by default; where it flattens onto the\n" +
+		"surface the control stands on instead — a text field's focus ring, a\n" +
+		"checkbox's edge — the rule sets `background-clip: padding-box` so the\n" +
+		"edge composites over the page. That pair of clips is the whole of what\n" +
+		"a control needs to know about its host; nothing is handed down.\n\n" +
+		"`.btn` is the button, **filled** by default: `--platform-control-accent`\n" +
+		"under `--platform-alternate-selected-control-text`, which is the\n" +
+		"platform's default action. Two modifier classes select the less\n" +
+		"pronounced variants — `.btn.tonal`, the platform's ordinary push button\n" +
+		"(`--platform-push-button-fill` under `--platform-control-text`, inside a\n" +
+		"`--platform-separator` hairline), and `.btn.ghost`, its borderless kind\n" +
+		"(no fill, `--platform-control-text`). Nothing tints on hover: a Finder\n" +
+		"toolbar button does and a Save dialog's push button does not, and this\n" +
+		"sheet's classes are push buttons. Held (`:active`),\n" +
+		"`--platform-press-overlay` goes over whatever fill the variant carries\n" +
+		"and over the page where it carries none. Keyboard focus\n" +
+		"(`:focus-visible`) keeps the resting fill and insets\n" +
+		"`--platform-keyboard-focus-indicator` at `--focus-ring-width` — the same\n" +
+		"ring at the same width in every variant, because keyboard visibility is\n" +
+		"not a prominence property. Disabled (`:disabled`) is the platform's own\n" +
+		"answer rather than a fade: the fill falls back to the push button's\n" +
+		"inside the separator hairline and every foreground becomes\n" +
+		"`--platform-disabled-control-text`. `.btn.icon` is the icon-only form: a\n" +
+		"square the density's control height on a side, the glyph (an inline SVG\n" +
+		"on `currentColor`) inset by the density's vertical padding.\n\n" +
+		"`.badge` is the inline annotation: `label-medium` text on the platform's\n" +
+		"system colour for the status it carries, under\n" +
+		"`--platform-alternate-selected-control-text` — white in both\n" +
+		"appearances, which is how the platform draws a count badge. The default\n" +
+		"is `--platform-system-gray`, the platform naming no colour for \"no\n" +
+		"status\"; `.badge.success` / `.badge.warning` / `.badge.error` /\n" +
+		"`.badge.info` are systemGreen, systemOrange, systemRed and systemBlue.\n" +
+		"Never invert the pair and never tint the system colour toward the\n" +
+		"surface. No boundary and no vertical padding, so its height is the\n" +
+		"role's line box; the side padding is `--space-2` and the corner is\n" +
+		"`--radius-base`, deliberately not the pill a chip wears. A badge is\n" +
 		"read, not used: no interaction states.\n\n" +
 		"The form controls dress native elements — no script anywhere:\n" +
 		"`.input` (text `<input>`, and `<select class=\"input select\">` inside a\n" +
-		"`.select-wrap` for the chevron), `.checkbox` and `.radio` on their native\n" +
-		"input types with `appearance: none`. They resolve exactly as\n" +
-		"`components/input` does: the Surface fill under `body-large` text,\n" +
-		"`--color-control-border` on the resting edge of all four controls,\n" +
-		"neutral 700 placeholder and chevron, focus promoting the border to the\n" +
-		"ring (2 dp on the text field, the shared outline on checkbox/radio),\n" +
-		"disabled fading every colour via `color-mix()`. That border is the\n" +
-		"neutral step the ramp measures as reaching 3:1 against the window\n" +
-		"backdrop, which is 600 in the light scheme and 500 in the dark; the named\n" +
-		"step it replaced read below the floor in one of them, at 2.67:1 in the\n" +
-		"scheme most people read in. The edge follows the control into a raised\n" +
-		"host: a surface that fills a deeper level declares `--surface-border`\n" +
-		"beside its own fill, the rules name it with the content's own token as\n" +
-		"the fallback, and every control inside re-derives — the same walk\n" +
-		"against the same fill the host measures its own outline against, which\n" +
-		"is why a checkbox in a dialog wears the dialog's edge. In the dark\n" +
-		"scheme the page's own step reads 2.62:1 over a level-2 fill and 1.80:1\n" +
-		"over a level-3 one, both under the floor; in the light scheme it clears\n" +
-		"every level and the handed-down token repeats. The ring does not\n" +
-		"follow, because it never left: it is measured against every level at\n" +
-		"once and is one colour for the scheme.\n" +
-		"Checked, the box is the accent fill under a check mark in the\n" +
-		"on-accent pin, drawn from the icon set's grid as two gradient bands — a\n" +
-		"fill says a colour was applied and only the mark says what it means. The\n" +
-		"radio's selected state is the accent ring and 10 dp dot around a Surface\n" +
-		"gap.\n\n")
+		"`.select-wrap` for the chevron), `.checkbox` and `.radio` on their\n" +
+		"native input types with `appearance: none`. They resolve exactly as\n" +
+		"`components/input` does: `--platform-text-background` under\n" +
+		"`--platform-text`, `--platform-placeholder-text` for a prompt,\n" +
+		"`--platform-field-edge` on the resting edge, focus replacing that edge\n" +
+		"with `--platform-keyboard-focus-indicator` at `--focus-ring-width`, and\n" +
+		"`--platform-disabled-control-text` where the control cannot be used —\n" +
+		"the fill staying exactly where it was, because the platform fades the\n" +
+		"wording and leaves the control. A text field's height floor is\n" +
+		"`--density-field-height`, not the control height: the platform draws a\n" +
+		"field shorter than the button beside it. The dropdown trigger is the\n" +
+		"exception in this family and is a BUTTON rather than a field, so\n" +
+		"`.select` takes the push button's fill, the separator hairline and the\n" +
+		"control height. Checked, the box is `--platform-control-accent` under a\n" +
+		"check mark drawn from the icon set's grid as two gradient bands — a fill\n" +
+		"says a colour was applied and only the mark says what it means. The\n" +
+		"radio's selected state is the same accent filling the circle with an\n" +
+		"8 dp white dot at its centre.\n\n" +
+		"`.card` is the platform's grouped box: `--platform-card-fill`, a small\n" +
+		"step of fill from the surface it stands on, with no hairline and no\n" +
+		"shadow. `.group` is the other half of that ruling — a\n" +
+		"`--platform-separator` hairline around related components, taking the\n" +
+		"fill of the surface it is in and declaring none. `.table` prints on\n" +
+		"`--platform-control-background` with rows a `--density-row-height`\n" +
+		"tall, `--platform-grid` closing each and `--platform-separator` closing\n" +
+		"the header band. The navigation family — `.navbar`, `.tabs`, `.sidebar`\n" +
+		"and `.crumbs` — stands on `--platform-sidebar-material`, the chrome, and\n" +
+		"draws the separator where two flush regions meet; selection is\n" +
+		"`--platform-selected-content-background`, as an underline on a link or a\n" +
+		"tab and as the row's own fill on a rail. The overlay family —\n" +
+		"`.scrim`/`.dialog`, `.popover`, `.tooltip`, `.toast` — is filled with\n" +
+		"`--platform-window-background`, which is what every floating surface on\n" +
+		"this platform is filled with, and floats on\n" +
+		"`--platform-floating-shadow`.\n\n")
 
 	b.WriteString("## Elevation: default vs opt-in\n\n" +
 		"Elevation is tonal, and it climbs toward the light: **in both schemes,\n" +

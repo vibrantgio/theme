@@ -403,14 +403,15 @@ func TestRoundTripMotion(t *testing.T) {
 	}
 }
 
-// TestRoundTripButtonClasses asserts the class layer cannot drift from the
-// button component's resolution: the walked solid-fill stops equal
-// SolidStateColor's per mode, the focus ring and the checkbox's edge are the
-// steps their own ramps measure against the surfaces they lie on, the
-// disabled fraction is DisabledOpacity, and every variant/state rule picks
-// exactly the ramp steps button.go's constants pick (tonalGround 200 /
-// tonalText 900, ghostGround 200 / ghostText 700 / ghostTextOnWash 900) —
-// with not one literal colour in the layer.
+// TestRoundTripButtonClasses asserts two things that must not drift. The
+// emitted derived variables still resolve to what their own rules say — the
+// walked solid-fill stops equal SolidStateColor's per mode, the ring and the
+// control edge are the steps their ramps measure, the disabled fraction is
+// DisabledOpacity — because the pages that have not converted still read
+// them. And the class layer below them names the PLATFORM's colours and
+// nothing else: every rule is a --platform- name, the mapping the Gio
+// components take, with not one literal colour and not one reference back up
+// into the derived set.
 // stepDistance is how far a ramp index sits from step 500, the mid-value
 // depth the ring's pick is aimed at. The test measures it for itself rather
 // than importing the emitter's constant, so a drift in the aim is a
@@ -534,7 +535,8 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		t.Errorf("--state-disabled-opacity = %q, want %q", got, want)
 	}
 
-	// The class layer itself: token references only, at button.go's steps.
+	// The class layer itself: the platform's names only, and no literal
+	// colour anywhere.
 	src := stylesCSS(snap)
 	idx := strings.Index(src, ".btn")
 	if idx < 0 {
@@ -544,199 +546,144 @@ func TestRoundTripButtonClasses(t *testing.T) {
 	if strings.Contains(classes, "#") {
 		t.Error("the class layer contains a literal colour; every value must be a token reference")
 	}
+	// Not one name from the derived set survives in the layer: those
+	// variables are still emitted above it for the pages that have not
+	// converted, and a class reaching back up to them is the drift this
+	// assertion exists to catch.
+	for _, gone := range []string{"var(--color-", "var(--elevation-", "var(--shadow-", "var(--surface-"} {
+		if strings.Contains(classes, gone) {
+			t.Errorf("the class layer still names %s; every colour in it is the platform's", gone)
+		}
+	}
 	for _, frag := range []string{
 		// Structure from the density, radius and label-large tokens.
 		"min-height: var(--density-control-height);",
 		"padding: var(--density-padding-y) var(--density-padding-x);",
 		"border-radius: var(--radius-md);",
 		"font-size: var(--font-label-large-size);",
-		// Filled: the pin under its on-colour; states via the walked stops.
-		"background: var(--color-accent);",
-		"color: var(--color-on-accent);",
-		".btn:hover, .btn.is-hover { background: var(--color-accent-hover); }",
-		".btn.selected { background: var(--color-accent-pressed); }",
-		".btn:active, .btn.is-active { background: var(--color-accent-pressed); }",
-		// The ring: one width, one hue and one value everywhere — the filled
-		// button's own fill is the one surface that answers differently, and
-		// no rule names a level. And its forcing twins: a static
-		// page shows a state through a class grouped into the same rule as
-		// the live pseudo-class, never through duplicated declarations.
-		"outline: var(--focus-ring-width) solid var(--color-focus-ring);",
-		"outline: var(--focus-ring-width) solid var(--color-focus-ring-on-accent);",
+		// Filled is the platform's default action.
+		"background: var(--platform-control-accent);",
+		"color: var(--platform-alternate-selected-control-text);",
+		// Tonal is the platform's ordinary push button, inside the seam.
+		"background: var(--platform-push-button-fill);",
+		"border: 1px solid var(--platform-separator);",
+		"color: var(--platform-control-text);",
+		// Ghost carries no fill at all.
+		".btn.ghost {",
+		"background: transparent;",
+		// No hover rule in any variant: a push button does not tint under
+		// the pointer on this platform. Held, the press overlay goes over
+		// the fill as a one-colour gradient layer.
+		".btn:active, .btn.is-active {",
+		"background-image: linear-gradient(var(--platform-press-overlay), var(--platform-press-overlay));",
+		// One ring, one width, every variant, and its forcing twins: a
+		// static page shows a state through a class grouped into the same
+		// rule as the live pseudo-class, never through duplicated
+		// declarations.
+		"outline: var(--focus-ring-width) solid var(--platform-keyboard-focus-indicator);",
 		".btn:focus-visible, .btn.is-focus {",
-		".btn.tonal:focus-visible, .btn.tonal.is-focus,",
-		".btn.ghost:focus-visible, .btn.ghost.is-focus,",
 		".checkbox:focus-visible, .checkbox.is-focus,",
 		".radio:focus-visible, .radio.is-focus {",
-		// Disabled fades to the disabled fraction of each colour's alpha.
-		"color-mix(in srgb, var(--color-accent) var(--state-disabled-opacity), transparent)",
-		// Tonal: the badge's tint under the accent role, the foreground
-		// moving with the fill the pointer walks.
-		"background: var(--color-btn-tonal-fill);",
-		"color: var(--color-btn-tonal);",
-		"background: var(--color-btn-tonal-fill-hover);",
-		"color: var(--color-btn-tonal-hover);",
-		".btn.tonal.selected,",
-		"background: var(--color-btn-tonal-fill-active);",
-		"color: var(--color-btn-tonal-active);",
+		// Disabled is the platform's pair, not a fade of the resting colours.
+		"color: var(--platform-disabled-control-text);",
 		// Icon-only: a control-height square, glyph inset by PaddingY.
 		"width: var(--density-control-height);",
 		"padding: var(--density-padding-y);",
-		// Ghost: nothing at rest under 700 text; under the pointer, the
-		// content's own walk under 900. The state fill is a state taken FROM a
-		// level rather than a step named on the ramp.
-		"color: var(--color-neutral-700);",
-		"background: var(--elevation-0-hover);",
-		"background: var(--elevation-0-active);",
-		"color: var(--color-neutral-900);",
-		// Ghost in a raised host: the state fill re-derives from the host
-		// surface's own level — both card looks at level 1, the dialog
-		// at level 2, the popover at level 3 — token
-		// references all the way, exactly buttonColors' ghostWash walk.
-		".card .btn.ghost:hover, .card .btn.ghost.is-hover {",
-		".card .btn.ghost:active, .card .btn.ghost.is-active {",
-		".dialog .btn.ghost:hover, .dialog .btn.ghost.is-hover {",
-		".dialog .btn.ghost:active, .dialog .btn.ghost.is-active {",
-		".popover .btn.ghost:hover, .popover .btn.ghost.is-hover {",
-		".popover .btn.ghost:active, .popover .btn.ghost.is-active {",
-		"background: var(--elevation-1-hover);",
-		"background: var(--elevation-1-active);",
-		"background: var(--elevation-2-hover);",
-		"background: var(--elevation-2-active);",
-		"background: var(--elevation-3-hover);",
-		"background: var(--elevation-3-active);",
-		// Badge: the inline annotation — label-medium text in one derived
-		// foreground, with no fill, no corner, no boundary and no padding, so
-		// the role's line box is the whole height. Five variants differing in
-		// hue alone, each foreground a token because it is derived against the
-		// surface rather than named on a ramp.
+		// Badge: the platform's system colour for the status under white.
 		".badge {",
 		"font-size: var(--font-label-medium-size);",
-		"color: var(--color-badge-neutral);",
-		".badge.success {",
-		"color: var(--color-badge-success);",
-		".badge.warning {",
-		"color: var(--color-badge-warning);",
-		".badge.error {",
-		"color: var(--color-badge-error);",
-		".badge.info {",
-		"color: var(--color-badge-info);",
-		// Forms: the input component's resolution — the raised level
-		// under body text, the ramp's measured edge, neutral 700
-		// placeholder/glyph, focus promoting the border to the ring,
-		// disabled fading via color-mix. Every edge and every fill names the
-		// level-local with the content level's own token as its fallback, which
-		// is how a raised host re-derives the controls inside it; the ring
-		// names none, being one colour for the scheme.
-		"border: 1px solid var(--surface-border, var(--color-control-border));",
-		"background: var(--surface-raised, var(--elevation-1));",
+		"background: var(--platform-system-gray);",
+		".badge.success { background: var(--platform-system-green); }",
+		".badge.warning { background: var(--platform-system-orange); }",
+		".badge.error { background: var(--platform-system-red); }",
+		".badge.info { background: var(--platform-system-blue); }",
+		// Forms: the platform's text background under its text, the
+		// measured field edge at rest, the field's own height floor, and
+		// the padding-box clip that puts a focus ring over the surface
+		// rather than over the field's own fill.
+		"border: 1px solid var(--platform-field-edge);",
+		"background: var(--platform-text-background);",
+		"background-clip: padding-box;",
+		"min-height: var(--density-field-height);",
 		"font-size: var(--font-body-large-size);",
-		".input::placeholder { color: var(--color-neutral-700); opacity: 1; }",
-		"border-color: var(--color-focus-ring);",
-		"box-shadow: inset 0 0 0 1px var(--color-focus-ring);",
-		"color-mix(in srgb, var(--surface-border, var(--color-control-border)) var(--state-disabled-opacity), transparent)",
-		// Dropdown chevron: neutral 700, the low-contrast glyph step.
-		"border-top: 8px solid var(--color-neutral-700);",
-		// Checkbox/radio: a 2 dp border over Surface, both wearing the one
-		// step the neutral ramp measures for a control's resting edge — the
-		// same token the text field and the dropdown trigger take. Checked is
-		// the accent fill under the icon-grid check mark (checkbox) / the
-		// 10 dp accent dot (radio), both drawn out of gradients rather than
-		// encoded as an image, so the no-literal guard above still holds over
-		// the whole layer.
-		"border: 2px solid var(--surface-border, var(--color-control-border));",
+		".input::placeholder { color: var(--platform-placeholder-text); opacity: 1; }",
+		"border-color: var(--platform-keyboard-focus-indicator);",
+		// The dropdown trigger is a button, not a field.
+		".select {",
+		"background-color: var(--platform-push-button-fill);",
+		"border-top: 8px solid var(--platform-secondary-label);",
+		// Checkbox/radio: the 16 dp measured glyph inside the 2 dp field
+		// edge; checked is the accent under a mark drawn out of gradients
+		// rather than encoded as an image, so the no-literal guard above
+		// still holds over the whole layer.
+		"border: 2px solid var(--platform-field-edge);",
 		".checkbox:checked, .checkbox.is-checked {",
-		"background-position: 3.161px 9.411px, 6.911px 4.411px;",
-		"background-size: 4.929px 4.929px, 9.929px 9.929px;",
-		"linear-gradient(45deg, transparent calc(50% - 0.833px), var(--color-on-accent) calc(50% - 0.833px), var(--color-on-accent) calc(50% + 0.833px), transparent calc(50% + 0.833px)),",
-		"radial-gradient(circle, var(--color-accent) 5px, var(--surface-raised, var(--elevation-1)) 5px)",
-		// Card and group: the card fills at level 1 under the seam its raise
-		// owes and no other line; the group declares no fill at all and is
-		// read by its hairline. Both radius Lg, S4 inset (the padding gives
-		// back the border's 1px), S3 slot gaps.
+		"background-position: 2.529px 7.529px, 5.529px 3.529px;",
+		"background-size: 3.943px 3.943px, 7.943px 7.943px;",
+		"radial-gradient(circle, var(--platform-alternate-selected-control-text) 4px, var(--platform-control-accent) 4px)",
+		// Card and group: the grouped box with no hairline, and the
+		// hairline with no box.
+		"background: var(--platform-card-fill);",
 		".group {",
-		"border: 1px solid var(--surface-seam, var(--elevation-0-seam));",
-		"border: 1px solid var(--surface-hairline, var(--elevation-0-hairline));",
 		"padding: calc(var(--space-4) - 1px);",
 		"border-radius: var(--radius-lg);",
-		"background: var(--elevation-1);",
-		"background: var(--elevation-2);",
-		"gap: var(--space-3);",
-		// Table: the Surface fill, neutral-300 header
-		// band under neutral-700 label-large, control-height row pitch,
-		// Seam rules inside the rows, S3 cell inset, and the 10x5 dp
-		// neutral-700 sort chevron on the active column only.
-		"background: var(--color-neutral-300);",
-		"height: var(--density-control-height);",
-		"border-bottom: 1px solid var(--color-seam);",
+		"color: var(--platform-secondary-label);",
+		// Table: the content fill, the platform's row pitch, the grid
+		// closing each row and the separator closing the header band.
+		"background: var(--platform-control-background);",
+		"height: var(--density-row-height);",
+		"box-shadow: inset 0 -1px 0 var(--platform-grid);",
+		".table tbody tr:nth-child(even) td {",
+		"background: var(--platform-alternating-content-background);",
 		"padding: 0 var(--space-3);",
-		".table th.sort-asc::after { border-bottom: 5px solid var(--color-neutral-700); }",
-		".table th.sort-desc::after { border-top: 5px solid var(--color-neutral-700); }",
-		// Navigation: the four patterns. The navbar bar is the shell's
-		// density pin over the Surface fill; link/tab cells carry the 2 dp
-		// underline slot the Active/selected cell fills with the accent pin;
-		// hover is the Surface fill's one-step walk to neutral 300.
+		".table th.sort-asc::after { border-bottom: 5px solid var(--platform-header-text); }",
+		".table th.sort-desc::after { border-top: 5px solid var(--platform-header-text); }",
+		// Navigation: the chrome material under the platform's label, the
+		// separator where two flush regions meet, and selection in the
+		// platform's selection colour.
 		"min-height: calc(var(--density-control-height) + 2 * var(--density-padding-y));",
+		"background: var(--platform-sidebar-material);",
+		"box-shadow: inset 0 -1px 0 var(--platform-separator);",
+		"box-shadow: inset -1px 0 0 var(--platform-separator);",
 		".navbar-link.selected, .tab.selected {",
-		"border-bottom-color: var(--color-accent);",
-		".navbar-link:hover, .navbar-link.is-hover,",
-		// Tabs: the strip is exactly ControlHeight tall.
-		"height: var(--density-control-height);",
-		// Sidebar: the contractual widths, the selected row's two-step walk
-		// to primary 400 (StateColor(RolePrimary, 200, StateSelected)), the
-		// neutral-700 toggle glyph, and the rail-level focus ring.
+		"border-bottom-color: var(--platform-selected-content-background);",
 		".sidebar.collapsed { width: 48px; }",
-		".sidebar-item.selected { background: var(--color-primary-400); }",
-		".sidebar-item:hover, .sidebar-item.is-hover { background: var(--color-neutral-300); }",
-		"background: var(--color-neutral-700);",
-		".sidebar:focus-visible, .sidebar.is-focus {",
-		// Breadcrumb: title-small, neutral-700 ancestors hovering to 900,
-		// the Text-pin current segment by position or forced, the 12 dp
-		// neutral-700 chevron.
+		".sidebar-item.selected {",
+		"background: var(--platform-selected-content-background);",
+		// Breadcrumb: the ancestors are links, the current segment the label.
 		"font-size: var(--font-title-small-size);",
-		".crumb:hover, .crumb.is-hover { color: var(--color-neutral-900); }",
-		".crumbs .crumb:last-child, .crumb.current { color: var(--color-text); }",
-		"border-left: 6px solid var(--color-neutral-700);",
-		// Overlays. The scrim is the --color-scrim token — the class
-		// layer stays literal-free; the pattern's fixed black lives in :root
-		// beside the shadows' (asserted below this loop).
-		"background: var(--color-scrim);",
-		// Dialog: patterns/modal's centred level-2 surface — the 75% width
-		// inside the 180–560 dp clamp, the 120 dp height floor, the S5 inset
-		// giving back the neutral-500 border's 1px, S3 gaps, radius Lg.
+		"color: var(--platform-link);",
+		".crumbs .crumb:last-child, .crumb.current { color: var(--platform-label); }",
+		"border-left: 6px solid var(--platform-secondary-label);",
+		// Overlays: the platform's scrim, the window background under the
+		// measured shadow, and the separator where a still surface needs a
+		// line.
+		"background: var(--platform-scrim);",
 		"min-width: 180px;",
 		"max-width: 560px;",
 		"min-height: 120px;",
-		"padding: calc(var(--space-5) - 1px);",
+		"padding: var(--space-5);",
 		"font-size: var(--font-title-medium-size);",
 		".dialog-footer {",
 		"justify-content: flex-end;",
-		// Popover: level-3 fill (the deepest step — an unscrimmed, shadowless
-		// overlay separates by fill alone) under the neutral-500 stroke,
-		// radius Md, S3 inset; the tail is the surface's own fill.
-		"background: var(--elevation-3);",
+		"background: var(--platform-window-background);",
 		"padding: calc(var(--space-3) - 1px);",
-		"border-top: 6px solid var(--elevation-3);",
-		"border-bottom: 6px solid var(--elevation-3);",
-		// Tooltip: the inverse pair — InverseSurface as the fill under an
-		// OnInverseSurface label, radius Sm, S2/S1 padding.
-		"background: var(--color-inverse-surface);",
-		"color: var(--color-on-inverse-surface);",
+		"border-top: 6px solid var(--platform-window-background);",
+		"--floating-shadow-step: color-mix(in srgb, var(--platform-floating-shadow) 12.5%, transparent);",
+		"0 0 0 24px var(--floating-shadow-step);",
+		// Tooltip: the window background inside the separator, S2/S1 padding
+		// measured from the outer edge.
 		"border-radius: var(--radius-sm);",
-		"padding: var(--space-1) var(--space-2);",
-		// Toast: the inverse pair — the counterpart scheme's surface under
-		// its own on-colour — with no outline at all, the level-3 cast
-		// shadow (the opt-in cue for a floating transient) and the level's
-		// leading edge as a two-stop gradient in that level's own mark on
-		// the inverse surface.
-		"color: var(--color-on-inverse-surface);",
-		"background: linear-gradient(to right, var(--color-info-on-inverse) 0 var(--space-2), var(--color-inverse-surface) var(--space-2));",
-		"box-shadow: var(--shadow-3);",
+		"padding: calc(var(--space-1) - 1px) calc(var(--space-2) - 1px);",
+		// Toast: the window background under the platform's label, the
+		// status carried on a leading edge one S2 wide in the system colour
+		// for it.
+		"background: linear-gradient(to right, var(--platform-system-blue) 0 var(--space-2), var(--platform-window-background) var(--space-2));",
 		"min-height: 36px;",
 		"padding-left: calc(var(--space-2) + var(--space-3));",
-		"background: linear-gradient(to right, var(--color-success-on-inverse) 0 var(--space-2), var(--color-inverse-surface) var(--space-2));",
-		"background: linear-gradient(to right, var(--color-warning-on-inverse) 0 var(--space-2), var(--color-inverse-surface) var(--space-2));",
-		"background: linear-gradient(to right, var(--color-error-on-inverse) 0 var(--space-2), var(--color-inverse-surface) var(--space-2));",
+		"background: linear-gradient(to right, var(--platform-system-green) 0 var(--space-2), var(--platform-window-background) var(--space-2));",
+		"background: linear-gradient(to right, var(--platform-system-orange) 0 var(--space-2), var(--platform-window-background) var(--space-2));",
+		"background: linear-gradient(to right, var(--platform-system-red) 0 var(--space-2), var(--platform-window-background) var(--space-2));",
 	} {
 		if !strings.Contains(classes, frag) {
 			t.Errorf("class layer lacks %q", frag)
