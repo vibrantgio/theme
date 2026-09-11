@@ -26,6 +26,10 @@ import (
 // cache — halving steady-state exec cost without a CGO notification bridge.
 // A worst-case accent change therefore reaches the theme within
 // accentInterval plus one poll, not within one poll.
+//
+// slowReadInterval is that cadence, and the live platform colour set
+// (platform_darwin.go) is read on it too: both follow settings a user
+// changes by hand, where arriving within a poll or two is prompt enough.
 type darwinSource struct {
 	accentInterval time.Duration
 	now            func() time.Time // injectable clock for tests
@@ -37,9 +41,13 @@ type darwinSource struct {
 	accentAt   time.Time // when accent was last read
 }
 
+// slowReadInterval is the cadence of the darwin readings that change
+// rarely: the accent key and the platform's colour set.
+const slowReadInterval = 10 * time.Second
+
 func newDarwinSource() *darwinSource {
 	return &darwinSource{
-		accentInterval: 10 * time.Second,
+		accentInterval: slowReadInterval,
 		now:            time.Now,
 		readAccentFn:   readAccent,
 	}

@@ -15,7 +15,9 @@
 //
 // The catalogue records alpha to two decimals, so each field stores
 // round(a × 255) of what was written down — at most one 255th away from what
-// AppKit reported. The live reader removes that gap.
+// AppKit reported. On macOS the live reader in theme/system removes that
+// gap: it asks AppKit for every one of these names itself, and these
+// recorded sets are what the other platforms — and every test — read.
 package tokens
 
 import (
@@ -248,8 +250,11 @@ var (
 // The rule is an APPROXIMATION of what AppKit does, not a reproduction of
 // it: the platform derives these in its own colour space, and rebuilding
 // the catalogue's blue rows through this rule lands within a few units per
-// channel rather than on the byte. It stands until the live reader asks
-// AppKit for each name directly. Where accent is the platform's own blue —
+// channel rather than on the byte. It is the rule on Windows and Linux,
+// whose desktops publish an accent colour but no colour set of their own;
+// macOS does not use it at all, because theme/system's live reader asks
+// AppKit for each of these names directly and gets the platform's own
+// answer. Where accent is the platform's own blue —
 // the accent already in the recorded rows — the set is returned unchanged,
 // so a machine on the default accent gets the catalogue exactly.
 func (p PlatformColors) WithAccent(accent color.NRGBA) PlatformColors {

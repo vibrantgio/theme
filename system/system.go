@@ -48,6 +48,15 @@
 // a brand that pins one. On Windows and Linux, whose desktops publish no
 // such colour, they are what an unchosen stream emits.
 //
+// The platform's own colour set — the tokens.PlatformColors every emission
+// carries beside the palette — is read off AppKit on macOS: every name in
+// the set under the aqua and darkAqua appearances, resolved to sRGB with
+// its alpha through a small Objective-C shim, on the same cadence as the
+// accent key. So the accent rows are the platform's own reading rather than
+// a derivation, and a settings change arrives within a poll or two. Windows
+// and Linux publish no such set: they carry the recorded one with the
+// accent rows rebuilt from the colour their desktop reports.
+//
 // Dark-mode sources for Windows and Linux are a later milestone. The two
 // accent shapes are deliberate: macOS's accent is one of eight named
 // choices, carried as the [Accent] enum; Windows and Linux accents are
@@ -397,26 +406,6 @@ func (c *config) theme(v rx.Tuple2[Appearance, a11y.A11yPrefs]) theme.Theme {
 		Radius:     rx.Of(tokens.Radius),
 		Elevation:  rx.Of(tokens.Elevation),
 	}
-}
-
-// platformColors builds the platform's own colour set for an appearance:
-// the recorded set for the appearance's side, with the accent-following
-// rows taken from the colour [PlatformColor] resolves. Where the platform
-// reports no colour to derive from — Windows and Linux today — the recorded
-// rows stand, which is the platform's own blue.
-//
-// It is deliberately independent of the palette precedence above: this set
-// is the platform's answer, not the application's brand, so [WithSeed] and
-// [WithPalette] do not reach it.
-func platformColors(a Appearance) tokens.PlatformColors {
-	p := tokens.PlatformLight
-	if a.Dark {
-		p = tokens.PlatformDark
-	}
-	if accent, ok := PlatformColor(a); ok {
-		p = p.WithAccent(accent)
-	}
-	return p
 }
 
 // pair resolves the light/dark pair for an appearance, applying the
