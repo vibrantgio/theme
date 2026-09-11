@@ -639,8 +639,9 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		".table th.sort-asc::after { border-bottom: 5px solid var(--platform-header-text); }",
 		".table th.sort-desc::after { border-top: 5px solid var(--platform-header-text); }",
 		// Navigation: the chrome material under the platform's label, the
-		// separator where two flush regions meet, and selection in the
-		// platform's selection colour.
+		// separator where two flush regions meet, the tab strip's selected
+		// underline in the platform's selection colour, and the sidebar's
+		// own measured pill in the accent.
 		"min-height: calc(var(--density-control-height) + 2 * var(--density-padding-y));",
 		"background: var(--platform-sidebar-material);",
 		"box-shadow: inset 0 -1px 0 var(--platform-separator);",
@@ -648,8 +649,11 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		".navbar-link.selected, .tab.selected {",
 		"border-bottom-color: var(--platform-selected-content-background);",
 		".sidebar.collapsed { width: 48px; }",
-		".sidebar-item.selected {",
-		"background: var(--platform-selected-content-background);",
+		"height: 32px;  /* RowHeight */",
+		".sidebar-item.selected::before {",
+		"inset: 0 10px;  /* SelectionInset */",
+		"border-radius: 8px;  /* SelectionRadius */",
+		"background: var(--platform-control-accent);",
 		// Breadcrumb: the ancestors are links, the current segment the label.
 		"font-size: var(--font-title-small-size);",
 		"color: var(--platform-link);",
