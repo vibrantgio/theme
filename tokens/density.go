@@ -1,121 +1,60 @@
 package tokens
 
-// Desktop density targets, measured 2026-08-05. This table is the
-// justification for every number below it; argue with the sources here rather
-// than with the numbers.
+// Desktop density is the platform's control scale: Comfortable is the
+// platform's regular control and Compact its small one. Nothing below is
+// derived from a web or Material scale.
 //
-// Three-way control metrics — shadcn/ui vs MD3 vs macOS (AppKit):
+// Provenance, per number — the reference and its gap are
+// `.github/reference/macos/controls.md`, indexed by ADR-019:
 //
-//	metric                  shadcn/ui                    MD3                            macOS (AppKit)
-//	------                  ---------                    ---                            --------------
-//	button height, default  36 px (h-9)                  40 dp (filled button)          24 pt regular, 28 pt large
-//	button height, small    32 px (h-8; xs is 24 px)     — (no smaller desktop size)    20 pt small, 16 pt mini
-//	input height            36 px (h-9)                  56 dp (filled text field)      24 pt (rounded-bezel field)
-//	base radius             10 px; controls 8 px (md)    pill (buttons), 4 dp (field)   not published
-//	stacked spacing         8 px label→control,          8 dp grid                      8 pt system spacing
-//	                        28 px between fields
+//	number                      value   provenance
+//	------                      -----   ----------
+//	Comfortable control height  22 dp   published: the macOS HIG's regular push button, text field and pop-up button
+//	Compact control height      19 dp   published: the macOS HIG's small push button
+//	Comfortable PaddingX         8 dp   published: the HIG's horizontal inset beside a regular push button's label
+//	Compact PaddingX             7 dp   derived: 8 × 19/22 rounded — no small-size inset is published
+//	Comfortable PaddingY         1 dp   derived: (22 − LabelLarge's 20 dp line box) / 2, which lands a button exactly on 22
+//	Compact PaddingY             0 dp   derived: LabelLarge's line box is already over 19, so there is nothing to pad with
 //
-// Sources (all fetched/measured 2026-08-05):
+// The stored captures hold no push button, text field or pop-up at regular
+// size: what they hold is the unified toolbar's controls, 36 px across five
+// applications, and Finder's info-pane text field at 33 px. Those are toolbar
+// and pane controls, not the regular control this scale is named after. Both
+// readings are recorded beside the published numbers, with a gap row asking
+// for the one capture that would replace "published" with "measured" here.
 //
-//   - shadcn/ui: button.tsx size variants `default: "h-9 …"`, `sm: "h-8 …"`,
-//     `lg: "h-10 …"`, `xs: "h-6 …"`, base class `rounded-md`; input.tsx `"h-9 …
-//     rounded-md …"`; form.tsx FormItem `"grid gap-2"` (8 px label→control);
-//     field.tsx Field base `gap-3` (12 px) and FieldGroup `gap-7` (28 px
-//     between stacked fields); globals.css `--radius: 0.625rem` (10 px) with
-//     `--radius-md: calc(var(--radius) * 0.8)` = 8 px, the radius controls
-//     actually render with. Tailwind: h-9 = 2.25rem = 36 px, h-8 = 32 px.
-//     https://github.com/shadcn-ui/ui — apps/v4/registry/new-york-v4/ui/{button,input,form,field}.tsx
-//     and apps/v4/app/globals.css; https://ui.shadcn.com/docs/theming.
+// A control height is a floor, not a height. A control is as tall as its
+// content box needs, and never shorter than the density says:
 //
-//   - MD3: material-web design tokens v0.192 — md-comp-filled-button
-//     'container-height': 40px, 'container-shape': corner-full;
-//     md-comp-filled-text-field 'container-shape': corner-extra-small-top
-//     (4 dp); md-sys-shape corner-extra-small 4 / small 8 / medium 12 /
-//     large 16 / extra-large 28 px. Filled/outlined text field container
-//     height is 56 dp per the m3.material.io text-field spec (the site is
-//     JS-walled; the 40 dp button height cross-checks against Flutter's
-//     generated token data, md.comp.filled-button.container.height = 40.0).
-//     MD3's minimum touch target is 48 dp.
-//     https://github.com/material-components/material-web — tokens/versions/v0_192/;
-//     https://github.com/flutter/flutter — dev/tools/gen_defaults/data/button_filled.json;
-//     https://m3.material.io/components/text-fields/specs.
+//	height = max(ControlHeight, lineBox + 2×PaddingY)
 //
-//   - macOS: measured directly against AppKit on macOS (Darwin 25.5.0) via
-//     fittingSize — NSButton (push bezel) mini 16 / small 20 / regular 24 /
-//     large 28 pt; NSTextField (rounded bezel, regular) 24 pt; stacked-control
-//     system spacing (constraint(equalToSystemSpacingBelow:multiplier:1) and
-//     NSStackView default spacing) 8 pt. Note the plan's "28 pt standard
-//     control" is NSControlSize.large — the size Apple uses for prominent
-//     buttons since Big Sur — while regular measures 24 pt. Apple's HIG
-//     publishes no per-size control heights for macOS, hence the direct
-//     measurement.
+// where lineBox is the type role's line height (see [TextStyle.LineHeight]
+// and theme/typeset). Typography does not move with density, so at the
+// platform's heights the two terms are close and either can win:
 //
-// The picks:
+//	control                  role         line box   + 2×PaddingY   ControlHeight   drawn
+//	-------                  ----         --------   ------------   -------------   -----
+//	button, Comfortable      LabelLarge   20         22             22              22
+//	button, Compact          LabelLarge   20         20             19              20
+//	text field, Comfortable  BodyLarge    24         26             22              26
+//	text field, Compact      BodyLarge    24         24             19              24
 //
-//   - Comfortable = 36 dp. The shadcn/ui default (button and input alike),
-//     sitting between macOS large (28 pt) and MD3's 40 dp — dense enough to
-//     read as a desktop app, generous enough to remain the default.
-//   - Compact = 28 dp. macOS's large control height and squarely between
-//     shadcn's sm (32 px) and xs (24 px): a native-feeling dense mode that
-//     stays above every AppKit regular-size control.
+// Comfortable's padding is what makes a button exact: 20 + 2×1 = 22. Compact
+// has no padding left to spend — LabelLarge's 20 dp line box is 1 dp over the
+// 19 dp floor before any padding — so a Compact button draws 20 dp and the
+// floor is not the answer. That 1 dp closes only by moving a typography role,
+// which this scale does not do.
 //
-// 44 dp is not a candidate for Comfortable: it comes from touch guidelines —
-// the WCAG 2.5.5 pointer-target minimum, next to MD3's 48 dp touch target —
-// and every desktop column above lands well below it (shadcn 36, macOS 24–28;
-// even touch-first MD3 draws its button at 40 inside a 48 dp target). It is a
-// hit-target floor, not a visual control height, and it stays one: the ≥44 dp
-// pointer target is independent of density, so Compact shrinks the drawn
-// control but never the clickable area.
-//
-// A control height is a floor, not a height. A Compact button draws 29 px
-// against a CompactControlHeight of 28, with an empty label, so no amount of
-// text is to blame. A control is as tall as its content box needs, and never
-// shorter than the density says:
-//
-//	height = max(ControlHeight, contentHeight + 2×PaddingY)
-//
-// Where contentHeight is the type role's line height (see [TextStyle.LineHeight]
-// and theme/typeset), the two terms are close enough that either can win:
-//
-//	control                role         line height   + 2×PaddingY   ControlHeight   drawn
-//	-------                ----         -----------   ------------   -------------   -----
-//	button, Comfortable    LabelLarge   20            36             36              36
-//	button, Compact        LabelLarge   20            32             28              32
-//	text field, Comfortable BodyLarge   24            40             36              40
-//	text field, Compact    BodyLarge    24            36             28              36
-//
-// Comfortable's 36 dp is exactly LabelLarge's line box plus its own padding,
-// which is not a coincidence — the number was picked against a button.
-//
-// # Compact's 28 dp is measured, not derived — do not "correct" it to 32
-//
-// Applying Comfortable's rule ("the floor is the control's own line box plus
-// its own padding") to Compact gives LabelLarge 20 + 2×6 = 32, which is also
-// shadcn/ui's sm button (h-8). 28 is deliberate and stands, for three reasons
-// in descending weight:
-//
-//   - 28 dp does not rest on that arithmetic. It came from measurement —
-//     macOS's large control height, squarely between shadcn's sm (32) and xs
-//     (24) — and its coincidence with LabelMedium's 16 dp line box plus its
-//     own padding is exactly that.
-//   - ControlHeight is a floor for controls but a *pin* for stacked rows: list
-//     rows, table rows, header cells and sidebar items are ControlHeight tall
-//     exactly (see the row table below). Moving 28 to 32 is a visual change to
-//     every dense list and table in the system.
-//   - It would nearly erase Compact. A 32 dp Compact row against a 36 dp
-//     Comfortable one is an 11% difference where it is now 22% — in exactly
-//     the dense tables and lists Compact exists for.
-//
-// So the two densities are derived by *different rules*: Comfortable from a
-// type role's line box, Compact from measured native control heights. The
-// asymmetry is intended. What is not allowed is calling the result a height
-// and then measuring something else.
-//
-// The consequence worth stating: controls in different type roles come
-// out at different heights, and a Comfortable text field (40) is taller than a
-// Comfortable button (36) because BodyLarge is a larger role than LabelLarge.
+// The consequence worth stating: controls in different type roles come out at
+// different heights, and a Comfortable text field (26) is taller than a
+// Comfortable button (22) because BodyLarge is a larger role than LabelLarge.
 // Both are honest readings of the tokens. A design that wants them equal
 // changes the roles or the padding, not the measurement.
+//
+// ControlHeight is a floor for controls but a *pin* for stacked rows: list
+// rows, table rows, header cells and sidebar items are ControlHeight tall
+// exactly (see the row table below), so a change here re-pitches every dense
+// list and table in the system.
 //
 // # Pointer targets: which WCAG level actually governs
 //
@@ -132,62 +71,57 @@ package tokens
 // does not need to lean on.)
 //
 // The pointer area is 44 dp for standalone controls — button, checkbox,
-// radio, text field, a dropdown's closed trigger — and deliberately not for
-// stacked rows: list rows, table rows and header cells, and open dropdown
-// option rows. Adjacent rows tile edge to edge, so
-// slop granted to one row is stolen from its neighbour; the extension would
-// not enlarge anything, it would only make the boundary lie about where it is.
-// Rows rely on their full row width instead.
+// radio, text field, a picker's closed trigger — and deliberately not for
+// stacked rows: list rows, table rows and header cells, and open picker
+// option rows. Adjacent rows tile edge to edge, so slop granted to one row is
+// stolen from its neighbour; the extension would not enlarge anything, it
+// would only make the boundary lie about where it is. Rows rely on their full
+// row width instead.
 //
-// So the stacked-row targets are as tall as the row is; measured at 1:1 rather
-// than repeated from the token, since ControlHeight is a floor —
-// max(ControlHeight, lineBox + 2×PaddingY) — so a row can draw more than the
-// token says:
+// So the stacked-row targets are as tall as the row is — ControlHeight is a
+// floor, so a row whose content box is taller draws more than the token says:
 //
 //	row                              Comfortable   Compact   sizing
 //	---                              -----------   -------   ------
-//	list row                         36            28        pinned to ControlHeight
-//	table body row and header cell   36            28        pinned to ControlHeight
-//	sidebar item                     36            28        pinned to ControlHeight
-//	dropdown option row              40            36        floor formula, BodyLarge
+//	list row                         22            19        pinned to ControlHeight
+//	table body row and header cell   22            19        pinned to ControlHeight
+//	sidebar item                     22            19        pinned to ControlHeight
+//	picker option row                26            24        floor formula, BodyLarge
 //
-// The narrowest of these is the 28 dp Compact row. 28 ≥ 24, so every row in
-// the system clears 2.5.8 at AA; none of them reaches 2.5.5's 44, and rows are
-// deliberately not floored there. Flooring rows at 44 dp would erase Compact in
-// exactly the dense tables and lists Compact exists for — a 44 dp "compact"
-// row is 8 dp taller than a Comfortable one — which trades an everyday density
-// benefit for a AAA criterion the system does not claim. An application that
-// does target AAA sets Comfortable (36) and still does not reach 44 by row
-// height alone; it needs a taller row of its own.
+// At the platform's control heights no pinned row reaches WCAG 2.5.8's 24 dp:
+// a Comfortable row is 22 and a Compact row 19, and a row's pointer target is
+// the row itself. That is what taking the platform's scale costs, and it is
+// recorded here rather than left to be discovered; the standalone floor is
+// untouched, so a
+// button, a checkbox, a chip and a closed picker still extend to 44 dp at
+// every density. An application that must claim 2.5.8 for its rows sets a
+// taller row of its own.
+
 const (
 	// ComfortableControlHeight is the default desktop control-height floor in
 	// dp: a Comfortable control is at least this tall, and taller when its
-	// content box needs it.
-	ComfortableControlHeight float32 = 36
-	// CompactControlHeight is the dense-mode control-height floor in dp. Every
-	// control drawn in a Label or Body role clears it — see the table above —
-	// so it is the floor that is least often the answer.
-	//
-	// The number is measured off macOS's large control; the line-box rule
-	// that produced ComfortableControlHeight would have given 32 here, not
-	// 28. Both facts are load-bearing and both are argued out under
-	// "Compact's 28 dp is measured" above. Read that before changing it —
-	// stacked rows are pinned to this value, not floored by it.
-	CompactControlHeight float32 = 28
+	// content box needs it. It is the platform's regular control — the HIG's
+	// 22 pt push button, text field and pop-up button.
+	ComfortableControlHeight float32 = 22
+	// CompactControlHeight is the dense-mode control-height floor in dp: the
+	// platform's small control, the HIG's 19 pt push button. A control set in
+	// LabelLarge or BodyLarge draws over it — see the table above — so for
+	// those it is never the answer, and for a stacked row it is a pin rather
+	// than a floor.
+	CompactControlHeight float32 = 19
 	// MinHitTarget is the pointer-target floor in dp for a *standalone*
 	// control — one with space around it: button, checkbox, radio, text
-	// field, the dropdown's closed trigger. Those extend their pointer area
-	// to at least this on each axis, centred on the drawn control, whatever
-	// the density.
+	// field, a picker's closed trigger. Those extend their pointer area to at
+	// least this on each axis, centred on the drawn control, whatever the
+	// density.
 	//
 	// It is 44 dp, WCAG 2.5.5 Target Size (Enhanced), which is a AAA
-	// criterion. It is not what stacked rows guarantee:
-	// list rows, table rows and header cells, and open-dropdown option rows
-	// are their own row height (28 dp at Compact) because extending one row
-	// would steal its neighbour's slop. Those clear WCAG 2.5.8 Target Size
-	// (Minimum) at 24 dp, the criterion that governs at AA. See "Pointer
-	// targets: which WCAG level actually governs" above for the measured
-	// per-row numbers.
+	// criterion. It is not what stacked rows guarantee: list rows, table rows
+	// and header cells, and open picker option rows are their own row height
+	// (19 dp at Compact) because extending one row would steal its
+	// neighbour's slop, and at the platform's control heights that is under
+	// WCAG 2.5.8 Target Size (Minimum), the 24 dp criterion that governs at
+	// AA. See "Pointer targets: which WCAG level actually governs" above.
 	MinHitTarget float32 = 44
 	// ChipDrop is how far under the control height the system's smallest
 	// control is drawn, in dp. See [Density.ChipHeight]: it is the whole of
@@ -227,7 +161,7 @@ func (Density) MinHitTarget() float32 { return MinHitTarget }
 // ChipHeight returns the chip height in dp: [Density.ControlHeight] less
 // [ChipDrop]. A chip is smaller than a button, and the relation says that once
 // instead of pinning a second scale that can drift off the first —
-// Comfortable lands on 32 and Compact on 24.
+// Comfortable lands on 18 and Compact on 15.
 //
 // It is a method for the same reason [Density.MinHitTarget] is one: no Density
 // value can carry a chip height that has come loose from its control height.
@@ -235,17 +169,14 @@ func (Density) MinHitTarget() float32 { return MinHitTarget }
 // extends to MinHitTarget like every other.
 func (d Density) ChipHeight() float32 { return d.ControlHeight - ChipDrop }
 
-// The padding picks come from the same measured world as the control
-// heights above:
-//
-//   - Comfortable: shadcn/ui's default button is h-9 px-4 py-2 → 16 dp
-//     horizontal, 8 dp vertical, pairing with the 36 dp height.
-//   - Compact: shadcn's sm button drops to px-3 (12 dp); vertical scales
-//     with it on the 2:1 ratio the default keeps → 12 dp / 6 dp, pairing
-//     with the 28 dp height.
+// The padding comes from the platform beside the control height: PaddingX is
+// the HIG's inset beside a push button's label, PaddingY is what is left of
+// the control height once LabelLarge's 20 dp line box has taken its share —
+// 1 dp at Comfortable, nothing at Compact, whose line box is already over the
+// height. See the provenance table at the top of this file.
 var (
 	// Comfortable is the default desktop density.
-	Comfortable = Density{ControlHeight: ComfortableControlHeight, PaddingX: 16, PaddingY: 8}
+	Comfortable = Density{ControlHeight: ComfortableControlHeight, PaddingX: 8, PaddingY: 1}
 	// Compact is the dense mode: smaller drawn controls, same hit target.
-	Compact = Density{ControlHeight: CompactControlHeight, PaddingX: 12, PaddingY: 6}
+	Compact = Density{ControlHeight: CompactControlHeight, PaddingX: 7, PaddingY: 0}
 )

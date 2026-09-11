@@ -217,9 +217,9 @@ func readmeMD(s Snapshot) string {
 		"surfaces never cast one.\n\n")
 
 	b.WriteString("## Density\n\n" +
-		"Two published settings, one variable family: comfortable (36 dp controls,\n" +
-		"32 dp chips, 16/8 dp padding) is the `:root` default; compact (28 dp\n" +
-		"controls, 24 dp chips, 12/6 dp padding) is the `.compact` class override,\n" +
+		"Two published settings, one variable family: comfortable (22 dp controls,\n" +
+		"18 dp chips, 8/1 dp padding) is the `:root` default; compact (19 dp\n" +
+		"controls, 15 dp chips, 7/0 dp padding) is the `.compact` class override,\n" +
 		"scoping to any subtree the way `.dark` scopes colours. The chip height is\n" +
 		"the control height less 4 dp in both settings — one relation, not a second\n" +
 		"scale. `--density-min-hit-target` (44 dp, WCAG 2.5.5) is deliberately not\n" +
