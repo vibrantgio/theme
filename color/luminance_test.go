@@ -35,3 +35,19 @@ func TestRelativeLuminanceAnchors(t *testing.T) {
 		t.Error("RelativeLuminance depends on alpha; it must ignore it")
 	}
 }
+
+// TestLuminanceRatioBrackets pins the dial at the two ends its callers read it
+// between: the same colour twice, and the two extremes of the sRGB cube.
+func TestLuminanceRatioBrackets(t *testing.T) {
+	white := stdcolor.NRGBA{R: 0xFF, G: 0xFF, B: 0xFF, A: 0xFF}
+	black := stdcolor.NRGBA{A: 0xFF}
+	if got := color.LuminanceRatio(white, white); math.Abs(got-1) > 1e-9 {
+		t.Errorf("one colour against itself = %.4f, want 1", got)
+	}
+	if got := color.LuminanceRatio(white, black); math.Abs(got-21) > 1e-9 {
+		t.Errorf("white on black = %.4f, want 21", got)
+	}
+	if got := color.LuminanceRatio(black, white); math.Abs(got-21) > 1e-9 {
+		t.Errorf("the dial is not symmetric: black on white = %.4f, want 21", got)
+	}
+}
