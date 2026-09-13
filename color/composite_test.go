@@ -2,6 +2,7 @@ package color_test
 
 import (
 	stdcolor "image/color"
+	"math"
 	"testing"
 
 	"github.com/vibrantgio/theme/color"
@@ -95,4 +96,67 @@ func TestFlattenIsMonotonicInCoverage(t *testing.T) {
 			prev = l
 		}
 	}
+}
+
+// TestLinearCoverageMissesByTheRecordedBound pins both halves of the fit:
+// the coverage each named overlay is handed, and the worst it can miss on
+// any surface byte. The bound is the doc comment's, and the whole reason an
+// overlay that can read what is beneath it flattens per pixel instead.
+func TestLinearCoverageMissesByTheRecordedBound(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		coverage uint8
+		want     uint8
+		bound    int
+	}{
+		{"transparent", 0x00, 0x00, 0},
+		{"the floating shadow's peak", 0x13, 0x28, 1},
+		{"the dark scheme's separator", 0x1a, 0x36, 2},
+		{"the scrim, light", 0x33, 0x63, 3},
+		{"the scrim, dark", 0x42, 0x7b, 3},
+		{"opaque", 0xff, 0xff, 0},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got := color.LinearCoverage(tc.coverage)
+			if got != tc.want {
+				t.Errorf("LinearCoverage(%#02x) = %#02x, want %#02x", tc.coverage, got, tc.want)
+			}
+			worst, where := 0, 0
+			for d := 0; d <= 0xff; d++ {
+				surface := stdcolor.NRGBA{R: uint8(d), G: uint8(d), B: uint8(d), A: 0xff}
+				platform := color.Flatten(stdcolor.NRGBA{A: tc.coverage}, surface)
+				gio := gioBlend(got, uint8(d))
+				e := int(gio) - int(platform.R)
+				if e < 0 {
+					e = -e
+				}
+				if e > worst {
+					worst, where = e, d
+				}
+			}
+			if worst != tc.bound {
+				t.Errorf("worst miss %d/255 at surface byte %d, want %d/255", worst, where, tc.bound)
+			}
+		})
+	}
+}
+
+// gioBlend predicts what a renderer blending in linear light lands when it is
+// handed black at coverage over an opaque grey surface: the hardware decodes
+// the surface byte, mixes, and encodes the result again.
+func gioBlend(coverage, surface uint8) uint8 {
+	lin := func(c float64) float64 {
+		if c <= 0.04045 {
+			return c / 12.92
+		}
+		return math.Pow((c+0.055)/1.055, 2.4)
+	}
+	enc := func(c float64) float64 {
+		if c <= 0.0031308 {
+			return c * 12.92
+		}
+		return 1.055*math.Pow(c, 1/2.4) - 0.055
+	}
+	kept := 1 - float64(coverage)/255
+	return uint8(math.Round(enc(kept*lin(float64(surface)/255)) * 255))
 }
