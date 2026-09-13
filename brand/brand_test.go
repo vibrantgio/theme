@@ -26,27 +26,27 @@ func file(t *testing.T) string {
 	return filepath.Join(t.TempDir(), "theme.json")
 }
 
-// TestAKeptSeedRegeneratesBothSchemesExactly is the whole promise of
+// TestAKeptColourRegeneratesBothSchemesExactly is the whole promise of
 // keeping one colour: what comes back off disk rebuilds the platform's
 // accent rows to the same values, field for field, as what went in.
-func TestAKeptSeedRebuildsTheAccentRowsExactly(t *testing.T) {
+func TestAKeptColourRebuildsTheAccentRowsExactly(t *testing.T) {
 	path := file(t)
-	if err := brand.SaveTo(path, brand.Brand{Seed: harbourRed, Source: "harbour.jpg"}); err != nil {
+	if err := brand.SaveTo(path, brand.Brand{ThemeColor: harbourRed, Source: "harbour.jpg"}); err != nil {
 		t.Fatalf("save: %v", err)
 	}
 	got, ok, err := brand.LoadFrom(path)
 	if err != nil || !ok {
 		t.Fatalf("load: got (%v, %v), want a brand and no error", ok, err)
 	}
-	if got.Seed != harbourRed {
-		t.Fatalf("seed came back as %v, want %v", got.Seed, harbourRed)
+	if got.ThemeColor != harbourRed {
+		t.Fatalf("the colour came back as %v, want %v", got.ThemeColor, harbourRed)
 	}
 	wantLight := tokens.PlatformLight.WithAccent(harbourRed)
 	wantDark := tokens.PlatformDark.WithAccent(harbourRed)
-	if got := tokens.PlatformLight.WithAccent(got.Seed); got != wantLight {
+	if got := tokens.PlatformLight.WithAccent(got.ThemeColor); got != wantLight {
 		t.Error("the light set rebuilt from the kept colour is not the one the colour rebuilds")
 	}
-	if got := tokens.PlatformDark.WithAccent(got.Seed); got != wantDark {
+	if got := tokens.PlatformDark.WithAccent(got.ThemeColor); got != wantDark {
 		t.Error("the dark set rebuilt from the kept colour is not the one the colour rebuilds")
 	}
 }
@@ -57,7 +57,7 @@ func TestAKeptSeedRebuildsTheAccentRowsExactly(t *testing.T) {
 func TestProvenanceSurvivesTheRoundTrip(t *testing.T) {
 	path := file(t)
 	kept := time.Date(2026, 8, 19, 11, 4, 31, 0, time.UTC)
-	if err := brand.SaveTo(path, brand.Brand{Seed: harbourRed, Source: "harbour.jpg", Saved: kept}); err != nil {
+	if err := brand.SaveTo(path, brand.Brand{ThemeColor: harbourRed, Source: "harbour.jpg", Saved: kept}); err != nil {
 		t.Fatalf("save: %v", err)
 	}
 	got, _, err := brand.LoadFrom(path)
@@ -72,11 +72,11 @@ func TestProvenanceSurvivesTheRoundTrip(t *testing.T) {
 	}
 }
 
-// TestTheFileSpellsItsSeedTheWayTheExportDoes pins the one thing another
+// TestTheFileSpellsItsColourTheWayTheExportDoes pins the one thing another
 // reader has to agree with: the key and the spelling of the colour.
-func TestTheFileSpellsItsSeedTheWayTheExportDoes(t *testing.T) {
+func TestTheFileSpellsItsColourTheWayTheExportDoes(t *testing.T) {
 	path := file(t)
-	if err := brand.SaveTo(path, brand.Brand{Seed: harbourRed}); err != nil {
+	if err := brand.SaveTo(path, brand.Brand{ThemeColor: harbourRed}); err != nil {
 		t.Fatalf("save: %v", err)
 	}
 	data, err := os.ReadFile(path)
@@ -84,18 +84,39 @@ func TestTheFileSpellsItsSeedTheWayTheExportDoes(t *testing.T) {
 		t.Fatalf("read: %v", err)
 	}
 	var f struct {
-		Seed string `json:"seed"`
+		ThemeColor string `json:"themeColour"`
+		Seed       string `json:"seed"`
 	}
 	if err := json.Unmarshal(data, &f); err != nil {
 		t.Fatalf("the file is not JSON: %v", err)
 	}
-	if f.Seed != "#e8112d" {
-		t.Errorf("seed written as %q, want lowercase #rrggbb %q", f.Seed, "#e8112d")
+	if f.ThemeColor != "#e8112d" {
+		t.Errorf("the theme colour is written as %q, want lowercase #rrggbb %q", f.ThemeColor, "#e8112d")
+	}
+	if f.Seed != "" {
+		t.Errorf("the retired key was written as %q; it is read for one release and never written", f.Seed)
+	}
+}
+
+// TestAFileUnderTheRetiredKeyStillLoads: the colour was written under "seed"
+// before it took its own name. One release of files carry that key, and a
+// reader that refused them would lose a person's chosen colour.
+func TestAFileUnderTheRetiredKeyStillLoads(t *testing.T) {
+	path := file(t)
+	if err := os.WriteFile(path, []byte(`{"seed": "#e8112d", "mono": "JetBrains Mono"}`), 0o600); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	got, ok, err := brand.LoadFrom(path)
+	if err != nil || !ok {
+		t.Fatalf("load: got (%v, %v), want a brand and no error", ok, err)
+	}
+	if got.ThemeColor != harbourRed {
+		t.Errorf("a file under the retired key read back as %v, want %v", got.ThemeColor, harbourRed)
 	}
 }
 
 // TestAnExportedThemeJSONIsAKeptBrand: the exported project's theme.json
-// names its seed under the same key in the same spelling, so it loads here
+// names its theme colour under the same key in the same spelling, so it loads here
 // without translation — which is why this file has that name and no other
 // format was minted for it.
 func TestAnExportedThemeJSONIsAKeptBrand(t *testing.T) {
@@ -115,11 +136,11 @@ func TestAnExportedThemeJSONIsAKeptBrand(t *testing.T) {
 	if err != nil || !ok {
 		t.Fatalf("load: got (%v, %v), want a brand and no error", ok, err)
 	}
-	if got.Seed != harbourRed {
-		t.Errorf("the exported theme.json read back as %v, want %v", got.Seed, harbourRed)
+	if got.ThemeColor != harbourRed {
+		t.Errorf("the exported theme.json read back as %v, want %v", got.ThemeColor, harbourRed)
 	}
 	if got.Mono != "" {
-		t.Errorf("the exported fonts.mono leaked into Brand.Mono as %q; the new key is a sibling of seed, not nested under fonts", got.Mono)
+		t.Errorf("the exported fonts.mono leaked into Brand.Mono as %q; the new key is a sibling of the theme colour, not nested under fonts", got.Mono)
 	}
 	if got.Typography().Code.Typeface != "Roboto Mono" {
 		t.Error("an exported theme.json applied a code face; unknown object keys must be ignored")
@@ -146,13 +167,13 @@ func TestNothingKeptIsExactlyTheDefaultPalette(t *testing.T) {
 func TestAFileThatWillNotParseIsNotACrash(t *testing.T) {
 	for _, tc := range []struct{ name, body string }{
 		{"empty", ""},
-		{"truncated", `{"seed": "#e811`},
+		{"truncated", `{"themeColour": "#e811`},
 		{"not json at all", "harbour red, I think\n"},
-		{"no seed", `{"source": "harbour.jpg"}`},
-		{"seed is a name", `{"seed": "red"}`},
-		{"seed is short", `{"seed": "#e12"}`},
-		{"seed is not hex", `{"seed": "#zzzzzz"}`},
-		{"seed is a number", `{"seed": 15208749}`},
+		{"no theme colour", `{"source": "harbour.jpg"}`},
+		{"the colour is a name", `{"themeColour": "red"}`},
+		{"the colour is short", `{"themeColour": "#e12"}`},
+		{"the colour is not hex", `{"themeColour": "#zzzzzz"}`},
+		{"the colour is a number", `{"themeColour": 15208749}`},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			path := file(t)
@@ -171,15 +192,15 @@ func TestAFileThatWillNotParseIsNotACrash(t *testing.T) {
 // file is for, and it parsed.
 func TestABadTimestampCostsTheProvenanceAndNotTheBrand(t *testing.T) {
 	path := file(t)
-	if err := os.WriteFile(path, []byte(`{"seed": "#e8112d", "saved": "last tuesday"}`), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte(`{"themeColour": "#e8112d", "saved": "last tuesday"}`), 0o644); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 	got, ok, err := brand.LoadFrom(path)
 	if err != nil || !ok {
 		t.Fatalf("load: got (%v, %v), want the brand and no error", ok, err)
 	}
-	if got.Seed != harbourRed {
-		t.Errorf("seed came back as %v, want %v", got.Seed, harbourRed)
+	if got.ThemeColor != harbourRed {
+		t.Errorf("the colour came back as %v, want %v", got.ThemeColor, harbourRed)
 	}
 	if !got.Saved.IsZero() {
 		t.Errorf("an unreadable timestamp came back as %v, want the zero time", got.Saved)
@@ -187,11 +208,11 @@ func TestABadTimestampCostsTheProvenanceAndNotTheBrand(t *testing.T) {
 }
 
 // TestTheKeptBrandPinsTheStreamsPaletteOnBothSides is the adoption seam: the
-// options put the kept seed on a live theme stream, and the OS keeps
+// options put the kept colour on a live theme stream, and the OS keeps
 // deciding which side of the pair shows.
 func TestTheKeptBrandPinsTheStreamsPaletteOnBothSides(t *testing.T) {
 	path := file(t)
-	if err := brand.SaveTo(path, brand.Brand{Seed: harbourRed}); err != nil {
+	if err := brand.SaveTo(path, brand.Brand{ThemeColor: harbourRed}); err != nil {
 		t.Fatalf("save: %v", err)
 	}
 	opts := brand.KeptFrom(path).Options()
@@ -205,7 +226,7 @@ func TestTheKeptBrandPinsTheStreamsPaletteOnBothSides(t *testing.T) {
 		{"the desktop is light", system.Appearance{}, light},
 		{"the desktop is dark", system.Appearance{Dark: true}, dark},
 		// An accent the OS reports loses to a brand a person chose.
-		{"the desktop has an accent", system.Appearance{AccentSeed: color.NRGBA{R: 0x00, G: 0x80, B: 0x00, A: 0xff}, AccentSeedSet: true}, light},
+		{"the desktop has an accent", system.Appearance{AccentColor: color.NRGBA{R: 0x00, G: 0x80, B: 0x00, A: 0xff}, AccentColorSet: true}, light},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			got, err := system.FromSourceTheme(fixed{tc.app}, time.Hour, opts...).First()
@@ -271,7 +292,7 @@ func TestSavingNoColourIsRefused(t *testing.T) {
 func TestSaveFillsInWhenItWasKept(t *testing.T) {
 	path := file(t)
 	before := time.Now().Add(-time.Second)
-	if err := brand.SaveTo(path, brand.Brand{Seed: harbourRed}); err != nil {
+	if err := brand.SaveTo(path, brand.Brand{ThemeColor: harbourRed}); err != nil {
 		t.Fatalf("save: %v", err)
 	}
 	got, _, err := brand.LoadFrom(path)
@@ -288,15 +309,15 @@ func TestSaveFillsInWhenItWasKept(t *testing.T) {
 func TestKeepingAgainReplacesTheBrand(t *testing.T) {
 	path := file(t)
 	teal := color.NRGBA{R: 0x00, G: 0x7a, B: 0x7a, A: 0xff}
-	if err := brand.SaveTo(path, brand.Brand{Seed: harbourRed, Source: "harbour.jpg"}); err != nil {
+	if err := brand.SaveTo(path, brand.Brand{ThemeColor: harbourRed, Source: "harbour.jpg"}); err != nil {
 		t.Fatalf("save: %v", err)
 	}
-	if err := brand.SaveTo(path, brand.Brand{Seed: teal, Source: "lagoon.png"}); err != nil {
+	if err := brand.SaveTo(path, brand.Brand{ThemeColor: teal, Source: "lagoon.png"}); err != nil {
 		t.Fatalf("save again: %v", err)
 	}
 	got := brand.KeptFrom(path)
-	if got.Seed != teal || got.Source != "lagoon.png" {
-		t.Errorf("the second keep read back as %v from %q, want %v from %q", got.Seed, got.Source, teal, "lagoon.png")
+	if got.ThemeColor != teal || got.Source != "lagoon.png" {
+		t.Errorf("the second keep read back as %v from %q, want %v from %q", got.ThemeColor, got.Source, teal, "lagoon.png")
 	}
 }
 
@@ -320,11 +341,11 @@ func TestThePathIsOneSharedFileUnderTheConfigDir(t *testing.T) {
 
 // TestTheChosenBaseSurvivesTheRoundTrip: the second choice the file carries is
 // a name per appearance, and both come back as they went in, under one key
-// beside the seed.
+// beside the theme colour.
 func TestTheChosenBaseSurvivesTheRoundTrip(t *testing.T) {
 	path := file(t)
 	pair := brand.BasePair{Light: "catppuccin-latte", Dark: "catppuccin-mocha"}
-	if err := brand.SaveTo(path, brand.Brand{Seed: harbourRed, Base: pair}); err != nil {
+	if err := brand.SaveTo(path, brand.Brand{ThemeColor: harbourRed, Base: pair}); err != nil {
 		t.Fatalf("save: %v", err)
 	}
 	if got := brand.KeptFrom(path); got.Base != pair {
@@ -355,7 +376,7 @@ func TestTheChosenBaseSurvivesTheRoundTrip(t *testing.T) {
 // takes its own default for the other.
 func TestOneKeptBaseReachesBothAppearances(t *testing.T) {
 	path := file(t)
-	const older = `{"seed":"#e8112d","base":"dracula","source":"harbour.jpg"}`
+	const older = `{"themeColour":"#e8112d","base":"dracula","source":"harbour.jpg"}`
 	if err := os.WriteFile(path, []byte(older), 0o644); err != nil {
 		t.Fatalf("write: %v", err)
 	}
@@ -363,8 +384,8 @@ func TestOneKeptBaseReachesBothAppearances(t *testing.T) {
 	if err != nil || !ok {
 		t.Fatalf("load: got (%v, %v), want a brand and no error", ok, err)
 	}
-	if got.Seed != harbourRed {
-		t.Errorf("seed came back as %v, want %v", got.Seed, harbourRed)
+	if got.ThemeColor != harbourRed {
+		t.Errorf("the colour came back as %v, want %v", got.ThemeColor, harbourRed)
 	}
 	light, dark := got.Base.Names()
 	if light != "dracula" || dark != "dracula" {
@@ -378,7 +399,7 @@ func TestOneKeptBaseReachesBothAppearances(t *testing.T) {
 // own default applies.
 func TestAPairMayNameOneAppearance(t *testing.T) {
 	path := file(t)
-	const half = `{"seed":"#e8112d","base":{"dark":"dracula"}}`
+	const half = `{"themeColour":"#e8112d","base":{"dark":"dracula"}}`
 	if err := os.WriteFile(path, []byte(half), 0o644); err != nil {
 		t.Fatalf("write: %v", err)
 	}
@@ -393,11 +414,11 @@ func TestAPairMayNameOneAppearance(t *testing.T) {
 
 // TestAFileWithNoBaseIsStillAKeptBrand: every theme.json written before the
 // field existed has no base in it, and reading one has to be uneventful —
-// the brand loads, the seed is intact, and the base comes back empty, which
+// the brand loads, the colour is intact, and the base comes back empty, which
 // is the value that means "the reader's own default applies".
 func TestAFileWithNoBaseIsStillAKeptBrand(t *testing.T) {
 	path := file(t)
-	const older = `{"seed":"#e8112d","source":"harbour.jpg"}`
+	const older = `{"themeColour":"#e8112d","source":"harbour.jpg"}`
 	if err := os.WriteFile(path, []byte(older), 0o644); err != nil {
 		t.Fatalf("write: %v", err)
 	}
@@ -405,8 +426,8 @@ func TestAFileWithNoBaseIsStillAKeptBrand(t *testing.T) {
 	if err != nil || !ok {
 		t.Fatalf("load: got (%v, %v), want a brand and no error", ok, err)
 	}
-	if got.Seed != harbourRed {
-		t.Errorf("seed came back as %v, want %v", got.Seed, harbourRed)
+	if got.ThemeColor != harbourRed {
+		t.Errorf("the colour came back as %v, want %v", got.ThemeColor, harbourRed)
 	}
 	if got.Base.Chosen() {
 		t.Errorf("a file with no base loaded base %+v, want none", got.Base)
@@ -417,7 +438,7 @@ func TestAFileWithNoBaseIsStillAKeptBrand(t *testing.T) {
 // says what was chosen and nothing else.
 func TestNoBaseIsNotWritten(t *testing.T) {
 	path := file(t)
-	if err := brand.SaveTo(path, brand.Brand{Seed: harbourRed}); err != nil {
+	if err := brand.SaveTo(path, brand.Brand{ThemeColor: harbourRed}); err != nil {
 		t.Fatalf("save: %v", err)
 	}
 	data, err := os.ReadFile(path)
@@ -434,11 +455,11 @@ func TestNoBaseIsNotWritten(t *testing.T) {
 }
 
 // TestTheChosenMonoSurvivesTheRoundTrip: the third choice the file carries
-// is a typeface name, under one key beside the seed, and it comes back as
+// is a typeface name, under one key beside the theme colour, and it comes back as
 // it went in.
 func TestTheChosenMonoSurvivesTheRoundTrip(t *testing.T) {
 	path := file(t)
-	if err := brand.SaveTo(path, brand.Brand{Seed: harbourRed, Mono: "JetBrains Mono"}); err != nil {
+	if err := brand.SaveTo(path, brand.Brand{ThemeColor: harbourRed, Mono: "JetBrains Mono"}); err != nil {
 		t.Fatalf("save: %v", err)
 	}
 	if got := brand.KeptFrom(path); got.Mono != "JetBrains Mono" {
@@ -453,20 +474,20 @@ func TestTheChosenMonoSurvivesTheRoundTrip(t *testing.T) {
 		t.Fatalf("the file is not JSON: %v", err)
 	}
 	if raw["mono"] != "JetBrains Mono" {
-		t.Errorf("the file spells mono as %#v, want the string %q beside seed", raw["mono"], "JetBrains Mono")
+		t.Errorf("the file spells mono as %#v, want the string %q beside the theme colour", raw["mono"], "JetBrains Mono")
 	}
 	if _, ok := raw["fonts"]; ok {
-		t.Error("the file nested the face under fonts; mono is a sibling of seed")
+		t.Error("the file nested the face under fonts; mono is a sibling of the theme colour")
 	}
 }
 
 // TestAFileWithNoMonoIsStillAKeptBrand: every theme.json written before the
 // field existed has no mono in it, and reading one has to be uneventful —
-// the brand loads, the seed is intact, and the face comes back empty, which
+// the brand loads, the colour is intact, and the face comes back empty, which
 // is the value that means Roboto Mono.
 func TestAFileWithNoMonoIsStillAKeptBrand(t *testing.T) {
 	path := file(t)
-	const older = `{"seed":"#e8112d","source":"harbour.jpg"}`
+	const older = `{"themeColour":"#e8112d","source":"harbour.jpg"}`
 	if err := os.WriteFile(path, []byte(older), 0o644); err != nil {
 		t.Fatalf("write: %v", err)
 	}
@@ -474,8 +495,8 @@ func TestAFileWithNoMonoIsStillAKeptBrand(t *testing.T) {
 	if err != nil || !ok {
 		t.Fatalf("load: got (%v, %v), want a brand and no error", ok, err)
 	}
-	if got.Seed != harbourRed {
-		t.Errorf("seed came back as %v, want %v", got.Seed, harbourRed)
+	if got.ThemeColor != harbourRed {
+		t.Errorf("the colour came back as %v, want %v", got.ThemeColor, harbourRed)
 	}
 	if got.Mono != "" {
 		t.Errorf("a file with no mono loaded %q, want none", got.Mono)
@@ -489,7 +510,7 @@ func TestAFileWithNoMonoIsStillAKeptBrand(t *testing.T) {
 // is the same as no key — the default face, and a rewrite omits it.
 func TestAnEmptyMonoInTheFileIsRobotoMono(t *testing.T) {
 	path := file(t)
-	if err := os.WriteFile(path, []byte(`{"seed":"#e8112d","mono":""}`), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte(`{"themeColour":"#e8112d","mono":""}`), 0o644); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 	got := brand.KeptFrom(path)
@@ -504,7 +525,7 @@ func TestAnEmptyMonoInTheFileIsRobotoMono(t *testing.T) {
 // TestAnEmptyMonoIsNotWritten: an unchosen face leaves no key behind.
 func TestAnEmptyMonoIsNotWritten(t *testing.T) {
 	path := file(t)
-	if err := brand.SaveTo(path, brand.Brand{Seed: harbourRed, Mono: ""}); err != nil {
+	if err := brand.SaveTo(path, brand.Brand{ThemeColor: harbourRed, Mono: ""}); err != nil {
 		t.Fatalf("save: %v", err)
 	}
 	data, err := os.ReadFile(path)
@@ -524,7 +545,7 @@ func TestAnEmptyMonoIsNotWritten(t *testing.T) {
 // survives the file — it is what was written — and applies as Roboto Mono.
 func TestAJunkMonoIsStoredAndIgnored(t *testing.T) {
 	path := file(t)
-	const junk = `{"seed":"#e8112d","mono":"Comic Sans"}`
+	const junk = `{"themeColour":"#e8112d","mono":"Comic Sans"}`
 	if err := os.WriteFile(path, []byte(junk), 0o644); err != nil {
 		t.Fatalf("write: %v", err)
 	}
@@ -554,7 +575,7 @@ func TestAJunkMonoIsStoredAndIgnored(t *testing.T) {
 // with the emoji fallback on top.
 func TestTheKeptMonoDressesTheStream(t *testing.T) {
 	path := file(t)
-	if err := brand.SaveTo(path, brand.Brand{Seed: harbourRed, Mono: "JetBrains Mono"}); err != nil {
+	if err := brand.SaveTo(path, brand.Brand{ThemeColor: harbourRed, Mono: "JetBrains Mono"}); err != nil {
 		t.Fatalf("save: %v", err)
 	}
 	kept := brand.KeptFrom(path)
@@ -585,7 +606,7 @@ func TestTheFirstFrameWearsTheSameFaceTheStreamDoes(t *testing.T) {
 	for _, name := range []string{"", "JetBrains Mono", "Roboto Mono", "Comic Sans"} {
 		t.Run(name, func(t *testing.T) {
 			path := file(t)
-			if err := brand.SaveTo(path, brand.Brand{Seed: harbourRed, Mono: name}); err != nil {
+			if err := brand.SaveTo(path, brand.Brand{ThemeColor: harbourRed, Mono: name}); err != nil {
 				t.Fatalf("save: %v", err)
 			}
 			kept := brand.KeptFrom(path)
@@ -698,8 +719,8 @@ func TestABrandCanFollowTheSystem(t *testing.T) {
 	if !got.FollowSystem {
 		t.Error("the brand came back pinning a colour, want one that follows the system")
 	}
-	if got.Seed != (color.NRGBA{}) {
-		t.Errorf("a brand that follows the system came back carrying %v, want no colour", got.Seed)
+	if got.ThemeColor != (color.NRGBA{}) {
+		t.Errorf("a brand that follows the system came back carrying %v, want no colour", got.ThemeColor)
 	}
 	if got.Base != pair {
 		t.Errorf("the base came back as %+v, want %+v", got.Base, pair)
@@ -712,7 +733,7 @@ func TestABrandCanFollowTheSystem(t *testing.T) {
 	// the stream is the one an application with no brand at all builds.
 	opts := got.Options()
 	green := color.NRGBA{R: 0x00, G: 0x80, B: 0x00, A: 0xff}
-	desktop := system.Appearance{AccentSeed: green, AccentSeedSet: true}
+	desktop := system.Appearance{AccentColor: green, AccentColorSet: true}
 	if schemeOf(t, desktop, opts...) != schemeOf(t, desktop) {
 		t.Error("following the system is not the stream an application with no brand builds")
 	}
@@ -725,21 +746,21 @@ func TestABrandCanFollowTheSystem(t *testing.T) {
 	}
 }
 
-// TestAFileWithASeedAndNoFlagStillPins: the flag is absent from every file
+// TestAFileWithAColourAndNoFlagStillPins: the flag is absent from every file
 // written before it existed, and such a file means what it always meant.
-func TestAFileWithASeedAndNoFlagStillPins(t *testing.T) {
+func TestAFileWithAColourAndNoFlagStillPins(t *testing.T) {
 	path := file(t)
-	if err := os.WriteFile(path, []byte(`{"seed":"#e8112d","source":"harbour.jpg"}`), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte(`{"themeColour":"#e8112d","source":"harbour.jpg"}`), 0o644); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 	got := brand.KeptFrom(path)
 	if got.FollowSystem {
-		t.Error("a file with a seed and no flag came back following the system")
+		t.Error("a file with a colour and no flag came back following the system")
 	}
-	if got.Seed != harbourRed {
-		t.Errorf("the seed came back as %v, want %v", got.Seed, harbourRed)
+	if got.ThemeColor != harbourRed {
+		t.Errorf("the the colour came back as %v, want %v", got.ThemeColor, harbourRed)
 	}
-	green := system.Appearance{AccentSeed: color.NRGBA{R: 0x00, G: 0x80, B: 0x00, A: 0xff}, AccentSeedSet: true}
+	green := system.Appearance{AccentColor: color.NRGBA{R: 0x00, G: 0x80, B: 0x00, A: 0xff}, AccentColorSet: true}
 	pinned := schemeOf(t, green, got.Options()...)
 	if pinned.ControlAccent != harbourRed {
 		t.Errorf("the stream carries the accent %v, want the kept %v", pinned.ControlAccent, harbourRed)
@@ -749,10 +770,10 @@ func TestAFileWithASeedAndNoFlagStillPins(t *testing.T) {
 	}
 }
 
-// TestAFollowingBrandWritesNoSeed: the file says which colour was kept, and
+// TestAFollowingBrandWritesNoColour: the file says which colour was kept, and
 // none was — so a reader written before the flag finds nothing to pin and
 // falls back to the platform's own colour, which is what the flag asks for.
-func TestAFollowingBrandWritesNoSeed(t *testing.T) {
+func TestAFollowingBrandWritesNoColour(t *testing.T) {
 	path := file(t)
 	if err := brand.SaveTo(path, brand.Brand{FollowSystem: true}); err != nil {
 		t.Fatalf("save: %v", err)
@@ -765,8 +786,8 @@ func TestAFollowingBrandWritesNoSeed(t *testing.T) {
 	if err := json.Unmarshal(data, &raw); err != nil {
 		t.Fatalf("the file is not JSON: %v", err)
 	}
-	if _, ok := raw["seed"]; ok {
-		t.Errorf("a brand that follows the system wrote a seed key: %s", data)
+	if _, ok := raw["themeColour"]; ok {
+		t.Errorf("a brand that follows the system wrote a theme-colour key: %s", data)
 	}
 	if raw["followSystem"] != true {
 		t.Errorf("the file does not say it follows the system: %s", data)

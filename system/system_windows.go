@@ -10,7 +10,7 @@ import (
 // HKEY_CURRENT_USER\Software\Microsoft\Windows\DWM, value AccentColor, an
 // ABGR DWORD holding the arbitrary colour the user picked in Settings →
 // Personalization → Colors. That colour cannot be an [Accent] enum value,
-// so it travels as Appearance.AccentSeed (see the decode in
+// so it travels as Appearance.AccentColor (see the decode in
 // nrgbaFromABGR). Reading uses golang.org/x/sys/windows/registry — pure
 // syscalls, no cgo; the module already carried x/sys transitively via Gio,
 // so this promotes an existing dependency to direct rather than adding one.
@@ -32,10 +32,10 @@ func newWindowsSource() *windowsSource {
 }
 
 func (s *windowsSource) Read() (Appearance, error) {
-	seed, ok := s.readAccentFn()
+	c, ok := s.readAccentFn()
 	return Appearance{
-		AccentSeed:    seed,
-		AccentSeedSet: ok,
+		AccentColor:    c,
+		AccentColorSet: ok,
 	}, nil
 }
 
@@ -56,10 +56,10 @@ func readAccentColor() (color.NRGBA, bool) {
 	return nrgbaFromABGR(uint32(v)), true
 }
 
-// platformSeed reports no colour: Windows publishes nothing an application
+// platformColor reports no colour: Windows publishes nothing an application
 // that has chosen none should paint itself with — the DWM AccentColor is
-// the user's own choice and arrives as Appearance.AccentSeed — so a stream
+// the user's own choice and arrives as Appearance.AccentColor — so a stream
 // with no palette option keeps the package's own default pair.
-func platformSeed() (color.NRGBA, bool) { return color.NRGBA{}, false }
+func platformColor() (color.NRGBA, bool) { return color.NRGBA{}, false }
 
 func defaultSource() Source { return newWindowsSource() }

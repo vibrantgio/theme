@@ -1,4 +1,4 @@
-// palette.go — seed candidates from a palette somebody already chose, rather
+// palette.go — theme-colour candidates from a palette somebody already chose, rather
 // than from a photograph.
 //
 // A picture has to be clustered before it can be ranked: a photograph holds
@@ -19,7 +19,7 @@
 // handing that fact over as repeats, and a caller with a plain list of
 // distinct colours gets the uniform reading.
 
-package imageseed
+package imagecolor
 
 import (
 	stdcolor "image/color"
@@ -27,13 +27,13 @@ import (
 	"github.com/vibrantgio/theme/color"
 )
 
-// ExtractPalette returns seed candidates for a curated palette under the
+// ExtractPalette returns candidates for a curated palette under the
 // default options, most prominent first. See ExtractPaletteWith.
 func ExtractPalette(palette []stdcolor.NRGBA) []Candidate {
 	return ExtractPaletteWith(palette, Options{})
 }
 
-// ExtractPaletteWith returns seed candidates for a curated palette, most
+// ExtractPaletteWith returns candidates for a curated palette, most
 // prominent first, under the given options.
 //
 // The colours enter as they are given: there is no clustering step, because a

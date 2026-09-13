@@ -179,7 +179,7 @@ type PlatformColors struct {
 	// over a #232a2e plane dark, flat-region samples of the Appearance
 	// pane's boxes in system-settings-grouped-box-light.png and
 	// -dark.png. The box carries no hairline and no shadow: its edge is
-	// a 2–3 px antialiased ramp straight from the plane to the fill, and
+	// a 2–3 px antialiased blend straight from the plane to the fill, and
 	// the step across it is about 3% of the way to black in light and to
 	// white in dark.
 	CardFill color.NRGBA `appkit:"-"`

@@ -8,20 +8,20 @@ import (
 	"github.com/vibrantgio/theme/tokens"
 )
 
-// Parameters is theme.json's shape: the generative parameters that
-// reproduce the theme. tokens.FromSeed(Seed) regenerates every ramp and pin
-// — the round-trip test asserts it — so the file alone rebuilds the
-// palette; the pins, scales, fonts, radius, density settings, elevation
-// model and motion set are recorded alongside so a reader (or a prototype)
-// need not run the generator to know them.
+// Parameters is theme.json's shape: what reproduces the theme. The theme
+// colour rebuilds the platform's accent rows exactly — the round-trip test
+// asserts it — and the platform's whole set, the scales, fonts, radius,
+// density settings, shadow depths and motion set are recorded alongside so
+// a reader (or a prototype) need not run the generator to know them.
 type Parameters struct {
 	// ThemeColor is the theme colour as lowercase #rrggbb: the colour the
 	// platform's accent rows were rebuilt for, and the one colour a reader
 	// needs to reproduce the set from the catalogue.
 	//
-	// The key is "seed", which is the key theme/brand's own file carries,
-	// so an exported theme.json loads as a kept brand without translation.
-	ThemeColor string `json:"seed"`
+	// The key is "themeColour", which is the key theme/brand's own file
+	// carries, so an exported theme.json loads as a kept brand without
+	// translation.
+	ThemeColor string `json:"themeColour"`
 
 	// Platform is the platform's colour set per appearance, keyed by the
 	// same name the sheet's --platform-* custom properties carry.

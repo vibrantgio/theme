@@ -2,7 +2,7 @@ package tokens
 
 // Desktop density is the platform's control scale: Comfortable is the
 // platform's regular control and Compact its small one. Nothing below is
-// derived from a web or Material scale.
+// derived from a web scale.
 //
 // Measured beats published. Where a stored capture and the platform's
 // published guidelines disagree, the capture wins (owner ruling,

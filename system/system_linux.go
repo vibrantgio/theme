@@ -14,7 +14,7 @@ import (
 //
 //   - GNOME 47+: `gsettings get org.gnome.desktop.interface accent-color`,
 //     a named enum mapped to libadwaita's published colours
-//     (gnomeAccentSeed). Older GNOME has no such key; the gsettings error
+//     (gnomeAccentColor). Older GNOME has no such key; the gsettings error
 //     folds to "no accent".
 //   - KDE Plasma: the AccentColor=r,g,b key in [General] of
 //     $XDG_CONFIG_HOME/kdeglobals (kdeGlobalsAccent). The key exists only
@@ -22,9 +22,9 @@ import (
 //     to "no accent".
 //   - Anything else: no accent.
 //
-// "No accent" leaves Appearance.AccentSeedSet false, and LiveTheme then
-// falls back to the default seed's palette. The colour travels as
-// Appearance.AccentSeed — Linux accents are arbitrary colours (KDE
+// "No accent" leaves Appearance.AccentColorSet false, and LiveTheme then
+// falls back to the default colour's pair. The colour travels as
+// Appearance.AccentColor — Linux accents are arbitrary colours (KDE
 // literally so), not the macOS [Accent] enum.
 //
 // The accent read is throttled exactly like the darwin source's: the GNOME
@@ -43,8 +43,8 @@ type linuxSource struct {
 	readAccentFn   func() (color.NRGBA, bool) // injectable accent reader for tests
 
 	mu         sync.Mutex
-	seed       color.NRGBA
-	seedSet    bool
+	color      color.NRGBA
+	colorSet   bool
 	accentRead bool      // whether accent has ever been read
 	accentAt   time.Time // when accent was last read
 }
@@ -58,10 +58,10 @@ func newLinuxSource() *linuxSource {
 }
 
 func (s *linuxSource) Read() (Appearance, error) {
-	seed, ok := s.readAccentThrottled()
+	c, ok := s.readAccentThrottled()
 	return Appearance{
-		AccentSeed:    seed,
-		AccentSeedSet: ok,
+		AccentColor:    c,
+		AccentColorSet: ok,
 	}, nil
 }
 
@@ -73,11 +73,11 @@ func (s *linuxSource) readAccentThrottled() (color.NRGBA, bool) {
 	defer s.mu.Unlock()
 	now := s.now()
 	if !s.accentRead || now.Sub(s.accentAt) >= s.accentInterval {
-		s.seed, s.seedSet = s.readAccentFn()
+		s.color, s.colorSet = s.readAccentFn()
 		s.accentRead = true
 		s.accentAt = now
 	}
-	return s.seed, s.seedSet
+	return s.color, s.colorSet
 }
 
 // readLinuxAccent dispatches on the detected desktop family. Every failure
@@ -99,7 +99,7 @@ func readGNOMEAccent() (color.NRGBA, bool) {
 	if err != nil {
 		return color.NRGBA{}, false
 	}
-	return gnomeAccentSeed(string(out))
+	return gnomeAccentColor(string(out))
 }
 
 func readKDEAccent() (color.NRGBA, bool) {
@@ -123,9 +123,9 @@ func configHome() string {
 	return filepath.Join(home, ".config")
 }
 
-// platformSeed reports no colour: a Linux desktop publishes nothing an
+// platformColor reports no colour: a Linux desktop publishes nothing an
 // application that has chosen none should paint itself with, so a stream
 // with no palette option keeps the package's own default pair.
-func platformSeed() (color.NRGBA, bool) { return color.NRGBA{}, false }
+func platformColor() (color.NRGBA, bool) { return color.NRGBA{}, false }
 
 func defaultSource() Source { return newLinuxSource() }

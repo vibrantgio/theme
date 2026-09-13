@@ -64,7 +64,7 @@ func TestThemeCarriesThePlatformSetForTheAppearance(t *testing.T) {
 		{"dark, no accent reported", system.Appearance{Dark: true}},
 		{"light, a named accent", system.Appearance{Accent: system.AccentPurple}},
 		{"dark, a named accent", system.Appearance{Dark: true, Accent: system.AccentGraphite}},
-		{"light, a raw accent colour", system.Appearance{AccentSeed: tokens.PlatformLight.SystemPink, AccentSeedSet: true}},
+		{"light, a raw accent colour", system.Appearance{AccentColor: tokens.PlatformLight.SystemPink, AccentColorSet: true}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -90,7 +90,7 @@ func TestThePlatformSetOnMacOSIsTheLiveSet(t *testing.T) {
 	if got := firstPlatform(t, system.Appearance{Accent: system.AccentPurple}); got != light {
 		t.Error("a stubbed accent moved the set AppKit answers for the light appearance")
 	}
-	if got := firstPlatform(t, system.Appearance{AccentSeed: tokens.PlatformLight.SystemPink, AccentSeedSet: true}); got != light {
+	if got := firstPlatform(t, system.Appearance{AccentColor: tokens.PlatformLight.SystemPink, AccentColorSet: true}); got != light {
 		t.Error("a stubbed accent colour moved the set AppKit answers for the light appearance")
 	}
 }

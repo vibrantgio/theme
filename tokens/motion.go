@@ -28,15 +28,15 @@ func CriticalDamping(stiffness, mass float32) float32 {
 	return 2 * float32(math.Sqrt(float64(stiffness)*float64(mass)))
 }
 
-// MD3 motion semantics on a desktop scale, mapped 2026-08-05: MD3's system,
-// not MD3's look. This table is the justification for every value below it;
-// argue with the sources here rather than with the consumer diffs.
+// The motion scale on a desktop pace, mapped 2026-08-05 off the published
+// web motion tokens the system was started from. This table is the
+// justification for every value below it; argue with the sources here
+// rather than with the consumer diffs.
 //
-// Easing. MD3 defines two easing families: standard for utilitarian
-// transitions and emphasized for expressive, attention-drawing ones, each
-// with accelerate (exit) and decelerate (enter) variants. The canonical
-// cubic-beziers, verified against material-web design tokens v0.192
-// (tokens/versions/v0_192/_md-sys-motion.scss, fetched 2026-08-05):
+// Easing. Two easing families: standard for utilitarian transitions and
+// emphasized for expressive, attention-drawing ones, each with accelerate
+// (exit) and decelerate (enter) variants. The cubic-beziers, verified
+// against the published web tokens v0.192, fetched 2026-08-05:
 //
 //	token                          cubic-bezier
 //	-----                          ------------
@@ -47,21 +47,21 @@ func CriticalDamping(stiffness, mass float32) float32 {
 //	easing-emphasized-accelerate   (0.3, 0, 0.8, 0.15)
 //	easing-emphasized-decelerate   (0.05, 0.7, 0.1, 1)
 //
-// MD3's "full" emphasized ease is a two-segment path (an accelerate
+// The published "full" emphasized ease is a two-segment path (an accelerate
 // segment chained into a decelerate one) that a single cubic-bezier cannot
 // represent. EaseEmphasized carries the documented single-bezier stand-in,
-// which is material-web's own easing-emphasized value: the standard curve
+// which is that source's own easing-emphasized value: the standard curve
 // (0.2, 0, 0, 1). That is an honest approximation, not the spec path —
 // the expressive character lives in the accelerate/decelerate pair, which
 // single beziers do represent exactly.
 //
-// Durations. MD3 publishes sixteen duration roles — short1-4 (50-200 ms),
-// medium1-4 (250-400), long1-4 (450-600), extra-long1-4 (700-1000), same
-// source as above. Desktop keeps five stops rather than adopting all
-// sixteen: a pointer-driven desktop app wants fewer, faster stops. Each stop
-// is defined as exactly one MD3 role:
+// Durations. The same source publishes sixteen duration roles — short1-4
+// (50-200 ms), medium1-4 (250-400), long1-4 (450-600), extra-long1-4
+// (700-1000). Desktop keeps five stops rather than adopting all sixteen: a
+// pointer-driven desktop app wants fewer, faster stops. Each stop is
+// defined as exactly one published role:
 //
-//	stop       MD3 role   value   used for
+//	stop       role       value   used for
 //	----       --------   -----   --------
 //	DurXFast   short1      50 ms  state layers, hover feedback
 //	DurFast    short3     150 ms  small component transitions
@@ -84,26 +84,26 @@ func CriticalDamping(stiffness, mass float32) float32 {
 //	SpringSnappy   1     300        22     ζ≈0.64  slight overshoot, "pop"
 //	SpringGentle   1     20         2·√20  ≈8.94   critical, soft
 
-// MotionScale holds duration stops, MD3 easing presets, and spring presets
+// MotionScale holds duration stops, easing presets, and spring presets
 // for animation tokens. See the mapping table above for where every value
 // comes from.
 type MotionScale struct {
 	// Duration stops — strictly increasing fastest → slowest, each pinned
-	// to one MD3 duration role (see the table above).
-	DurXFast  time.Duration // MD3 short1, 50 ms
-	DurFast   time.Duration // MD3 short3, 150 ms
-	DurNormal time.Duration // MD3 medium1, 250 ms
-	DurSlow   time.Duration // MD3 medium4, 400 ms
-	DurXSlow  time.Duration // MD3 long2, 500 ms
+	// to one published duration role (see the table above).
+	DurXFast  time.Duration // short1, 50 ms
+	DurFast   time.Duration // short3, 150 ms
+	DurNormal time.Duration // medium1, 250 ms
+	DurSlow   time.Duration // medium4, 400 ms
+	DurXSlow  time.Duration // long2, 500 ms
 
-	// MD3 standard easing family: utilitarian transitions.
+	// The standard easing family: utilitarian transitions.
 	// Accelerate is for exits, Decelerate for enters.
 	EaseStandard           Bezier
 	EaseStandardAccelerate Bezier
 	EaseStandardDecelerate Bezier
 
-	// MD3 emphasized easing family: expressive transitions. EaseEmphasized
-	// is the documented single-bezier stand-in for MD3's two-segment path
+	// The emphasized easing family: expressive transitions. EaseEmphasized
+	// is the documented single-bezier stand-in for the two-segment path
 	// (see above); the accelerate/decelerate pair is exact.
 	EaseEmphasized           Bezier
 	EaseEmphasizedAccelerate Bezier

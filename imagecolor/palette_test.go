@@ -1,4 +1,4 @@
-package imageseed
+package imagecolor
 
 import (
 	stdcolor "image/color"

@@ -13,7 +13,7 @@ import (
 // The foundation pages are static HTML that reads only from the emitted
 // token sheet: every colour, size, radius, shadow and font value in a style
 // position is a var(--...) reference into ../styles.css, so regenerating the
-// sheet from another seed reflows every page with no page edit. The only
+// sheet for another theme colour reflows every page with no page edit. The only
 // literal token values in a page are annotation text — hexes, px numbers and
 // contrast measurements printed for the reader — which the generator
 // computes from the Snapshot at generation time. Chrome CSS (flex, grid,
@@ -135,27 +135,6 @@ func page(title, heading, intro, style, body string) string {
 // dark-on-light, negative light-on-dark.
 func lcStr(text, surface stdcolor.NRGBA) string {
 	return fmt.Sprintf("%.1f", color.APCA(text, surface))
-}
-
-// stepPurpose is the job per ramp step: the step number carries the
-// meaning, identically in both modes.
-func stepPurpose(step int) string {
-	switch step {
-	case 100:
-		return "tinted fill · backdrop"
-	case 200:
-		return "tinted fill · card"
-	case 300:
-		return "hover · subtle border"
-	case 500:
-		return "mid reference · strong border"
-	case 700:
-		return "low-contrast text · pressed"
-	case 900:
-		return "high-contrast text · pressed"
-	default: // 400, 600, 800
-		return "intermediate · state walk"
-	}
 }
 
 // modeHex annotates one token's value in both modes, labelled, because text
@@ -311,7 +290,7 @@ const typePageCSS = `.type-role {
 }
 `
 
-// typeHTML renders foundations/type.html: the fifteen MD3 type roles plus the
+// typeHTML renders foundations/type.html: the fifteen type roles plus the
 // code style at their real size, weight, line height and tracking, each styled
 // entirely through its --font-<role>-* vars and annotated with the numbers.
 // The code specimen additionally names its own family through
@@ -467,9 +446,9 @@ const layoutPageCSS = `.space-row {
 
 // layoutHTML renders foundations/layout.html: the spacing scale as sized
 // bars, the control metrics at both density settings side by side, the
-// radius scale on sample boxes, and tonal elevation — the surface fill as
-// the default cue, the dp shadow as the opt-in cue for floating transients
-// — each specimen sized, padded, rounded, filled or shadowed by its var.
+// radius scale on sample boxes, and the shadow depth per level — the cue a
+// floating transient carries over the platform fill its level is given —
+// each specimen sized, padded, rounded, filled or shadowed by its var.
 func layoutHTML(s Snapshot) string {
 	var b strings.Builder
 

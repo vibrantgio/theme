@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-var testSeed = color.NRGBA{R: 0x35, G: 0x84, B: 0xE4, A: 0xFF}
+var testColor = color.NRGBA{R: 0x35, G: 0x84, B: 0xE4, A: 0xFF}
 
 // TestLinuxAccentThrottled mirrors the darwin throttle contract: the accent
 // reader — a fork+exec of gsettings on GNOME — is invoked at most once per
@@ -21,7 +21,7 @@ func TestLinuxAccentThrottled(t *testing.T) {
 		now:            func() time.Time { return clock },
 		readAccentFn: func() (color.NRGBA, bool) {
 			accentReads++
-			return testSeed, true
+			return testColor, true
 		},
 	}
 
@@ -31,8 +31,8 @@ func TestLinuxAccentThrottled(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Read() %d: %v", i, err)
 		}
-		if !a.AccentSeedSet || a.AccentSeed != testSeed {
-			t.Fatalf("Read() %d: AccentSeed=%+v set=%v; want cached or fresh seed", i, a.AccentSeed, a.AccentSeedSet)
+		if !a.AccentColorSet || a.AccentColor != testColor {
+			t.Fatalf("Read() %d: AccentColor=%+v set=%v; want the cached or a fresh colour", i, a.AccentColor, a.AccentColorSet)
 		}
 		clock = clock.Add(time.Second)
 	}
@@ -56,7 +56,7 @@ func TestLinuxAccentReadOnFirstCall(t *testing.T) {
 		now:            func() time.Time { return clock },
 		readAccentFn: func() (color.NRGBA, bool) {
 			accentReads++
-			return testSeed, true
+			return testColor, true
 		},
 	}
 	a, err := src.Read()
@@ -66,8 +66,8 @@ func TestLinuxAccentReadOnFirstCall(t *testing.T) {
 	if accentReads != 1 {
 		t.Fatalf("first Read() performed %d accent reads; want exactly 1", accentReads)
 	}
-	if !a.AccentSeedSet || a.AccentSeed != testSeed {
-		t.Errorf("first Read() AccentSeed=%+v set=%v; want the injected seed", a.AccentSeed, a.AccentSeedSet)
+	if !a.AccentColorSet || a.AccentColor != testColor {
+		t.Errorf("first Read() AccentColor=%+v set=%v; want the injected colour", a.AccentColor, a.AccentColorSet)
 	}
 }
 
@@ -76,31 +76,31 @@ func TestLinuxAccentReadOnFirstCall(t *testing.T) {
 // user clearing the accent is eventually observed.
 func TestLinuxAccentRefreshesAfterInterval(t *testing.T) {
 	var clock time.Time
-	seed, set := testSeed, true
+	c, set := testColor, true
 	src := &linuxSource{
 		accentInterval: 10 * time.Second,
 		now:            func() time.Time { return clock },
-		readAccentFn:   func() (color.NRGBA, bool) { return seed, set },
+		readAccentFn:   func() (color.NRGBA, bool) { return c, set },
 	}
 
-	if a, _ := src.Read(); !a.AccentSeedSet || a.AccentSeed != testSeed {
-		t.Fatalf("initial accent=%+v set=%v; want the seed", a.AccentSeed, a.AccentSeedSet)
+	if a, _ := src.Read(); !a.AccentColorSet || a.AccentColor != testColor {
+		t.Fatalf("initial accent=%+v set=%v; want the colour", a.AccentColor, a.AccentColorSet)
 	}
 	// Clear the underlying accent; before the interval elapses the cache holds.
-	seed, set = color.NRGBA{}, false
+	c, set = color.NRGBA{}, false
 	clock = clock.Add(9 * time.Second)
-	if a, _ := src.Read(); !a.AccentSeedSet {
-		t.Errorf("accent before interval cleared; want cached seed")
+	if a, _ := src.Read(); !a.AccentColorSet {
+		t.Errorf("accent before interval cleared; want the cached colour")
 	}
 	// After the interval, the cleared state is picked up.
 	clock = clock.Add(2 * time.Second) // total 11 s ≥ 10 s
-	if a, _ := src.Read(); a.AccentSeedSet {
+	if a, _ := src.Read(); a.AccentColorSet {
 		t.Errorf("accent after interval still set; want no accent")
 	}
 }
 
 // TestLinuxSourceNoAccent verifies the zero path: a reader that finds no
-// accent yields an Appearance whose AccentSeedSet is false and whose Dark
+// accent yields an Appearance whose AccentColorSet is false and whose Dark
 // is false (dark mode is not read on Linux yet).
 func TestLinuxSourceNoAccent(t *testing.T) {
 	src := &linuxSource{

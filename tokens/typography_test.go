@@ -45,7 +45,7 @@ func TestDefaultTypographyRolesComplete(t *testing.T) {
 	}
 }
 
-// TestDefaultTypographyCode pins the code style, which is not an MD3 role —
+// TestDefaultTypographyCode pins the code style, which is not one of the fifteen roles —
 // the 5×3 grid has no code slot — but a sixteenth style outside the grid:
 // BodyMedium's metrics on the mono face (G-F0).
 func TestDefaultTypographyCode(t *testing.T) {

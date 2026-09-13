@@ -1,6 +1,6 @@
-// Package imageseed extracts brand-seed candidates from an image: the
+// Package imagecolor extracts theme-colour candidates from an image: the
 // colours the picture is actually made of, clustered in the same perceptual
-// space a palette derivation reads a seed in, and ranked so a vivid minority
+// space a theme colour is judged in, and ranked so a vivid minority
 // leads a dull majority.
 //
 // Extract returns candidates, never a palette. Each Candidate carries a
@@ -8,7 +8,7 @@
 // nothing in the picture ever had — together with the share of sampled
 // pixels it stands for and the chroma-weighted prominence it was ranked by.
 // Deriving tokens from one of them is the caller's step; every candidate is
-// a legal seed.
+// a colour the image actually carries.
 //
 // # Placement
 //
@@ -17,7 +17,7 @@
 // package's exported surface, called from here: a second copy of the
 // mathematics would be a second answer to a question the module already
 // answers once, free to drift from the answer palettes are actually derived
-// with. Clustering in the space the derivation reads a seed in is the whole
+// with. Clustering in that same perceptual space is the whole
 // point of the exercise, so the space has to be the same space.
 //
 // # The steps
@@ -33,7 +33,7 @@
 // the perceptual difference the space was built to make it. The starting
 // centroids are not random: sampled colours are counted into a coarse OKLab
 // grid and the most populated cells, ordered by population and then by
-// cell so ties cannot swing, seed the iteration. Extraction is therefore
+// cell so ties cannot swing, start the iteration. Extraction is therefore
 // deterministic — the same image yields the same candidates in the same
 // order on every machine and every run — which is what lets a fixture test
 // assert on rank rather than on membership. More clusters are formed than
@@ -42,7 +42,7 @@
 //
 // Gather. Clusters of one hue are one colour, however many depths they
 // were sampled at. A sky is pale at the horizon and deep overhead and
-// clusters honestly into several, but it is one seed, and an answer that
+// clusters honestly into several, but it is one colour, and an answer that
 // spent four of its six places on it would offer a choice it does not have.
 // So two colours that both carry a hue are the same colour when their hues
 // are within a quarter-turn-to-the-complement of each other, whatever their
@@ -78,7 +78,7 @@
 // Gathering, ranking and the degenerate cases are the image path's own, so a
 // candidate row derived from a palette and one derived from a picture are
 // comparable things.
-package imageseed
+package imagecolor
 
 import (
 	"image"
@@ -142,7 +142,7 @@ const (
 	minAlpha = 8
 )
 
-// Candidate is one extracted seed: a colour the image contains, with the
+// Candidate is one extracted colour: a colour the image contains, with the
 // evidence for it.
 type Candidate struct {
 	// Color is a sampled pixel — a colour the image really has, in gamut
@@ -156,7 +156,7 @@ type Candidate struct {
 	// than were asked for, since the ones left out keep their share.
 	Share float64
 	// Chroma is Color's OKLCh chroma — how much colour it has, on the same
-	// axis a palette derivation reads a seed's chroma on. It is the
+	// axis a theme colour's chroma is read on. It is the
 	// highest chroma among the clusters gathered into this colour.
 	Chroma float64
 	// Weight is the chroma-weighted prominence the candidates were ordered
@@ -196,14 +196,14 @@ func (o Options) withDefaults() Options {
 	return o
 }
 
-// Extract returns the image's seed candidates under the default options,
+// Extract returns the image's candidates under the default options,
 // most prominent first. See ExtractWith for the options and the package
 // documentation for what "prominent" measures.
 func Extract(img image.Image) []Candidate {
 	return ExtractWith(img, Options{})
 }
 
-// ExtractWith returns the image's seed candidates, most prominent first,
+// ExtractWith returns the image's candidates, most prominent first,
 // under the given options. It returns nil for a nil image, an empty one, or
 // one whose pixels are all transparent; it never returns two candidates
 // closer together than the separation, and never more than the maximum.
@@ -302,7 +302,7 @@ func (c centroid) distance(p pixel) float64 {
 // distinct coarse colours than k yields fewer clusters, which is how a
 // single-colour image yields exactly one candidate.
 func cluster(pixels []pixel, k int) []group {
-	centres := seedCentroids(pixels, k)
+	centres := startingCentroids(pixels, k)
 	if len(centres) == 0 {
 		return nil
 	}
@@ -395,12 +395,12 @@ type cell struct {
 	sum   centroid
 }
 
-// seedCentroids picks the starting centres deterministically: sampled
+// startingCentroids picks the starting centres deterministically: sampled
 // colours are counted into a coarse OKLab grid, the cells are ordered by
 // population with the cell coordinates breaking every tie, and the means of
 // the k most populated become the centres. No randomness enters, so two
 // runs over one image cannot disagree.
-func seedCentroids(pixels []pixel, k int) []centroid {
+func startingCentroids(pixels []pixel, k int) []centroid {
 	byCell := make(map[[3]int]*cell, k*4)
 	order := make([][3]int, 0, k*4)
 	for _, p := range pixels {
@@ -492,7 +492,7 @@ func sortByWeight(cs []Candidate) {
 //
 // A family is one colour of the picture, however many depths it was sampled
 // at. A sky is light at the horizon and deep overhead, and clustering
-// faithfully reports that as several clusters — but they are one seed, and a
+// faithfully reports that as several clusters — but they are one colour, and a
 // row that spent four of its six places on one sky would be offering a
 // choice it does not have. So sameness is judged on hue, not on distance:
 // two colours that both carry a hue are the same colour when their hues are
@@ -505,7 +505,7 @@ func sortByWeight(cs []Candidate) {
 // what they look like they mean. Its colour is its MOST chromatic member,
 // not its largest: the members differ mostly in depth, and the one that
 // carries the family's hue most clearly is the one worth offering as a
-// seed. Its rank follows from the two.
+// colour. Its rank follows from the two.
 func choose(ranked []Candidate, max int, separation float64) []Candidate {
 	limit := separation * separation
 	families := make([]Candidate, 0, max)

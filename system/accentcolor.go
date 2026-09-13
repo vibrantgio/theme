@@ -14,7 +14,7 @@ import (
 // nrgbaFromABGR decodes the Windows DWM AccentColor registry DWORD, whose
 // byte layout is 0xAABBGGRR (little-endian ABGR). The alpha byte is a DWM
 // composition detail, not part of the user's chosen colour, so the result
-// is forced opaque — a seed colour is always fully opaque.
+// is forced opaque — an accent colour is always fully opaque.
 func nrgbaFromABGR(v uint32) color.NRGBA {
 	return color.NRGBA{
 		R: uint8(v),
@@ -24,12 +24,12 @@ func nrgbaFromABGR(v uint32) color.NRGBA {
 	}
 }
 
-// gnomeAccentSeeds maps the GNOME 47+ accent-color names (the
+// gnomeAccentColors maps the GNOME 47+ accent-color names (the
 // org.gnome.desktop.interface accent-color enum) to libadwaita's published
 // accent background colours (AdwAccentColor accent_bg_color, libadwaita 1.6).
 // These are the colours GNOME itself paints its accented controls with, so a
-// seeded palette matches the desktop exactly.
-var gnomeAccentSeeds = map[string]color.NRGBA{
+// palette matches the desktop exactly.
+var gnomeAccentColors = map[string]color.NRGBA{
 	"blue":   {R: 0x35, G: 0x84, B: 0xE4, A: 0xFF},
 	"teal":   {R: 0x21, G: 0x90, B: 0xA4, A: 0xFF},
 	"green":  {R: 0x3A, G: 0x94, B: 0x4A, A: 0xFF},
@@ -41,7 +41,7 @@ var gnomeAccentSeeds = map[string]color.NRGBA{
 	"slate":  {R: 0x6F, G: 0x83, B: 0x96, A: 0xFF},
 }
 
-// gnomeAccentSeed parses the output of
+// gnomeAccentColor parses the output of
 //
 //	gsettings get org.gnome.desktop.interface accent-color
 //
@@ -49,10 +49,10 @@ var gnomeAccentSeeds = map[string]color.NRGBA{
 // name onto its published colour. ok is false for an unknown name, empty
 // output, or the error text a pre-47 GNOME's "No such key" produces (which
 // never matches a name).
-func gnomeAccentSeed(out string) (seed color.NRGBA, ok bool) {
+func gnomeAccentColor(out string) (c color.NRGBA, ok bool) {
 	name := strings.Trim(strings.TrimSpace(out), "'")
-	seed, ok = gnomeAccentSeeds[name]
-	return seed, ok
+	c, ok = gnomeAccentColors[name]
+	return c, ok
 }
 
 // kdeGlobalsAccent extracts the accent colour from the contents of KDE's
@@ -61,7 +61,7 @@ func gnomeAccentSeed(out string) (seed color.NRGBA, ok bool) {
 // ok is false when the key is absent — a colour scheme with no accent
 // override, KDE's default state — or malformed; the same key in any other
 // section is ignored.
-func kdeGlobalsAccent(content string) (seed color.NRGBA, ok bool) {
+func kdeGlobalsAccent(content string) (c color.NRGBA, ok bool) {
 	inGeneral := false
 	for line := range strings.Lines(content) {
 		line = strings.TrimSpace(line)

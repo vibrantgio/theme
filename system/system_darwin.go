@@ -142,11 +142,11 @@ func accentFromIndex(n int) Accent {
 	return AccentDefault
 }
 
-// platformSeed is the colour macOS paints an application that has chosen
-// none of its own: systemBlue, the seed AccentBlue carries. Multicolour —
+// platformColor is the colour macOS paints an application that has chosen
+// none of its own: systemBlue, the colour AccentBlue carries. Multicolour —
 // the absent AppleAccentColor key — and a failed read both report "no
 // accent override", and a stream with no palette option derives from this
-// rather than from the package's own default seed.
-func platformSeed() (color.NRGBA, bool) { return AccentBlue.Seed() }
+// rather than from the package's own default colour.
+func platformColor() (color.NRGBA, bool) { return AccentBlue.Color() }
 
 func defaultSource() Source { return newDarwinSource() }

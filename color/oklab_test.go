@@ -159,7 +159,7 @@ func TestRGBFromOKLabIsTotal(t *testing.T) {
 // TestOKLabNRGBAHelpers checks the image/color adapters agree with OKLab,
 // OKLCh and their inverses.
 func TestOKLabNRGBAHelpers(t *testing.T) {
-	in := stdcolor.NRGBA{R: 0x67, G: 0x50, B: 0xa4, A: 0xff} // the MD3 default seed
+	in := stdcolor.NRGBA{R: 0x67, G: 0x50, B: 0xa4, A: 0xff} // a mid-chroma violet, exercising the round trip off the greys
 	L, a, b := color.OKLabFromNRGBA(in)
 	wl, wa, wb := color.OKLab(in.R, in.G, in.B)
 	if L != wl || a != wa || b != wb {

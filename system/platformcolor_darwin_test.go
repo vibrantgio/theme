@@ -21,7 +21,7 @@ func TestTheMacOSMulticolourSettingAnswersSystemBlue(t *testing.T) {
 		t.Errorf("the absent AppleAccentColor key read as %d, want AccentDefault", got)
 	}
 
-	blue, ok := AccentBlue.Seed()
+	blue, ok := AccentBlue.Color()
 	if !ok {
 		t.Fatal("AccentBlue carries no colour")
 	}
@@ -49,11 +49,11 @@ func TestAFailedReadOfTheMacOSAccentColourAnswersSystemBlue(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
-	if a.Accent != AccentDefault || a.AccentSeedSet {
+	if a.Accent != AccentDefault || a.AccentColorSet {
 		t.Fatalf("a failed read produced %+v, want the no-colour appearance", a)
 	}
 
-	blue, _ := AccentBlue.Seed()
+	blue, _ := AccentBlue.Color()
 	if got, ok := PlatformColor(a); !ok || got != blue {
 		t.Errorf("a failed read answered %v (ok=%v), want systemBlue %v", got, ok, blue)
 	}
@@ -62,14 +62,14 @@ func TestAFailedReadOfTheMacOSAccentColourAnswersSystemBlue(t *testing.T) {
 // TestThePlatformColorIsSystemBlue pins the colour itself, independently of
 // the accent table: Apple's systemBlue in light appearance, sRGB.
 func TestThePlatformColorIsSystemBlue(t *testing.T) {
-	seed, ok := platformSeed()
+	c, ok := platformColor()
 	if !ok {
 		t.Fatal("macOS reports no colour for an application that has chosen none")
 	}
-	if seed.R != 0x00 || seed.G != 0x7A || seed.B != 0xFF || seed.A != 0xFF {
-		t.Errorf("the platform colour is %+v, want systemBlue 007AFF", seed)
+	if c.R != 0x00 || c.G != 0x7A || c.B != 0xFF || c.A != 0xFF {
+		t.Errorf("the platform colour is %+v, want systemBlue 007AFF", c)
 	}
-	if blue, _ := AccentBlue.Seed(); seed != blue {
+	if blue, _ := AccentBlue.Color(); c != blue {
 		t.Error("the platform colour is not the one AccentBlue carries")
 	}
 }

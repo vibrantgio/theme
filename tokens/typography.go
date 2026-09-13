@@ -29,7 +29,7 @@ func FontWeight(weight int) font.Weight {
 	return font.Weight(weight - WeightRegular)
 }
 
-// TextStyle describes one Material Design 3 type role: the typeface to shape
+// TextStyle describes one type role: the typeface to shape
 // with and its metrics. Size, LineHeight and Tracking (letter spacing) are in
 // device-independent pixels (dp); Weight is a CSS-style numeric weight where
 // regular is 400 and medium is 500.
@@ -124,7 +124,7 @@ func (s DocumentHeadingScale) Level(n int) TextStyle {
 	return s[n-1]
 }
 
-// Typography holds one TextStyle per Material Design 3 type role.
+// Typography holds one TextStyle per type role.
 type Typography struct {
 	DisplayLarge  TextStyle
 	DisplayMedium TextStyle
@@ -147,7 +147,7 @@ type Typography struct {
 	BodySmall  TextStyle
 
 	// Code is the monospace style code renders in — markdown code blocks and
-	// inline code spans. It is not one of the fifteen MD3 roles: MD3's 5×3
+	// inline code spans. It is not one of the fifteen roles: the 5×3
 	// grid has no code role, so Code sits outside the grid as a sixteenth
 	// style, carrying a body role's metrics on the mono face.
 	Code TextStyle
@@ -155,7 +155,7 @@ type Typography struct {
 	// DocumentHeadings is the heading scale for prose surfaces, derived from
 	// BodyLarge rather than borrowed from the Headline and Title roles; see
 	// [DocumentHeadingScale] for what it is for and how its steps are
-	// proportioned. It sits outside the MD3 grid the way Code does, and it
+	// proportioned. It sits outside that grid the way Code does, and it
 	// replaces none of the display roles: a screen's own headline keeps
 	// taking them.
 	DocumentHeadings DocumentHeadingScale
@@ -461,8 +461,9 @@ func jetbrainsEmojiTypography() Typography {
 	return jetbrainsEmojiTyp
 }
 
-// DefaultTypography is the canonical MD3 typography: Roboto throughout, the
-// Material Design 3 sizes, and the official MD3 line heights and tracking.
+// DefaultTypography is the canonical typography: Roboto throughout, with
+// the published sizes, line heights and tracking of the scale it was mapped
+// from.
 // Display, Headline, Title Large and Body roles are regular weight;
 // Title Medium/Small and the Label roles are medium. Code is BodyMedium's
 // metrics on Roboto Mono, Roboto's companion mono face; Faces carries

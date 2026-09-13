@@ -1,4 +1,4 @@
-package imageseed
+package imagecolor
 
 import (
 	"image"
@@ -384,7 +384,7 @@ var (
 	skyDark = rgb(0x19, 0x4a, 0x69) // hue 240, chroma 0.074
 )
 
-// TestOneHueAtSeveralDepthsIsOneCandidate: a sky is one seed however many
+// TestOneHueAtSeveralDepthsIsOneCandidate: a sky is one colour however many
 // depths it was sampled at, it holds the share of all of them, and the
 // swatch offered for it is the member that carries the hue most clearly.
 func TestOneHueAtSeveralDepthsIsOneCandidate(t *testing.T) {

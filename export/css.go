@@ -134,8 +134,8 @@ func platformVars(p tokens.PlatformColors) []cssVar {
 	return vars
 }
 
-// typeRoles orders the fifteen MD3 type roles under their CSS names, plus
-// code — the sixteenth style outside the MD3 grid, the mono face at
+// typeRoles orders the fifteen type roles under their CSS names, plus
+// code — the sixteenth style outside the type scale, the mono face at
 // body-medium's metrics (G-F0) — emitted last.
 var typeRoles = []struct {
 	name string
@@ -242,7 +242,7 @@ var densityMetrics = []struct {
 	{"padding-y", func(d tokens.Density) float32 { return d.PaddingY }},
 }
 
-// easeRoles orders the MD3 easing presets under their CSS names.
+// easeRoles orders the easing presets under their CSS names.
 var easeRoles = []struct {
 	name string
 	pick func(tokens.MotionScale) tokens.Bezier
@@ -409,8 +409,8 @@ func stylesCSS(s Snapshot) string {
 // It mirrors the Gio components, which are the sources of truth, and since
 // Phase CE every colour in it is the platform's own name for what that
 // element is on the platform — the same mapping components/button,
-// components/input, components/badge and the patterns took. No role, no
-// ramp step, no level and no derivation appears here.
+// components/input, components/badge and the patterns took. Nothing is
+// derived here: every value is a platform name.
 //
 // A coverage composites the same on both sides, which is what lets the
 // sheet name a platform colour and stop. AppKit's labels, seams, overlays
@@ -1043,8 +1043,8 @@ const componentClasses = `/* ---- Component classes ----
 
 /* The collapse affordance (drawToggle): a full-width ControlHeight row with
    the icon set's sidebar mark centred in it at icon.Size — the control's
-   inner content box, ControlHeight - 2*PaddingY — in the platform's secondary
-   label. Pointer-only, never a Tab stop. */
+   inner content box, ControlHeight - 2*PaddingY — in the platform's
+   secondary label. Pointer-only, never a Tab stop. */
 .sidebar-toggle {
   flex: none;
   display: flex;

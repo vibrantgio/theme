@@ -2,21 +2,18 @@
 // keeping outlives the application that generated it, and hands it back as
 // the options a live theme stream is built with.
 //
-// What is kept is one colour. [tokens.FromSeed] is a pure function of its
-// seed and reproduces its own output from the primary it pins, so the seed
-// alone regenerates every ramp, pin and on-colour of both schemes exactly —
-// there is nothing else to store, and storing the generated colours instead
-// would freeze a palette that the generator is still entitled to improve.
-// What is kept alongside it is provenance, not input: where the colour came
-// from and when it was kept, so a file found six months later can say what
-// it is.
+// What is kept is one colour: the theme colour the platform's accent rows
+// are rebuilt for. Nothing is derived from it beyond those rows, so there is
+// nothing else to store. What is kept alongside it is provenance, not input:
+// where the colour came from and when it was kept, so a file found six
+// months later can say what it is.
 //
 // # The file
 //
 // One JSON object:
 //
 //	{
-//	  "seed": "#e8112d",
+//	  "themeColour": "#e8112d",
 //	  "base": {
 //	    "light": "catppuccin-latte",
 //	    "dark": "catppuccin-mocha"
@@ -39,12 +36,13 @@
 //	  "saved": "2026-09-09T09:12:00Z"
 //	}
 //
-// The flag is a key beside "seed" rather than a word in "source", because
-// "source" is free text a chooser fills in and a picture may honestly be
-// called anything at all. Such a file carries no "seed" key, so a reader
-// written before the flag existed reads it as a file whose seed will not
-// parse and falls back to the platform's own colour — which is what the flag
-// asks for. A file with a seed and no flag pins that seed, as it always did.
+// The flag is a key beside "themeColour" rather than a word in "source",
+// because "source" is free text a chooser fills in and a picture may
+// honestly be called anything at all. Such a file carries no colour key, so
+// a reader written before the flag existed reads it as a file whose colour
+// will not parse and falls back to the platform's own colour — which is what
+// the flag asks for. A file with a colour and no flag pins that colour, as
+// it always did.
 //
 // It sits in an OS-appropriate config directory:
 //
@@ -58,21 +56,24 @@
 // everything the person opens wears it, so the directory is the design
 // system's, and one file serves every application that asks.
 //
-// The seed is spelled the way theme/export's theme.json spells it —
-// lowercase #rrggbb under the key "seed" — so the two files agree on how a
-// seed is written, and an exported theme.json dropped in as this file loads
-// without translation. Keys this package does not know are ignored.
+// The colour is spelled the way theme/export's theme.json spells it —
+// lowercase #rrggbb under the key "themeColour" — so the two files agree on
+// how it is written, and an exported theme.json dropped in as this file
+// loads without translation. A file written before the rename carries the
+// colour under "seed"; [Load] reads that key for one release and writes the
+// current one. Keys this package does not know are ignored.
 //
 // "base" is the second thing a person chooses: the name of the syntax
 // palette code is coloured from, one per appearance. It is a name and not a
-// palette for the same reason the seed is not a set of ramps — the styling
-// is derived from it, and the derivation is entitled to improve. This
+// palette for the same reason the theme colour is not a set of colours —
+// the styling is derived from it, and the derivation is entitled to
+// improve. This
 // package neither resolves the name nor judges it: it does not know what
 // styles exist, so an empty or unrecognised name is the reader's to fall
 // back on, and the fallback is whatever that reader's default base is.
 //
 // "mono" is the third: the typeface name fenced code wears. It sits beside
-// "seed" and "base", not under a "fonts" object — that nesting is the
+// "themeColour" and "base", not under a "fonts" object — that nesting is the
 // export tree's, and an exported theme.json dropped in as this file still
 // loads because unknown object keys are ignored. Empty, absent, or a name
 // this package does not ship is Roboto Mono, the default Code face. The
@@ -110,7 +111,7 @@
 //	th := system.LiveTheme(time.Second, brand.Kept().Options()...)
 //
 // The kept brand pins the palette pair; which side of it shows is still the
-// OS's to decide, and still changes live. Adoption replaces the seed, never
+// OS's to decide, and still changes live. Adoption replaces the colour, never
 // the light/dark switching.
 //
 // A missing file and an unreadable one are deliberately the same answer to
@@ -143,7 +144,7 @@ import (
 const dirName = "vibrantgio"
 
 // fileName is the file itself. It is theme/export's name for the same fact
-// on purpose: both files answer "which seed is this theme", and a reader
+// on purpose: both files answer "which colour is this theme", and a reader
 // that finds either knows what it is holding.
 const fileName = "theme.json"
 
@@ -154,15 +155,15 @@ const stylesDirName = "styles"
 
 // Brand is a kept brand colour with the provenance that explains it.
 //
-// The zero Brand is "nothing kept": Seed's alpha is zero, which no kept
+// The zero Brand is "nothing kept": ThemeColor's alpha is zero, which no kept
 // colour has, so [Brand.Chosen] can tell the two apart without a second
 // field and every method degrades to the package defaults.
 type Brand struct {
-	// Seed is the theme colour, opaque: the colour the platform's accent
+	// ThemeColor is the theme colour, opaque: the colour the platform's accent
 	// rows are rebuilt for wherever the platform paints its accent — the
 	// default button, the selection, the focus ring, the sidebar's pill.
 	// Nothing else derives from it.
-	Seed color.NRGBA
+	ThemeColor color.NRGBA
 
 	// Base names the syntax palettes code is coloured from, one per
 	// appearance. It is carried as a name: what resolves it is the
@@ -173,7 +174,7 @@ type Brand struct {
 	// did.
 	Base BasePair
 
-	// Mono names the typeface fenced code wears. It is a sibling of Seed
+	// Mono names the typeface fenced code wears. It is a sibling of ThemeColor
 	// and Base, spelled under the file key "mono". Empty is Roboto Mono —
 	// nothing chosen, the default Code face. The one other name this
 	// package applies is "JetBrains Mono"; any other string is stored as
@@ -190,10 +191,10 @@ type Brand struct {
 	// pinned, and the live theme derives from the colour the platform
 	// reports exactly as it does with no brand at all
 	// ([system.PlatformColor]). It is a state of its own and not an absent
-	// seed — a file that keeps nothing is not the same answer as a person
-	// choosing the platform's colour — and Seed is the zero colour while it
-	// is set. Base and Mono are kept alongside it as they are alongside a
-	// seed.
+	// colour — a file that keeps nothing is not the same answer as a person
+	// choosing the platform's colour — and ThemeColor is the zero colour
+	// while it is set. Base and Mono are kept alongside it as they are
+	// alongside a colour.
 	FollowSystem bool
 
 	// Saved is when the colour was kept. [Save] fills it with the current
@@ -234,7 +235,7 @@ func (p BasePair) Chosen() bool { return p.Light != "" || p.Dark != "" }
 // Chosen reports whether this Brand carries a colour. It is false for the
 // zero Brand — the value [Kept] returns when there is no file, or none that
 // parses.
-func (b Brand) Chosen() bool { return b.Seed.A != 0 }
+func (b Brand) Chosen() bool { return b.ThemeColor.A != 0 }
 
 // Typography returns the type roles the brand wears: CodeFace of Mono,
 // then WithEmoji, including when Mono is empty or unknown. A caller that
@@ -267,7 +268,7 @@ func (b Brand) Options() []system.Option {
 	}
 	opts := make([]system.Option, 0, 2)
 	if !b.FollowSystem {
-		opts = append(opts, system.WithThemeColor(b.Seed))
+		opts = append(opts, system.WithThemeColor(b.ThemeColor))
 	}
 	return append(opts, system.WithTypography(tokens.CodeFace(b.Mono).WithEmoji()))
 }
@@ -295,7 +296,7 @@ func StylesDir() (string, error) {
 
 // Kept is the forgiving read: the kept brand, or the zero [Brand] when
 // there is none to be had for any reason at all — no file, an unreadable
-// directory, a file that is not JSON, a seed that is not a colour. Nothing
+// directory, a file that is not JSON, a theme colour that is not a colour. Nothing
 // an application does with a brand is worth failing to start over, and the
 // answer it needs in every one of those cases is the same one.
 func Kept() Brand {
@@ -343,13 +344,19 @@ func LoadFrom(path string) (Brand, bool, error) {
 	b := Brand{Base: f.Base.pair(), Mono: strings.TrimSpace(f.Mono), Source: f.Source, FollowSystem: f.FollowSystem}
 	if !f.FollowSystem {
 		// A file that follows the system carries no colour, so there is
-		// none to hold against it; a file that does not is the seed and
-		// nothing without it.
-		seed, err := parseHex(f.Seed)
+		// none to hold against it; a file that does not is the colour and
+		// nothing without it. "seed" is the key this file carried before the
+		// colour took its own name; it is read for one release and never
+		// written.
+		hex := f.ThemeColor
+		if hex == "" {
+			hex = f.Seed
+		}
+		c, err := parseHex(hex)
 		if err != nil {
 			return Brand{}, false, fmt.Errorf("brand: load %s: %w", path, err)
 		}
-		b.Seed = seed
+		b.ThemeColor = c
 	}
 	if f.Saved != "" {
 		// An unreadable timestamp costs the provenance, not the brand: the
@@ -381,14 +388,14 @@ func SaveTo(path string, b Brand) error {
 	if b.Saved.IsZero() {
 		b.Saved = time.Now()
 	}
-	// A brand that follows the system writes no seed: the file says which
+	// A brand that follows the system writes no colour: the file says which
 	// colour was kept, and no colour was.
-	seed := hexRGB(b.Seed)
+	hex := hexRGB(b.ThemeColor)
 	if b.FollowSystem {
-		seed = ""
+		hex = ""
 	}
 	data, err := json.MarshalIndent(file{
-		Seed:         seed,
+		ThemeColor:   hex,
 		Base:         baseFrom(b.Base),
 		Mono:         strings.TrimSpace(b.Mono),
 		Source:       b.Source,
@@ -412,11 +419,14 @@ func SaveTo(path string, b Brand) error {
 // package makes once rather than a shape every caller has to hold a colour
 // in.
 type file struct {
+	ThemeColor string `json:"themeColour,omitempty"`
+	// Seed is the retired key the colour was written under before it took its own
+	// name. Read for one release, never written.
 	Seed   string     `json:"seed,omitempty"`
 	Base   *baseField `json:"base,omitempty"`
 	Mono   string     `json:"mono,omitempty"`
 	Source string     `json:"source,omitempty"`
-	// FollowSystem is absent from every file that pins a seed, so a file
+	// FollowSystem is absent from every file that pins a colour, so a file
 	// written before the flag existed reads as one that pins.
 	FollowSystem bool   `json:"followSystem,omitempty"`
 	Saved        string `json:"saved,omitempty"`
@@ -480,7 +490,7 @@ func (f *baseField) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// hexRGB writes a colour as lowercase #rrggbb. A kept seed is opaque, so
+// hexRGB writes a colour as lowercase #rrggbb. A kept colour is opaque, so
 // alpha is never written.
 func hexRGB(c color.NRGBA) string {
 	return fmt.Sprintf("#%02x%02x%02x", c.R, c.G, c.B)
@@ -488,16 +498,16 @@ func hexRGB(c color.NRGBA) string {
 
 // parseHex reads #rrggbb, in either case, and returns it opaque. Anything
 // else — an empty string, a name, a short form, trailing rubbish — is an
-// error, because a file whose seed cannot be read is a file with no brand
+// error, because a file whose colour cannot be read is a file with no brand
 // in it and saying so is more useful than guessing a colour.
 func parseHex(s string) (color.NRGBA, error) {
 	h := strings.TrimPrefix(strings.TrimSpace(s), "#")
 	if len(h) != 6 {
-		return color.NRGBA{}, fmt.Errorf("seed %q is not a #rrggbb colour", s)
+		return color.NRGBA{}, fmt.Errorf("theme colour %q is not a #rrggbb colour", s)
 	}
 	v, err := strconv.ParseUint(h, 16, 32)
 	if err != nil {
-		return color.NRGBA{}, fmt.Errorf("seed %q is not a #rrggbb colour", s)
+		return color.NRGBA{}, fmt.Errorf("theme colour %q is not a #rrggbb colour", s)
 	}
 	return color.NRGBA{R: uint8(v >> 16), G: uint8(v >> 8), B: uint8(v), A: 0xff}, nil
 }

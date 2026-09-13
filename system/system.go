@@ -27,12 +27,12 @@
 //	          via `defaults read -g`       normalized to [Accent] (throttled)
 //	Windows   no (always light)            yes — HKCU\Software\Microsoft\
 //	                                       Windows\DWM AccentColor, an
-//	                                       arbitrary colour → AccentSeed
+//	                                       arbitrary colour → AccentColor
 //	Linux     no (always light)            GNOME 47+: the named accent via
 //	                                       `gsettings`, mapped to libadwaita's
-//	                                       published colour → AccentSeed
+//	                                       published colour → AccentColor
 //	                                       KDE Plasma: kdeglobals [General]
-//	                                       AccentColor r,g,b → AccentSeed
+//	                                       AccentColor r,g,b → AccentColor
 //	                                       other desktops, older GNOME, or a
 //	                                       KDE scheme with no explicit accent:
 //	                                       none
@@ -58,7 +58,7 @@
 // Dark-mode sources for Windows and Linux are a later milestone. The two
 // accent shapes are deliberate: macOS's accent is one of eight named
 // choices, carried as the [Accent] enum; Windows and Linux accents are
-// arbitrary colours, carried raw in Appearance.AccentSeed. Both feed the
+// arbitrary colours, carried raw in Appearance.AccentColor. Both feed the
 // same rebuild of the set's accent rows.
 //
 // The streams are shared. One [FromSource]/[Live]/[LiveTheme] value
@@ -111,20 +111,20 @@ type Appearance struct {
 	// override", so the zero Appearance keeps the platform's own accent.
 	Accent Accent
 
-	// AccentSeed is the OS accent as a raw colour, for platforms whose
+	// AccentColor is the OS accent as a raw colour, for platforms whose
 	// accent is an arbitrary colour rather than a named choice: the
 	// Windows shim decodes the DWM AccentColor registry value into it, and
 	// the Linux shim the GNOME named accent or the KDE kdeglobals RGB.
-	// It is meaningful only when AccentSeedSet is true; when set it takes
+	// It is meaningful only when AccentColorSet is true; when set it takes
 	// precedence over Accent when the accent rows are rebuilt (an explicit
 	// WithThemeColor still beats both).
-	AccentSeed color.NRGBA
+	AccentColor color.NRGBA
 
-	// AccentSeedSet reports whether AccentSeed carries a value. A separate
+	// AccentColorSet reports whether AccentColor carries a value. A separate
 	// flag rather than a sentinel colour keeps every colour — including
 	// black — representable, and keeps Appearance comparable for
 	// rx.DistinctUntilChanged.
-	AccentSeedSet bool
+	AccentColorSet bool
 }
 
 // Source reads the current OS appearance state.
@@ -263,7 +263,7 @@ func WithTypography(t tokens.Typography) Option {
 // [WithThemeColor] wins outright — the application chose its colour, and
 // the OS accent is ignored. With none, macOS carries what AppKit reports,
 // and Windows and Linux rebuild the recorded set's accent rows for the
-// colour their desktop publishes — a raw Appearance.AccentSeed, else the
+// colour their desktop publishes — a raw Appearance.AccentColor, else the
 // colour the [Accent] enum carries. An accent change re-emits the theme.
 //
 // The stream also composes the OS accessibility preferences
@@ -325,8 +325,8 @@ func (c *config) theme(v rx.Tuple2[Appearance, a11y.A11yPrefs]) theme.Theme {
 
 // PlatformColor is the colour a stream with nothing chosen derives its pair
 // from for this appearance, and false where there is nothing to derive from:
-// a raw Appearance.AccentSeed (the arbitrary colour a Windows or Linux
-// desktop reports), else the seed the [Accent] enum carries, else the colour
+// a raw Appearance.AccentColor (the arbitrary colour a Windows or Linux
+// desktop reports), else the colour the [Accent] enum carries, else the colour
 // this platform paints an application that has chosen none — systemBlue on
 // macOS, nothing on Windows and Linux, where such a stream keeps the
 // package's own pair.
@@ -335,13 +335,13 @@ func (c *config) theme(v rx.Tuple2[Appearance, a11y.A11yPrefs]) theme.Theme {
 // an application can offer that colour as a choice and draw it. Reading
 // Appearance.Accent alone is not the same question and answers it wrongly on
 // the setting most Macs are on: Multicolour is AccentDefault, which carries
-// no seed of its own.
-func PlatformColor(a Appearance) (seed color.NRGBA, ok bool) {
-	if a.AccentSeedSet {
-		return a.AccentSeed, true
+// no colour of its own.
+func PlatformColor(a Appearance) (c color.NRGBA, ok bool) {
+	if a.AccentColorSet {
+		return a.AccentColor, true
 	}
-	if seed, ok := a.Accent.Seed(); ok {
-		return seed, true
+	if c, ok := a.Accent.Color(); ok {
+		return c, true
 	}
-	return platformSeed()
+	return platformColor()
 }

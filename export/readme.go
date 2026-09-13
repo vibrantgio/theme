@@ -68,13 +68,13 @@ func readmeMD(s Snapshot) string {
 	for i, role := range typeRoles {
 		typeNames[i] = role.name
 	}
-	fmt.Fprintf(&b, "| `--font-<role>-*` | roles %s; each with `-size`, `-line-height`, `-weight`, `-tracking` | px sizes, CSS numeric weights; code is the mono style outside the MD3 grid, at body-medium's metrics |\n", strings.Join(typeNames, ", "))
+	fmt.Fprintf(&b, "| `--font-<role>-*` | roles %s; each with `-size`, `-line-height`, `-weight`, `-tracking` | px sizes, CSS numeric weights; code is the mono style outside the type grid, at body-medium's metrics |\n", strings.Join(typeNames, ", "))
 	fmt.Fprintf(&b, "| `--density-<metric>` | %s, `--density-min-hit-target` | control metrics, px; `:root` is comfortable, `.compact` overrides all but the hit-target floor |\n", joinTokens("--density-", densityNames()))
 	fmt.Fprintf(&b, "| `--space-<key>` | %s | the 4-pt spacing grid, px |\n", joinTokens("--space-", spaceNames()))
 	fmt.Fprintf(&b, "| `--radius-<key>` | %s | corner radii, Tailwind naming, px |\n", joinTokens("--radius-", radiusNames()))
 	fmt.Fprintf(&b, "| `--shadow-<level>` | %s | dp box-shadows — the cue a floating transient carries (menus, dialogs, tooltips) over the platform fill it stands in; resting surfaces cast none |\n", joinTokens("--shadow-", shadowNames()))
-	fmt.Fprintf(&b, "| `--ease-<name>` | %s | MD3 easing presets as `cubic-bezier()`; emphasized is the documented single-bezier stand-in for MD3's two-segment path |\n", joinTokens("--ease-", easeNames()))
-	fmt.Fprintf(&b, "| `--duration-<stop>` | %s | MD3-pinned duration stops, ms; the reduce-motion variant zeroes them |\n", joinTokens("--duration-", durationNames()))
+	fmt.Fprintf(&b, "| `--ease-<name>` | %s | easing presets as `cubic-bezier()`; emphasized is the documented single-bezier stand-in for the published two-segment path |\n", joinTokens("--ease-", easeNames()))
+	fmt.Fprintf(&b, "| `--duration-<stop>` | %s | duration stops, ms; the reduce-motion variant zeroes them |\n", joinTokens("--duration-", durationNames()))
 	b.WriteString("| interaction states | `--focus-ring-width` | the ring's 2 px stroke, mode-invariant, unlike the ring's colour, which is `--platform-keyboard-focus-indicator` and flips with the appearance |\n\n")
 
 	b.WriteString("## Component classes\n\n" +
@@ -85,7 +85,7 @@ func readmeMD(s Snapshot) string {
 		"1/2 dp input borders) — so it flips to `.dark` and densifies to\n" +
 		"`.compact` with the sheet. Every colour in it is the platform's own\n" +
 		"name for what that element is on the platform, the same mapping the Gio\n" +
-		"components take: no role, no ramp step, no level, no derivation. Every\n" +
+		"components take: nothing is derived, every value is a platform name. Every\n" +
 		"pointer/keyboard state rule carries a forcing twin class (`.is-hover`,\n" +
 		"`.is-active`, `.is-focus`, `.is-checked`) grouped into the same rule, so\n" +
 		"a static page can show a state with exactly the live declarations;\n" +
@@ -200,8 +200,8 @@ func readmeMD(s Snapshot) string {
 		"`theme.json` records both settings' metrics plus which one the theme runs.\n\n")
 
 	b.WriteString("## Motion\n\n" +
-		"The MD3 easing presets are emitted as `cubic-bezier()` variables and the\n" +
-		"five duration stops in ms, each pinned to one MD3 duration role. The spring\n" +
+		"The easing presets are emitted as `cubic-bezier()` variables and the\n" +
+		"five duration stops in ms, each pinned to one duration role. The spring\n" +
 		"presets (default/snappy/gentle) are Go-side damped-oscillator physics with\n" +
 		"no CSS counterpart, so they live only in `theme.json`'s motion parameters.\n" +
 		"Under the OS reduce-motion preference the theme emits the same scale with\n" +
@@ -214,7 +214,7 @@ func readmeMD(s Snapshot) string {
 		"motion set (durations, easings, springs). A round-trip test in\n" +
 		"`theme/export` asserts the file and the sheet agree value for value, so the\n" +
 		"file, not this text, is the contract. To change the theme colour, rerun\n" +
-		"`vg-tokens -seed #rrggbb`; every page here reflows because nothing in them\n" +
+		"`vg-tokens -color #rrggbb`; every page here reflows because nothing in them\n" +
 		"is hard-coded.\n\n" +
 		"Fonts: the tokens name " + s.Typography.BodyLarge.Typeface + " (and " + s.Typography.Code.Typeface + " for code); the pages fall\n" +
 		"back to system faces when they are not installed. The OS increased-contrast\n" +

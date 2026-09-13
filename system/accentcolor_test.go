@@ -29,11 +29,11 @@ func TestNRGBAFromABGR(t *testing.T) {
 	}
 }
 
-// TestGnomeAccentSeedNames pins the GNOME name → colour table against
+// TestGnomeAccentColorNames pins the GNOME name → colour table against
 // libadwaita's published accent_bg_color values, independently of the
 // package's own table, so a silent edit fails here. Inputs carry the
 // GVariant quoting and trailing newline gsettings actually emits.
-func TestGnomeAccentSeedNames(t *testing.T) {
+func TestGnomeAccentColorNames(t *testing.T) {
 	cases := []struct {
 		out  string
 		want color.NRGBA
@@ -49,32 +49,32 @@ func TestGnomeAccentSeedNames(t *testing.T) {
 		{"'slate'\n", color.NRGBA{R: 0x6F, G: 0x83, B: 0x96, A: 0xFF}},
 	}
 	for _, tc := range cases {
-		got, ok := gnomeAccentSeed(tc.out)
+		got, ok := gnomeAccentColor(tc.out)
 		if !ok {
-			t.Errorf("gnomeAccentSeed(%q): not ok", tc.out)
+			t.Errorf("gnomeAccentColor(%q): not ok", tc.out)
 			continue
 		}
 		if got != tc.want {
-			t.Errorf("gnomeAccentSeed(%q) = %+v, want %+v", tc.out, got, tc.want)
+			t.Errorf("gnomeAccentColor(%q) = %+v, want %+v", tc.out, got, tc.want)
 		}
 	}
 	// Unquoted input (defensive: some gsettings frontends strip quotes).
-	if got, ok := gnomeAccentSeed("blue"); !ok || got != (color.NRGBA{R: 0x35, G: 0x84, B: 0xE4, A: 0xFF}) {
-		t.Errorf("gnomeAccentSeed(\"blue\") = %+v, %v; want the blue seed, true", got, ok)
+	if got, ok := gnomeAccentColor("blue"); !ok || got != (color.NRGBA{R: 0x35, G: 0x84, B: 0xE4, A: 0xFF}) {
+		t.Errorf("gnomeAccentColor(\"blue\") = %+v, %v; want the blue colour, true", got, ok)
 	}
 }
 
-// TestGnomeAccentSeedRejects verifies unknown names, empty output and a
+// TestGnomeAccentColorRejects verifies unknown names, empty output and a
 // pre-47 GNOME's error text all fold to "no accent".
-func TestGnomeAccentSeedRejects(t *testing.T) {
+func TestGnomeAccentColorRejects(t *testing.T) {
 	for _, out := range []string{
 		"",
 		"\n",
 		"'magenta'\n",
 		"No such key “accent-color”\n",
 	} {
-		if _, ok := gnomeAccentSeed(out); ok {
-			t.Errorf("gnomeAccentSeed(%q): ok = true, want false", out)
+		if _, ok := gnomeAccentColor(out); ok {
+			t.Errorf("gnomeAccentColor(%q): ok = true, want false", out)
 		}
 	}
 }

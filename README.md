@@ -21,8 +21,9 @@ is why all seven [workbench](https://github.com/vibrantgio/workbench)
 applications bootstrap the same two lines and none of them asks the OS about
 appearance a second time. The same stream carries the OS accent colour — an
 accent change re-emits the theme just like a dark-mode flip — and while the OS
-reports increased contrast, the `Color` observable emits a high-contrast
-variant derived from the resolved palette's own seed. The only light/dark
+reports increased contrast, there is no branch at all: the platform paints
+its own semantic colours differently under "Increase Contrast", and a live
+read carries what it paints. The only light/dark
 branches left in the seven are the two that pick a chroma syntax theme for a
 markdown code block, and they branch on the luminance of the background token
 rather than on the OS, because chroma's themes are the one visual thing the
@@ -86,7 +87,7 @@ github.com/reactivego/rx v0.3.0 and Go 1.25.1.
 
 | Package | |
 | --- | --- |
-| `tokens` | The typed design values, all of them: `PlatformColors`, the platform's own colour set — one field per AppKit semantic colour name, with `PlatformLight` and `PlatformDark` carrying the recorded values and `WithAccent` rebuilding the rows the platform derives from the accent; `Typography` — fifteen MD3 text roles plus `Code` and `DocumentHeadings`, the six-step heading scale prose surfaces set their headings in, carrying the face collection, `WithFaces` to widen it, and two shapers cached apart: `Shaper()` with the system fallback for applications and `DeterministicShaper()` with the collection pinned for golden tests; `Density` (Comfortable 36 dp / Compact 28 dp control heights); `MotionScale` (duration stops, easings, spring presets, and `Reduced()` for the OS reduce-motion preference); `ElevationScale`, the shadow depth each of the six levels casts (a level's FILL is a platform name, not a derivation); and the 4-pt spacing and named radius scales. |
+| `tokens` | The typed design values, all of them: `PlatformColors`, the platform's own colour set — one field per AppKit semantic colour name, with `PlatformLight` and `PlatformDark` carrying the recorded values and `WithAccent` rebuilding the rows the platform derives from the accent; `Typography` — fifteen text roles plus `Code` and `DocumentHeadings`, the six-step heading scale prose surfaces set their headings in, carrying the face collection, `WithFaces` to widen it, and two shapers cached apart: `Shaper()` with the system fallback for applications and `DeterministicShaper()` with the collection pinned for golden tests; `Density` (Comfortable 36 dp / Compact 28 dp control heights); `MotionScale` (duration stops, easings, spring presets, and `Reduced()` for the OS reduce-motion preference); `ElevationScale`, the shadow depth each of the six levels casts (a level's FILL is a platform name, not a derivation); and the 4-pt spacing and named radius scales. |
 | `color` | The generative colour engine the palettes are derived with — sRGB ↔ CIELAB and OKLCh conversions and the APCA contrast metric that gates every generated pair. Mathematics only; no colour values live here. |
 | `theme` | `Theme`: one `rx.Observable` per token category, so a consumer subscribes to just the categories it reads. `Default()` and `AutoLightDark()` construct one — note `AutoLightDark()` reads the clock (hours 7–17 light), not the OS; `system.LiveTheme` is the real tracker. |
 | `system` | The OS appearance — dark mode and accent colour — polled behind a `Source` interface and published as an observable that emits only on change. `Live` gives the raw `Appearance`; `LiveTheme` gives the `theme.Theme` a window wants, with a `WithThemeColor` option for the accent an application chooses. Dark mode is read on macOS; the accent is read on all three platforms — macOS's accent choice, the Windows DWM registry value, GNOME's named accent and KDE's `kdeglobals` RGB. |
@@ -225,12 +226,13 @@ Honest about what does not work yet:
   `Theme.Type` is deleted rather than retyped because nothing read it — the
   in-org consumers moved to `Typography` in C1.1, E1.2 and F3.3, and
   `spectrum/export` never consumed it at all.
-- **v0.2.0 was a breaking release too.** F3.3's shim sweep deleted the
-  `spectrum/transition` alias, `ColorTokens`' five MD3 alias fields
-  (`OnBackground`, `OnSurface`, `SurfaceVariant`, `OnSurfaceVariant`,
-  `Outline`) and elevation levels 4 and 5. Read the deprecation notes on
-  v0.1.0's fields for what each one resolves to; every deleted colour alias
-  was a documented ramp step and stays reachable as that step.
+- **The derived colour set is gone.** `ColorTokens` and everything that fed
+  it — the generated colour scales, the tinted fills, the walks that read a
+  fill off a level — were deleted in the platform round, along with
+  `spectrum/transition`'s alias. There is no migration table for them,
+  because nothing derived replaces a derived value: read the platform name
+  for what the thing IS. `PlatformColors` is the whole colour surface, and
+  `theme/export` emits it under the platform's own names.
 
 ## License
 

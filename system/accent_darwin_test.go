@@ -29,18 +29,18 @@ func TestAccentFromIndex(t *testing.T) {
 	}
 }
 
-// TestAccentSeedTotal verifies Seed() is defined for every named accent
+// TestAccentColorTotal verifies Color() is defined for every named accent
 // except AccentDefault, and undefined outside the enum, so the palette
 // fallback path is exactly the "no override" set.
-func TestAccentSeedTotal(t *testing.T) {
+func TestAccentColorTotal(t *testing.T) {
 	for a := AccentRed; a <= AccentGraphite; a++ {
-		if _, ok := a.Seed(); !ok {
-			t.Errorf("Accent(%d).Seed() not defined", a)
+		if _, ok := a.Color(); !ok {
+			t.Errorf("Accent(%d).Color() not defined", a)
 		}
 	}
 	for _, a := range []Accent{AccentDefault, Accent(-1), AccentGraphite + 1} {
-		if _, ok := a.Seed(); ok {
-			t.Errorf("Accent(%d).Seed() should be undefined", a)
+		if _, ok := a.Color(); ok {
+			t.Errorf("Accent(%d).Color() should be undefined", a)
 		}
 	}
 }

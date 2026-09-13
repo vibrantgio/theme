@@ -495,7 +495,7 @@ func TestThemeJSONReproduces(t *testing.T) {
 	// The theme colour, under the key theme/brand's own file carries, so
 	// an exported theme.json loads there without translation.
 	if got, want := p.ThemeColor, wantHex(snap.PlatformLight.ControlAccent); got != want {
-		t.Errorf("seed = %q, want the theme colour %q", got, want)
+		t.Errorf("the theme colour is %q, want %q", got, want)
 	}
 
 	// The platform's set, name for name, against the sheet's own blocks.

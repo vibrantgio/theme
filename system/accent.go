@@ -29,13 +29,13 @@ const (
 	AccentGraphite
 )
 
-// accentSeeds are the colours each named accent stands for: Apple's
+// accentColors are the colours each named accent stands for: Apple's
 // published System Colors (HIG "System Colors", macOS light appearance,
 // sRGB). Graphite uses systemGray. On a platform with no colour set of its
 // own the accent rows of the recorded set are rebuilt for this colour
 // through tokens.PlatformColors.WithAccent, so an accented button matches
 // the OS accent.
-var accentSeeds = map[Accent]color.NRGBA{
+var accentColors = map[Accent]color.NRGBA{
 	AccentRed:      {R: 0xFF, G: 0x3B, B: 0x30, A: 0xFF}, // systemRed
 	AccentOrange:   {R: 0xFF, G: 0x95, B: 0x00, A: 0xFF}, // systemOrange
 	AccentYellow:   {R: 0xFF, G: 0xCC, B: 0x00, A: 0xFF}, // systemYellow
@@ -46,9 +46,9 @@ var accentSeeds = map[Accent]color.NRGBA{
 	AccentGraphite: {R: 0x8E, G: 0x8E, B: 0x93, A: 0xFF}, // systemGray
 }
 
-// Seed returns the accent's seed colour. ok is false for AccentDefault and
+// Color returns the accent's colour. ok is false for AccentDefault and
 // any value outside the enum — the "keep the theme's own palette" cases.
-func (a Accent) Seed() (seed color.NRGBA, ok bool) {
-	seed, ok = accentSeeds[a]
-	return seed, ok
+func (a Accent) Color() (c color.NRGBA, ok bool) {
+	c, ok = accentColors[a]
+	return c, ok
 }

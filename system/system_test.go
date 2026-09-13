@@ -200,7 +200,7 @@ func TestFromSourceThemeWithThemeColorRebuildsTheAccentRows(t *testing.T) {
 func TestFromSourceThemeWithThemeColorBeatsTheOSAccent(t *testing.T) {
 	for _, a := range []system.Appearance{
 		{Accent: system.AccentPurple},
-		{AccentSeed: rawAccent, AccentSeedSet: true},
+		{AccentColor: rawAccent, AccentColorSet: true},
 	} {
 		src := &fakeSource{vals: []system.Appearance{a}}
 		themes, err := collect(system.FromSourceTheme(src, time.Hour, system.WithThemeColor(customThemeColor)).Take(1))
@@ -219,12 +219,12 @@ func TestFromSourceThemeWithThemeColorBeatsTheOSAccent(t *testing.T) {
 }
 
 // rawAccent is an arbitrary colour of the kind the Windows registry or a
-// KDE kdeglobals delivers — deliberately none of the enum accent seeds.
+// KDE kdeglobals delivers — deliberately none of the enum accent colours.
 var rawAccent = color.NRGBA{R: 0x00, G: 0x78, B: 0xD7, A: 0xFF} // Windows default blue
 
-func TestFromSourceEmitsOnAccentSeedChange(t *testing.T) {
-	a := system.Appearance{AccentSeed: rawAccent, AccentSeedSet: true}
-	b := system.Appearance{AccentSeed: color.NRGBA{R: 0xE6, G: 0x2D, B: 0x42, A: 0xFF}, AccentSeedSet: true}
+func TestFromSourceEmitsOnAccentColorChange(t *testing.T) {
+	a := system.Appearance{AccentColor: rawAccent, AccentColorSet: true}
+	b := system.Appearance{AccentColor: color.NRGBA{R: 0xE6, G: 0x2D, B: 0x42, A: 0xFF}, AccentColorSet: true}
 	src := &fakeSource{vals: []system.Appearance{a, a, b}}
 
 	got, err := collect(system.FromSource(src, time.Millisecond).Take(2))
@@ -232,7 +232,7 @@ func TestFromSourceEmitsOnAccentSeedChange(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(got) != 2 || got[0] != a || got[1] != b {
-		t.Errorf("seed transitions wrong: got %+v", got)
+		t.Errorf("colour transitions wrong: got %+v", got)
 	}
 }
 
@@ -416,11 +416,11 @@ func TestPlatformColorWalksTheFallthrough(t *testing.T) {
 		want color.NRGBA
 		ok   bool
 	}{
-		{"a desktop reporting a colour of its own", system.Appearance{AccentSeed: desktop, AccentSeedSet: true}, desktop, true},
-		{"a macOS accent colour chosen by name", system.Appearance{Accent: system.AccentPink}, seedOf(t, system.AccentPink), true},
+		{"a desktop reporting a colour of its own", system.Appearance{AccentColor: desktop, AccentColorSet: true}, desktop, true},
+		{"a macOS accent colour chosen by name", system.Appearance{Accent: system.AccentPink}, colorOf(t, system.AccentPink), true},
 		// The raw colour wins where a source ever reports both, which is the
 		// order the stream resolves them in.
-		{"both", system.Appearance{AccentSeed: desktop, AccentSeedSet: true, Accent: system.AccentPink}, desktop, true},
+		{"both", system.Appearance{AccentColor: desktop, AccentColorSet: true, Accent: system.AccentPink}, desktop, true},
 		// Multicolour, an unsupported desktop, a failed read: the platform's
 		// own colour, where it has one.
 		{"nothing chosen", system.Appearance{}, platformOwnColor(t), runtime.GOOS == "darwin"},
@@ -445,12 +445,12 @@ func platformOwnColor(t *testing.T) color.NRGBA {
 	return c
 }
 
-// seedOf is the colour one named macOS accent carries.
-func seedOf(t *testing.T, a system.Accent) color.NRGBA {
+// colorOf is the colour one named macOS accent carries.
+func colorOf(t *testing.T, a system.Accent) color.NRGBA {
 	t.Helper()
-	seed, ok := a.Seed()
+	c, ok := a.Color()
 	if !ok {
-		t.Fatalf("%v carries no seed", a)
+		t.Fatalf("%v carries no colour", a)
 	}
-	return seed
+	return c
 }

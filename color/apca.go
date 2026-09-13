@@ -105,9 +105,9 @@ func Magnitude(text, background stdcolor.NRGBA) float64 {
 // Candidates are offered in preference order, so a fill that two colours
 // serve equally keeps the one its derivation named first.
 //
-// This is how every on-colour in the palette is chosen. Measuring both ends
+// This is how a foreground is chosen over a fill. Measuring both ends
 // of the available axis and keeping the better one — rather than taking one
-// end while it clears a floor — is what puts white on a saturated mid-tone
+// end while it clears a floor — is what puts white on a saturated mid-lightness fill
 // blue, where a luminance-only measure ranks black above it and every eye
 // disagrees.
 //
