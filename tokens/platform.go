@@ -13,14 +13,16 @@
 // on every fill. Nothing here is pre-composited: a caller that paints one of
 // these over something else composites it there.
 //
-// The catalogue records alpha to two decimals, so each field stores
-// round(a × 255) of what was written down — at most one 255th away from what
-// AppKit reported. On macOS the live reader in theme/system removes that
-// gap: it asks AppKit for every one of these names itself, and these
-// recorded sets are what the other platforms — and every test — read.
+// The catalogue records alpha as the byte AppKit reports, re-read
+// 2026-09-13: every alpha the platform names is exactly n/255, so a field
+// stores that n and nothing rounds. Label is 216, not the 217 a two-decimal
+// 0.85 would round to. On macOS the live reader in theme/system asks AppKit
+// for every one of these names itself; these recorded sets are what the
+// other platforms — and every test — read.
 //
-// Ten fields are not AppKit's. The platform paints a sidebar, a grouped
-// box, a push button, a hovered and a pressed control, the shadow under a
+// Eleven fields are not AppKit's. The platform paints a sidebar, a grouped
+// box, a selected sidebar row, a push button, a hovered and a pressed
+// control, the shadow under a
 // floating pane, a text field's hairline, an overlay scrollbar's knob, a
 // list's alternating row and the dim a sheet lays over the window it
 // interrupts without giving any of them an NSColor name, so those fills
@@ -34,20 +36,23 @@
 //
 //	field            light          dark           provenance
 //	-----            -----          ----           ----------
-//	SidebarMaterial  #ffffff        #232a2e        measured: the chrome band and the list below it
+//	SidebarMaterial  #f7f7f7        #1c1c1c        measured: the chrome band, wallpaper tinting off
+//	SidebarSelection #178bfb        #1994fc        measured: the selected sidebar row's pill
 //	CardFill         #f7f7f7        #2a3034        measured: the System Settings grouped box
 //	PushButtonFill   #ececec        #333a3f        measured: the Save dialog's push button at rest
 //	HoverOverlay     #000000 a0.051 #ffffff a0.094 measured: a toolbar button under the pointer
 //	PressOverlay     #000000 a0.098 #ffffff a0.098 measured: a push button held down
 //	FloatingShadow   #000000 a0.075 #000000 a0.075 measured: the sidebar shadow's peak coverage, 24 px of reach
 //	FieldEdge        #f3f3f3        #2c3338        measured: the unfocused text field's hairline in the Save dialog
-//	ScrollbarThumb   #000000 a0.337 #ffffff a0.337 measured: the overlay scrollbar's knob over its track
+//	ScrollbarThumb   #000000 a0.572 #ffffff a0.572 measured: the overlay scrollbar's knob over its track
 //	AlternatingContentBackground  #f4f5f5  #ffffff a0.05  measured: the second of alternatingContentBackgroundColors, and Finder's list stripes
 //	Scrim            #000000 a0.20  #000000 a0.26  measured: the dim under a Save sheet in save-dialog-{light,dark}.png
 //
-// Every one of these was read on a desktop whose "Tint window background
-// with wallpaper colour" is on, which is what carries the chrome material
-// and the grouped box off neutral grey in the dark scheme.
+// The chrome material and the sidebar's pill were read with "Tint window
+// background with wallpaper colour" off, so they carry the platform's own
+// shade and not the desktop picture's. The grouped box, the push button,
+// the field edge and the scrim were read with it on, which is what carries
+// them off neutral grey in the dark scheme.
 package tokens
 
 import (
@@ -144,17 +149,30 @@ type PlatformColors struct {
 	Highlight color.NRGBA
 
 	// SidebarMaterial is the chrome regions' fill: sidebars, toolbars,
-	// navbars, inspectors, status bars. Dark is #232a2e, a flat-region
-	// sample of mail-window.png — the toolbar band at y 1–31 and the
-	// flush mailbox list below the band's hairline carry the same value,
-	// and finder-window.png carries it again as the window's own plane
-	// behind the floating pane. Light is #ffffff, the same regions read
-	// off mail-window-light.png and finder-window-light.png; System
-	// Settings' own plane agrees in both schemes. So on macOS 26 the
-	// light chrome is the content's fill exactly, and a consumer that
-	// needs the chrome to read apart from the content in the light
-	// scheme cannot get that separation from this value.
+	// navbars, inspectors, status bars. #f7f7f7 light and #1c1c1c dark,
+	// flat-region samples of Finder's sidebar in
+	// finder-window-untinted-light.png and finder-window-untinted-dark.png,
+	// read with window-background wallpaper tinting off so the value is the
+	// platform's own and not the desktop picture's. The content beside it
+	// reads #ffffff and #1e1e1e in the same captures, so the chrome is a
+	// shade under the content in both appearances. The platform paints the
+	// dark band #1b1b1b through #1d1d1d down its height; #1c1c1c is what it
+	// holds over the band's flat middle, and this set paints it flat.
 	SidebarMaterial color.NRGBA `appkit:"-"`
+
+	// SidebarSelection is the pill the platform lays under the selected row
+	// of a sidebar: #178bfb light and #1994fc dark, flat-region samples of
+	// Voice Memos' selected row in voicememos-sidebar-light.png (x 74-273,
+	// y 363-394) and voicememos-sidebar-dark.png, both 32 tall and cornered
+	// at 8, with a white label.
+	//
+	// It is deliberately neither ControlAccent nor
+	// SelectedContentBackground. The pill follows the user's accent, so
+	// [PlatformColors.WithAccent] moves it; but the platform lifts it above
+	// the accent's own #007aff over the chrome material, and a content
+	// list's selected row wears a different colour again. So the lift is
+	// recorded as the pixel in both appearances.
+	SidebarSelection color.NRGBA `appkit:"-"`
 
 	// CardFill is the fill of the platform's box — a card, a grouped
 	// box, a filled inset: #f7f7f7 over a #ffffff plane light, #2a3034
@@ -221,9 +239,12 @@ type PlatformColors struct {
 
 	// ScrollbarThumb is the overlay scrollbar's thumb: Label's own black
 	// or white at the coverage the platform's knob measures, laid over the
-	// track. The coverage is 0.337, read off textedit-scrollbar.png — the
-	// knob reads #9d9fa1 over a #1a2124 track, which white at 0.337
-	// reproduces within one 255th on every channel. No stored capture
+	// track. The coverage is 0.572 — 146/255 — read off
+	// textedit-scrollbar.png: the knob reads #9d9fa1 over a #1a2124 track,
+	// which white at that coverage reproduces within one 255th on every
+	// channel when flattened in encoded sRGB, the space the platform
+	// composites in. The 0.337 this row carried before was fitted through a
+	// blend in linear light. No stored capture
 	// holds a light-appearance overlay scrollbar (the platform hides the
 	// overlay bar unless it is being operated, and the light window
 	// captures caught none), so the light row carries the dark row's
@@ -265,7 +286,7 @@ type PlatformColors struct {
 var (
 	PlatformLight = PlatformColors{
 		WindowBackground:    color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
-		UnderPageBackground: color.NRGBA{R: 0x96, G: 0x96, B: 0x96, A: 0xe6},
+		UnderPageBackground: color.NRGBA{R: 0x96, G: 0x96, B: 0x96, A: 0xe5},
 		ControlBackground:   color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
 		TextBackground:      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
 
@@ -276,29 +297,29 @@ var (
 
 		FindHighlight: color.NRGBA{R: 0xfa, G: 0xef, B: 0xbd, A: 0xff},
 
-		Separator: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x1a},
+		Separator: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x19},
 		Grid:      color.NRGBA{R: 0xe6, G: 0xe6, B: 0xe6, A: 0xff},
 
-		Label:           color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xd9},
-		SecondaryLabel:  color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x80},
+		Label:           color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xd8},
+		SecondaryLabel:  color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x7f},
 		TertiaryLabel:   color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x42},
-		QuaternaryLabel: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x1a},
+		QuaternaryLabel: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x19},
 
 		Text:            color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
-		PlaceholderText: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x80},
+		PlaceholderText: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x7f},
 		SelectedText:    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
 		Link:            color.NRGBA{R: 0x00, G: 0x68, B: 0xda, A: 0xff},
-		HeaderText:      color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xd9},
+		HeaderText:      color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xd8},
 
 		Control:                      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
-		ControlText:                  color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xd9},
-		DisabledControlText:          color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x40},
+		ControlText:                  color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xd8},
+		DisabledControlText:          color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x3f},
 		SelectedControl:              color.NRGBA{R: 0xb3, G: 0xd7, B: 0xff, A: 0xff},
-		SelectedControlText:          color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xd9},
+		SelectedControlText:          color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xd8},
 		AlternateSelectedControlText: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
 
 		ControlAccent:          color.NRGBA{R: 0x00, G: 0x7a, B: 0xff, A: 0xff},
-		KeyboardFocusIndicator: color.NRGBA{R: 0x00, G: 0x67, B: 0xf4, A: 0x80},
+		KeyboardFocusIndicator: color.NRGBA{R: 0x00, G: 0x67, B: 0xf4, A: 0x7f},
 
 		SystemRed:    color.NRGBA{R: 0xff, G: 0x38, B: 0x3c, A: 0xff},
 		SystemOrange: color.NRGBA{R: 0xff, G: 0x8d, B: 0x28, A: 0xff},
@@ -317,14 +338,15 @@ var (
 		Shadow:    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
 		Highlight: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
 
-		SidebarMaterial: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
-		CardFill:        color.NRGBA{R: 0xf7, G: 0xf7, B: 0xf7, A: 0xff},
-		PushButtonFill:  color.NRGBA{R: 0xec, G: 0xec, B: 0xec, A: 0xff},
-		HoverOverlay:    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x0d},
-		PressOverlay:    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x19},
-		FloatingShadow:  color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13},
-		FieldEdge:       color.NRGBA{R: 0xf3, G: 0xf3, B: 0xf3, A: 0xff},
-		ScrollbarThumb:  color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x56},
+		SidebarMaterial:  color.NRGBA{R: 0xf7, G: 0xf7, B: 0xf7, A: 0xff},
+		SidebarSelection: color.NRGBA{R: 0x17, G: 0x8b, B: 0xfb, A: 0xff},
+		CardFill:         color.NRGBA{R: 0xf7, G: 0xf7, B: 0xf7, A: 0xff},
+		PushButtonFill:   color.NRGBA{R: 0xec, G: 0xec, B: 0xec, A: 0xff},
+		HoverOverlay:     color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x0d},
+		PressOverlay:     color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x19},
+		FloatingShadow:   color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13},
+		FieldEdge:        color.NRGBA{R: 0xf3, G: 0xf3, B: 0xf3, A: 0xff},
+		ScrollbarThumb:   color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x92},
 
 		AlternatingContentBackground: color.NRGBA{R: 0xf4, G: 0xf5, B: 0xf5, A: 0xff},
 		Scrim:                        color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x33},
@@ -343,13 +365,13 @@ var (
 
 		FindHighlight: color.NRGBA{R: 0x6e, G: 0x6e, B: 0x4d, A: 0xff},
 
-		Separator: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x1a},
+		Separator: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x19},
 		Grid:      color.NRGBA{R: 0x1a, G: 0x1a, B: 0x1a, A: 0xff},
 
-		Label:           color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xd9},
+		Label:           color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xd8},
 		SecondaryLabel:  color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x8c},
-		TertiaryLabel:   color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x40},
-		QuaternaryLabel: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x1a},
+		TertiaryLabel:   color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x3f},
+		QuaternaryLabel: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x19},
 
 		Text:            color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
 		PlaceholderText: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x8c},
@@ -357,15 +379,15 @@ var (
 		Link:            color.NRGBA{R: 0x41, G: 0x9c, B: 0xff, A: 0xff},
 		HeaderText:      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
 
-		Control:                      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x40},
-		ControlText:                  color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xd9},
-		DisabledControlText:          color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x40},
+		Control:                      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x3f},
+		ControlText:                  color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xd8},
+		DisabledControlText:          color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x3f},
 		SelectedControl:              color.NRGBA{R: 0x3f, G: 0x63, B: 0x8b, A: 0xff},
-		SelectedControlText:          color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xd9},
+		SelectedControlText:          color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xd8},
 		AlternateSelectedControlText: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
 
 		ControlAccent:          color.NRGBA{R: 0x00, G: 0x7a, B: 0xff, A: 0xff},
-		KeyboardFocusIndicator: color.NRGBA{R: 0x1a, G: 0xa9, B: 0xff, A: 0x80},
+		KeyboardFocusIndicator: color.NRGBA{R: 0x1a, G: 0xa9, B: 0xff, A: 0x7f},
 
 		SystemRed:    color.NRGBA{R: 0xff, G: 0x42, B: 0x45, A: 0xff},
 		SystemOrange: color.NRGBA{R: 0xff, G: 0x92, B: 0x30, A: 0xff},
@@ -384,31 +406,33 @@ var (
 		Shadow:    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
 		Highlight: color.NRGBA{R: 0xb4, G: 0xb4, B: 0xb4, A: 0xff},
 
-		SidebarMaterial: color.NRGBA{R: 0x23, G: 0x2a, B: 0x2e, A: 0xff},
-		CardFill:        color.NRGBA{R: 0x2a, G: 0x30, B: 0x34, A: 0xff},
-		PushButtonFill:  color.NRGBA{R: 0x33, G: 0x3a, B: 0x3f, A: 0xff},
-		HoverOverlay:    color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x18},
-		PressOverlay:    color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x19},
-		FloatingShadow:  color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13},
-		FieldEdge:       color.NRGBA{R: 0x2c, G: 0x33, B: 0x38, A: 0xff},
-		ScrollbarThumb:  color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x56},
+		SidebarMaterial:  color.NRGBA{R: 0x1c, G: 0x1c, B: 0x1c, A: 0xff},
+		SidebarSelection: color.NRGBA{R: 0x19, G: 0x94, B: 0xfc, A: 0xff},
+		CardFill:         color.NRGBA{R: 0x2a, G: 0x30, B: 0x34, A: 0xff},
+		PushButtonFill:   color.NRGBA{R: 0x33, G: 0x3a, B: 0x3f, A: 0xff},
+		HoverOverlay:     color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x18},
+		PressOverlay:     color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x19},
+		FloatingShadow:   color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13},
+		FieldEdge:        color.NRGBA{R: 0x2c, G: 0x33, B: 0x38, A: 0xff},
+		ScrollbarThumb:   color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x92},
 
 		AlternatingContentBackground: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x0d},
 		Scrim:                        color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x42},
 	}
 )
 
-// WithAccent returns the set with the five rows the platform derives from
+// WithAccent returns the set with the six rows the platform derives from
 // the accent colour rebuilt for accent. Every other field is untouched: the
 // unemphasized selection pair is the inactive window's grey, Link is a fixed
 // blue, and the system colours are a fixed catalogue — none of them moves
 // when the user changes the accent.
 //
-// The five rows and their rule:
+// The six rows and their rule:
 //
 //   - ControlAccent is the accent itself, at the recorded row's alpha.
-//   - SelectedContentBackground, SelectedTextBackground, SelectedControl
-//     and KeyboardFocusIndicator keep the accent's hue and saturation and
+//   - SelectedContentBackground, SelectedTextBackground, SelectedControl,
+//     KeyboardFocusIndicator and SidebarSelection keep the accent's hue and
+//     saturation and
 //     take the recorded row's HSL lightness and alpha. In the catalogue all
 //     four are the platform's blue at a lightness of their own — the
 //     emphasized selection darker than the accent, the text selection and
@@ -435,6 +459,7 @@ func (p PlatformColors) WithAccent(accent color.NRGBA) PlatformColors {
 	p.SelectedTextBackground = atAccentHue(hue, sat, p.SelectedTextBackground)
 	p.SelectedControl = atAccentHue(hue, sat, p.SelectedControl)
 	p.KeyboardFocusIndicator = atAccentHue(hue, sat, p.KeyboardFocusIndicator)
+	p.SidebarSelection = atAccentHue(hue, sat, p.SidebarSelection)
 	return p
 }
 

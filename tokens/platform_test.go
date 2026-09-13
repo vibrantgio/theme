@@ -45,10 +45,11 @@ const measuredSection = "# measured materials"
 // readCatalogue parses the tab-separated catalogue into its two sections.
 // The first is what AppKit answered: a leading "#" header naming the OS it
 // was read on, then "<appKitName>\t<light>\t<dark>", each value "#rrggbb"
-// with an optional " a0.NNN" alpha. The [measuredSection] comment opens the
+// with an optional alpha: " aN/255" in the AppKit rows, which carry the
+// byte AppKit reported, and " a0.NNN" in the measured rows, which carry a
+// fitted coverage. The [measuredSection] comment opens the
 // second, whose rows carry a fourth column naming the capture the value was
-// read from or the reason it is published rather than measured. Alpha
-// becomes round(a*255), which is the quantization PlatformColors records.
+// read from or the reason it is published rather than measured.
 func readCatalogue(t *testing.T) (appKit, measured map[string]catalogueEntry) {
 	t.Helper()
 	f, err := os.Open(cataloguePath)
@@ -138,7 +139,22 @@ func parseCatalogueColor(s string) (color.NRGBA, error) {
 	c := color.NRGBA{R: uint8(v >> 16), G: uint8(v >> 8), B: uint8(v), A: 0xff}
 	if len(fields) > 1 {
 		if !strings.HasPrefix(fields[1], "a") {
-			return color.NRGBA{}, fmt.Errorf("want an alpha of the form a0.NN, got %q", fields[1])
+			return color.NRGBA{}, fmt.Errorf("want an alpha of the form aN/255 or a0.NN, got %q", fields[1])
+		}
+		// Two forms, and the difference is what the row is. An AppKit row
+		// carries the byte AppKit reported, "a216/255", and nothing rounds.
+		// A measured row carries a fitted coverage, "a0.572", which is a
+		// fraction because a fit is not a byte anyone read off the platform.
+		if num, den, ok := strings.Cut(fields[1][1:], "/"); ok {
+			n, err := strconv.ParseUint(num, 10, 8)
+			if err != nil {
+				return color.NRGBA{}, fmt.Errorf("%q: %w", s, err)
+			}
+			if den != "255" {
+				return color.NRGBA{}, fmt.Errorf("%q: an alpha byte is written over 255, got %q", s, den)
+			}
+			c.A = uint8(n)
+			return c, nil
 		}
 		a, err := strconv.ParseFloat(fields[1][1:], 64)
 		if err != nil {
@@ -217,6 +233,7 @@ var accentRows = []string{
 	"SelectedTextBackground",
 	"SelectedControl",
 	"KeyboardFocusIndicator",
+	"SidebarSelection",
 }
 
 // TestWithAccentKeepsThePlatformBlue pins that the recorded sets already
@@ -372,7 +389,12 @@ func TestCardFillIsTheMeasuredGroupedBox(t *testing.T) {
 		if c.in.CardFill == c.in.ControlBackground {
 			t.Errorf("%s CardFill = %v, the content's fill; the box was measured apart from it", c.name, c.in.CardFill)
 		}
-		if c.in.CardFill == c.in.SidebarMaterial {
+		// The light box and the light chrome material are the same
+		// value on this platform: the grouped box reads #f7f7f7 over
+		// System Settings' white plane, and Finder's sidebar reads
+		// #f7f7f7 too. They were measured apart, off different windows,
+		// and landed together; the dark pair does not.
+		if c.name == "dark" && c.in.CardFill == c.in.SidebarMaterial {
 			t.Errorf("%s CardFill = %v, the chrome material; the box was measured apart from it", c.name, c.in.CardFill)
 		}
 	}
@@ -439,11 +461,10 @@ func TestTheStateOverlaysAreBlackOnLightAndWhiteOnDark(t *testing.T) {
 // the glyph cores of the sheet's own wording and of the Cancel button's
 // title.
 //
-// The label rows land one 255th light of the capture because the catalogue
-// records alpha to two decimals: Label carries round(0.85×255) = 217 where
-// the platform's own coverage byte is 216. That is the rounding this
-// package's doc comment records, and it is the whole of the difference — the
-// blend is exact, and on macOS the live reader closes it.
+// Every row lands on the captured byte exactly. It did not while the
+// catalogue recorded alpha to two decimals — Label carried round(0.85×255)
+// = 217 where the platform's own coverage byte is 216, and the label rows
+// landed one 255th light. The catalogue now carries the byte.
 func TestAlphaNamesFlattenToTheCapturedBytes(t *testing.T) {
 	for _, tc := range []struct {
 		name          string
@@ -451,11 +472,11 @@ func TestAlphaNamesFlattenToTheCapturedBytes(t *testing.T) {
 		want, capture color.NRGBA
 	}{
 		{"Label on the light sheet", tokens.PlatformLight.Label, tokens.PlatformLight.WindowBackground,
-			color.NRGBA{0x26, 0x26, 0x26, 0xff}, color.NRGBA{0x27, 0x27, 0x27, 0xff}},
+			color.NRGBA{0x27, 0x27, 0x27, 0xff}, color.NRGBA{0x27, 0x27, 0x27, 0xff}},
 		{"Label on the light push button", tokens.PlatformLight.Label, tokens.PlatformLight.PushButtonFill,
-			color.NRGBA{0x23, 0x23, 0x23, 0xff}, color.NRGBA{0x24, 0x24, 0x24, 0xff}},
+			color.NRGBA{0x24, 0x24, 0x24, 0xff}, color.NRGBA{0x24, 0x24, 0x24, 0xff}},
 		{"Label on the dark push button", tokens.PlatformDark.Label, tokens.PlatformDark.PushButtonFill,
-			color.NRGBA{0xe1, 0xe2, 0xe2, 0xff}, color.NRGBA{0xe0, 0xe1, 0xe2, 0xff}},
+			color.NRGBA{0xe0, 0xe1, 0xe2, 0xff}, color.NRGBA{0xe0, 0xe1, 0xe2, 0xff}},
 		{"SecondaryLabel on the dark sheet", tokens.PlatformDark.SecondaryLabel, color.NRGBA{0x23, 0x2a, 0x2f, 0xff},
 			color.NRGBA{0x9c, 0x9f, 0xa1, 0xff}, color.NRGBA{0x9c, 0x9f, 0xa1, 0xff}},
 	} {

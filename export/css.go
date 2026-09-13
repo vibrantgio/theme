@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	vgcolor "github.com/vibrantgio/theme/color"
 	"github.com/vibrantgio/theme/tokens"
 )
 
@@ -53,6 +52,10 @@ func px(v float32) string {
 // --platform-system-red, exactly as the Go field drops AppKit's trailing
 // "Color" and nothing else. The ten fields AppKit has no name for are spelled
 // the same way from the name the token set gives them.
+//
+// A test walks tokens.PlatformColors by reflection and fails if a field has
+// no entry here: a name the set carries and the sheet drops is a colour a
+// rule can reference and never resolve.
 var platformNames = []struct {
 	name string
 	pick func(tokens.PlatformColors) stdcolor.NRGBA
@@ -101,6 +104,7 @@ var platformNames = []struct {
 	{"shadow", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Shadow }},
 	{"highlight", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Highlight }},
 	{"sidebar-material", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarMaterial }},
+	{"sidebar-selection", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarSelection }},
 	{"card-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.CardFill }},
 	{"push-button-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.PushButtonFill }},
 	{"hover-overlay", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.HoverOverlay }},
@@ -128,429 +132,6 @@ func platformVars(p tokens.PlatformColors) []cssVar {
 		vars = append(vars, cssVar{"--platform-" + n.name, hexRGBA(n.pick(p))})
 	}
 	return vars
-}
-
-// rampRoles orders the colour roles under their CSS names.
-var rampRoles = []struct {
-	name string
-	ramp func(tokens.RampSet) tokens.Ramp
-}{
-	{"neutral", func(r tokens.RampSet) tokens.Ramp { return r.Neutral }},
-	{"primary", func(r tokens.RampSet) tokens.Ramp { return r.Primary }},
-	{"secondary", func(r tokens.RampSet) tokens.Ramp { return r.Secondary }},
-	{"tertiary", func(r tokens.RampSet) tokens.Ramp { return r.Tertiary }},
-	{"error", func(r tokens.RampSet) tokens.Ramp { return r.Error }},
-	{"success", func(r tokens.RampSet) tokens.Ramp { return r.Success }},
-	{"warning", func(r tokens.RampSet) tokens.Ramp { return r.Warning }},
-	{"info", func(r tokens.RampSet) tokens.Ramp { return r.Info }},
-}
-
-// pinRoles orders the pinned bases and the semantic layer under their CSS
-// names; the doc comment on this package records the mapping.
-var pinRoles = []struct {
-	name string
-	pick func(tokens.ColorTokens) stdcolor.NRGBA
-}{
-	{"bg", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Background }},
-	{"surface", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Surface }},
-	{"text", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Text }},
-	{"seam", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Seam }},
-	// The inverse pair, emitted as first-class tokens for the same reason
-	// the state walk below is: it resolves off the counterpart scheme's
-	// neutral ramp, and a sheet holding only this scheme's ramps has no
-	// var() arithmetic that could reach it.
-	{"inverse-surface", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.InverseSurface }},
-	{"on-inverse-surface", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.OnInverseSurface }},
-	// The highlight: the fill marking content the reader was brought to. It
-	// is emitted as a first-class token because it belongs to no ramp — it
-	// is one reserved yellow laid over the surface at less than full
-	// strength, which no var() reference over the ramps could reach — and
-	// it is the fill laid over the surface these pages stand on, level 0,
-	// which is the one answer a sheet has to give. It is not a status and
-	// no status hue serves it; see the tokens package's highlight.go for
-	// the colour and the coverage.
-	{"highlight", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Highlight }},
-	{"accent", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Primary }},
-	{"on-accent", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.OnPrimary }},
-	// The solid-fill state walk: hover one step from the pin toward the
-	// ramp's 900 end, pressed two — SolidStateColor, the exact resolution a
-	// filled button draws. They are emitted as first-class tokens because a
-	// walked pin is off-ramp: no var() arithmetic over the ramp steps could
-	// reproduce it, and a state is a real, addressable colour a sheet can
-	// emit.
-	{"accent-hover", func(t tokens.ColorTokens) stdcolor.NRGBA {
-		return t.SolidStateColor(tokens.RolePrimary, tokens.StateHover)
-	}},
-	{"accent-pressed", func(t tokens.ColorTokens) stdcolor.NRGBA {
-		return t.SolidStateColor(tokens.RolePrimary, tokens.StatePressed)
-	}},
-	{"secondary", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Secondary }},
-	{"on-secondary", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.OnSecondary }},
-	{"tertiary", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Tertiary }},
-	{"on-tertiary", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.OnTertiary }},
-	{"error", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Error }},
-	{"on-error", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.OnError }},
-	{"success", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Success }},
-	{"on-success", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.OnSuccess }},
-	{"warning", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Warning }},
-	{"on-warning", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.OnWarning }},
-	{"info", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.Info }},
-	{"on-info", func(t tokens.ColorTokens) stdcolor.NRGBA { return t.OnInfo }},
-	// The status containers and the marks read on them. They are emitted as
-	// first-class tokens for the same reason the state walk above is: a
-	// container is realized at a tone rather than mixed, so no var()
-	// arithmetic over the ramp steps could reproduce one, and the mark is
-	// the step the container's own contrast chose, which a sheet has no way
-	// to measure.
-	{"error-container", func(t tokens.ColorTokens) stdcolor.NRGBA {
-		return t.StatusContainer(tokens.RoleError)
-	}},
-	{"on-error-container", func(t tokens.ColorTokens) stdcolor.NRGBA {
-		return t.OnStatusContainer(tokens.RoleError)
-	}},
-	{"success-container", func(t tokens.ColorTokens) stdcolor.NRGBA {
-		return t.StatusContainer(tokens.RoleSuccess)
-	}},
-	{"on-success-container", func(t tokens.ColorTokens) stdcolor.NRGBA {
-		return t.OnStatusContainer(tokens.RoleSuccess)
-	}},
-	{"warning-container", func(t tokens.ColorTokens) stdcolor.NRGBA {
-		return t.StatusContainer(tokens.RoleWarning)
-	}},
-	{"on-warning-container", func(t tokens.ColorTokens) stdcolor.NRGBA {
-		return t.OnStatusContainer(tokens.RoleWarning)
-	}},
-	{"info-container", func(t tokens.ColorTokens) stdcolor.NRGBA {
-		return t.StatusContainer(tokens.RoleInfo)
-	}},
-	{"on-info-container", func(t tokens.ColorTokens) stdcolor.NRGBA {
-		return t.OnStatusContainer(tokens.RoleInfo)
-	}},
-	// Each status role's mark on the inverse surface: the step of that
-	// role's ramp nearest its mid-value step that reads over the
-	// counterpart scheme's card at the on-colour floor (MarkOn). It is a
-	// token rather than a ramp reference because the two schemes do not
-	// land on one step — a light scheme's marks come off step 500 and a
-	// dark scheme's off step 400, its ramps having turned light by 500 —
-	// so a sheet naming a step could not flip them with the scheme.
-	{"error-on-inverse", func(t tokens.ColorTokens) stdcolor.NRGBA {
-		return t.MarkOn(tokens.RoleError, t.InverseSurface, onFloor)
-	}},
-	{"success-on-inverse", func(t tokens.ColorTokens) stdcolor.NRGBA {
-		return t.MarkOn(tokens.RoleSuccess, t.InverseSurface, onFloor)
-	}},
-	{"warning-on-inverse", func(t tokens.ColorTokens) stdcolor.NRGBA {
-		return t.MarkOn(tokens.RoleWarning, t.InverseSurface, onFloor)
-	}},
-	{"info-on-inverse", func(t tokens.ColorTokens) stdcolor.NRGBA {
-		return t.MarkOn(tokens.RoleInfo, t.InverseSurface, onFloor)
-	}},
-	// A badge draws one hue at two strengths, so each of the five variants
-	// emits two tokens: the container fill it wears and the foreground read
-	// on that fill. Both are resolved for the surface the sheet's pages stand
-	// on, which is level 0 — a badge is small and its fill is
-	// derived against whatever it is placed on, and a sheet has one answer to
-	// give.
-	//
-	// The fill is a pale tint of the role's hue against that surface, at the
-	// container chroma, at the depth that separates it from the surface
-	// (StatusContainerOn). The foreground is then derived against the FILL
-	// rather than against the surface: the role's pinned base while that base
-	// clears the text floor over it and the nearest step to the mid-value that
-	// does otherwise (ForegroundOnAtFloor). Neutral has no pinned base — the
-	// neutral ramp carries no pin — so it takes the walk directly (MarkOn), at
-	// the same floor, and its fill comes back as depth alone.
-	//
-	// The floor is the text floor for all five: a sign is the same utterance
-	// at the same weight as a word. Never an inverted on-colour — a white
-	// word on a saturated field is the variant interaction speaks in, and a
-	// badge is read rather than used.
-	{"badge-neutral-fill", badgeFill(tokens.RoleNeutral)},
-	{"badge-neutral", badgeForeground(tokens.RoleNeutral)},
-	{"badge-success-fill", badgeFill(tokens.RoleSuccess)},
-	{"badge-success", badgeForeground(tokens.RoleSuccess)},
-	{"badge-warning-fill", badgeFill(tokens.RoleWarning)},
-	{"badge-warning", badgeForeground(tokens.RoleWarning)},
-	{"badge-error-fill", badgeFill(tokens.RoleError)},
-	{"badge-error", badgeForeground(tokens.RoleError)},
-	{"badge-info-fill", badgeFill(tokens.RoleInfo)},
-	{"badge-info", badgeForeground(tokens.RoleInfo)},
-	// The tinted button is that same recipe under the accent role, so its
-	// six tokens are the badge's two taken through the three states a
-	// button answers a pointer with. They are tokens rather than ramp
-	// references for the reason the containers above are: the fill is
-	// realized at a tone against the surface it stands on, and the walk is
-	// counted on the neutral scale from that realization, so no var()
-	// arithmetic over the ramp steps reproduces either.
-	//
-	// Level 0, as the badge family is, and for the same reason: the Gio
-	// side derives against the surface the control is placed on
-	// (RenderState.Level) and a sheet has one answer to give.
-	{"btn-tonal-fill", tonalFill(tokens.StateNormal)},
-	{"btn-tonal", tonalForeground(tokens.StateNormal)},
-	{"btn-tonal-fill-hover", tonalFill(tokens.StateHover)},
-	{"btn-tonal-hover", tonalForeground(tokens.StateHover)},
-	{"btn-tonal-fill-active", tonalFill(tokens.StatePressed)},
-	{"btn-tonal-active", tonalForeground(tokens.StatePressed)},
-	// The marks a control and a raised surface draw on themselves, each the
-	// step its own ramp's MarkOn walk answers with at the graphic floor. All
-	// are per-scheme tokens rather than named steps, because a named step is
-	// a pairing and not a colour: the light and dark neutral ramps are
-	// realized at the same perceptual depths from opposite ends, so one step
-	// means two different contrasts against two surfaces that moved the whole
-	// way.
-	//
-	// The two families ask the elevation levels different questions, and the
-	// difference is the whole of why one is a set of four and the other a
-	// single token. A resting edge asks which step of the neutral ramp reads
-	// on the level the thing stands on, and each level may answer for
-	// itself: an edge is the boundary of one surface, and two surfaces are
-	// free to draw their own. A focus ring asks which step of the primary
-	// ramp reads on EVERY level at once, because focus is one state and a
-	// page that spelled it in two purples would be teaching two idioms.
-	//
-	// control-border is the level-0 answer for the row of controls that
-	// says what it is with a line — the unchecked box, the unselected radio,
-	// the text field, the dropdown trigger (components/input controlBorder):
-	// the neutral step nearest step 500 that reaches graphicFloor against the
-	// level-0 surface a control on the page is guaranteed against. Naming
-	// step 500 in both schemes — which this sheet did, at every one of those
-	// four sites — measures |Lc| 46.80 in the light scheme and 24.95 in the
-	// dark, under the floor in the scheme most people read in at night. The
-	// walk answers 500 in the light scheme and 600 in the dark and needs to
-	// know nothing about either.
-	//
-	// dialog-border and popover-border are the same walk taken against a
-	// deeper level, and each serves both readings of "edge on that level":
-	// the surface's own outline — a dialog's edge circles its level-2 fill,
-	// a popover's its level 3, each pattern painting the fill it is measured
-	// against — and the resting edge of any control standing on it, which is
-	// the same line over the same surface and cannot sensibly be a second
-	// colour. A checkbox in a dialog therefore takes dialog-border, not
-	// control-border, and asks its own question rather than inheriting an
-	// answer. A focus ring asks nothing of the level it was put on, which is
-	// why no dialog-focus-ring stands beside dialog-border here.
-	//
-	// Level 1 has no member: a card is never outlined and draws no line of
-	// its own, and the light scheme's level-0 step already clears level 1,
-	// so a control standing on a card takes control-border unchanged.
-	//
-	// Whether the four answers differ is the derivation's to report, and
-	// today they part in one scheme only. Because elevation lightens toward
-	// the viewer in both schemes, a light window's hardest surface is its
-	// CHROME level and a dark window's is its TOP level, and a step that
-	// clears the hardest clears every other by more. In the light scheme one
-	// neutral step therefore serves the whole window — 3.55:1 on chrome,
-	// rising to 4.35:1 on a popover — and all four tokens repeat it. The dark
-	// scheme's levels climb further from its chrome level: its level-0 step
-	// reads 2.62:1 on a dialog's fill and 1.80:1 on a popover's, under the
-	// floor a graphic owes the surface it stands on, so those two levels walk
-	// on to a lighter step and the sheet states two edge colours where the
-	// light one states one.
-	//
-	// focus-ring is the scheme's one ring, the colour every focused control
-	// draws on every level: focusRing below, the step of the primary ramp
-	// nearest its mid-value step that reaches the graphic floor against all
-	// the levels a control can stand on at once. One token, not one per
-	// surface, because a walk aimed at one surface answers that surface: two
-	// controls whose fills lie three units apart on one level come back steps
-	// 19 L* apart when the ramp carries a step between them, and two purples
-	// for one state on one page is not an idiom. Asking every level is
-	// affordable because a ring only ever lies on a level elevation carries,
-	// and there are five of those rather than the whole scheme.
-	//
-	// The same pick answers the four edge tokens above as well, and owes them
-	// a separation rather than a floor. A ring is a graphic on a surface, so
-	// the levels are what the graphic floor is measured to; but the line the
-	// ring replaces is the level's own resting edge, and a ring that matched
-	// that edge in luminance would announce focus in hue alone —
-	// focusRingBorderSeparation is what keeps the two apart in the channel a
-	// forced-colors or greyscale display leaves standing.
-	//
-	// One surface belongs to no level: the accent fill a FILLED button's
-	// ring lies on, because that ring is inset in the button's own
-	// background rather than drawn at its boundary. It is the one place the
-	// scheme's ring cannot be used — the ring is a step of the primary ramp
-	// and so is that fill, and the two land on the same step, which is the
-	// same colour twice. focusRingOn keeps the scheme's ring wherever it
-	// reads on the fill and walks against the fill only where it cannot, so
-	// the exception costs exactly the one surface that forces it.
-	{"control-border", func(t tokens.ColorTokens) stdcolor.NRGBA {
-		return t.MarkOn(tokens.RoleNeutral, t.SurfaceAt(tokens.Level0), graphicFloor)
-	}},
-	{"dialog-border", func(t tokens.ColorTokens) stdcolor.NRGBA {
-		return t.MarkOn(tokens.RoleNeutral, t.SurfaceAt(tokens.Level2), graphicFloor)
-	}},
-	{"popover-border", func(t tokens.ColorTokens) stdcolor.NRGBA {
-		return t.MarkOn(tokens.RoleNeutral, t.SurfaceAt(tokens.Level3), graphicFloor)
-	}},
-	{"focus-ring", focusRing},
-	{"focus-ring-on-accent", func(t tokens.ColorTokens) stdcolor.NRGBA {
-		return focusRingOn(t, t.SolidStateColor(tokens.RolePrimary, tokens.StateFocus))
-	}},
-}
-
-// primaryMidStep indexes the primary ramp's step 500, the mid-value step the
-// ring's pick is aimed at. A tokens.Ramp is nine steps, 100 through 900.
-const primaryMidStep = 4
-
-// focusRingBorderSeparation is the least luminance separation the ring owes
-// the neutral resting border a control on the same level draws — the line
-// control-border, dialog-border and popover-border carry, and the
-// line a focused field swaps for its ring. Colour is the ring's only channel,
-// so a ring at the border's own luminance says nothing but hue, and hue is
-// what Differentiate Without Color, forced-colors and a greyscale display take
-// away.
-//
-// 1.25:1 is measured rather than picked. Over the seed sweep — 411 seeds, both
-// schemes, both derivations, every level — the separations a step of the
-// primary ramp can reach while still clearing graphicFloor fall in two bands
-// with a wide empty stretch between them: 1.00–1.01, where the ring and the
-// border are one grey, and 1.53 upward, where the ramp's next step is a
-// different grey. The threshold goes in the empty stretch.
-//
-// It is components/internal/focus.BorderSeparation, restated here for the same
-// reason the walk below is.
-const focusRingBorderSeparation = 1.25
-
-// focusRing is the colour every focused control draws its ring in, one per
-// scheme: the step of the primary ramp nearest primaryMidStep that reaches
-// graphicFloor against every elevation level, reaches
-// focusRingBorderSeparation against every level's neutral resting border, and
-// is not the accent fill itself. It is the
-// derivation components/internal/focus draws by, restated here because the
-// sheet is emitted a layer below the components and the two must land on the
-// same hex.
-//
-// Every level rather than one, because the ring is one colour
-// and a control may stand anywhere on it: a chip on a card and the button
-// beside it are the same state and owe the reader the same pixel. The ramp
-// is walked from its middle out, so where several steps clear every level the
-// ring is the one nearest the depth the brand hue is most itself at, and the
-// one furthest from both ends.
-//
-// The accent fill is excluded rather than measured, because what it owes the
-// ring has no scale: it is what a checked box and a filled button paint at
-// rest, and a dark scheme realizes it exactly on a step of this ramp. A ring
-// drawn in it would announce focus in the colour the control was already
-// speaking.
-//
-// A ring has to be drawn whatever it measures, so a palette no step satisfied
-// all three on takes the step that comes closest against the levels rather
-// than none.
-func focusRing(t tokens.ColorTokens) stdcolor.NRGBA {
-	pick, dist := -1, len(t.Ramps.Primary)
-	widest, widestAt := -1.0, 0
-	for i, step := range t.Ramps.Primary {
-		// Both ceilings sit above anything a pairing can reach — |Lc| tops
-		// out near 106 and the luminance ratio at 21 — so the first level
-		// always lowers them.
-		const maxLc, maxRatio = 110.0, 21.0
-		worst, worstBorder := maxLc, maxRatio
-		for _, lvl := range standableLevels {
-			surface := t.SurfaceAt(lvl.level)
-			if got := vgcolor.Magnitude(step, surface); got < worst {
-				worst = got
-			}
-			border := t.MarkOn(tokens.RoleNeutral, surface, graphicFloor)
-			if got := luminanceRatio(step, border); got < worstBorder {
-				worstBorder = got
-			}
-		}
-		if worst > widest {
-			widest, widestAt = worst, i
-		}
-		if worst < graphicFloor || worstBorder < focusRingBorderSeparation || step == t.Primary {
-			continue
-		}
-		d := i - primaryMidStep
-		if d < 0 {
-			d = -d
-		}
-		if d < dist {
-			pick, dist = i, d
-		}
-	}
-	if pick < 0 {
-		return t.Ramps.Primary[widestAt]
-	}
-	return t.Ramps.Primary[pick]
-}
-
-// focusRingOn is focusRing for a band lying inside a fill of the control's
-// own, with that fill on both sides of it and no level anywhere near it —
-// the filled button's inset ring, the only such band in the class layer. It
-// answers the scheme's ring wherever that ring reads on the fill, and walks
-// the primary ramp against the fill only where it cannot.
-//
-// A transparent fill is no fill: what a ghost button's ring lies on is the
-// level showing through it, which the scheme's ring already answers.
-func focusRingOn(t tokens.ColorTokens, fill stdcolor.NRGBA) stdcolor.NRGBA {
-	ring := focusRing(t)
-	if fill.A == 0 || vgcolor.Magnitude(ring, fill) >= graphicFloor {
-		return ring
-	}
-	return t.MarkOn(tokens.RolePrimary, fill, graphicFloor)
-}
-
-// badgeFill and badgeForeground are the badge pair, written once per role
-// rather than ten times. Splitting them is what keeps the two derivations
-// honest: the foreground's surface is the fill, so a fill that moved without
-// the foreground moving with it would emit a pairing nothing measured.
-func badgeFill(role tokens.Role) func(tokens.ColorTokens) stdcolor.NRGBA {
-	return func(t tokens.ColorTokens) stdcolor.NRGBA {
-		return t.StatusContainerOn(role, t.SurfaceAt(tokens.Level0))
-	}
-}
-
-func badgeForeground(role tokens.Role) func(tokens.ColorTokens) stdcolor.NRGBA {
-	return func(t tokens.ColorTokens) stdcolor.NRGBA {
-		return t.ForegroundOn(role, t.StatusContainerOn(role, t.SurfaceAt(tokens.Level0)))
-	}
-}
-
-// tonalFill and tonalForeground are the SAME recipe under the accent role,
-// which is what a tinted button wears: a tinted button and a status badge
-// differ by no practical visual difference, so they speak one recipe and
-// behaviour tells them apart. state is the walk the fill is under — normal,
-// hover or pressed — and the foreground is derived against wherever that walk
-// landed rather than against the resting fill.
-func tonalFill(state tokens.State) func(tokens.ColorTokens) stdcolor.NRGBA {
-	return func(t tokens.ColorTokens) stdcolor.NRGBA {
-		rest := t.StatusContainerOn(tokens.RolePrimary, t.SurfaceAt(tokens.Level0))
-		return t.PinnedStateColor(rest, state)
-	}
-}
-
-func tonalForeground(state tokens.State) func(tokens.ColorTokens) stdcolor.NRGBA {
-	return func(t tokens.ColorTokens) stdcolor.NRGBA {
-		return t.ForegroundOn(tokens.RolePrimary, tonalFill(state)(t))
-	}
-}
-
-// The floors this sheet derives against are the theme's own, not a second
-// spelling of them: onFloor is the text floor a mark on the inverse surface
-// is chosen against — a toast's leading edge is the only thing that says
-// which level the toast is, so it is held to the text floor rather than to
-// what a non-text graphic owes — and graphicFloor is what a control's edge
-// and its focus ring owe the surface they are drawn on, neither being
-// decoration.
-const (
-	onFloor      = tokens.TextFloor
-	graphicFloor = tokens.GraphicFloor
-)
-
-// luminanceRatio is the arithmetic [focusRingBorderSeparation] is measured
-// in: (L1+0.05)/(L2+0.05) over the two relative luminances, lighter first.
-// It is not a contrast measure — contrast is APCA
-// ([vgcolor.Magnitude]) throughout — but the scale on which one grey stops
-// being another grey.
-func luminanceRatio(a, b stdcolor.NRGBA) float64 {
-	la, lb := vgcolor.RelativeLuminance(a), vgcolor.RelativeLuminance(b)
-	if la < lb {
-		la, lb = lb, la
-	}
-	return (la + 0.05) / (lb + 0.05)
 }
 
 // typeRoles orders the fifteen MD3 type roles under their CSS names, plus
@@ -615,35 +196,28 @@ var radiusKeys = []struct {
 	{"full", func(r tokens.RadiusScale) float32 { return r.Full }},
 }
 
-// elevationLevels orders the levels from the backdrop up toward the reader:
-// the two levels under the content under their own names, then the four
-// numbered levels. Each level's fill is resolved per scheme through
-// [tokens.ColorTokens.SurfaceAt] and its shadow dp read off the snapshot's
-// ElevationScale.
+// shadowLevels orders the six levels from the backdrop up toward the
+// reader, with the shadow depth each casts. A level's FILL is the
+// platform's own name for what that region is; the shadow is the separate,
+// opt-in cue a floating surface carries, and this is the only thing the
+// sheet states per level.
 //
 // The backdrop and the chrome level are spelled out rather than numbered
 // because the numbering is anchored on the content and they are below it:
 // naming them "-2" and "-1" in a CSS variable would read as an arithmetic
 // accident, and renumbering the four above them would rename every token to
 // say the same thing.
-var elevationLevels = []struct {
-	name  string
-	level tokens.ElevationLevel
+var shadowLevels = []struct {
+	name string
+	dp   func(tokens.ElevationScale) float32
 }{
-	{"backdrop", tokens.LevelBackdrop},
-	{"chrome", tokens.LevelChrome},
-	{"0", tokens.Level0},
-	{"1", tokens.Level1},
-	{"2", tokens.Level2},
-	{"3", tokens.Level3},
+	{"backdrop", func(e tokens.ElevationScale) float32 { return e.Backdrop }},
+	{"chrome", func(e tokens.ElevationScale) float32 { return e.Chrome }},
+	{"0", func(e tokens.ElevationScale) float32 { return e.Level0 }},
+	{"1", func(e tokens.ElevationScale) float32 { return e.Level1 }},
+	{"2", func(e tokens.ElevationScale) float32 { return e.Level2 }},
+	{"3", func(e tokens.ElevationScale) float32 { return e.Level3 }},
 }
-
-// standableLevels is elevationLevels without the backdrop: the levels a
-// control can be put on, and so the surfaces a derivation that answers "on
-// every level" has to clear. Nothing is drawn at the backdrop — it shows
-// wherever nothing stands — so a ring measured against it would be walked
-// against a surface no ring ever lies on.
-var standableLevels = elevationLevels[1:]
 
 // densityMetrics orders the per-setting density metrics under their CSS
 // names. The WCAG pointer-target floor is not here: it is not a per-setting
@@ -714,100 +288,9 @@ func ms(d time.Duration) string {
 	return strconv.FormatFloat(float64(d)/float64(time.Millisecond), 'f', -1, 64) + "ms"
 }
 
-// colorVars renders one colour scheme as its ramp and pin variables.
-func colorVars(t tokens.ColorTokens) []cssVar {
-	var vars []cssVar
-	for _, role := range rampRoles {
-		ramp := role.ramp(t.Ramps)
-		for step := 100; step <= 900; step += 100 {
-			vars = append(vars, cssVar{
-				name:  fmt.Sprintf("--color-%s-%d", role.name, step),
-				value: hexRGB(ramp.Step(step)),
-			})
-		}
-	}
-	for _, pin := range pinRoles {
-		vars = append(vars, cssVar{"--color-" + pin.name, hexRGB(pin.pick(t))})
-	}
-	// The elevation levels' surface fills. They live with the colours
-	// rather than with the mode-invariant scales because a level is not a
-	// ramp step in both schemes: the levels are anchored on the Background
-	// pin and placed in CIELAB L*, so the light scheme's levels above the
-	// content are off the ramp and the dark scheme's backdrop is off it
-	// below. No var() arithmetic over the ramp steps reaches those values,
-	// so each scheme states its own, exactly as the walked pins and the
-	// derived borders beside them do.
-	//
-	// --elevation-1 is not a table entry on the Go side: it is the raise
-	// walked from the content. The sheet states it anyway because the walk
-	// has no CSS arithmetic either, and the class layer expresses the walk
-	// the way a cascade can — a host that raises what it holds redeclares
-	// --surface-raised, so a control names var(--surface-raised,
-	// var(--elevation-1)) once and lands one step above whatever it is
-	// actually inside.
-	for _, level := range elevationLevels {
-		vars = append(vars, cssVar{"--elevation-" + level.name, hexRGB(t.SurfaceAt(level.level))})
-	}
-	// And the seam each level owes what stands on it: the hairline a raise
-	// draws at its own edge where the scheme has no step left to tell it
-	// with. It is `transparent` where the raise IS told by its fill, so a
-	// rule can carry the border unconditionally and the geometry does not
-	// move between the schemes — which is what the Gio side does too, its
-	// stroke being centred on an edge the inset does not depend on.
-	//
-	// The backdrop has none: nothing stands on the backdrop.
-	for _, level := range standableLevels {
-		raise := t.RaisedOn(t.SurfaceAt(level.level))
-		value := "transparent"
-		if raise.Seamed {
-			value = hexRGB(raise.Seam)
-		}
-		vars = append(vars, cssVar{"--elevation-" + level.name + "-seam", value})
-	}
-	// And the hairline two regions that SHARE a level's fill are parted by:
-	// what a group draws at its own edge. It is the same derivation as the
-	// seam above with both sides at one fill
-	// (tokens.ColorTokens.SeamOn), and it differs from that seam in when it
-	// is drawn: a raise owes its seam only where the fill cannot tell the
-	// raise, so --elevation-N-seam is `transparent` in every other scheme,
-	// while a group has no fill of its own and the line is the whole of what
-	// says where it ends. It is never transparent.
-	//
-	// The backdrop has none: nothing is grouped on the bare window plane.
-	for _, level := range standableLevels {
-		vars = append(vars, cssVar{"--elevation-" + level.name + "-hairline",
-			hexRGB(t.SeamOn(t.SurfaceAt(level.level)))})
-	}
-	// And each level's own interaction walk, for the same reason and one step
-	// further: a ghost button paints no fill at rest and takes a state fill on
-	// the surface it stands on under the pointer, so that fill is taken FROM
-	// that level's fill (tokens.ColorTokens.StateAt, which is what
-	// components/button's ghostWash performs). While a level was a ramp step
-	// the sheet could name the step's neighbour and be done; a level off the
-	// ramp has no neighbour to name, so the walk is written out per scheme
-	// like the fill it starts from.
-	for _, level := range elevationLevels {
-		for _, st := range []struct {
-			suffix string
-			state  tokens.State
-		}{
-			{"-hover", tokens.StateHover},
-			{"-active", tokens.StatePressed},
-		} {
-			vars = append(vars, cssVar{
-				name:  "--elevation-" + level.name + st.suffix,
-				value: hexRGB(t.StateAt(level.level, st.state)),
-			})
-		}
-	}
-	return vars
-}
-
 // scaleVars renders the mode-invariant families: fonts, density
 // (comfortable — the :root setting), spacing, radius, the dp shadows (the
-// opt-in cue for floating transients), and the motion set. The tonal
-// surface fills the shadows layer over are NOT here: a level resolves per
-// scheme, so --elevation-* sits with the colours.
+// opt-in cue for floating transients), and the motion set.
 func scaleVars(s Snapshot) []cssVar {
 	vars := []cssVar{
 		{"--font-family", strconv.Quote(s.Typography.BodyLarge.Typeface)},
@@ -830,8 +313,8 @@ func scaleVars(s Snapshot) []cssVar {
 	for _, key := range radiusKeys {
 		vars = append(vars, cssVar{"--radius-" + key.name, px(key.pick(s.Radius))})
 	}
-	for _, level := range elevationLevels {
-		vars = append(vars, cssVar{"--shadow-" + level.name, boxShadow(s.Elevation.Dp(level.level))})
+	for _, level := range shadowLevels {
+		vars = append(vars, cssVar{"--shadow-" + level.name, boxShadow(level.dp(s.Elevation))})
 	}
 	for _, role := range easeRoles {
 		vars = append(vars, cssVar{"--ease-" + role.name, cubicBezier(role.pick(s.Motion))})
@@ -839,39 +322,12 @@ func scaleVars(s Snapshot) []cssVar {
 	for _, stop := range durationStops {
 		vars = append(vars, cssVar{"--duration-" + stop.name, ms(stop.pick(s.Motion))})
 	}
-	// The interaction-state base the class layer builds on: the ring's 2 dp
-	// stroke width, and the disabled fraction as
-	// tokens.DisabledOpacity in color-mix() percent, because disabled is an
-	// opacity and not a ramp step. Both are mode-invariant, which is why they
-	// are here and the ring's COLOUR is not: --color-focus-ring is a measured
-	// walk against surfaces that flip with the scheme, so it lives with the
-	// colours (see pinRoles).
-	vars = append(vars,
-		cssVar{"--focus-ring-width", px(focusRingWidthDp)},
-		cssVar{"--state-disabled-opacity", fnum(tokens.DisabledOpacity*100) + "%"},
-	)
-	// The scrim: a modal's dimmer over the whole window plane — black at alpha
-	// 0x80, deliberately the same in both modes because a scrim dims by
-	// reducing luminance, so it lives with the mode-invariant scales rather
-	// than in the colour schemes. Like the shadows' fixed black, it is a
-	// constant of the pattern, not a ramp resolution; emitting it as a token
-	// keeps the class layer itself literal-free.
-	vars = append(vars, cssVar{"--color-scrim", scrimRGBA})
+	// The focus ring's 2 dp stroke width, mode-invariant, which is why it
+	// is here and the ring's COLOUR is not: the ring wears
+	// --platform-keyboard-focus-indicator, which flips with the appearance.
+	vars = append(vars, cssVar{"--focus-ring-width", px(focusRingWidthDp)})
 	return vars
 }
-
-// scrimRGBA is the scrim colour — color.NRGBA{0, 0, 0, 0x80} — as the CSS
-// colour that REPRODUCES it, which is not rgba(0,0,0,0.502): Gio
-// composites the translucent black in linear RGB while a browser composites
-// plain-alpha backgrounds in the sRGB space the pixels are stored in, so the
-// literal alpha would dim roughly twice as hard as the pattern does
-// (measured: 123 vs Gio's 181 over the light bg pin).
-// The sRGB-equivalent alpha — the a solving srgb(bg)·(1−a) =
-// srgb(linear(bg)·0.5) — is 0.267 over the light surfaces (bg ≈ 247), 0.28 at
-// mid-grey and 0.30 near black: 0.28 is the compromise, within ±0.013 of
-// exact across the whole tonal range (≤ ~3/255 per channel on any surface),
-// and one value serves both modes exactly as the Gio constant does.
-const scrimRGBA = "rgba(0, 0, 0, 0.28)"
 
 // focusRingWidthDp is the focus ring's stroke width — the 2 dp
 // components/button draws (drawButton's gtx.Dp(2) stroke), identical in
@@ -914,12 +370,12 @@ func block(b *strings.Builder, selector string, vars []cssVar) {
 	b.WriteString("}\n")
 }
 
-// stylesCSS renders the full token sheet: the light scheme and every
-// mode-invariant scale under :root, the paired dark colours under .dark,
-// and the compact density metrics under .compact. The two class blocks are
-// orthogonal switches — .dark flips the colours (and with them the
-// var()-chained --elevation-* surfaces), .compact flips the per-setting
-// density metrics — so a surface can be any of the four combinations.
+// stylesCSS renders the full token sheet: the platform's light set and
+// every mode-invariant scale under :root, the platform's dark set under
+// .dark, and the compact density metrics under .compact. The two class
+// blocks are orthogonal switches — .dark flips the colours, .compact flips
+// the per-setting density metrics — so a surface can be any of the four
+// combinations.
 func stylesCSS(s Snapshot) string {
 	var b strings.Builder
 	b.WriteString("/* Generated by theme/export (cmd/vg-tokens). Do not edit. */\n\n")
@@ -937,12 +393,9 @@ func stylesCSS(s Snapshot) string {
 	fontFace("Roboto", "500", "roboto-medium.ttf")
 	fontFace("Roboto Mono", "400", "robotomono-regular.ttf")
 	b.WriteString("\n")
-	// The platform's set stands beside the derived one in both blocks, under
-	// its own prefix, so a rule may name either while the consumers convert.
-	root := append(colorVars(s.Light), platformVars(s.PlatformLight)...)
-	block(&b, ":root", append(root, scaleVars(s)...))
+	block(&b, ":root", append(platformVars(s.PlatformLight), scaleVars(s)...))
 	b.WriteString("\n")
-	block(&b, ".dark", append(colorVars(s.Dark), platformVars(s.PlatformDark)...))
+	block(&b, ".dark", platformVars(s.PlatformDark))
 	b.WriteString("\n")
 	block(&b, ".compact", densityVars(tokens.Compact))
 	b.WriteString("\n")
@@ -1321,18 +774,19 @@ const componentClasses = `/* ---- Component classes ----
   background-size: 3.943px 3.943px, 7.943px 7.943px;
 }
 /* Disabled: unchecked, the platform's disabled control text takes the edge
-   and the fill stays; checked, the accent fill is the accent at the disabled
-   fraction of its own coverage over the surface, with the mark following it. */
+   and the fill stays; checked, the accent drains — the fill is the
+   platform's disabled control text over the surface, with the mark in the
+   platform's own control text so it still reads. */
 .checkbox:disabled, .radio:disabled {
   cursor: default;
   border-color: var(--platform-disabled-control-text);
 }
 .checkbox:checked:disabled, .checkbox.is-checked:disabled {
-  border-color: color-mix(in srgb, var(--platform-control-accent) var(--state-disabled-opacity), transparent);
-  background-color: color-mix(in srgb, var(--platform-control-accent) var(--state-disabled-opacity), transparent);
+  border-color: var(--platform-disabled-control-text);
+  background-color: var(--platform-disabled-control-text);
   background-image:
-    linear-gradient(45deg, transparent calc(50% - 0.667px), var(--platform-disabled-control-text) calc(50% - 0.667px), var(--platform-disabled-control-text) calc(50% + 0.667px), transparent calc(50% + 0.667px)),
-    linear-gradient(135deg, transparent calc(50% - 0.667px), var(--platform-disabled-control-text) calc(50% - 0.667px), var(--platform-disabled-control-text) calc(50% + 0.667px), transparent calc(50% + 0.667px));
+    linear-gradient(45deg, transparent calc(50% - 0.667px), var(--platform-control-text) calc(50% - 0.667px), var(--platform-control-text) calc(50% + 0.667px), transparent calc(50% + 0.667px)),
+    linear-gradient(135deg, transparent calc(50% - 0.667px), var(--platform-control-text) calc(50% - 0.667px), var(--platform-control-text) calc(50% + 0.667px), transparent calc(50% + 0.667px));
 }
 
 /* Radio (components/input radio.go): the same 16 dp glyph as a circle.
@@ -1346,8 +800,8 @@ const componentClasses = `/* ---- Component classes ----
   background-clip: border-box;
 }
 .radio:checked:disabled, .radio.is-checked:disabled {
-  border-color: color-mix(in srgb, var(--platform-control-accent) var(--state-disabled-opacity), transparent);
-  background: radial-gradient(circle, var(--platform-disabled-control-text) 4px, color-mix(in srgb, var(--platform-control-accent) var(--state-disabled-opacity), transparent) 4px);
+  border-color: var(--platform-disabled-control-text);
+  background: radial-gradient(circle, var(--platform-control-text) 4px, var(--platform-disabled-control-text) 4px);
 }
 
 /* ---- Card and group ----
@@ -1650,7 +1104,7 @@ const componentClasses = `/* ---- Component classes ----
   inset: 0 10px;  /* SelectionInset */
   z-index: -1;
   border-radius: 8px;  /* SelectionRadius */
-  background: var(--platform-control-accent);
+  background: var(--platform-sidebar-selection);
 }
 .sidebar-item-icon {
   flex: none;

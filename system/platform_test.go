@@ -95,14 +95,21 @@ func TestThePlatformSetOnMacOSIsTheLiveSet(t *testing.T) {
 	}
 }
 
-// TestThePlatformSetIgnoresAPinnedBrand pins that the platform set is the
-// platform's answer and not the application's: an explicit palette option
-// steers Color and leaves the platform set where the OS put it.
-func TestThePlatformSetIgnoresAPinnedBrand(t *testing.T) {
+// TestAPinnedThemeColourMovesTheAccentRowsAlone pins the reach of a chosen
+// theme colour: it rebuilds the rows the platform derives from the accent
+// and leaves every other name where the OS put it.
+func TestAPinnedThemeColourMovesTheAccentRowsAlone(t *testing.T) {
+	green := tokens.PlatformLight.SystemGreen
 	for _, a := range []system.Appearance{{}, {Dark: true}} {
-		branded := firstPlatform(t, a, system.WithSeed(tokens.PlatformLight.SystemGreen))
-		if want := firstPlatform(t, a); branded != want {
-			t.Errorf("a pinned brand moved the platform set for %+v", a)
+		branded := firstPlatform(t, a, system.WithThemeColor(green))
+		if want := firstPlatform(t, a).WithAccent(green); branded != want {
+			t.Errorf("a pinned theme colour did not rebuild the accent rows for %+v", a)
+		}
+		if got := branded.ControlAccent; got.R != green.R || got.G != green.G || got.B != green.B {
+			t.Errorf("the accent is %v for %+v, want the chosen %v", got, a, green)
+		}
+		if branded.WindowBackground != firstPlatform(t, a).WindowBackground {
+			t.Errorf("a pinned theme colour moved the window's plane for %+v", a)
 		}
 	}
 }

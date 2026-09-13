@@ -36,20 +36,3 @@ func RelativeLuminance(c stdcolor.NRGBA) float64 {
 	}
 	return 0.2126*lin(c.R) + 0.7152*lin(c.G) + 0.0722*lin(c.B)
 }
-
-// LuminanceRatio is the sRGB luminance ratio between two colours, (L1+0.05) /
-// (L2+0.05) with the lighter first, in [1,21].
-//
-// It is a lightness dial and not a contrast measure. What it answers is
-// whether two colours off one lightness sweep are still two colours — the
-// question the palette's container, state, raise and seam dials are each set
-// against — and it says nothing about whether a reader can resolve one colour
-// laid on another. That is [APCA]'s question alone, and a floor on legibility
-// is a floor on [Magnitude].
-func LuminanceRatio(a, b stdcolor.NRGBA) float64 {
-	la, lb := RelativeLuminance(a), RelativeLuminance(b)
-	if la < lb {
-		la, lb = lb, la
-	}
-	return (la + 0.05) / (lb + 0.05)
-}

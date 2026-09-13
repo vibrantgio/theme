@@ -26,8 +26,8 @@ import (
 // all resolve through the token sheet.
 const chromeCSS = `body {
   margin: 0;
-  background: var(--color-bg);
-  color: var(--color-text);
+  background: var(--platform-window-background);
+  color: var(--platform-label);
   font-family: var(--font-family), system-ui, sans-serif;
   font-size: var(--font-body-medium-size);
   line-height: var(--font-body-medium-line-height);
@@ -67,14 +67,14 @@ h3 {
 }
 .intro {
   max-width: 48rem;
-  color: var(--color-neutral-700);
+  color: var(--platform-secondary-label);
 }
 .annot {
   font-size: var(--font-label-small-size);
   line-height: var(--font-label-small-line-height);
   font-weight: var(--font-label-small-weight);
   letter-spacing: var(--font-label-small-tracking);
-  color: var(--color-neutral-700);
+  color: var(--platform-secondary-label);
   margin: var(--space-1) 0 0;
 }
 .mode-toggle {
@@ -84,14 +84,14 @@ h3 {
   font-weight: var(--font-label-large-weight);
   letter-spacing: var(--font-label-large-tracking);
   padding: var(--space-2) var(--space-4);
-  color: var(--color-text);
-  background: var(--color-surface);
-  border: thin solid var(--color-control-border);
+  color: var(--platform-label);
+  background: var(--platform-card-fill);
+  border: thin solid var(--platform-field-edge);
   border-radius: var(--radius-base);
   cursor: pointer;
 }
 .mode-toggle:hover {
-  background: var(--color-neutral-300);
+  background: var(--platform-separator);
 }
 `
 
@@ -199,7 +199,7 @@ const colorPageCSS = `.platform-grid {
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-sm);
-  border: thin solid var(--color-neutral-300);
+  border: thin solid var(--platform-separator);
   font-size: var(--font-label-medium-size);
   font-weight: var(--font-label-medium-weight);
 }
@@ -220,7 +220,7 @@ const colorPageCSS = `.platform-grid {
   margin: var(--space-4) 0;
 }
 .contrast th, .contrast td {
-  border: thin solid var(--color-neutral-300);
+  border: thin solid var(--platform-separator);
   padding: var(--space-1) var(--space-3);
   font-size: var(--font-body-small-size);
   line-height: var(--font-body-small-line-height);
@@ -231,184 +231,25 @@ const colorPageCSS = `.platform-grid {
   font-weight: var(--font-label-medium-weight);
 }
 .contrast thead th {
-  background: var(--color-surface);
+  background: var(--platform-card-fill);
   text-align: right;
 }
 `
 
-// colorRole is one ramp role's page model: the CSS name, both mode ramps,
-// and the pinned chips shown beside the ramp — for the accent roles the
-// pinned base with its on-colour, for neutral the semantic layer.
-type colorRole struct {
-	name string
-	pins []pinChip
-	// pairLabel names the pinned text pair measured in the contrast table.
-	pairLabel                     string
-	lightPinText, lightPinSurface stdcolor.NRGBA
-	darkPinText, darkPinSurface   stdcolor.NRGBA
-}
-
-// pinChip is one pinned base rendered as a labelled chip: painted by its
-// var, captioned with both modes' hexes.
-type pinChip struct {
-	bgVar, fgVar string         // CSS variable names, without var()
-	label        string         // caption
-	lightBg      stdcolor.NRGBA // annotation values
-	darkBg       stdcolor.NRGBA
-}
-
-// colorHTML renders foundations/color.html: eight roles, each with its full
-// nine-step ramp, its pinned base(s), the step purposes, and the
-// measured APCA Lc of each text pair in both modes.
+// colorHTML renders foundations/color.html: the platform's colour set, one
+// swatch per name, both appearances printed, and the measured contrast of
+// the pairs the platform itself puts together.
+//
+// It is a listing and not a system. The values are read off the platform,
+// so there is nothing to explain about how one was derived from another:
+// what a page can usefully add is the name, the two values, and what each
+// name reads at where the platform pairs it with a fill.
 func colorHTML(s Snapshot) string {
-	roles := []colorRole{
-		{
-			name: "neutral",
-			pins: []pinChip{
-				{"--color-bg", "--color-text", "bg (pinned)", s.Light.Background, s.Dark.Background},
-				{"--color-surface", "--color-text", "surface (neutral-200)", s.Light.Surface, s.Dark.Surface},
-				{"--color-seam", "--color-text", "seam (neutral-300)", s.Light.Seam, s.Dark.Seam},
-				{"--color-text", "--color-bg", "text (pinned)", s.Light.Text, s.Dark.Text},
-			},
-			pairLabel:       "text on bg",
-			lightPinText:    s.Light.Text,
-			lightPinSurface: s.Light.Background,
-			darkPinText:     s.Dark.Text,
-			darkPinSurface:  s.Dark.Background,
-		},
-		{
-			name: "primary",
-			pins: []pinChip{
-				{"--color-accent", "--color-on-accent", "accent (pinned primary)", s.Light.Primary, s.Dark.Primary},
-			},
-			pairLabel:       "on-accent on accent",
-			lightPinText:    s.Light.OnPrimary,
-			lightPinSurface: s.Light.Primary,
-			darkPinText:     s.Dark.OnPrimary,
-			darkPinSurface:  s.Dark.Primary,
-		},
-		{
-			name: "secondary",
-			pins: []pinChip{
-				{"--color-secondary", "--color-on-secondary", "secondary (pinned)", s.Light.Secondary, s.Dark.Secondary},
-			},
-			pairLabel:       "on-secondary on secondary",
-			lightPinText:    s.Light.OnSecondary,
-			lightPinSurface: s.Light.Secondary,
-			darkPinText:     s.Dark.OnSecondary,
-			darkPinSurface:  s.Dark.Secondary,
-		},
-		{
-			name: "tertiary",
-			pins: []pinChip{
-				{"--color-tertiary", "--color-on-tertiary", "tertiary (pinned)", s.Light.Tertiary, s.Dark.Tertiary},
-			},
-			pairLabel:       "on-tertiary on tertiary",
-			lightPinText:    s.Light.OnTertiary,
-			lightPinSurface: s.Light.Tertiary,
-			darkPinText:     s.Dark.OnTertiary,
-			darkPinSurface:  s.Dark.Tertiary,
-		},
-		{
-			name: "error",
-			pins: []pinChip{
-				{"--color-error", "--color-on-error", "error (pinned)", s.Light.Error, s.Dark.Error},
-			},
-			pairLabel:       "on-error on error",
-			lightPinText:    s.Light.OnError,
-			lightPinSurface: s.Light.Error,
-			darkPinText:     s.Dark.OnError,
-			darkPinSurface:  s.Dark.Error,
-		},
-		{
-			name: "success",
-			pins: []pinChip{
-				{"--color-success", "--color-on-success", "success (pinned)", s.Light.Success, s.Dark.Success},
-			},
-			pairLabel:       "on-success on success",
-			lightPinText:    s.Light.OnSuccess,
-			lightPinSurface: s.Light.Success,
-			darkPinText:     s.Dark.OnSuccess,
-			darkPinSurface:  s.Dark.Success,
-		},
-		{
-			name: "warning",
-			pins: []pinChip{
-				{"--color-warning", "--color-on-warning", "warning (pinned)", s.Light.Warning, s.Dark.Warning},
-			},
-			pairLabel:       "on-warning on warning",
-			lightPinText:    s.Light.OnWarning,
-			lightPinSurface: s.Light.Warning,
-			darkPinText:     s.Dark.OnWarning,
-			darkPinSurface:  s.Dark.Warning,
-		},
-		{
-			name: "info",
-			pins: []pinChip{
-				{"--color-info", "--color-on-info", "info (pinned)", s.Light.Info, s.Dark.Info},
-			},
-			pairLabel:       "on-info on info",
-			lightPinText:    s.Light.OnInfo,
-			lightPinSurface: s.Light.Info,
-			darkPinText:     s.Dark.OnInfo,
-			darkPinSurface:  s.Dark.Info,
-		},
-	}
-
 	var b strings.Builder
-	for _, role := range roles {
-		lightRamp := rampNamed(s.Light.Ramps, role.name)
-		darkRamp := rampNamed(s.Dark.Ramps, role.name)
-		fmt.Fprintf(&b, "<section>\n<h2>%s</h2>\n", role.name)
-
-		// The ramp: nine swatches painted by their vars, captioned with the
-		// step purpose and both modes' values.
-		b.WriteString("<div class=\"ramp\">\n")
-		for step := 100; step <= 900; step += 100 {
-			labelVar := fmt.Sprintf("--color-%s-900", role.name)
-			if step >= 600 {
-				labelVar = fmt.Sprintf("--color-%s-100", role.name)
-			}
-			fmt.Fprintf(&b, "<div class=\"step\">\n<div class=\"chip\" style=\"background: var(--color-%s-%d); color: var(%s)\">%d</div>\n",
-				role.name, step, labelVar, step)
-			fmt.Fprintf(&b, "<p class=\"annot\">%s<br>%s</p>\n</div>\n",
-				stepPurpose(step), modeHex(lightRamp.Step(step), darkRamp.Step(step)))
-		}
-		b.WriteString("</div>\n")
-
-		// The pinned base(s), painted by their vars.
-		b.WriteString("<h3>Pins</h3>\n<div class=\"pins\">\n")
-		for _, pin := range role.pins {
-			fmt.Fprintf(&b, "<div class=\"pin\">\n<div class=\"chip\" style=\"background: var(%s); color: var(%s)\">Aa</div>\n",
-				pin.bgVar, pin.fgVar)
-			fmt.Fprintf(&b, "<p class=\"annot\">%s<br><code>var(%s)</code><br>%s</p>\n</div>\n",
-				html.EscapeString(pin.label), pin.bgVar, modeHex(pin.lightBg, pin.darkBg))
-		}
-		b.WriteString("</div>\n")
-
-		// The measured text pairs: the gates, both modes.
-		b.WriteString("<h3>Measured contrast</h3>\n<table class=\"contrast\">\n<thead>\n")
-		b.WriteString("<tr><th scope=\"col\">text pair</th><th scope=\"col\">light Lc</th><th scope=\"col\">dark Lc</th></tr>\n")
-		b.WriteString("</thead>\n<tbody>\n")
-		for _, pair := range [][2]int{{900, 100}, {900, 200}, {700, 100}, {700, 200}} {
-			text, surface := pair[0], pair[1]
-			contrastRow(&b, fmt.Sprintf("%d on %d", text, surface),
-				lightRamp.Step(text), lightRamp.Step(surface),
-				darkRamp.Step(text), darkRamp.Step(surface))
-		}
-		contrastRow(&b, role.pairLabel,
-			role.lightPinText, role.lightPinSurface,
-			role.darkPinText, role.darkPinSurface)
-		b.WriteString("</tbody>\n</table>\n</section>\n")
-	}
-
-	// The platform's own set, one swatch per name, both schemes printed. It
-	// is a listing and not a system: the values are read off the platform,
-	// so there is nothing to explain about how one was derived from another.
-	b.WriteString("<section>\n<h2>The platform's colour set</h2>\n")
-	b.WriteString("<p class=\"intro\">AppKit's semantic colours under their own names, plus the ten fills the platform draws without naming one, measured. " +
+	b.WriteString("<section>\n<h2>The platform\u2019s colour set</h2>\n")
+	b.WriteString("<p class=\"intro\">AppKit\u2019s semantic colours under their own names, plus the fills the platform draws without naming one, measured. " +
 		"Each swatch is painted through <code>var(--platform-&lt;name&gt;)</code>, so the toggle restyles it; the hexes beside it are printed for both schemes, labelled L and D. " +
-		"A name that carries a coverage is printed and painted as <code>#rrggbbaa</code> &mdash; the platform's answer for a label, a seam, an overlay or the focus ring is a colour AT a coverage over whatever lies beneath, and the swatch shows it over the page it is on.</p>\n")
+		"A name that carries a coverage is printed and painted as <code>#rrggbbaa</code> &mdash; the platform\u2019s answer for a label, a seam, an overlay or the focus ring is a colour AT a coverage over whatever lies beneath, and the swatch shows it over the page it is on.</p>\n")
 	b.WriteString("<div class=\"platform-grid\">\n")
 	for _, n := range platformNames {
 		fmt.Fprintf(&b, "<div class=\"platform-name\">\n<div class=\"platform-swatch\" style=\"background: var(--platform-%s)\"></div>\n", n.name)
@@ -417,31 +258,52 @@ func colorHTML(s Snapshot) string {
 	}
 	b.WriteString("</div>\n</section>\n")
 
-	intro := "Each role carries a nine-step functional ramp (100&ndash;900) where the step is the meaning &mdash; " +
-		"100&ndash;300 tinted fills, hovers and subtle borders, 500 the mid-value reference, 700&ndash;900 text and pressed states &mdash; " +
-		"plus a pinned base. Dark mode is the paired ramp: the same step keeps the same job. " +
+	// The measured pairs: a foreground name over the fill the platform puts
+	// it on, flattened first, because every one of these foregrounds is a
+	// coverage and APCA can only be handed an opaque colour.
+	b.WriteString("<section>\n<h2>Measured contrast</h2>\n")
+	b.WriteString("<p class=\"intro\">APCA Lc is the one contrast measure (signed: negative means light-on-dark). Each foreground is flattened over the fill beneath it in encoded sRGB first, the way the platform composites it.</p>\n")
+	b.WriteString("<table class=\"contrast\">\n<thead>\n")
+	b.WriteString("<tr><th scope=\"col\">pair</th><th scope=\"col\">light Lc</th><th scope=\"col\">dark Lc</th></tr>\n")
+	b.WriteString("</thead>\n<tbody>\n")
+	for _, pair := range platformPairs {
+		lightFill, darkFill := pair.fill(s.PlatformLight), pair.fill(s.PlatformDark)
+		contrastRow(&b, pair.label,
+			color.Flatten(pair.text(s.PlatformLight), lightFill), lightFill,
+			color.Flatten(pair.text(s.PlatformDark), darkFill), darkFill)
+	}
+	b.WriteString("</tbody>\n</table>\n</section>\n")
+
+	intro := "The platform\u2019s own colour set, one field per AppKit semantic name, with the values that name reports under each appearance. " +
 		"Swatches are painted through the token sheet, so the toggle restyles them; " +
-		"annotation values are printed for both modes, labelled L and D. " +
-		"APCA Lc is the one contrast measure (signed: negative means light-on-dark)."
+		"annotation values are printed for both schemes, labelled L and D."
 	return page("Colour — Vibrant Gio foundations", "Colour", intro, colorPageCSS, b.String())
 }
 
-// rampNamed resolves a ramp by its CSS role name via the shared rampRoles
-// table, so the pages and the sheet cannot disagree about which ramp a name
-// means.
-func rampNamed(set tokens.RampSet, name string) tokens.Ramp {
-	for _, role := range rampRoles {
-		if role.name == name {
-			return role.ramp(set)
-		}
-	}
-	panic("export: rampNamed: unknown role " + name)
+// platformPairs are the foreground/fill pairings the platform itself makes,
+// which are the only pairings a listing of its names can honestly measure:
+// a label on the plane it is set on, a control's text on the control's own
+// fill, the text the platform names for a fill its accent paints.
+var platformPairs = []struct {
+	label      string
+	text, fill func(tokens.PlatformColors) stdcolor.NRGBA
+}{
+	{"label on the window", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Label }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.WindowBackground }},
+	{"secondary label on the window", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SecondaryLabel }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.WindowBackground }},
+	{"label on the chrome material", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Label }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarMaterial }},
+	{"label on the card", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Label }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.CardFill }},
+	{"control text on the push button", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ControlText }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.PushButtonFill }},
+	{"alternate selected control text on the accent", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.AlternateSelectedControlText }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ControlAccent }},
+	{"alternate selected control text on the selected row", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.AlternateSelectedControlText }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SelectedContentBackground }},
+	{"alternate selected control text on the sidebar pill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.AlternateSelectedControlText }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarSelection }},
+	{"link on the window", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Link }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.WindowBackground }},
+	{"disabled control text on the push button", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.DisabledControlText }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.PushButtonFill }},
 }
 
 // typePageCSS is the type page's specimen scaffolding.
 const typePageCSS = `.type-role {
   margin: var(--space-8) 0;
-  border-bottom: thin solid var(--color-seam);
+  border-bottom: thin solid var(--platform-separator);
   padding-bottom: var(--space-4);
 }
 .specimen {
@@ -492,7 +354,7 @@ const layoutPageCSS = `.space-row {
 }
 .space-bar {
   height: var(--space-4);
-  background: var(--color-accent);
+  background: var(--platform-control-accent);
   border-radius: var(--radius-sm);
 }
 .specimen-grid {
@@ -504,8 +366,8 @@ const layoutPageCSS = `.space-row {
 .radius-box {
   width: var(--space-24);
   height: var(--space-24);
-  background: var(--color-surface);
-  border: thin solid var(--color-control-border);
+  background: var(--platform-card-fill);
+  border: thin solid var(--platform-field-edge);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -519,15 +381,15 @@ const layoutPageCSS = `.space-row {
 .density-col {
   flex: 1 1 18rem;
   padding: var(--space-4);
-  background: var(--color-surface);
-  border: thin solid var(--color-neutral-300);
+  background: var(--platform-card-fill);
+  border: thin solid var(--platform-separator);
   border-radius: var(--radius-md);
 }
 .hit-target {
   display: flex;
   align-items: center;
   min-height: var(--density-min-hit-target);
-  border: thin dashed var(--color-control-border);
+  border: thin dashed var(--platform-field-edge);
   border-radius: var(--radius-sm);
   margin: var(--space-2) 0;
 }
@@ -536,8 +398,8 @@ const layoutPageCSS = `.space-row {
   padding: 0 var(--density-padding-x);
   display: inline-flex;
   align-items: center;
-  background: var(--color-accent);
-  color: var(--color-on-accent);
+  background: var(--platform-control-accent);
+  color: var(--platform-alternate-selected-control-text);
   border-radius: var(--radius-md);
   font-size: var(--font-label-large-size);
   font-weight: var(--font-label-large-weight);
@@ -548,9 +410,9 @@ const layoutPageCSS = `.space-row {
   margin-left: var(--space-2);
   display: inline-flex;
   align-items: center;
-  background: var(--color-surface);
-  color: var(--color-text);
-  border: thin solid var(--color-control-border);
+  background: var(--platform-card-fill);
+  color: var(--platform-label);
+  border: thin solid var(--platform-field-edge);
   border-radius: var(--radius-md);
   font-size: var(--font-label-large-size);
   font-weight: var(--font-label-large-weight);
@@ -578,8 +440,8 @@ const layoutPageCSS = `.space-row {
 .pad-box {
   display: inline-block;
   padding: var(--density-padding-y) var(--density-padding-x);
-  background: var(--color-neutral-200);
-  border: thin solid var(--color-control-border);
+  background: var(--platform-card-fill);
+  border: thin solid var(--platform-field-edge);
   border-radius: var(--radius-md);
   margin: var(--space-2) 0;
 }
@@ -588,7 +450,7 @@ const layoutPageCSS = `.space-row {
   flex-wrap: wrap;
   gap: var(--space-8);
   padding: var(--space-6);
-  background: var(--color-neutral-100);
+  background: var(--platform-window-background);
   border-radius: var(--radius-md);
   margin: var(--space-4) 0;
 }
@@ -596,7 +458,7 @@ const layoutPageCSS = `.space-row {
   width: var(--space-24);
   height: var(--space-20);
   border-radius: var(--radius-md);
-  border: thin solid var(--color-neutral-300);
+  border: thin solid var(--platform-separator);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -657,35 +519,24 @@ func layoutHTML(s Snapshot) string {
 	}
 	b.WriteString("</div>\n</section>\n")
 
-	b.WriteString("<section>\n<h2>Elevation</h2>\n")
-	b.WriteString("<p class=\"intro\">Elevation is tonal, and it climbs toward the light: <strong>in both schemes, " +
-		"every level is lighter than the one beneath it</strong> &mdash; one rule, no mirror. " +
-		"<code>--elevation-*</code> is the surface fill and the default cue, resolved per scheme, so both blocks " +
-		"state their own six. The levels run from the backdrop up toward the reader: the bare window plane, the " +
-		"chrome a window wears, the content surface, then raised insets and floating transients. " +
-		"Read the swatches below left to right and the fill gets lighter, in either scheme. " +
+	b.WriteString("<section>\n<h2>Shadow depth</h2>\n")
+	b.WriteString("<p class=\"intro\">A level\u2019s FILL is the platform\u2019s own name for what that region is &mdash; " +
+		"the window\u2019s plane, the chrome material, the content, the card. What the levels state here is the " +
+		"shadow each casts, the opt-in cue a floating transient carries on top of its fill: " +
+		"<code>--shadow-N</code>, for menus, dialogs and tooltips. Neither level under the content casts anything &mdash; " +
+		"the backdrop is what everything stands on, and chrome lies flat on it. " +
 		"The levels stop at 3 &mdash; desktop has no six-deep stack.</p>\n")
 	b.WriteString("<div class=\"elevation-row\">\n")
-	for i, level := range elevationLevels {
+	for i, level := range shadowLevels {
 		wears := []string{"nothing: it shows where nothing stands", "navbars, toolbars, sidebars, panes",
 			"the content", "cards, fences, fields", "dialogs, toasts", "menus, popovers"}[i]
-		fmt.Fprintf(&b, "<div>\n<div class=\"surface-card\" style=\"background: var(--elevation-%s)\">%s</div>\n", level.name, level.name)
-		fmt.Fprintf(&b, "<p class=\"annot\"><code>--elevation-%s</code> &middot; %s</p>\n</div>\n", level.name, wears)
-	}
-	b.WriteString("</div>\n")
-
-	b.WriteString("<h3>The opt-in shadow</h3>\n")
-	b.WriteString("<p class=\"intro\">The dp shadows survive as <code>--shadow-N</code> for floating transients only &mdash; " +
-		"menus, dialogs, tooltips: a float adds its shadow on top of its tonal fill; resting surfaces use the fill alone.</p>\n")
-	b.WriteString("<div class=\"elevation-row\">\n")
-	for _, level := range elevationLevels {
-		fmt.Fprintf(&b, "<div>\n<div class=\"surface-card\" style=\"background: var(--elevation-%s); box-shadow: var(--shadow-%s)\">%s</div>\n", level.name, level.name, level.name)
-		fmt.Fprintf(&b, "<p class=\"annot\"><code>--shadow-%s</code> &middot; depth %sdp</p>\n</div>\n", level.name, fnum(s.Elevation.Dp(level.level)))
+		fmt.Fprintf(&b, "<div>\n<div class=\"surface-card\" style=\"background: var(--platform-card-fill); box-shadow: var(--shadow-%s)\">%s</div>\n", level.name, level.name)
+		fmt.Fprintf(&b, "<p class=\"annot\"><code>--shadow-%s</code> &middot; depth %sdp &middot; %s</p>\n</div>\n", level.name, fnum(level.dp(s.Elevation)), wears)
 	}
 	b.WriteString("</div>\n</section>\n")
 
 	intro := "The spacing scale as sized bars, the control metrics at both density settings, the radius scale on sample boxes " +
-		"and tonal elevation as fill swatches &mdash; every bar width, control height, padding, corner radius, surface fill and " +
+		"and the shadow depth each level casts &mdash; every bar width, control height, padding, corner radius and " +
 		"shadow resolves through its token, so the sheet is the single source of these shapes."
 	return page("Layout — Vibrant Gio foundations", "Layout", intro, layoutPageCSS, b.String())
 }

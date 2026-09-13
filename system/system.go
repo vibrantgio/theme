@@ -4,11 +4,11 @@
 // [Source]; [FromSource] turns a Source plus a poll interval into an
 // rx.Observable that emits only when the value changes; [Live] wires the
 // current platform's shim, and [LiveTheme] maps that stream to
-// [theme.Theme] values whose Color matches the OS setting. LiveTheme also
-// composes the OS accessibility preferences (theme/a11y):
-// reduce motion zeroes the emitted motion scale's durations so animated
-// components snap, and high contrast routes the resolved palette pair
-// through [HighContrastVariant].
+// [theme.Theme] values whose colour set matches the OS setting. LiveTheme
+// also composes the OS accessibility preferences (theme/a11y): reduce
+// motion zeroes the emitted motion scale's durations so animated components
+// snap. High contrast needs no branch of its own — the platform answers it
+// in the values it reports.
 //
 // Reach for it as the theme argument of a window: LiveTheme(time.Second) is
 // what every workbench application hands to theme/window, and from there
@@ -38,18 +38,16 @@
 //	                                       none
 //	other     no (always light)            no
 //
-// With nothing chosen at all — no [WithSeed] or [WithPalette], and a
-// platform reporting no colour — the pair a stream emits is the platform's
-// own. On macOS that is systemBlue, the colour the system paints an
-// application that has chosen none: the Multicolour setting (the absent
-// AppleAccentColor key) and a failed read of the macOS accent colour both
-// report "no accent override" and derive from it, so tokens.DefaultLight/
-// DefaultDark are reached there only through [WithSeed], [WithPalette], or
-// a brand that pins one. On Windows and Linux, whose desktops publish no
-// such colour, they are what an unchosen stream emits.
+// With nothing chosen at all — no [WithThemeColor], and a platform
+// reporting no colour — the accent a stream emits is the platform's own. On
+// macOS that is what AppKit reports for controlAccentColor: the Multicolour
+// setting (the absent AppleAccentColor key) and a failed read both mean "no
+// accent override", and the live reader answers with the platform's blue.
+// On Windows and Linux, whose desktops publish an accent colour but no
+// colour set, the recorded set's accent rows are rebuilt for it.
 //
 // The platform's own colour set — the tokens.PlatformColors every emission
-// carries beside the palette — is read off AppKit on macOS: every name in
+// carries — is read off AppKit on macOS: every name in
 // the set under the aqua and darkAqua appearances, resolved to sRGB with
 // its alpha through a small Objective-C shim, on the same cadence as the
 // accent key. So the accent rows are the platform's own reading rather than
@@ -61,7 +59,7 @@
 // accent shapes are deliberate: macOS's accent is one of eight named
 // choices, carried as the [Accent] enum; Windows and Linux accents are
 // arbitrary colours, carried raw in Appearance.AccentSeed. Both feed the
-// same tokens.FromSeed derivation.
+// same rebuild of the set's accent rows.
 //
 // The streams are shared. One [FromSource]/[Live]/[LiveTheme] value
 // runs one poll loop no matter how many subscribers attach: the loop starts
@@ -78,19 +76,17 @@
 // Errors are invisible by design: a failing Read is folded into the zero
 // Appearance rather than an error emission, so a broken source is
 // indistinguishable from light mode with no accent. The accent is not just
-// carried: with no palette option, LiveTheme follows it — each [Accent]
-// maps to Apple's published seed colour and the emitted palette is
-// tokens.FromSeed of that seed, derived once per accent value and cached.
-// An explicit [WithSeed] or [WithPalette] beats the OS accent: the app
-// chose its brand, so the accent is ignored entirely; with neither, and no
-// colour reported, the platform's own colour above stands. [PlatformColor]
-// answers that last question on its own, for an application that offers the
-// colour it would derive from as a choice.
+// carried: with no theme colour chosen, LiveTheme follows it — each
+// [Accent] maps to Apple's published colour and the emitted set's accent
+// rows are rebuilt for it. An explicit [WithThemeColor] beats the OS
+// accent: the application chose its colour, so the accent is ignored
+// entirely; with neither, and no colour reported, the platform's own colour
+// above stands. [PlatformColor] answers that last question on its own, for
+// an application that offers the colour it would rebuild from as a choice.
 package system
 
 import (
 	"image/color"
-	"sync"
 	"time"
 
 	"github.com/reactivego/rx"
@@ -112,7 +108,7 @@ type Appearance struct {
 	// AppleAccentColor key (-1 graphite, 0..6 red through pink, absent =
 	// multicolour) onto it; platforms without an enum-shaped accent report
 	// the zero value. The zero value, AccentDefault, means "no accent
-	// override", so the zero Appearance keeps the theme's own palette.
+	// override", so the zero Appearance keeps the platform's own accent.
 	Accent Accent
 
 	// AccentSeed is the OS accent as a raw colour, for platforms whose
@@ -120,8 +116,8 @@ type Appearance struct {
 	// Windows shim decodes the DWM AccentColor registry value into it, and
 	// the Linux shim the GNOME named accent or the KDE kdeglobals RGB.
 	// It is meaningful only when AccentSeedSet is true; when set it takes
-	// precedence over Accent in palette resolution (an explicit WithSeed
-	// or WithPalette still beats both).
+	// precedence over Accent when the accent rows are rebuilt (an explicit
+	// WithThemeColor still beats both).
 	AccentSeed color.NRGBA
 
 	// AccentSeedSet reports whether AccentSeed carries a value. A separate
@@ -170,25 +166,26 @@ func Live(interval time.Duration) rx.Observable[Appearance] {
 	return FromSource(defaultSource(), interval)
 }
 
-// Option customizes a theme stream. The palette options ([WithSeed],
-// [WithPalette]) choose the light/dark pair the stream flips between; the
-// default — no palette option — is the platform's own pair (the package
-// doc's table), except that with no option the stream also follows the OS
-// accent: a non-default [Accent] swaps in tokens.FromSeed of that accent's
-// seed colour. Giving any palette option pins the pair — the app chose its
-// brand, so the OS accent is ignored. Palette options choose which light/dark pair is
-// emitted; they never affect when emissions happen, so OS dark-mode
-// tracking keeps working with a branded palette. [WithTypography] chooses
+// Option customizes a theme stream. [WithThemeColor] pins the colour the
+// emitted set's accent rows are rebuilt for; with no such option the stream
+// follows the OS accent instead. Pinning it means the application chose its
+// colour, so the OS accent is ignored. It changes only WHICH values are
+// emitted; it never affects when emissions happen, so OS dark-mode tracking
+// keeps working with a chosen theme colour. [WithTypography] chooses
 // the type roles the stream emits; the default is tokens.EmojiTypography().
 // [WithA11ySource] chooses where the accessibility preferences composed
 // into the emissions are read from.
 type Option func(*config)
 
-// config is everything the options configure: the palette machinery, the
+// config is everything the options configure: the theme colour, the
 // typography the stream emits, and the accessibility-preference source
 // the stream composes on top of it.
 type config struct {
-	pal *palette
+	// themeColor is the colour the accent rows of every emitted set are
+	// rebuilt for, and pinned says one was chosen. With nothing chosen the
+	// platform's own accent stands.
+	themeColor color.NRGBA
+	pinned     bool
 
 	// typ is the type roles every emission carries. The default is
 	// tokens.EmojiTypography(); [WithTypography] replaces it.
@@ -200,13 +197,11 @@ type config struct {
 	a11ySrc a11y.Source
 }
 
-// newConfig applies opts over the defaults. When several palette options
-// or several [WithTypography] options are given, the last one of each wins.
+// newConfig applies opts over the defaults. When several theme-colour
+// options or several [WithTypography] options are given, the last one of
+// each wins.
 func newConfig(opts []Option) *config {
-	c := &config{
-		pal: &palette{light: tokens.DefaultLight, dark: tokens.DefaultDark},
-		typ: tokens.EmojiTypography(),
-	}
+	c := &config{typ: tokens.EmojiTypography()}
 	for _, opt := range opts {
 		opt(c)
 	}
@@ -222,44 +217,17 @@ func (c *config) a11yStream(interval time.Duration, fallback rx.Observable[a11y.
 	return fallback
 }
 
-// palette is the light/dark pair an Appearance flips between. When pinned
-// is false (no palette option given) an OS accent — a raw AccentSeed or a
-// non-default Accent — overrides the pair with the seed's derived pair, and
-// with no accent reported the platform's own colour ([platformSeed]) does;
-// bySeed caches those derivations so tokens.FromSeed runs once per
-// distinct seed colour, not once per emission.
-type palette struct {
-	light, dark tokens.ColorTokens
-	pinned      bool // an explicit option chose the pair; ignore the OS accent
-
-	mu     sync.Mutex
-	bySeed map[color.NRGBA]colorPair
-}
-
-type colorPair struct {
-	light, dark tokens.ColorTokens
-}
-
-// WithSeed derives the light/dark pair from one brand colour via
-// tokens.FromSeed (derived once, up front — not per emission). The light
-// primary is that colour at its own hue and depth with the palette's accent
-// chroma on it; everything else is generated. The pair is
-// pinned: a stream given WithSeed ignores the OS accent colour.
-func WithSeed(seed color.NRGBA) Option {
-	return func(c *config) {
-		c.pal.light, c.pal.dark = tokens.FromSeed(seed)
-		c.pal.pinned = true
-	}
-}
-
-// WithPalette supplies both modes explicitly, for callers that need full
-// control beyond what a seed derives. The appearance stream still decides
-// which of the two is live. The pair is pinned: a stream given
-// WithPalette ignores the OS accent colour.
-func WithPalette(light, dark tokens.ColorTokens) Option {
-	return func(c *config) {
-		c.pal.light, c.pal.dark = light, dark
-		c.pal.pinned = true
+// WithThemeColor pins the theme colour: the colour the emitted set's accent
+// rows are rebuilt for, through [tokens.PlatformColors.WithAccent]. It is
+// what the themer keeps and what a brand carries, and it beats the accent
+// the OS reports — the application chose its colour.
+//
+// Nothing else in the set moves. The accent is the one thing the platform
+// derives from a colour of the user's choosing; every other name is the
+// platform's own answer for the appearance.
+func WithThemeColor(c color.NRGBA) Option {
+	return func(cfg *config) {
+		cfg.themeColor, cfg.pinned = c, true
 	}
 }
 
@@ -285,77 +253,24 @@ func WithTypography(t tokens.Typography) Option {
 	}
 }
 
-// HighContrastVariant selects the high-contrast variant of a resolved
-// light/dark palette pair. The theme stream calls it while the OS
-// "Increase Contrast" preference is on, AFTER palette precedence has
-// resolved the pair — so it derives the high-contrast variant OF the
-// chosen palette, whether that came from WithSeed, WithPalette, the OS
-// accent, or the defaults.
-//
-// The default re-derives from the resolved pair's own brand base:
-// tokens.FromSeedHighContrast of light.Primary. For every seed-derived pair
-// — the defaults, WithSeed, an OS accent — that base is what the seed
-// derived, and the derivation reproduces itself from it, so the result is
-// the seed's own variant. A hand-built WithPalette pair carries no seed,
-// but its light Primary is still its pinned brand base, so it gets a
-// derived high-contrast approximation via that pin —
-// FromSeedHighContrast accepts any colour, so derivation never fails.
-// Derivations are memoized per pair, mirroring the per-seed palette cache.
-//
-// It is a variable so an application (or test) can substitute its own
-// derivation.
-var HighContrastVariant = func(light, dark tokens.ColorTokens) (hcLight, hcDark tokens.ColorTokens) {
-	hcMu.Lock()
-	defer hcMu.Unlock()
-	key := colorPair{light: light, dark: dark}
-	if c, ok := hcByPair[key]; ok {
-		return c.light, c.dark
-	}
-	l, d := tokens.FromSeedHighContrast(light.Primary)
-	if hcByPair == nil {
-		hcByPair = make(map[colorPair]colorPair)
-	}
-	hcByPair[key] = colorPair{light: l, dark: d}
-	return l, d
-}
-
-// hcByPair memoizes the default HighContrastVariant per resolved pair, the
-// same idiom as palette.bySeed: the derivation runs on first sight of a
-// pair, not on every emission. Keyed on the whole pair, not just the seed
-// pin, so the cache stays correct for any pair shape.
-var (
-	hcMu     sync.Mutex
-	hcByPair map[colorPair]colorPair
-)
-
 // LiveTheme bridges system-appearance changes to a theme.Theme stream.
-// Each emission is a fresh theme.Theme whose Color field matches the OS
+// Each emission is a fresh theme.Theme whose Platform field matches the OS
 // dark-mode setting; Typography is [WithTypography]'s value or
 // tokens.EmojiTypography(); the remaining token categories use their
 // package defaults, modulated by the OS accessibility preferences below.
 //
-// Which light/dark pair flips is decided by precedence: an explicit
-// [WithSeed] or [WithPalette] wins outright — the app chose its brand, and
-// the OS accent is ignored. With no palette option the stream follows the
-// OS accent live: a raw Appearance.AccentSeed (Windows, Linux) or a
-// non-default [Accent] (macOS) emits tokens.FromSeed of that seed colour
-// (the light primary pins that colour), the raw seed beating the enum if a
-// source ever sets both. No accent at all —
-// AccentDefault with no AccentSeed: Multicolour on macOS, an unsupported
-// desktop, or a failed read — emits the platform's own pair: on macOS
-// tokens.FromSeed of systemBlue, elsewhere tokens.DefaultLight/DefaultDark.
-// An accent change re-emits the theme with the new pair; each pair is derived
-// once per seed colour and cached.
+// Which accent the set carries is decided by precedence: an explicit
+// [WithThemeColor] wins outright — the application chose its colour, and
+// the OS accent is ignored. With none, macOS carries what AppKit reports,
+// and Windows and Linux rebuild the recorded set's accent rows for the
+// colour their desktop publishes — a raw Appearance.AccentSeed, else the
+// colour the [Accent] enum carries. An accent change re-emits the theme.
 //
 // The stream also composes the OS accessibility preferences
-// ([a11y.Live] at the same interval, or [WithA11ySource]'s source), and
-// they modulate the emissions on top of the palette precedence above:
-// while ReduceMotion is on, Motion emits tokens.Motion.Reduced() — every
-// duration zero, so duration-driven components snap to their targets —
-// regardless of which palette won; while HighContrast is on, Color emits
-// [HighContrastVariant] of the resolved pair — the high-contrast variant
-// OF the chosen palette, not a palette override. A preference toggle
-// re-emits the theme just as an appearance change does.
+// ([a11y.Live] at the same interval, or [WithA11ySource]'s source): while
+// ReduceMotion is on, Motion emits tokens.Motion.Reduced() — every duration
+// zero, so duration-driven components snap to their targets. A preference
+// toggle re-emits the theme just as an appearance change does.
 //
 // The two streams it composes are shared: however many layers subscribe to
 // one LiveTheme value, the appearance source and the a11y source are each
@@ -379,26 +294,26 @@ func FromSourceTheme(src Source, interval time.Duration, opts ...Option) rx.Obse
 }
 
 // theme maps one (Appearance, A11yPrefs) combination to a theme.Theme
-// value: palette precedence resolves the pair, HighContrast selects its
-// high-contrast variant, dark mode picks the side, and ReduceMotion
-// swaps the motion scale for its zero-duration variant.
+// value: the platform's set for the appearance, with the accent rows
+// rebuilt for a pinned theme colour where one was chosen, and ReduceMotion
+// swapping the motion scale for its zero-duration variant.
+//
+// There is no high-contrast branch. The platform answers that preference
+// itself: on macOS the live reader asks AppKit for every name while
+// "Increase Contrast" is on and gets the values the platform paints under
+// it, so the set an emission carries is already the high-contrast one.
 func (c *config) theme(v rx.Tuple2[Appearance, a11y.A11yPrefs]) theme.Theme {
 	a, prefs := v.First, v.Second
-	light, dark := c.pal.pair(a)
-	if prefs.HighContrast {
-		light, dark = HighContrastVariant(light, dark)
-	}
-	colors := light
-	if a.Dark {
-		colors = dark
+	platform := platformColors(a)
+	if c.pinned {
+		platform = platform.WithAccent(c.themeColor)
 	}
 	motion := tokens.Motion
 	if prefs.ReduceMotion {
 		motion = motion.Reduced()
 	}
 	return theme.Theme{
-		Color:      rx.Of(colors),
-		Platform:   rx.Of(platformColors(a)),
+		Platform:   rx.Of(platform),
 		Typography: rx.Of(c.typ),
 		Density:    rx.Of(tokens.Comfortable),
 		Motion:     rx.Of(motion),
@@ -406,22 +321,6 @@ func (c *config) theme(v rx.Tuple2[Appearance, a11y.A11yPrefs]) theme.Theme {
 		Radius:     rx.Of(tokens.Radius),
 		Elevation:  rx.Of(tokens.Elevation),
 	}
-}
-
-// pair resolves the light/dark pair for an appearance, applying the
-// precedence rule: a pinned palette (explicit WithSeed/WithPalette) always
-// wins; then the colour [PlatformColor] resolves for the appearance yields
-// its derived pair; and last, where that colour does not exist, the
-// palette's own pair. Derived pairs are cached per seed colour —
-// tokens.FromSeed runs on first sight of a seed, not on every emission.
-func (p *palette) pair(a Appearance) (light, dark tokens.ColorTokens) {
-	if p.pinned {
-		return p.light, p.dark
-	}
-	if seed, ok := PlatformColor(a); ok {
-		return p.seedPair(seed)
-	}
-	return p.light, p.dark
 }
 
 // PlatformColor is the colour a stream with nothing chosen derives its pair
@@ -432,7 +331,7 @@ func (p *palette) pair(a Appearance) (light, dark tokens.ColorTokens) {
 // macOS, nothing on Windows and Linux, where such a stream keeps the
 // package's own pair.
 //
-// It is the fallthrough a stream with no palette option applies, exported so
+// It is the fallthrough a stream with no theme colour applies, exported so
 // an application can offer that colour as a choice and draw it. Reading
 // Appearance.Accent alone is not the same question and answers it wrongly on
 // the setting most Macs are on: Multicolour is AccentDefault, which carries
@@ -445,21 +344,4 @@ func PlatformColor(a Appearance) (seed color.NRGBA, ok bool) {
 		return seed, true
 	}
 	return platformSeed()
-}
-
-// seedPair returns the memoized tokens.FromSeed derivation for one seed
-// colour. The mutex covers concurrent subscriptions to one observable,
-// which share this palette.
-func (p *palette) seedPair(seed color.NRGBA) (light, dark tokens.ColorTokens) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if c, ok := p.bySeed[seed]; ok {
-		return c.light, c.dark
-	}
-	l, d := tokens.FromSeed(seed)
-	if p.bySeed == nil {
-		p.bySeed = make(map[color.NRGBA]colorPair)
-	}
-	p.bySeed[seed] = colorPair{light: l, dark: d}
-	return l, d
 }

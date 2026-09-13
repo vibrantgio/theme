@@ -23,8 +23,8 @@ func TestAutoLightDarkEmitsOneTheme(t *testing.T) {
 		t.Fatalf("expected 1 emission, got %d", len(got))
 	}
 	th := got[0]
-	if th.Color == nil {
-		t.Error("emitted Theme.Color is nil")
+	if th.Platform == nil {
+		t.Error("emitted Theme.Platform is nil")
 	}
 	if th.Motion == nil {
 		t.Error("emitted Theme.Motion is nil")
@@ -40,12 +40,12 @@ func TestAutoLightDarkEmitsOneTheme(t *testing.T) {
 	}
 }
 
-func TestAutoLightDarkColorTokens(t *testing.T) {
+func TestAutoLightDarkPlatformColors(t *testing.T) {
 	themes, err := collect(theme.AutoLightDark().Take(1))
 	if err != nil || len(themes) != 1 {
 		t.Fatalf("setup failed: err=%v len=%d", err, len(themes))
 	}
-	colors, err := collect(themes[0].Color)
+	colors, err := collect(themes[0].Platform)
 	if err != nil {
 		t.Fatalf("color observable error: %v", err)
 	}
@@ -53,14 +53,14 @@ func TestAutoLightDarkColorTokens(t *testing.T) {
 		t.Fatalf("expected 1 color emission, got %d", len(colors))
 	}
 	h := time.Now().Hour()
-	var want tokens.ColorTokens
+	var want tokens.PlatformColors
 	if h <= 6 || h >= 18 {
-		want = tokens.DefaultDark
+		want = tokens.PlatformDark
 	} else {
-		want = tokens.DefaultLight
+		want = tokens.PlatformLight
 	}
 	if colors[0] != want {
 		t.Errorf("wrong colour scheme for hour %d: got background %v, want background %v",
-			h, colors[0].Background, want.Background)
+			h, colors[0].WindowBackground, want.WindowBackground)
 	}
 }

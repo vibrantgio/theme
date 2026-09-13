@@ -26,12 +26,12 @@ func collect[T any](obs rx.Observable[T]) ([]T, error) {
 }
 
 // lightTheme and darkTheme are the two distinct themes the isolation
-// test launches its windows with. They differ in their Color stream's
+// test launches its windows with. They differ in their Platform stream's
 // emitted ColorTokens (DefaultLight vs DefaultDark), which is the
 // observable property the test asserts each window keeps to itself.
 func lightTheme() theme.Theme {
 	return theme.Theme{
-		Color:      rx.Of(tokens.DefaultLight),
+		Platform:   rx.Of(tokens.PlatformLight),
 		Typography: rx.Of(tokens.DefaultTypography),
 		Density:    rx.Of(tokens.Comfortable),
 		Motion:     rx.Of(tokens.Motion),
@@ -43,7 +43,7 @@ func lightTheme() theme.Theme {
 
 func darkTheme() theme.Theme {
 	return theme.Theme{
-		Color:      rx.Of(tokens.DefaultDark),
+		Platform:   rx.Of(tokens.PlatformDark),
 		Typography: rx.Of(tokens.DefaultTypography),
 		Density:    rx.Of(tokens.Comfortable),
 		Motion:     rx.Of(tokens.Motion),
@@ -76,14 +76,14 @@ func TestPerWindowThemeIsolation(t *testing.T) {
 
 	// Each build callback captures the colour tokens its window's theme
 	// emits. The capture happens through the layer pipeline a real app
-	// would build (theme → Color → layout.Widget), so the assertion is
+	// would build (theme → Platform → layout.Widget), so the assertion is
 	// that the wrapper threaded the right theme into the right window.
-	var capturedA, capturedB []tokens.ColorTokens
-	captureColors := func(dst *[]tokens.ColorTokens) func(rx.Observable[theme.Theme]) []rx.Observable[layout.Widget] {
+	var capturedA, capturedB []tokens.PlatformColors
+	captureColors := func(dst *[]tokens.PlatformColors) func(rx.Observable[theme.Theme]) []rx.Observable[layout.Widget] {
 		return func(themeObs rx.Observable[theme.Theme]) []rx.Observable[layout.Widget] {
 			return []rx.Observable[layout.Widget]{
 				rx.SwitchMap(themeObs, func(th theme.Theme) rx.Observable[layout.Widget] {
-					return rx.Map(th.Color, func(c tokens.ColorTokens) layout.Widget {
+					return rx.Map(th.Platform, func(c tokens.PlatformColors) layout.Widget {
 						*dst = append(*dst, c)
 						return func(layout.Context) layout.Dimensions {
 							return layout.Dimensions{}
@@ -107,24 +107,24 @@ func TestPerWindowThemeIsolation(t *testing.T) {
 		t.Fatalf("window B layer subscribe: %v", err)
 	}
 
-	if len(capturedA) != 1 || capturedA[0] != tokens.DefaultLight {
-		t.Errorf("window A captured colours: got %+v, want [DefaultLight]", capturedA)
+	if len(capturedA) != 1 || capturedA[0] != tokens.PlatformLight {
+		t.Errorf("window A captured colours: got %+v, want [PlatformLight]", capturedA)
 	}
-	if len(capturedB) != 1 || capturedB[0] != tokens.DefaultDark {
-		t.Errorf("window B captured colours: got %+v, want [DefaultDark]", capturedB)
+	if len(capturedB) != 1 || capturedB[0] != tokens.PlatformDark {
+		t.Errorf("window B captured colours: got %+v, want [PlatformDark]", capturedB)
 	}
 
 	// Cross-window isolation: A must never have seen B's colour, and
 	// vice versa. This is the property "different themes... isolation"
 	// in the milestone Measurable.
 	for _, c := range capturedA {
-		if c == tokens.DefaultDark {
-			t.Errorf("window A leaked window B's DefaultDark colour: %+v", capturedA)
+		if c == tokens.PlatformDark {
+			t.Errorf("window A leaked window B's PlatformDark colour: %+v", capturedA)
 		}
 	}
 	for _, c := range capturedB {
-		if c == tokens.DefaultLight {
-			t.Errorf("window B leaked window A's DefaultLight colour: %+v", capturedB)
+		if c == tokens.PlatformLight {
+			t.Errorf("window B leaked window A's PlatformLight colour: %+v", capturedB)
 		}
 	}
 }
@@ -154,11 +154,11 @@ func TestThemeFieldIsTheArgument(t *testing.T) {
 	if len(gotThemes) != len(wantThemes) || len(gotThemes) != 1 {
 		t.Fatalf("emission count mismatch: w.Theme=%d, want=%d", len(gotThemes), len(wantThemes))
 	}
-	gotColors, err := collect(gotThemes[0].Color)
+	gotColors, err := collect(gotThemes[0].Platform)
 	if err != nil {
-		t.Fatalf("collect Color: %v", err)
+		t.Fatalf("collect Platform: %v", err)
 	}
-	if len(gotColors) != 1 || gotColors[0] != tokens.DefaultLight {
+	if len(gotColors) != 1 || gotColors[0] != tokens.PlatformLight {
 		t.Errorf("Theme passed through New differs from input: got %+v", gotColors)
 	}
 }

@@ -86,10 +86,10 @@ github.com/reactivego/rx v0.3.0 and Go 1.25.1.
 
 | Package | |
 | --- | --- |
-| `tokens` | The typed design values, all of them: the ADR-007 colour ramps and pins, with `FromSeed` deriving both modes from one seed colour; `Typography` — fifteen MD3 text roles plus `Code` and `DocumentHeadings`, the six-step heading scale prose surfaces set their headings in, carrying the face collection, `WithFaces` to widen it, and two shapers cached apart: `Shaper()` with the system fallback for applications and `DeterministicShaper()` with the collection pinned for golden tests; `Density` (Comfortable 36 dp / Compact 28 dp control heights); `MotionScale` (duration stops, easings, spring presets, and `Reduced()` for the OS reduce-motion preference); the elevation levels (`SurfaceAt` for a level's fill, `StateAt` for a state walked from it, and `ElevationLevel.Raised` for the level one step nearer the viewer than the surface a thing stands on — `LevelBackdrop` for the bare window plane and `LevelChrome` for the chrome under the content, then levels 0–3, lighter with every level in both schemes per ADR-022); and the 4-pt spacing and named radius scales. |
+| `tokens` | The typed design values, all of them: `PlatformColors`, the platform's own colour set — one field per AppKit semantic colour name, with `PlatformLight` and `PlatformDark` carrying the recorded values and `WithAccent` rebuilding the rows the platform derives from the accent; `Typography` — fifteen MD3 text roles plus `Code` and `DocumentHeadings`, the six-step heading scale prose surfaces set their headings in, carrying the face collection, `WithFaces` to widen it, and two shapers cached apart: `Shaper()` with the system fallback for applications and `DeterministicShaper()` with the collection pinned for golden tests; `Density` (Comfortable 36 dp / Compact 28 dp control heights); `MotionScale` (duration stops, easings, spring presets, and `Reduced()` for the OS reduce-motion preference); `ElevationScale`, the shadow depth each of the six levels casts (a level's FILL is a platform name, not a derivation); and the 4-pt spacing and named radius scales. |
 | `color` | The generative colour engine the palettes are derived with — sRGB ↔ CIELAB and OKLCh conversions and the APCA contrast metric that gates every generated pair. Mathematics only; no colour values live here. |
 | `theme` | `Theme`: one `rx.Observable` per token category, so a consumer subscribes to just the categories it reads. `Default()` and `AutoLightDark()` construct one — note `AutoLightDark()` reads the clock (hours 7–17 light), not the OS; `system.LiveTheme` is the real tracker. |
-| `system` | The OS appearance — dark mode and accent colour — polled behind a `Source` interface and published as an observable that emits only on change. `Live` gives the raw `Appearance`; `LiveTheme` gives the `theme.Theme` a window wants, with `WithSeed`/`WithPalette` options for branding. Dark mode is read on macOS; the accent is read on all three platforms — macOS's accent choice, the Windows DWM registry value, GNOME's named accent and KDE's `kdeglobals` RGB. |
+| `system` | The OS appearance — dark mode and accent colour — polled behind a `Source` interface and published as an observable that emits only on change. `Live` gives the raw `Appearance`; `LiveTheme` gives the `theme.Theme` a window wants, with a `WithThemeColor` option for the accent an application chooses. Dark mode is read on macOS; the accent is read on all three platforms — macOS's accent choice, the Windows DWM registry value, GNOME's named accent and KDE's `kdeglobals` RGB. |
 | `a11y` | OS accessibility preferences — reduce motion, increased contrast, larger text — polled and published as an `rx.Observable[A11yPrefs]` that emits only on change. The composed theme already reflects the first two; macOS and Windows report real preferences, Linux returns all-false. |
 | `window` | Pairs an `mvu.Window` with the theme observable that scopes it, and hands that observable to the layer builder. Two windows built with two theme streams render in two different themes in the same process. |
 | `preferences` | Persists the user's explicit appearance choice — a theme name plus accessibility overrides — as JSON under the OS config directory, and reads it back at launch. |
@@ -125,21 +125,18 @@ Options on `LiveTheme` (and `FromSourceTheme`) brand the window without giving
 up live OS tracking:
 
 ```go
-// one brand colour; everything else derived, dark mode still live
-specsystem.LiveTheme(time.Second, specsystem.WithSeed(brand))
-
-// full control: both schemes supplied, the OS still picks which is live
-specsystem.LiveTheme(time.Second, specsystem.WithPalette(light, dark))
+// one theme colour; the rest of the set stays the platform's, dark mode
+// still live
+specsystem.LiveTheme(time.Second, specsystem.WithThemeColor(brand))
 ```
 
-Precedence, highest first: a palette option pins the pair — the application
-chose its brand, the OS accent is ignored. With no palette option the stream
-follows the OS accent colour live, each accent becoming the seed of a derived
-pair; no accent at all falls back to the default palette. Accessibility
-composes on top of whichever palette wins: while the OS reports increased
-contrast, `Color` emits a high-contrast variant derived from the resolved
-palette's own seed, and while it reports reduced motion, `Motion` emits
-`MotionScale.Reduced()` — every duration zero.
+Precedence, highest first: a chosen theme colour pins the accent rows — the
+application chose its colour, the OS accent is ignored. With none, macOS
+carries what AppKit reports and the other desktops rebuild the recorded set's
+accent rows for the colour they publish. Increased contrast needs no branch
+of its own: the platform reports the values it paints under it. While the OS
+reports reduced motion, `Motion` emits `MotionScale.Reduced()` — every
+duration zero.
 
 `Render` is where the theme becomes the application's. It calls the build
 function with this window's own theme observable and renders the layers that
@@ -165,7 +162,7 @@ synchronously:
 
 ```go
 themes := rx.SwitchMap(th, func(t theme.Theme) rx.Observable[themed] {
-	return rx.Map(t.Color, func(c tokens.ColorTokens) themed {
+	return rx.Map(t.Platform, func(c tokens.PlatformColors) themed {
 		return themed{components: t, palette: PaletteFrom(c)}
 	})
 })
@@ -204,7 +201,7 @@ Honest about what does not work yet:
   the new palette in one step, and since v0.2.0 deleted this repository's
   deprecated alias, no module or application imports `effects/transition` at
   all. A cross-fade today is the caller's to build out of
-  `ColorTokensTween`.
+  `LerpPlatformColors`.
 - **`preferences` persists a choice nothing reads.** No module or application
   imports it, and there is no mapping from the stored theme name to a
   `theme.Theme` — the string round-trips to disk and stops there, as do the

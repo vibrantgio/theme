@@ -27,9 +27,9 @@ func file(t *testing.T) string {
 }
 
 // TestAKeptSeedRegeneratesBothSchemesExactly is the whole promise of
-// keeping one colour instead of a palette: what comes back off disk derives
-// the same two schemes, field for field, as what went in.
-func TestAKeptSeedRegeneratesBothSchemesExactly(t *testing.T) {
+// keeping one colour: what comes back off disk rebuilds the platform's
+// accent rows to the same values, field for field, as what went in.
+func TestAKeptSeedRebuildsTheAccentRowsExactly(t *testing.T) {
 	path := file(t)
 	if err := brand.SaveTo(path, brand.Brand{Seed: harbourRed, Source: "harbour.jpg"}); err != nil {
 		t.Fatalf("save: %v", err)
@@ -41,13 +41,13 @@ func TestAKeptSeedRegeneratesBothSchemesExactly(t *testing.T) {
 	if got.Seed != harbourRed {
 		t.Fatalf("seed came back as %v, want %v", got.Seed, harbourRed)
 	}
-	wantLight, wantDark := tokens.FromSeed(harbourRed)
-	gotLight, gotDark := got.Colors()
-	if gotLight != wantLight {
-		t.Error("the light scheme regenerated from the kept seed is not the one the seed derives")
+	wantLight := tokens.PlatformLight.WithAccent(harbourRed)
+	wantDark := tokens.PlatformDark.WithAccent(harbourRed)
+	if got := tokens.PlatformLight.WithAccent(got.Seed); got != wantLight {
+		t.Error("the light set rebuilt from the kept colour is not the one the colour rebuilds")
 	}
-	if gotDark != wantDark {
-		t.Error("the dark scheme regenerated from the kept seed is not the one the seed derives")
+	if got := tokens.PlatformDark.WithAccent(got.Seed); got != wantDark {
+		t.Error("the dark set rebuilt from the kept colour is not the one the colour rebuilds")
 	}
 }
 
@@ -99,7 +99,7 @@ func TestTheFileSpellsItsSeedTheWayTheExportDoes(t *testing.T) {
 // without translation — which is why this file has that name and no other
 // format was minted for it.
 func TestAnExportedThemeJSONIsAKeptBrand(t *testing.T) {
-	th, err := system.FromSourceTheme(fixed{}, time.Hour, system.WithSeed(harbourRed)).First()
+	th, err := system.FromSourceTheme(fixed{}, time.Hour, system.WithThemeColor(harbourRed)).First()
 	if err != nil {
 		t.Fatalf("theme: %v", err)
 	}
@@ -195,11 +195,12 @@ func TestTheKeptBrandPinsTheStreamsPaletteOnBothSides(t *testing.T) {
 		t.Fatalf("save: %v", err)
 	}
 	opts := brand.KeptFrom(path).Options()
-	light, dark := tokens.FromSeed(harbourRed)
+	light := tokens.PlatformLight.WithAccent(harbourRed)
+	dark := tokens.PlatformDark.WithAccent(harbourRed)
 	for _, tc := range []struct {
 		name string
 		app  system.Appearance
-		want tokens.ColorTokens
+		want tokens.PlatformColors
 	}{
 		{"the desktop is light", system.Appearance{}, light},
 		{"the desktop is dark", system.Appearance{Dark: true}, dark},
@@ -211,7 +212,7 @@ func TestTheKeptBrandPinsTheStreamsPaletteOnBothSides(t *testing.T) {
 			if err != nil {
 				t.Fatalf("theme: %v", err)
 			}
-			colors, err := got.Color.First()
+			colors, err := got.Platform.First()
 			if err != nil {
 				t.Fatalf("colours: %v", err)
 			}
@@ -233,7 +234,7 @@ func TestWithNothingKeptTheStreamIsTheOneItAlwaysWas(t *testing.T) {
 	if err != nil {
 		t.Fatalf("theme: %v", err)
 	}
-	colors, err := got.Color.First()
+	colors, err := got.Platform.First()
 	if err != nil {
 		t.Fatalf("colours: %v", err)
 	}
@@ -244,7 +245,7 @@ func TestWithNothingKeptTheStreamIsTheOneItAlwaysWas(t *testing.T) {
 	if err != nil {
 		t.Fatalf("theme: %v", err)
 	}
-	want, err := unbranded.Color.First()
+	want, err := unbranded.Platform.First()
 	if err != nil {
 		t.Fatalf("colours: %v", err)
 	}
@@ -536,7 +537,7 @@ func TestAJunkMonoIsStoredAndIgnored(t *testing.T) {
 	}
 	opts := got.Options()
 	if n := len(opts); n != 2 {
-		t.Fatalf("a junk name produced %d options, want WithSeed and WithTypography", n)
+		t.Fatalf("a junk name produced %d options, want WithThemeColor and WithTypography", n)
 	}
 	streamed := streamTypography(t, opts)
 	if streamed.Code.Typeface != "Roboto Mono" {
@@ -559,7 +560,7 @@ func TestTheKeptMonoDressesTheStream(t *testing.T) {
 	kept := brand.KeptFrom(path)
 	opts := kept.Options()
 	if len(opts) != 2 {
-		t.Fatalf("a known mono produced %d options, want WithSeed and WithTypography", len(opts))
+		t.Fatalf("a known mono produced %d options, want WithThemeColor and WithTypography", len(opts))
 	}
 	got := streamTypography(t, opts)
 	if got.Code.Typeface != "JetBrains Mono" {
@@ -668,10 +669,6 @@ func assertDefaults(t *testing.T, b brand.Brand) {
 	if opts := b.Options(); opts != nil {
 		t.Errorf("no brand produced %d stream options, want none", len(opts))
 	}
-	light, dark := b.Colors()
-	if light != tokens.DefaultLight || dark != tokens.DefaultDark {
-		t.Error("no brand produced something other than the default palette")
-	}
 	live := tokens.EmojiTypography()
 	if typ := b.Typography(); typ.Shaper() != live.Shaper() {
 		t.Error("no brand produced a typography other than EmojiTypography")
@@ -711,17 +708,12 @@ func TestABrandCanFollowTheSystem(t *testing.T) {
 		t.Errorf("the mono came back as %q, want the one that was kept", got.Mono)
 	}
 
-	// The seam that matters: the options carry the face and no seed, so the
-	// stream is the one an application with no brand at all builds.
+	// The seam that matters: the options carry the face and no colour, so
+	// the stream is the one an application with no brand at all builds.
 	opts := got.Options()
 	green := color.NRGBA{R: 0x00, G: 0x80, B: 0x00, A: 0xff}
 	desktop := system.Appearance{AccentSeed: green, AccentSeedSet: true}
-	colors := schemeOf(t, desktop, opts...)
-	want, _ := tokens.FromSeed(green)
-	if colors != want {
-		t.Error("a brand that follows the system did not derive from the colour the desktop reports")
-	}
-	if colors != schemeOf(t, desktop) {
+	if schemeOf(t, desktop, opts...) != schemeOf(t, desktop) {
 		t.Error("following the system is not the stream an application with no brand builds")
 	}
 	if typ, err := system.FromSourceTheme(fixed{desktop}, time.Hour, opts...).First(); err != nil {
@@ -747,10 +739,13 @@ func TestAFileWithASeedAndNoFlagStillPins(t *testing.T) {
 	if got.Seed != harbourRed {
 		t.Errorf("the seed came back as %v, want %v", got.Seed, harbourRed)
 	}
-	light, _ := tokens.FromSeed(harbourRed)
 	green := system.Appearance{AccentSeed: color.NRGBA{R: 0x00, G: 0x80, B: 0x00, A: 0xff}, AccentSeedSet: true}
-	if schemeOf(t, green, got.Options()...) != light {
-		t.Error("the kept seed no longer outranks the colour the desktop reports")
+	pinned := schemeOf(t, green, got.Options()...)
+	if pinned.ControlAccent != harbourRed {
+		t.Errorf("the stream carries the accent %v, want the kept %v", pinned.ControlAccent, harbourRed)
+	}
+	if pinned == schemeOf(t, green) {
+		t.Error("the kept colour no longer outranks the colour the desktop reports")
 	}
 }
 
@@ -778,15 +773,15 @@ func TestAFollowingBrandWritesNoSeed(t *testing.T) {
 	}
 }
 
-// schemeOf is the light-side palette a stream built with these options emits
-// for one desktop state.
-func schemeOf(t *testing.T, a system.Appearance, opts ...system.Option) tokens.ColorTokens {
+// schemeOf is the light-side colour set a stream built with these options
+// emits for one desktop state.
+func schemeOf(t *testing.T, a system.Appearance, opts ...system.Option) tokens.PlatformColors {
 	t.Helper()
 	got, err := system.FromSourceTheme(fixed{a}, time.Hour, opts...).First()
 	if err != nil {
 		t.Fatalf("theme: %v", err)
 	}
-	colors, err := got.Color.First()
+	colors, err := got.Platform.First()
 	if err != nil {
 		t.Fatalf("colours: %v", err)
 	}

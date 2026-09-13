@@ -1,7 +1,8 @@
 // Package theme carries the design tokens a component reads while it lays
-// out. A Theme is one rx.Observable per token category — colour, type,
-// motion, spacing, radius, elevation — so a consumer subscribes to only the
-// categories it actually reads and rebuilds only when those change.
+// out. A Theme is one rx.Observable per token category — the platform's
+// colours, type, motion, spacing, radius, shadow depth — so a consumer
+// subscribes to only the categories it actually reads and rebuilds only
+// when those change.
 //
 // Reach for it whenever you build an observable components component: button.Button,
 // input.TextField and their siblings all take an rx.Observable[theme.Theme] as

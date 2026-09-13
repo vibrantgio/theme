@@ -8,15 +8,14 @@ import (
 )
 
 // AutoLightDark returns an Observable that emits a new Theme every minute.
-// Hours 7–17 (inclusive) use DefaultLight; all other hours use DefaultDark.
+// Hours 7–17 (inclusive) use PlatformLight; all other hours use PlatformDark.
 func AutoLightDark() rx.Observable[Theme] {
 	return rx.Map(rx.Ticker(0, time.Minute), func(t time.Time) Theme {
-		colors, platform := tokens.DefaultLight, tokens.PlatformLight
+		platform := tokens.PlatformLight
 		if t.Hour() <= 6 || t.Hour() >= 18 {
-			colors, platform = tokens.DefaultDark, tokens.PlatformDark
+			platform = tokens.PlatformDark
 		}
 		return Theme{
-			Color:      rx.Of(colors),
 			Platform:   rx.Of(platform),
 			Typography: rx.Of(tokens.DefaultTypography),
 			Density:    rx.Of(tokens.Comfortable),

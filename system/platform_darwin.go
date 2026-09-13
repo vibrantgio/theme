@@ -16,7 +16,7 @@ import (
 //
 // It is deliberately independent of the palette precedence in the theme
 // bridge: this set is the platform's answer, not the application's brand,
-// so [WithSeed] and [WithPalette] do not reach it. It is equally
+// so [WithThemeColor] does not reach it; the bridge applies a pinned theme colour to the set this returns. It is equally
 // independent of the Appearance's accent, which is the same setting read a
 // second way; only Dark selects a side, so a stubbed Source still chooses
 // which appearance is emitted.

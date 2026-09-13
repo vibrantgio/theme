@@ -13,7 +13,7 @@ import "github.com/vibrantgio/theme/tokens"
 //
 // It is deliberately independent of the theme bridge's palette precedence:
 // this set is the platform's answer, not the application's brand, so
-// [WithSeed] and [WithPalette] do not reach it.
+// [WithThemeColor] does not reach it; the bridge applies a pinned theme colour to the set this returns.
 func platformColors(a Appearance) tokens.PlatformColors {
 	p := tokens.PlatformLight
 	if a.Dark {

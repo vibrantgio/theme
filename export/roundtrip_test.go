@@ -6,13 +6,13 @@ import (
 	stdcolor "image/color"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/reactivego/rx"
-	"github.com/vibrantgio/theme/color"
 	"github.com/vibrantgio/theme/theme"
 	"github.com/vibrantgio/theme/tokens"
 )
@@ -124,9 +124,8 @@ func TestRoundTripColors(t *testing.T) {
 
 	schemes := []struct {
 		vars     map[string]string
-		tokens   tokens.ColorTokens
 		platform tokens.PlatformColors
-	}{{root, snap.Light, snap.PlatformLight}, {dark, snap.Dark, snap.PlatformDark}}
+	}{{root, snap.PlatformLight}, {dark, snap.PlatformDark}}
 
 	for _, scheme := range schemes {
 		// The platform's own set, one property per field of
@@ -139,43 +138,20 @@ func TestRoundTripColors(t *testing.T) {
 				t.Errorf("%s = %q, want %q", name, got, want)
 			}
 		}
-		for _, role := range rampRoles {
-			ramp := role.ramp(scheme.tokens.Ramps)
-			for step := 100; step <= 900; step += 100 {
-				name := fmt.Sprintf("--color-%s-%d", role.name, step)
-				if got, want := scheme.vars[name], wantHex(ramp.Step(step)); got != want {
-					t.Errorf("%s = %q, want %q", name, got, want)
-				}
-			}
-		}
-		for _, pin := range pinRoles {
-			name := "--color-" + pin.name
-			if got, want := scheme.vars[name], wantHex(pin.pick(scheme.tokens)); got != want {
-				t.Errorf("%s = %q, want %q", name, got, want)
-			}
-		}
 	}
 
-	// The dark block carries exactly the overrides that resolve against a
-	// scheme — every variable it declares must exist in :root, and nothing
-	// but a colour or an elevation level may differ per mode. A level is
-	// placed against the Background pin rather than named as a ramp step,
-	// so it resolves per scheme like the walked pins do and cannot be a
-	// var() reference the .dark block flips underneath.
+	// The dark block carries exactly the overrides that resolve against an
+	// appearance — every variable it declares must exist in :root, and
+	// nothing but the platform's own set may differ between the two.
 	for name := range dark {
 		if _, ok := root[name]; !ok {
 			t.Errorf(".dark declares %s which :root does not", name)
 		}
-		if !strings.HasPrefix(name, "--color-") && !strings.HasPrefix(name, "--elevation-") && !strings.HasPrefix(name, "--platform-") {
+		if !strings.HasPrefix(name, "--platform-") {
 			t.Errorf(".dark declares non-scheme variable %s", name)
 		}
 	}
-	// Three families per level — the fill, and the hover and press walks
-	// taken from it — plus two hairlines every level a thing can stand on
-	// carries: the seam it owes what stands on it, and the line two regions
-	// sharing its own fill are parted by. All resolve per scheme for the
-	// same reason.
-	if want := len(rampRoles)*9 + len(pinRoles) + 3*len(elevationLevels) + 2*len(standableLevels) + len(platformNames); len(dark) != want {
+	if want := len(platformNames); len(dark) != want {
 		t.Errorf(".dark declares %d variables, want %d", len(dark), want)
 	}
 }
@@ -222,8 +198,8 @@ func TestRoundTripScales(t *testing.T) {
 		}
 	}
 
-	for _, level := range elevationLevels {
-		name, dp := "--shadow-"+level.name, snap.Elevation.Dp(level.level)
+	for _, level := range shadowLevels {
+		name, dp := "--shadow-"+level.name, level.dp(snap.Elevation)
 		v := root[name]
 		if dp == 0 {
 			if v != "none" {
@@ -249,71 +225,6 @@ func TestRoundTripScales(t *testing.T) {
 		y, blur := wantPx(t, name, lengths[0]), wantPx(t, name, lengths[1])
 		if y != dp || blur != 2*dp {
 			t.Errorf("%s = %q: y %v blur %v, want dp %v and 2dp", name, v, y, blur, dp)
-		}
-	}
-}
-
-// TestRoundTripElevationSurfaces asserts every --elevation-* variable is a
-// literal that equals, in its own block, exactly the colour SurfaceAt
-// returns for that scheme — the sheet's default elevation cue cannot drift
-// from the Go resolver.
-//
-// They cannot be var() references into the neutral ramp: a level is placed
-// against the Background pin in CIELAB L*, so the light scheme's levels
-// above the content and the dark scheme's floor are not ramp steps at all and
-// no var() chain reaches them. Each block states its own five.
-//
-// The scale's direction is asserted here too: read down the levels and
-// the fill gets lighter, in the :root block and in the .dark one, with no
-// mirror clause between them.
-func TestRoundTripElevationSurfaces(t *testing.T) {
-	snap, sheet, _ := writeDefault(t)
-	root, dark := sheet[":root"], sheet[".dark"]
-
-	for _, mode := range []struct {
-		name   string
-		scheme tokens.ColorTokens
-		vars   map[string]string
-	}{{":root", snap.Light, root}, {".dark", snap.Dark, dark}} {
-		var last float64 = -1
-		for _, level := range elevationLevels {
-			name := "--elevation-" + level.name
-			got, ok := mode.vars[name]
-			if !ok {
-				t.Fatalf("%s does not declare %s; every scheme states its own scale", mode.name, name)
-			}
-			fill := mode.scheme.SurfaceAt(level.level)
-			if want := wantHex(fill); got != want {
-				t.Errorf("%s %s = %q, want SurfaceAt = %q", mode.name, name, got, want)
-			}
-			if l, _, _ := color.LabFromNRGBA(fill); l < last {
-				t.Errorf("%s %s is L*%.2f, under the level below it (L*%.2f)",
-					mode.name, name, l, last)
-			} else {
-				last = l
-			}
-		}
-		// And the seam each standable level owes what stands on it:
-		// transparent where the raise is told by its own fill, the derived
-		// hairline where it is not. The backdrop declares none — nothing
-		// stands on the backdrop.
-		if _, ok := mode.vars["--elevation-backdrop-seam"]; ok {
-			t.Errorf("%s declares a seam for the backdrop; nothing stands on it", mode.name)
-		}
-		for _, level := range standableLevels {
-			name := "--elevation-" + level.name + "-seam"
-			got, ok := mode.vars[name]
-			if !ok {
-				t.Fatalf("%s does not declare %s", mode.name, name)
-			}
-			raise := mode.scheme.RaisedOn(mode.scheme.SurfaceAt(level.level))
-			want := "transparent"
-			if raise.Seamed {
-				want = wantHex(raise.Seam)
-			}
-			if got != want {
-				t.Errorf("%s %s = %q, want %q", mode.name, name, got, want)
-			}
 		}
 	}
 }
@@ -403,138 +314,13 @@ func TestRoundTripMotion(t *testing.T) {
 	}
 }
 
-// TestRoundTripButtonClasses asserts two things that must not drift. The
-// emitted derived variables still resolve to what their own rules say — the
-// walked solid-fill stops equal SolidStateColor's per mode, the ring and the
-// control edge are the steps their ramps measure, the disabled fraction is
-// DisabledOpacity — because the pages that have not converted still read
-// them. And the class layer below them names the PLATFORM's colours and
-// nothing else: every rule is a --platform- name, the mapping the Gio
-// components take, with not one literal colour and not one reference back up
-// into the derived set.
-// stepDistance is how far a ramp index sits from step 500, the mid-value
-// depth the ring's pick is aimed at. The test measures it for itself rather
-// than importing the emitter's constant, so a drift in the aim is a
-// failure here rather than a silent agreement.
-func stepDistance(i int) int {
-	const mid = 4 // steps run 100…900
-	if i < mid {
-		return mid - i
-	}
-	return i - mid
-}
-
 func TestRoundTripButtonClasses(t *testing.T) {
 	snap, sheet, _ := writeDefault(t)
-	root, dark := sheet[":root"], sheet[".dark"]
+	root := sheet[":root"]
 
-	// The solid-fill state walk, per mode. Written against SolidStateColor
-	// directly, not through pinRoles, so the emitter cannot drift with its
-	// own table.
-	for i, mode := range []struct {
-		vars map[string]string
-		tok  tokens.ColorTokens
-	}{{root, snap.Light}, {dark, snap.Dark}} {
-		if got, want := mode.vars["--color-accent-hover"], wantHex(mode.tok.SolidStateColor(tokens.RolePrimary, tokens.StateHover)); got != want {
-			t.Errorf("--color-accent-hover (mode %d) = %q, want SolidStateColor hover %q", i, got, want)
-		}
-		if got, want := mode.vars["--color-accent-pressed"], wantHex(mode.tok.SolidStateColor(tokens.RolePrimary, tokens.StatePressed)); got != want {
-			t.Errorf("--color-accent-pressed (mode %d) = %q, want SolidStateColor pressed %q", i, got, want)
-		}
-		// The ring: one per mode, restated here from the rule rather than
-		// called out of the emitter, so the sheet and its generator cannot
-		// agree on a wrong answer. The rule is the step of the primary ramp
-		// nearest step 500 that reaches [tokens.GraphicFloor] against EVERY
-		// level a control can stand on — every level but the backdrop, which
-		// nothing is drawn at — 1.25:1 in luminance against every one of
-		// those levels' neutral resting borders, and is not the accent fill
-		// — the property the Gio side
-		// derives by, and the reason no per-level ring token exists to pin.
-		// The second floor is what keeps focus from being spelled in hue
-		// alone: the resting border is the line a focused field swaps for its
-		// ring. The exclusion keeps it from being spelled in the colour a
-		// checked box already paints.
-		var wantRing stdcolor.NRGBA
-		wantAt, clearing := -1, 0
-		for r, step := range mode.tok.Ramps.Primary {
-			clears := true
-			for _, level := range standableLevels {
-				surface := mode.tok.SurfaceAt(level.level)
-				border := mode.tok.MarkOn(tokens.RoleNeutral, surface, tokens.GraphicFloor)
-				if color.Magnitude(step, surface) < tokens.GraphicFloor ||
-					luminanceRatio(step, border) < 1.25 {
-					clears = false
-					break
-				}
-			}
-			if !clears || step == mode.tok.Primary {
-				continue
-			}
-			clearing++
-			// Steps run 100…900, so index 4 is step 500. Nearest to it wins;
-			// walking upward, a tie keeps the lower step, as the sheet does.
-			if wantAt < 0 || stepDistance(r) < stepDistance(wantAt) {
-				wantRing, wantAt = step, r
-			}
-		}
-		if clearing == 0 {
-			t.Fatalf("mode %d: no step of the primary ramp clears both the ring's floors on every level a control stands on — the sheet's ring rule has nothing to pick", i)
-		}
-		if got, want := mode.vars["--color-focus-ring"], wantHex(wantRing); got != want {
-			t.Errorf("--color-focus-ring (mode %d) = %q, want the primary step nearest step 500 that reads on every level and parts from every resting border %q", i, got, want)
-		}
-		// The one exception, and the only surface that belongs to no level:
-		// the fill a filled button insets its ring in. The scheme's ring
-		// serves wherever it reads on that fill; where it cannot — a solid
-		// primary fill being a step of the ring's own ramp — the ramp is
-		// walked against the fill instead.
-		fill := mode.tok.SolidStateColor(tokens.RolePrimary, tokens.StateFocus)
-		onAccent := wantRing
-		if color.Magnitude(wantRing, fill) < tokens.GraphicFloor {
-			onAccent = mode.tok.MarkOn(tokens.RolePrimary, fill, tokens.GraphicFloor)
-		}
-		if got, want := mode.vars["--color-focus-ring-on-accent"], wantHex(onAccent); got != want {
-			t.Errorf("--color-focus-ring-on-accent (mode %d) = %q, want the ring the filled button's own fill can carry %q", i, got, want)
-		}
-		// The level-varying ring tokens are gone, and their absence is
-		// pinned: a ring that depended on the surface is the divergence this
-		// sheet exists not to reintroduce.
-		for _, gone := range []string{"--color-dialog-focus-ring", "--color-popover-focus-ring"} {
-			if got, ok := mode.vars[gone]; ok {
-				t.Errorf("%s (mode %d) = %q, want no such token: the ring does not vary with the level", gone, i, got)
-			}
-		}
-		// The control row's resting edge, likewise: components/input's
-		// controlBorder is MarkOn against the level-0 surface, and the two
-		// outline tokens are the same walk two and three levels up — the
-		// fills patterns/modal and patterns/popover paint and measure their
-		// own edges against, and the edge any control standing on those
-		// levels wears. Level 1 has none: a card draws no line of its own,
-		// and a control on a card takes control-border unchanged.
-		if got, want := mode.vars["--color-control-border"], wantHex(mode.tok.MarkOn(tokens.RoleNeutral, mode.tok.SurfaceAt(tokens.Level0), tokens.GraphicFloor)); got != want {
-			t.Errorf("--color-control-border (mode %d) = %q, want the neutral step that reads on the window surface %q", i, got, want)
-		}
-		for _, edge := range []struct {
-			name  string
-			level tokens.ElevationLevel
-			what  string
-		}{
-			{"--color-dialog-border", tokens.Level2, "the dialog's level-2 fill"},
-			{"--color-popover-border", tokens.Level3, "the popover's level-3 fill"},
-		} {
-			want := wantHex(mode.tok.MarkOn(tokens.RoleNeutral, mode.tok.SurfaceAt(edge.level), tokens.GraphicFloor))
-			if got := mode.vars[edge.name]; got != want {
-				t.Errorf("%s (mode %d) = %q, want the neutral step that reads on %s %q", edge.name, i, got, edge.what, want)
-			}
-		}
-	}
 	if got := wantPx(t, "--focus-ring-width", root["--focus-ring-width"]); got != 2 {
 		t.Errorf("--focus-ring-width = %v, want the 2 dp stroke components/button draws", got)
 	}
-	if got, want := root["--state-disabled-opacity"], fmt.Sprintf("%v%%", tokens.DisabledOpacity*100); got != want {
-		t.Errorf("--state-disabled-opacity = %q, want %q", got, want)
-	}
-
 	// The class layer itself: the platform's names only, and no literal
 	// colour anywhere.
 	src := stylesCSS(snap)
@@ -653,7 +439,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		".sidebar-item.selected::before {",
 		"inset: 0 10px;  /* SelectionInset */",
 		"border-radius: 8px;  /* SelectionRadius */",
-		"background: var(--platform-control-accent);",
+		"background: var(--platform-sidebar-selection);",
 		// Breadcrumb: the ancestors are links, the current segment the label.
 		"font-size: var(--font-title-small-size);",
 		"color: var(--platform-link);",
@@ -694,24 +480,11 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		}
 	}
 
-	// The scrim token: the modal scrim's black at alpha 0x80 in
-	// the alpha that reproduces it under sRGB compositing (Gio composites in
-	// linear RGB — see scrimRGBA's derivation), mode-invariant like the
-	// shadows' fixed black, so it lives in :root and .dark never overrides
-	// it.
-	if got := root["--color-scrim"]; got != scrimRGBA {
-		t.Errorf("--color-scrim = %q, want scrimRGBA %q", got, scrimRGBA)
-	}
-	if _, ok := dark["--color-scrim"]; ok {
-		t.Error("--color-scrim is overridden in .dark; the scrim is mode-invariant")
-	}
 }
 
-// TestThemeJSONReproduces asserts theme.json's reproducibility claim: the
-// one colour it records alone regenerates the exported palette through
-// FromSeed, and every recorded parameter matches the tokens and the sheet.
-// That colour is the light scheme's primary base — the brand seed with the
-// palette's accent chroma on it — and FromSeed reproduces itself from it.
+// TestThemeJSONReproduces asserts theme.json's reproducibility claim: every
+// recorded parameter matches the tokens and the sheet, value for value, so
+// the file alone rebuilds what was exported.
 func TestThemeJSONReproduces(t *testing.T) {
 	snap, sheet, js := writeDefault(t)
 	var p Parameters
@@ -719,45 +492,25 @@ func TestThemeJSONReproduces(t *testing.T) {
 		t.Fatalf("theme.json: %v", err)
 	}
 
-	var r, g, b uint8
-	if _, err := fmt.Sscanf(p.Seed, "#%02x%02x%02x", &r, &g, &b); err != nil {
-		t.Fatalf("theme.json seed %q: %v", p.Seed, err)
-	}
-	seed := stdcolor.NRGBA{R: r, G: g, B: b, A: 0xff}
-	if seed != tokens.DefaultLight.Primary {
-		t.Errorf("seed = %q, want the default palette's primary base %s", p.Seed, wantHex(tokens.DefaultLight.Primary))
-	}
-	light, dark := tokens.FromSeed(seed)
-	if light != snap.Light || dark != snap.Dark {
-		t.Errorf("FromSeed(theme.json seed) does not reproduce the exported palette")
+	// The theme colour, under the key theme/brand's own file carries, so
+	// an exported theme.json loads there without translation.
+	if got, want := p.ThemeColor, wantHex(snap.PlatformLight.ControlAccent); got != want {
+		t.Errorf("seed = %q, want the theme colour %q", got, want)
 	}
 
-	_, chroma, hue := color.OKLChFromNRGBA(seed)
-	if diff := p.Hue - hue; diff < -0.005 || diff > 0.005 {
-		t.Errorf("hue = %v, want %v within 0.005", p.Hue, hue)
-	}
-	if diff := p.Sat - chroma; diff < -0.00005 || diff > 0.00005 {
-		t.Errorf("sat = %v, want %v within 0.00005", p.Sat, chroma)
-	}
-
+	// The platform's set, name for name, against the sheet's own blocks.
 	root, darkVars := sheet[":root"], sheet[".dark"]
 	for _, mode := range []struct {
-		pins Pins
+		name string
+		set  map[string]string
 		vars map[string]string
-	}{{p.Pins.Light, root}, {p.Pins.Dark, darkVars}} {
-		checks := []struct{ name, got string }{
-			{"--color-bg", mode.pins.Bg},
-			{"--color-text", mode.pins.Text},
-			{"--color-accent", mode.pins.Accent},
-			{"--color-secondary", mode.pins.Secondary},
-			{"--color-tertiary", mode.pins.Tertiary},
-			{"--color-error", mode.pins.Error},
-			{"--color-success", mode.pins.Success},
-			{"--color-warning", mode.pins.Warning},
+	}{{":root", p.Platform.Light, root}, {".dark", p.Platform.Dark, darkVars}} {
+		if len(mode.set) != len(platformNames) {
+			t.Errorf("theme.json platform.%s carries %d names, want %d", mode.name, len(mode.set), len(platformNames))
 		}
-		for _, c := range checks {
-			if c.got != mode.vars[c.name] {
-				t.Errorf("theme.json pin %s = %q, sheet says %q", c.name, c.got, mode.vars[c.name])
+		for _, n := range platformNames {
+			if got, want := mode.set[n.name], mode.vars["--platform-"+n.name]; got != want {
+				t.Errorf("theme.json platform.%s[%s] = %q, sheet says %q", mode.name, n.name, got, want)
 			}
 		}
 	}
@@ -768,13 +521,6 @@ func TestThemeJSONReproduces(t *testing.T) {
 	if p.Radius != float64(snap.Radius.Base) {
 		t.Errorf("radius = %v, want the base radius %v", p.Radius, snap.Radius.Base)
 	}
-	if want := [9]int{97, 92, 85, 74, 63, 51, 39, 28, 6}; p.Scale.Light != want {
-		t.Errorf("scale.light = %v, want ADR-007's shared scale %v", p.Scale.Light, want)
-	}
-	if want := [9]int{8, 13, 19, 30, 46, 64, 82, 86, 94}; p.Scale.Dark != want {
-		t.Errorf("scale.dark = %v, want the paired dark scale %v", p.Scale.Dark, want)
-	}
-
 	// Density: the active setting by name, both published settings' metrics,
 	// and the invariant floor.
 	if p.Density.Setting != "comfortable" {
@@ -797,16 +543,9 @@ func TestThemeJSONReproduces(t *testing.T) {
 		t.Errorf("density.minHitTarget = %v, want %v", p.Density.MinHitTarget, tokens.MinHitTarget)
 	}
 
-	// Elevation: the level fill per scheme and the shadow dp per level,
-	// off the captured snapshot through the same resolver the sheet uses.
-	for i, level := range elevationLevels {
-		if got, want := p.Elevation.Surfaces.Light[i], hexRGB(snap.Light.SurfaceAt(level.level)); got != want {
-			t.Errorf("elevation.surfaces.light[%d] = %q, want %q", i, got, want)
-		}
-		if got, want := p.Elevation.Surfaces.Dark[i], hexRGB(snap.Dark.SurfaceAt(level.level)); got != want {
-			t.Errorf("elevation.surfaces.dark[%d] = %q, want %q", i, got, want)
-		}
-		if got, want := p.Elevation.ShadowDp[i], float64(snap.Elevation.Dp(level.level)); got != want {
+	// The shadow depth each level casts, off the captured scale.
+	for i, level := range shadowLevels {
+		if got, want := p.Elevation.ShadowDp[i], float64(level.dp(snap.Elevation)); got != want {
 			t.Errorf("elevation.shadowDp[%d] = %v, want %v", i, got, want)
 		}
 	}
@@ -881,33 +620,63 @@ func TestCaptureRejectsIrreproducible(t *testing.T) {
 	}
 
 	th := theme.Default()
-	th.Color = rx.Of(tokens.DefaultDark) // a dark scheme: its Primary pin is not the seed
-	if _, err := Capture(th); err == nil {
-		t.Error("Capture of a dark colour emission must error: FromSeed(pin) cannot reproduce it")
-	}
-
-	th = theme.Default()
 	th.Density = rx.Of(tokens.Density{ControlHeight: 30, PaddingX: 10, PaddingY: 5})
 	if _, err := Capture(th); err == nil {
 		t.Error("Capture of a non-preset density must error: theme.json records density as a named setting")
 	}
 }
 
-// TestCaptureCustomSeed asserts a re-branded light scheme captures with its
-// own seed recovered.
-func TestCaptureCustomSeed(t *testing.T) {
-	seed := stdcolor.NRGBA{R: 0x00, G: 0x68, B: 0x74, A: 0xff}
-	light, dark := tokens.FromSeed(seed)
+// TestCaptureAChosenThemeColour asserts a set whose accent rows were rebuilt
+// for a chosen colour captures with that colour, and that the dark
+// counterpart carries it too.
+func TestCaptureAChosenThemeColour(t *testing.T) {
+	chosen := stdcolor.NRGBA{R: 0x00, G: 0x68, B: 0x74, A: 0xff}
 	th := theme.Default()
-	th.Color = rx.Of(light)
+	th.Platform = rx.Of(tokens.PlatformLight.WithAccent(chosen))
 	snap, err := Capture(th)
 	if err != nil {
 		t.Fatalf("Capture: %v", err)
 	}
-	if snap.Seed != seed {
-		t.Errorf("Seed = %v, want %v", snap.Seed, seed)
+	if got := snap.PlatformLight.ControlAccent; got != chosen {
+		t.Errorf("PlatformLight.ControlAccent = %v, want %v", got, chosen)
 	}
-	if snap.Dark != dark {
-		t.Errorf("Dark scheme is not FromSeed(seed)'s pair")
+	if want := tokens.PlatformDark.WithAccent(chosen); snap.PlatformDark != want {
+		t.Error("the dark counterpart does not carry the chosen theme colour")
 	}
+}
+
+// TestPlatformNamesCoverEveryField walks tokens.PlatformColors by reflection
+// and fails if a field has no entry in platformNames. A name the set carries
+// and the sheet drops is a colour a class-layer rule can reference and never
+// resolve — which is how the sidebar's pill lost its fill once.
+func TestPlatformNamesCoverEveryField(t *testing.T) {
+	byName := make(map[string]bool, len(platformNames))
+	for _, n := range platformNames {
+		byName[n.name] = true
+	}
+	typ := reflect.TypeOf(tokens.PlatformColors{})
+	if typ.NumField() != len(platformNames) {
+		t.Errorf("PlatformColors has %d fields and platformNames %d entries", typ.NumField(), len(platformNames))
+	}
+	for i := range typ.NumField() {
+		if want := kebab(typ.Field(i).Name); !byName[want] {
+			t.Errorf("PlatformColors.%s has no --platform-%s entry", typ.Field(i).Name, want)
+		}
+	}
+}
+
+// kebab is the naming rule platformNames follows: the Go field name with a
+// hyphen before each interior capital, lowercased.
+func kebab(field string) string {
+	var b strings.Builder
+	for i, r := range field {
+		if i > 0 && r >= 'A' && r <= 'Z' {
+			b.WriteByte('-')
+		}
+		if r >= 'A' && r <= 'Z' {
+			r += 'a' - 'A'
+		}
+		b.WriteRune(r)
+	}
+	return b.String()
 }

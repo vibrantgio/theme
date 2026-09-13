@@ -2,7 +2,6 @@ package export
 
 import (
 	"fmt"
-	stdcolor "image/color"
 	"os"
 	"path/filepath"
 
@@ -11,20 +10,10 @@ import (
 )
 
 // Snapshot is one resolved theme: the first emission of each theme.Theme
-// observable, with the paired dark colour scheme and the seed recovered
-// from the light scheme's primary pin. It is the input Write serialises.
+// observable, with the paired dark appearance's colour set. It is the input
+// Write serialises.
 type Snapshot struct {
-	// Seed is the colour the schemes derive from — the light scheme's
-	// pinned Primary, the brand seed carrying the palette's accent chroma.
-	// FromSeed reproduces its own output from it, which is what makes the
-	// snapshot reproducible.
-	Seed stdcolor.NRGBA
-
-	// Light is the colour scheme the theme emitted; Dark is its paired
-	// scheme, FromSeed(Seed)'s dark half.
-	Light, Dark tokens.ColorTokens
-
-	// PlatformLight and PlatformDark are the platform's own colour set in
+	// PlatformLight and PlatformDark are the platform's colour set in
 	// the two appearances: the set the theme emitted, and its counterpart
 	// under the same accent. The accent is the only row a machine's own
 	// settings move, so the pair is the two recorded sets carrying the
@@ -41,27 +30,22 @@ type Snapshot struct {
 }
 
 // Capture collects the first emission of each observable a serialisation
-// needs — Color, Typography, Density, Motion, Spacing, Radius and Elevation
-// — into a Snapshot. (Type is not consumed: it duplicates Typography's
-// sizes.)
+// needs — Platform, Typography, Density, Motion, Spacing, Radius and
+// Elevation — into a Snapshot. (Type is not consumed: it duplicates
+// Typography's sizes.)
 //
-// The colour emission must be a seed-derived light scheme: FromSeed pins
-// the light primary base to the seed exactly, so Capture recovers the seed
-// from the emission's Primary and regenerates the pair. An emission
-// FromSeed cannot reproduce — a dark scheme, or hand-assembled tokens — is
-// an error, because theme.json could not honestly claim to reproduce it.
-// The density emission must likewise be one of the two published settings —
+// The colour emission is the platform's set for the light appearance; its
+// dark counterpart is the recorded dark set carrying the emitted accent,
+// since the accent is the only row a machine's own settings move.
+// The density emission must be one of the two published settings —
 // tokens.Comfortable or tokens.Compact — because theme.json records density
 // as a named setting plus both settings' metrics, not as free-form numbers.
 func Capture(th theme.Theme) (Snapshot, error) {
 	var s Snapshot
-	if th.Color == nil || th.Platform == nil || th.Typography == nil || th.Density == nil || th.Motion == nil || th.Spacing == nil || th.Radius == nil || th.Elevation == nil {
+	if th.Platform == nil || th.Typography == nil || th.Density == nil || th.Motion == nil || th.Spacing == nil || th.Radius == nil || th.Elevation == nil {
 		return s, fmt.Errorf("export: Capture: theme has nil observables; every consumed field of theme.Theme must be set")
 	}
 	var err error
-	if s.Light, err = th.Color.First(); err != nil {
-		return s, fmt.Errorf("export: Capture: Color: %w", err)
-	}
 	if s.PlatformLight, err = th.Platform.First(); err != nil {
 		return s, fmt.Errorf("export: Capture: Platform: %w", err)
 	}
@@ -84,13 +68,6 @@ func Capture(th theme.Theme) (Snapshot, error) {
 	if s.Elevation, err = th.Elevation.First(); err != nil {
 		return s, fmt.Errorf("export: Capture: Elevation: %w", err)
 	}
-
-	s.Seed = s.Light.Primary
-	light, dark := tokens.FromSeed(s.Seed)
-	if light != s.Light {
-		return s, fmt.Errorf("export: Capture: the colour emission is not FromSeed(%s)'s light scheme; only seed-derived light schemes are reproducible from theme.json", hexRGB(s.Seed))
-	}
-	s.Dark = dark
 
 	if _, ok := densitySetting(s.Density); !ok {
 		return s, fmt.Errorf("export: Capture: the density emission is neither tokens.Comfortable nor tokens.Compact; theme.json records density as a named setting, so only the published settings are reproducible")

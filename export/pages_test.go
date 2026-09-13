@@ -143,56 +143,34 @@ func wantRow(label string, lt, lg, dt, dg stdcolor.NRGBA) string {
 }
 
 // TestColorPageAnnotatesContrast asserts the colour page carries the
-// measured APCA Lc, in both modes, for every gated text pair:
-// the four ramp pairs per role (900/700 on 100/200) and each role's pinned
-// pair.
+// measured APCA Lc, in both appearances, for every pairing the platform
+// itself makes — each foreground flattened over the fill beneath it first,
+// which is the only form APCA can be handed.
 func TestColorPageAnnotatesContrast(t *testing.T) {
 	snap, _, pages := writeProject(t)
 	src := pages[filepath.Join("foundations", "color.html")]
 
-	for _, role := range rampRoles {
-		light, dark := role.ramp(snap.Light.Ramps), role.ramp(snap.Dark.Ramps)
-		for _, pair := range [][2]int{{900, 100}, {900, 200}, {700, 100}, {700, 200}} {
-			text, surface := pair[0], pair[1]
-			row := wantRow(fmt.Sprintf("%d on %d", text, surface),
-				light.Step(text), light.Step(surface), dark.Step(text), dark.Step(surface))
-			if !strings.Contains(src, row) {
-				t.Errorf("color.html lacks the measured row for %s %d on %d:\n%s", role.name, text, surface, row)
-			}
-		}
-	}
-
-	pinPairs := []struct {
-		label  string
-		lt, lg stdcolor.NRGBA
-		dt, dg stdcolor.NRGBA
-	}{
-		{"text on bg", snap.Light.Text, snap.Light.Background, snap.Dark.Text, snap.Dark.Background},
-		{"on-accent on accent", snap.Light.OnPrimary, snap.Light.Primary, snap.Dark.OnPrimary, snap.Dark.Primary},
-		{"on-secondary on secondary", snap.Light.OnSecondary, snap.Light.Secondary, snap.Dark.OnSecondary, snap.Dark.Secondary},
-		{"on-tertiary on tertiary", snap.Light.OnTertiary, snap.Light.Tertiary, snap.Dark.OnTertiary, snap.Dark.Tertiary},
-		{"on-error on error", snap.Light.OnError, snap.Light.Error, snap.Dark.OnError, snap.Dark.Error},
-	}
-	for _, p := range pinPairs {
-		row := wantRow(p.label, p.lt, p.lg, p.dt, p.dg)
+	for _, pair := range platformPairs {
+		lightFill, darkFill := pair.fill(snap.PlatformLight), pair.fill(snap.PlatformDark)
+		row := wantRow(pair.label,
+			color.Flatten(pair.text(snap.PlatformLight), lightFill), lightFill,
+			color.Flatten(pair.text(snap.PlatformDark), darkFill), darkFill)
 		if !strings.Contains(src, row) {
-			t.Errorf("color.html lacks the measured pin row %q:\n%s", p.label, row)
+			t.Errorf("color.html lacks the measured row for %q:\n%s", pair.label, row)
 		}
 	}
 }
 
 // TestColorPageAnnotatesBothModeValues spot-checks that swatch annotations
-// carry both modes' hexes, labelled, since text cannot flip with the class.
+// carry both appearances' hexes, labelled, since text cannot flip with the
+// class.
 func TestColorPageAnnotatesBothModeValues(t *testing.T) {
 	snap, _, pages := writeProject(t)
 	src := pages[filepath.Join("foundations", "color.html")]
-	for _, role := range rampRoles {
-		light, dark := role.ramp(snap.Light.Ramps), role.ramp(snap.Dark.Ramps)
-		for step := 100; step <= 900; step += 100 {
-			want := fmt.Sprintf("L %s · D %s", wantHex(light.Step(step)), wantHex(dark.Step(step)))
-			if !strings.Contains(src, want) {
-				t.Errorf("color.html lacks the dual-mode annotation for %s-%d: %q", role.name, step, want)
-			}
+	for _, n := range platformNames {
+		want := fmt.Sprintf("L %s &middot; D %s", hexRGBA(n.pick(snap.PlatformLight)), hexRGBA(n.pick(snap.PlatformDark)))
+		if !strings.Contains(src, want) {
+			t.Errorf("color.html lacks the dual-appearance annotation for %s: %q", n.name, want)
 		}
 	}
 }
@@ -205,11 +183,8 @@ func TestReadmeNamesFamilies(t *testing.T) {
 	readme := pages["readme.md"]
 
 	var want []string
-	for _, role := range rampRoles {
-		want = append(want, "--color-"+role.name+"-100", "--color-"+role.name+"-900")
-	}
-	for _, pin := range pinRoles {
-		want = append(want, "--color-"+pin.name)
+	for _, n := range platformNames {
+		want = append(want, "--platform-"+n.name)
 	}
 	want = append(want, "--font-family", "-size", "-line-height", "-weight", "-tracking")
 	for _, role := range typeRoles {
@@ -221,8 +196,8 @@ func TestReadmeNamesFamilies(t *testing.T) {
 	for _, key := range radiusKeys {
 		want = append(want, "--radius-"+key.name)
 	}
-	for _, level := range elevationLevels {
-		want = append(want, "--elevation-"+level.name, "--shadow-"+level.name)
+	for _, level := range shadowLevels {
+		want = append(want, "--shadow-"+level.name)
 	}
 	for _, m := range densityMetrics {
 		want = append(want, "--density-"+m.name)
@@ -235,7 +210,7 @@ func TestReadmeNamesFamilies(t *testing.T) {
 		want = append(want, "--duration-"+stop.name)
 	}
 	want = append(want,
-		wantHex(snap.Seed),
+		wantHex(snap.PlatformLight.ControlAccent),
 		"styles.css", "theme.json",
 		"foundations/color.html", "foundations/type.html", "foundations/layout.html",
 	)
@@ -248,12 +223,9 @@ func TestReadmeNamesFamilies(t *testing.T) {
 	// Paranoia in the other direction: every variable the sheet actually
 	// emits must be documented, so a new family cannot ship unnamed. Each
 	// variable maps to the string the readme must contain for it.
-	rampStepRE := regexp.MustCompile(`^(--color-[a-z]+)-[1-9]00$`)
 	for name := range sheet[":root"] {
-		mention := name // pins, --space-*, --radius-*, --shadow-*: listed in full
-		if m := rampStepRE.FindStringSubmatch(name); m != nil && !isPinName(name) {
-			mention = m[1] + "-100" // the ramp family's endpoint mention
-		} else if role, metric, ok := fontMetric(name); ok {
+		mention := name // --platform-*, --space-*, --radius-*, --shadow-*: listed in full
+		if role, metric, ok := fontMetric(name); ok {
 			if !strings.Contains(readme, metric) {
 				t.Errorf("readme.md does not mention the %q metric suffix for %s", metric, name)
 			}
@@ -265,12 +237,11 @@ func TestReadmeNamesFamilies(t *testing.T) {
 	}
 }
 
-// TestLayoutPageDensityAndElevation asserts the layout page's contract:
+// TestLayoutPageDensityAndShadow asserts the layout page's contract:
 // the control metrics render at BOTH density settings — the compact column
 // is the same markup inside a .compact wrapper, exercising the sheet's
-// override block — and the elevation section's cards fill tonally through
-// --elevation-* with the dp shadow shown as the opt-in cue.
-func TestLayoutPageDensityAndElevation(t *testing.T) {
+// override block — and the shadow section shows each level's depth.
+func TestLayoutPageDensityAndShadow(t *testing.T) {
 	_, _, pages := writeProject(t)
 	src := pages[filepath.Join("foundations", "layout.html")]
 
@@ -285,25 +256,11 @@ func TestLayoutPageDensityAndElevation(t *testing.T) {
 	if !strings.Contains(src, "var(--density-min-hit-target)") {
 		t.Error("layout.html does not render the invariant hit-target floor")
 	}
-	for _, level := range elevationLevels {
-		if !strings.Contains(src, fmt.Sprintf(`style="background: var(--elevation-%s)"`, level.name)) {
-			t.Errorf("layout.html has no tonal card filled by var(--elevation-%s)", level.name)
-		}
+	for _, level := range shadowLevels {
 		if !strings.Contains(src, fmt.Sprintf("box-shadow: var(--shadow-%s)", level.name)) {
-			t.Errorf("layout.html does not show the opt-in shadow var(--shadow-%s)", level.name)
+			t.Errorf("layout.html does not show the shadow var(--shadow-%s)", level.name)
 		}
 	}
-}
-
-// isPinName reports whether a sheet variable is a pinned/semantic colour
-// rather than a ramp step.
-func isPinName(name string) bool {
-	for _, pin := range pinRoles {
-		if name == "--color-"+pin.name {
-			return true
-		}
-	}
-	return false
 }
 
 // fontMetric splits a --font-<role>-<metric> variable into the role name

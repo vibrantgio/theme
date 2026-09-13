@@ -292,7 +292,22 @@ func parseCatalogueColor(s string) (color.NRGBA, error) {
 	c := color.NRGBA{R: uint8(v >> 16), G: uint8(v >> 8), B: uint8(v), A: 0xff}
 	if len(fields) > 1 {
 		if !strings.HasPrefix(fields[1], "a") {
-			return color.NRGBA{}, fmt.Errorf("want an alpha of the form a0.NN, got %q", fields[1])
+			return color.NRGBA{}, fmt.Errorf("want an alpha of the form aN/255 or a0.NN, got %q", fields[1])
+		}
+		// Two forms. An AppKit row carries the byte AppKit reported,
+		// "a216/255", and nothing rounds; a measured row carries a fitted
+		// coverage, "a0.572", which is a fraction because a fit is not a
+		// byte anyone read off the platform.
+		if num, den, ok := strings.Cut(fields[1][1:], "/"); ok {
+			n, err := strconv.ParseUint(num, 10, 8)
+			if err != nil {
+				return color.NRGBA{}, fmt.Errorf("%q: %w", s, err)
+			}
+			if den != "255" {
+				return color.NRGBA{}, fmt.Errorf("%q: an alpha byte is written over 255, got %q", s, den)
+			}
+			c.A = uint8(n)
+			return c, nil
 		}
 		a, err := strconv.ParseFloat(fields[1][1:], 64)
 		if err != nil {

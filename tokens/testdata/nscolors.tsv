@@ -1,6 +1,6 @@
-# macOS 26.5.2 (build 25F84), read 2026-09-10 by nscolors.swift under aqua then darkAqua; sRGB, alpha to two decimals where below 1
+# macOS 26.5.2 (build 25F84), read 2026-09-10 by nscolors.swift under aqua then darkAqua and re-read 2026-09-13 with the alpha carried to the byte; sRGB. Every alpha AppKit names is exactly n/255, written here as "aN/255"; the measured-materials section below carries fitted coverages as fractions instead, since a fit is not a byte AppKit reported.
 windowBackgroundColor	#ffffff	#1e1e1e
-underPageBackgroundColor	#969696 a0.90	#282828
+underPageBackgroundColor	#969696 a229/255	#282828
 controlBackgroundColor	#ffffff	#1e1e1e
 textBackgroundColor	#ffffff	#1e1e1e
 selectedContentBackgroundColor	#0064e1	#0059d1
@@ -8,25 +8,25 @@ unemphasizedSelectedContentBackgroundColor	#dcdcdc	#464646
 selectedTextBackgroundColor	#b3d7ff	#3f638b
 unemphasizedSelectedTextBackgroundColor	#dcdcdc	#464646
 findHighlightColor	#ffff00	#ffff00
-separatorColor	#000000 a0.10	#ffffff a0.10
+separatorColor	#000000 a25/255	#ffffff a25/255
 gridColor	#e6e6e6	#1a1a1a
-labelColor	#000000 a0.85	#ffffff a0.85
-secondaryLabelColor	#000000 a0.50	#ffffff a0.55
-tertiaryLabelColor	#000000 a0.26	#ffffff a0.25
-quaternaryLabelColor	#000000 a0.10	#ffffff a0.10
+labelColor	#000000 a216/255	#ffffff a216/255
+secondaryLabelColor	#000000 a127/255	#ffffff a140/255
+tertiaryLabelColor	#000000 a66/255	#ffffff a63/255
+quaternaryLabelColor	#000000 a25/255	#ffffff a25/255
 textColor	#000000	#ffffff
-placeholderTextColor	#000000 a0.50	#ffffff a0.55
+placeholderTextColor	#000000 a127/255	#ffffff a140/255
 selectedTextColor	#000000	#ffffff
 linkColor	#0068da	#419cff
-headerTextColor	#000000 a0.85	#ffffff
-controlColor	#ffffff	#ffffff a0.25
-controlTextColor	#000000 a0.85	#ffffff a0.85
-disabledControlTextColor	#000000 a0.25	#ffffff a0.25
+headerTextColor	#000000 a216/255	#ffffff
+controlColor	#ffffff	#ffffff a63/255
+controlTextColor	#000000 a216/255	#ffffff a216/255
+disabledControlTextColor	#000000 a63/255	#ffffff a63/255
 selectedControlColor	#b3d7ff	#3f638b
-selectedControlTextColor	#000000 a0.85	#ffffff a0.85
+selectedControlTextColor	#000000 a216/255	#ffffff a216/255
 alternateSelectedControlTextColor	#ffffff	#ffffff
 controlAccentColor	#007aff	#007aff
-keyboardFocusIndicatorColor	#0067f4 a0.50	#1aa9ff a0.50
+keyboardFocusIndicatorColor	#0067f4 a127/255	#1aa9ff a127/255
 systemRed	#ff383c	#ff4245
 systemOrange	#ff8d28	#ff9230
 systemYellow	#ffcc00	#ffd600
@@ -43,13 +43,14 @@ systemGray	#8e8e93	#98989d
 shadowColor	#000000	#000000
 highlightColor	#ffffff	#b4b4b4
 # measured materials: the fills the platform gives no NSColor name, read off the stored captures in reference/macos. Four columns: name, light, dark, provenance — MEASURED, naming the capture and the region. Alpha is carried to the precision the reading supports, not the catalogue's two decimals.
-sidebarMaterial	#ffffff	#232a2e	MEASURED: flat-region samples of the chrome band and of the list flush below its hairline — mail-window.png and finder-window.png dark, mail-window-light.png and finder-window-light.png light; System Settings' own plane agrees in both schemes (system-settings-grouped-box-{light,dark}.png)
+sidebarMaterial	#f7f7f7	#1c1c1c	MEASURED: flat-region samples of Finder's sidebar in finder-window-untinted-light.png and finder-window-untinted-dark.png, read with window-background wallpaper tinting OFF so the value is the platform's own; the content beside it reads #ffffff and #1e1e1e in the same captures. The platform paints the dark band #1b1b1b through #1d1d1d down its height and #1c1c1c over its flat middle. The #232a2e recorded here before was the tinted desktop's
+sidebarSelection	#178bfb	#1994fc	MEASURED: flat-region samples of Voice Memos' selected sidebar row in voicememos-sidebar-light.png (x 74-273, y 363-394) and voicememos-sidebar-dark.png (2026-09-13; sidebar #1c1c1c), both 32 tall, cornered at 8, with a white label. It is neither controlAccentColor's #007aff — the platform lifts the pill above it over the chrome material — nor selectedContentBackgroundColor, which is a content list's selected row
 cardFill	#f7f7f7	#2a3034	MEASURED: flat-region samples of the Appearance pane's grouped boxes in system-settings-grouped-box-light.png over a #ffffff plane and system-settings-grouped-box-dark.png over a #232a2e plane; the box carries no hairline and no shadow, its edge a 2-3 px antialiased ramp
 pushButtonFill	#ececec	#333a3f	MEASURED: flat-region samples of the "Cancel" push button in save-dialog-light.png (x 362-430, y 504-521, #ececec over 1008 of 1242 pixels) and save-dialog-dark.png (#333a3f over 982 of them) — the sheet's ordinary push button, the one it does not fill with the accent; controlColor is not this value in either appearance
 hoverOverlay	#000000 a0.051	#ffffff a0.094	MEASURED: a Finder toolbar button under the pointer — control-hover-light.png #ffffff to #f2f2f2, control-hover-dark.png #242d32 to #384146; black at 0.051 reproduces the light reading on every channel, white at 0.094 the dark reading on green and within one 255th on red and blue
 pressOverlay	#000000 a0.098	#ffffff a0.098	MEASURED: a Save dialog's push button held down — control-pressed-light.png #ececec to #d5d5d5, control-pressed-dark.png #333a3f to #474d52; black and white at 0.098 reproduce both readings on every channel
 floatingShadow	#000000 a0.075	#000000 a0.075	MEASURED: finder-sidebar-shadow.png and reminders-sidebar-shadow.png agree — the #232a2e plane reads #20272b against the pane's edge stroke and recovers over 24 px; black at 0.075 reproduces that pixel on every channel
 fieldEdge	#f3f3f3	#2c3338	MEASURED: the unfocused "Tags:" text field's single border row in save-dialog-light.png and save-dialog-dark.png, y 243 and y 269, over that sheet's own fill (#ffffff light, #232a2f dark, the field's interior being the sheet's there); the light value is separatorColor over that white to the byte, the dark one is not — separatorColor over the dark sheet reads #606264 — so the edge is recorded as the pixel
-scrollbarThumb	#000000 a0.337	#ffffff a0.337	MEASURED: the overlay scrollbar's knob in textedit-scrollbar.png, #9d9fa1 over a #1a2124 track, which labelColor's white at 0.337 reproduces within one 255th on every channel; no stored capture holds a light-appearance overlay scrollbar, so the light row carries the dark row's coverage under labelColor's black
+scrollbarThumb	#000000 a0.572	#ffffff a0.572	MEASURED: the overlay scrollbar's knob in textedit-scrollbar.png, #9d9fa1 over a #1a2124 track, which labelColor's white at 0.572 (146/255) reproduces within one 255th on every channel when flattened in encoded sRGB, the space the platform composites in; the 0.337 recorded here before was fitted through a blend in linear light. No stored capture holds a light-appearance overlay scrollbar, so the light row carries the dark row's coverage under labelColor's black
 alternatingContentBackground	#f4f5f5	#ffffff a0.05	MEASURED: the second entry of NSColor.alternatingContentBackgroundColors, read 2026-09-11 by the catalogue's own command-line AppKit program under aqua then darkAqua — the pair has no NSColor name of its own, AppKit answering for it as an array. The light value is what Finder's list view draws to the byte: the stripes in finder-window-light.png alternate #ffffff and #f4f5f5 on a 20 px pitch (x=965, y 82-284). No stored capture holds a dark list view, so the dark row is the array's answer alone
 scrim	#000000 a0.20	#000000 a0.26	MEASURED: the window standing behind the sheet in save-dialog-light.png and save-dialog-dark.png. Light: the parent's toolbar band and document body both read #cccccc against the #ffffff the sheet itself carries, which is black at 0.20 exactly. Dark: the parent's toolbar band reads #1a1f22 against the measured #232a2e chrome material, which black at 0.26 reproduces on every channel (0.255 through 0.275 do; 0.25 does not)

@@ -4,10 +4,11 @@
 //
 // Usage:
 //
-//	vg-tokens [-out dir] [-seed #rrggbb]
+//	vg-tokens [-out dir] [-color #rrggbb]
 //
-// With no flags it serialises theme.Default() into ./design. -seed rebrands
-// the colour scheme from another seed; everything else stays the default.
+// With no flags it serialises theme.Default() into ./design. -color rebuilds
+// the platform set's accent rows for another theme colour; everything else
+// stays the default.
 package main
 
 import (
@@ -25,17 +26,16 @@ import (
 
 func main() {
 	out := flag.String("out", "design", "target directory for the generated project")
-	seedHex := flag.String("seed", "", "brand seed as #rrggbb (default: the built-in default seed)")
+	colorHex := flag.String("color", "", "theme colour as #rrggbb (default: the platform's own accent)")
 	flag.Parse()
 
 	th := theme.Default()
-	if *seedHex != "" {
-		seed, err := parseSeed(*seedHex)
+	if *colorHex != "" {
+		themeColor, err := parseColor(*colorHex)
 		if err != nil {
 			fatal(err)
 		}
-		light, _ := tokens.FromSeed(seed)
-		th.Color = rx.Of(light)
+		th.Platform = rx.Of(tokens.PlatformLight.WithAccent(themeColor))
 	}
 
 	snap, err := export.Capture(th)
@@ -48,12 +48,12 @@ func main() {
 	fmt.Printf("wrote %s: theme.json, styles.css, readme.md, foundations/{color,type,layout}.html\n", *out)
 }
 
-// parseSeed accepts #rrggbb or rrggbb.
-func parseSeed(s string) (stdcolor.NRGBA, error) {
+// parseColor accepts #rrggbb or rrggbb.
+func parseColor(s string) (stdcolor.NRGBA, error) {
 	hex, _ := strings.CutPrefix(s, "#")
 	var r, g, b uint8
 	if n, err := fmt.Sscanf(hex, "%02x%02x%02x", &r, &g, &b); n != 3 || err != nil || len(hex) != 6 {
-		return stdcolor.NRGBA{}, fmt.Errorf("vg-tokens: -seed %q: want #rrggbb", s)
+		return stdcolor.NRGBA{}, fmt.Errorf("vg-tokens: -color %q: want #rrggbb", s)
 	}
 	return stdcolor.NRGBA{R: r, G: g, B: b, A: 0xff}, nil
 }

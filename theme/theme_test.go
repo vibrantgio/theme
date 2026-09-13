@@ -27,8 +27,8 @@ func collect[T any](obs rx.Observable[T]) ([]T, error) {
 
 func TestDefaultThemeFieldsNonNil(t *testing.T) {
 	th := theme.Default()
-	if th.Color == nil {
-		t.Error("Color is nil")
+	if th.Platform == nil {
+		t.Error("Platform is nil")
 	}
 	if th.Density == nil {
 		t.Error("Density is nil")
@@ -47,17 +47,17 @@ func TestDefaultThemeFieldsNonNil(t *testing.T) {
 	}
 }
 
-func TestDefaultColorEmission(t *testing.T) {
+func TestDefaultPlatformEmission(t *testing.T) {
 	th := theme.Default()
-	got, err := collect(th.Color)
+	got, err := collect(th.Platform)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(got) != 1 {
 		t.Fatalf("expected 1 emission, got %d", len(got))
 	}
-	if got[0] != tokens.DefaultLight {
-		t.Error("emitted ColorTokens does not match tokens.DefaultLight")
+	if got[0] != tokens.PlatformLight {
+		t.Error("emitted PlatformColors does not match tokens.PlatformLight")
 	}
 }
 

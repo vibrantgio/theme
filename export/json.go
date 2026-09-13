@@ -2,11 +2,9 @@ package export
 
 import (
 	"encoding/json"
-	"math"
 	"strconv"
 	"time"
 
-	"github.com/vibrantgio/theme/color"
 	"github.com/vibrantgio/theme/tokens"
 )
 
@@ -17,15 +15,17 @@ import (
 // model and motion set are recorded alongside so a reader (or a prototype)
 // need not run the generator to know them.
 type Parameters struct {
-	// Seed is the brand seed as lowercase #rrggbb; Hue and Sat are its
-	// OKLCh hue (degrees, 2 decimals) and chroma (4 decimals), recorded for
-	// the reader — regeneration starts from the hex.
-	Seed string  `json:"seed"`
-	Hue  float64 `json:"hue"`
-	Sat  float64 `json:"sat"`
+	// ThemeColor is the theme colour as lowercase #rrggbb: the colour the
+	// platform's accent rows were rebuilt for, and the one colour a reader
+	// needs to reproduce the set from the catalogue.
+	//
+	// The key is "seed", which is the key theme/brand's own file carries,
+	// so an exported theme.json loads as a kept brand without translation.
+	ThemeColor string `json:"seed"`
 
-	// Pins are the pinned role bases per mode.
-	Pins ModePins `json:"pins"`
+	// Platform is the platform's colour set per appearance, keyed by the
+	// same name the sheet's --platform-* custom properties carry.
+	Platform ModePlatform `json:"platform"`
 
 	// Fonts names the heading, body and mono faces. Heading and body are
 	// Roboto until a heading face exists; mono is the code style's face.
@@ -35,21 +35,14 @@ type Parameters struct {
 	// --radius-base.
 	Radius float64 `json:"radius"`
 
-	// Scale is the shared CIELAB L* lightness scale per mode, steps
-	// 100–900, measured back from the emitted neutral ramps. It documents
-	// the generator's fixed scale; it is not itself an input —
-	// FromSeed carries it.
-	Scale ModeScale `json:"scale"`
-
 	// Density records the theme's active setting by name plus both
 	// published settings' metrics, and the density-invariant pointer-target
 	// floor.
 	Density DensityParams `json:"density"`
 
-	// Elevation records the tonal model per level 0–3: the neutral-ramp
-	// step of the surface fill (the default cue; 0 marks the bg pin, not a
-	// ramp step) and the dp shadow depth (the opt-in cue for floating
-	// transients).
+	// Elevation records the shadow depth each of the six levels casts, from
+	// the backdrop up — the opt-in cue for floating transients. A level's
+	// fill is the platform's own, under Platform.
 	Elevation ElevationParams `json:"elevation"`
 
 	// Motion records the captured MotionScale in full — duration stops,
@@ -77,24 +70,12 @@ type DensityMetrics struct {
 	PaddingY      float64 `json:"paddingY"`
 }
 
-// ElevationParams records the elevation, indexed the way the levels are
-// ordered — the backdrop first, then chrome, then levels 0 through 3, from
-// the backdrop up toward the reader. Surfaces carries each level's realized
-// fill per scheme and ShadowDp the level's shadow depth, which is
-// scheme-invariant.
-//
-// Surfaces carries resolved colours rather than neutral-ramp step numbers
-// because a level is not a ramp step in both schemes, so a step number
-// cannot name it.
+// ElevationParams records the shadow depth of each of the six levels, from
+// the backdrop up. A level's FILL is the platform's own name for what that
+// region is, under Parameters.Platform; the shadow is the separate, opt-in
+// cue a floating surface carries.
 type ElevationParams struct {
-	Surfaces ModeSurfaces `json:"surfaces"`
-	ShadowDp [6]float64   `json:"shadowDp"`
-}
-
-// ModeSurfaces carries the six level fills, as hex, per scheme.
-type ModeSurfaces struct {
-	Light [6]string `json:"light"`
-	Dark  [6]string `json:"dark"`
+	ShadowDp [6]float64 `json:"shadowDp"`
 }
 
 // MotionParams records the motion set.
@@ -155,24 +136,12 @@ func f64(v float32) float64 {
 	return f
 }
 
-// ModePins carries the pinned bases for both modes.
-type ModePins struct {
-	Light Pins `json:"light"`
-	Dark  Pins `json:"dark"`
-}
-
-// Pins records one mode's pinned bases as lowercase #rrggbb hexes. Accent
-// is the primary pin — the sheet's --color-accent.
-type Pins struct {
-	Bg        string `json:"bg"`
-	Text      string `json:"text"`
-	Accent    string `json:"accent"`
-	Secondary string `json:"secondary"`
-	Tertiary  string `json:"tertiary"`
-	Error     string `json:"error"`
-	Success   string `json:"success"`
-	Warning   string `json:"warning"`
-	Info      string `json:"info"`
+// ModePlatform carries the platform's colour set for both appearances,
+// each name mapped to its value as lowercase #rrggbb, or #rrggbbaa where
+// the platform's answer is a colour at a coverage.
+type ModePlatform struct {
+	Light map[string]string `json:"light"`
+	Dark  map[string]string `json:"dark"`
 }
 
 // Fonts names the typefaces. Mono is the code style's face — the sheet's
@@ -181,40 +150,6 @@ type Fonts struct {
 	Heading string `json:"heading"`
 	Body    string `json:"body"`
 	Mono    string `json:"mono"`
-}
-
-// ModeScale carries the L* scale for both modes.
-type ModeScale struct {
-	Light [9]int `json:"light"`
-	Dark  [9]int `json:"dark"`
-}
-
-// pinsOf reads one scheme's pinned bases.
-func pinsOf(t tokens.ColorTokens) Pins {
-	return Pins{
-		Bg:        hexRGB(t.Background),
-		Text:      hexRGB(t.Text),
-		Accent:    hexRGB(t.Primary),
-		Secondary: hexRGB(t.Secondary),
-		Tertiary:  hexRGB(t.Tertiary),
-		Error:     hexRGB(t.Error),
-		Success:   hexRGB(t.Success),
-		Warning:   hexRGB(t.Warning),
-		Info:      hexRGB(t.Info),
-	}
-}
-
-// measuredScale reads the CIELAB L* of each ramp step back from the ramp
-// itself, rounded to the nearest integer — the documented scale values are
-// integral, and 8-bit quantisation keeps the measurement well within
-// rounding distance.
-func measuredScale(r tokens.Ramp) [9]int {
-	var s [9]int
-	for i, c := range r {
-		L, _, _ := color.LabFromNRGBA(c)
-		s[i] = int(math.Round(L))
-	}
-	return s
 }
 
 // densityMetricsOf reads one setting's metrics.
@@ -244,25 +179,16 @@ func durMs(d time.Duration) float64 {
 
 // parameters assembles the Parameters for a snapshot.
 func parameters(s Snapshot) Parameters {
-	_, chroma, hue := color.OKLChFromNRGBA(s.Seed)
 	setting, _ := densitySetting(s.Density) // Capture already validated it
 	var elev ElevationParams
-	for i, level := range elevationLevels {
-		elev.Surfaces.Light[i] = hexRGB(s.Light.SurfaceAt(level.level))
-		elev.Surfaces.Dark[i] = hexRGB(s.Dark.SurfaceAt(level.level))
-		elev.ShadowDp[i] = f64(s.Elevation.Dp(level.level))
+	for i, level := range shadowLevels {
+		elev.ShadowDp[i] = f64(level.dp(s.Elevation))
 	}
 	return Parameters{
-		Seed:   hexRGB(s.Seed),
-		Hue:    math.Round(hue*100) / 100,
-		Sat:    math.Round(chroma*10000) / 10000,
-		Pins:   ModePins{Light: pinsOf(s.Light), Dark: pinsOf(s.Dark)},
-		Fonts:  Fonts{Heading: s.Typography.HeadlineLarge.Typeface, Body: s.Typography.BodyLarge.Typeface, Mono: s.Typography.Code.Typeface},
-		Radius: float64(s.Radius.Base),
-		Scale: ModeScale{
-			Light: measuredScale(s.Light.Ramps.Neutral),
-			Dark:  measuredScale(s.Dark.Ramps.Neutral),
-		},
+		ThemeColor: hexRGB(s.PlatformLight.ControlAccent),
+		Platform:   ModePlatform{Light: platformMap(s.PlatformLight), Dark: platformMap(s.PlatformDark)},
+		Fonts:      Fonts{Heading: s.Typography.HeadlineLarge.Typeface, Body: s.Typography.BodyLarge.Typeface, Mono: s.Typography.Code.Typeface},
+		Radius:     float64(s.Radius.Base),
 		Density: DensityParams{
 			Setting:      setting,
 			Comfortable:  densityMetricsOf(tokens.Comfortable),
@@ -293,6 +219,16 @@ func parameters(s Snapshot) Parameters {
 			},
 		},
 	}
+}
+
+// platformMap renders one appearance's set as name → value, under the same
+// names the sheet's --platform-* custom properties carry.
+func platformMap(p tokens.PlatformColors) map[string]string {
+	m := make(map[string]string, len(platformNames))
+	for _, n := range platformNames {
+		m[n.name] = hexRGBA(n.pick(p))
+	}
+	return m
 }
 
 // themeJSON renders theme.json, indented and newline-terminated.

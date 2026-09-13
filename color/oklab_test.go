@@ -182,3 +182,11 @@ func TestOKLabNRGBAHelpers(t *testing.T) {
 		t.Errorf("OKLabFromNRGBA should ignore alpha: got %v,%v,%v", l2, a2, b2)
 	}
 }
+
+// absDiff is the distance between two 8-bit channels.
+func absDiff(a, b uint8) int {
+	if a > b {
+		return int(a) - int(b)
+	}
+	return int(b) - int(a)
+}

@@ -158,8 +158,10 @@ const stylesDirName = "styles"
 // colour has, so [Brand.Chosen] can tell the two apart without a second
 // field and every method degrades to the package defaults.
 type Brand struct {
-	// Seed is the colour the palette derives from, opaque. It is the
-	// whole input: tokens.FromSeed(Seed) is both schemes.
+	// Seed is the theme colour, opaque: the colour the platform's accent
+	// rows are rebuilt for wherever the platform paints its accent — the
+	// default button, the selection, the focus ring, the sidebar's pill.
+	// Nothing else derives from it.
 	Seed color.NRGBA
 
 	// Base names the syntax palettes code is coloured from, one per
@@ -234,23 +236,9 @@ func (p BasePair) Chosen() bool { return p.Light != "" || p.Dark != "" }
 // parses.
 func (b Brand) Chosen() bool { return b.Seed.A != 0 }
 
-// Colors returns the pair of schemes the brand generates, or the package
-// defaults when no colour was kept — including for a brand that follows the
-// system, which pins nothing to snapshot and whose first frame is therefore
-// the one an application with no brand draws. It is what a caller needs before a theme
-// stream has emitted anything — the palette to draw the first frame in, so
-// that frame is already wearing the kept brand rather than flashing the
-// default one at the person who chose against it.
-func (b Brand) Colors() (light, dark tokens.ColorTokens) {
-	if !b.Chosen() {
-		return tokens.DefaultLight, tokens.DefaultDark
-	}
-	return tokens.FromSeed(b.Seed)
-}
-
 // Typography returns the type roles the brand wears: CodeFace of Mono,
-// then WithEmoji, including when Mono is empty or unknown. It is the
-// first-frame twin of Colors. A caller that snapshots DefaultTypography
+// then WithEmoji, including when Mono is empty or unknown. A caller that
+// snapshots DefaultTypography
 // while the stream is about to emit EmojiTypography flashes tofu on the
 // first emoji; a caller that snapshots DefaultTypography while the
 // stream is about to emit JetBrains Mono flashes Roboto Mono on the
@@ -264,12 +252,12 @@ func (b Brand) Typography() tokens.Typography {
 // stream constructor adopts a brand when there is one and changes nothing
 // when there is not.
 //
-// The seed option pins the palette pair, so the OS accent colour does not
+// The theme-colour option pins the accent, so the OS accent colour does not
 // override it: a deliberately chosen brand outranks the desktop's. Light
 // and dark still follow the OS. A brand that follows the system contributes
-// no seed option at all, so the stream derives from the colour the platform
-// reports and keeps following it as it changes — the same stream an
-// application with no brand builds. A [system.WithTypography] option always
+// no theme-colour option at all, so the stream carries the colour the
+// platform reports and keeps following it as it changes — the same stream
+// an application with no brand builds. A [system.WithTypography] option always
 // rides along so the stream wears the same value [Brand.Typography]
 // snapshots — CodeFace of Mono, then WithEmoji, including when Mono is
 // empty.
@@ -279,7 +267,7 @@ func (b Brand) Options() []system.Option {
 	}
 	opts := make([]system.Option, 0, 2)
 	if !b.FollowSystem {
-		opts = append(opts, system.WithSeed(b.Seed))
+		opts = append(opts, system.WithThemeColor(b.Seed))
 	}
 	return append(opts, system.WithTypography(tokens.CodeFace(b.Mono).WithEmoji()))
 }
