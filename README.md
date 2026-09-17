@@ -175,11 +175,10 @@ this module's own tests drive.
 
 ## For coding assistants
 
-Read the canonical guide before writing code against this module — the module
-inventory with current tags, the application skeleton, MVU and rx semantics,
-typography, and the pitfalls that are not guessable:
-
-<https://raw.githubusercontent.com/vibrantgio/workbench/master/llms.txt>
+This README's own sections are the guide: [Where it sits](#where-it-sits) and
+[Packages](#packages) place the module and its packages, [Usage](#usage) is
+the whole bootstrap, and each package's own `doc.go` comment covers what the
+table above only summarises.
 
 [`AGENTS.md`](./AGENTS.md) in this repository has the build, test and
 golden-image commands. The golden line there is exact and both halves of it
