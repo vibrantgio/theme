@@ -266,7 +266,7 @@ func TestRoundTripDensity(t *testing.T) {
 		}
 	}
 	if _, ok := compact[name]; ok {
-		t.Errorf(".compact overrides %s; the WCAG floor must not scale with density", name)
+		t.Errorf(".compact overrides %s; the WCAG 2.5.5 pointer-target floor must not scale with density", name)
 	}
 	if want := len(densityMetrics); len(compact) != want {
 		t.Errorf(".compact declares %d variables, want %d", len(compact), want)

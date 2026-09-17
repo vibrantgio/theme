@@ -173,8 +173,8 @@ const (
 	// because extending one row would steal its neighbour's slop. At the
 	// platform's measured regular control a Comfortable row is 24 dp and
 	// meets WCAG 2.5.8 Target Size (Minimum), the 24 dp criterion that
-	// governs at AA; a Compact row is 19 dp and does not. See "Pointer
-	// targets: which WCAG level actually governs" above.
+	// governs at AA; a Compact row is 19 dp and does not.
+	// See "Pointer targets: which WCAG level actually governs" above.
 	MinHitTarget float32 = 44
 	// ChipDrop is how far under the control height the system's smallest
 	// control is drawn, in dp. See [Density.ChipHeight]: it is the whole of
