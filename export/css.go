@@ -430,14 +430,21 @@ func stylesCSS(s Snapshot) string {
 // control no longer asks which level hosts it, because the browser already
 // knows what is under the pixel.
 //
-// The states are the platform's own answers. Nothing tints on hover but a
-// toolbar button, which this sheet has no class for; a press lays
+// The states are the platform's own answers. A press lays
 // --platform-press-overlay over whatever fill the variant carries, and
 // over the page where it carries none, which is how a ghost gets a fill at
 // all. Focus is --platform-keyboard-focus-indicator at --focus-ring-width,
-// the same ring in every variant. Disabled is not a fade of the resting
-// colours: a fill falls back to the push button's own, and every
-// foreground becomes --platform-disabled-control-text.
+// the same ring in every variant. Disabled falls a fill back to the push
+// button's own and takes every foreground to
+// --platform-disabled-control-text.
+//
+// This sheet emits no hover rule and no fade on the disabled fill, and the
+// components draw both: the library lays --platform-hover-overlay over the
+// fill a control carries and fades a switched-off control toward the
+// surface it stands on. The sheet has not been brought in step, and neither
+// has the trigger this sheet still draws with a hairline and a solid
+// triangle; a reader comparing the two is reading a sheet behind the
+// components, not two answers deliberately kept apart.
 //
 // Every pointer/keyboard state rule also carries a forcing twin class
 // (.is-hover, .is-active, .is-focus, .is-checked) grouped into the same
@@ -529,10 +536,11 @@ const componentClasses = `/* ---- Component classes ----
   fill: currentColor;
 }
 
-/* No hover rule, in any variant, and the absence is measured: a Finder
-   toolbar button tints under the pointer and a Save dialog's push button
-   does not, so a push button on this platform answers the pointer only when
-   it is held. Held, the platform lays its press overlay over the fill the
+/* No hover rule in any variant, and the absence is a sheet behind the
+   components rather than a measurement: no stored capture holds a push
+   button under the pointer, so nothing measures one as exempt, and the
+   library lays the platform's hover overlay on every variant.
+   Held, the platform lays its press overlay over the fill the
    variant carries - written as a one-colour gradient layer over the
    background colour, which is how CSS composites a coverage onto a fill in
    the same space Flatten does, and straight onto the page where the variant
@@ -552,10 +560,12 @@ const componentClasses = `/* ---- Component classes ----
   outline-offset: calc(var(--focus-ring-width) / -2);
 }
 
-/* Disabled is the platform's own answer rather than a fade of the resting
-   colours: a variant that carries a fill falls back to the push button's
-   fill inside the separator hairline, and every foreground becomes the
-   platform's disabled control text. The padding gives back the hairline's
+/* Disabled falls a variant that carries a fill back to the push button's
+   fill inside the separator hairline and takes every foreground to the
+   platform's disabled control text. The library fades that fill and that
+   hairline toward the surface the control stands on as well, at the
+   coverage the Save dialog's switched-off checkbox measures; this sheet
+   does not, and is behind it. The padding gives back the hairline's
    1px, as everywhere else in this sheet, so the drawn box does not grow. A
    ghost keeps its absence of fill: there is nothing to fall back to. */
 .btn:disabled {

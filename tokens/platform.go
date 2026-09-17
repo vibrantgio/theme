@@ -63,6 +63,28 @@ import (
 	"math"
 )
 
+// DisabledCoverage is how much of its own paint a control keeps while it is
+// switched off: the fraction of 255 its fill, its edge and its marks are
+// drawn at over the surface it stands on. The control fades toward that
+// surface; it is not tinted by an overlay of a fixed colour, which no single
+// coverage could reproduce in both appearances.
+//
+// MEASURED, save-dialog-light.png and save-dialog-dark.png: the "Options:"
+// checkbox is switched off in both, its 16 px box reading #f2f2f2 light and
+// #2e3439 dark, on sheets of #ffffff and #232a2f — and seventeen rows above
+// it the "File Format:" pop-up, enabled on the same sheet, reads the push
+// button's own #ececec and #333a3f. 170 of 255 puts the enabled fill on the
+// disabled reading exactly light and exactly on dark red, one 255th over on
+// dark green and blue, which is the tolerance the hover overlay's dark
+// reading carries in the same reference.
+//
+// The dialog holds no switched-off push button and no switched-off edged
+// control, so this one coverage carries both the fill and the edge; a
+// capture of either is on the capture list. Text is not faded by it: a
+// switched-off control's wording is DisabledControlText, which is the
+// platform's own reduced coverage and reads at it in the same capture.
+const DisabledCoverage uint8 = 170
+
 // PlatformColors is the platform's colour set: one field per AppKit
 // semantic colour name, in Go casing, with the value that name reports for
 // one appearance. [PlatformLight] and [PlatformDark] are the two recorded
@@ -212,10 +234,16 @@ type PlatformColors struct {
 	// #d5d5d5; -dark.png: #333a3f to #474d52). The light readings are
 	// exact on every channel; the dark hover is exact on green and
 	// within one 255th on red and blue, the platform's dark tint being
-	// closer to an even lightening than to a white composite. A push
-	// button does not tint under the pointer at all on macOS 26 and a
-	// list row does not either, so a caller applies HoverOverlay only
-	// where the platform does.
+	// closer to an even lightening than to a white composite.
+	//
+	// The overlay is the platform's one hover answer and a caller lays it
+	// on whatever fill the control carries. The reference holds no capture
+	// of a push button or a list row under the pointer and not held, so
+	// neither is measured as exempt; both captures are on the capture
+	// list. What the pressed capture does settle is that the two states do
+	// not stack: the held push button reads #d5d5d5 light and #474d52
+	// dark, which is PressOverlay straight over PushButtonFill, with no
+	// hover under it.
 	HoverOverlay color.NRGBA `appkit:"-"`
 	PressOverlay color.NRGBA `appkit:"-"`
 

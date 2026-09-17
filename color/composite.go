@@ -136,3 +136,19 @@ func sRGBFromLinear(c float64) float64 {
 	}
 	return 1.055*math.Pow(c, 1/2.4) - 0.055
 }
+
+// Fade returns c at coverage of the coverage it already carries: the colour
+// a control's own paint takes when the control is drawn at less than full
+// strength. An opaque fill comes back translucent, and a colour that already
+// carries a coverage — a seam, a label — comes back at that coverage scaled
+// down, so one call covers both. [Flatten] then lands it on the surface the
+// control stands on.
+//
+// coverage is a fraction of 255, the way every coverage in this library is
+// carried: 255 returns c unchanged and 0 returns it at no coverage at all.
+// The rounding is the same half-up rounding [Flatten] uses, so the two
+// compose without a second rounding rule.
+func Fade(c stdcolor.NRGBA, coverage uint8) stdcolor.NRGBA {
+	c.A = uint8(math.Round(float64(c.A) * float64(coverage) / 255))
+	return c
+}

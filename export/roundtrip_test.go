@@ -347,9 +347,9 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		// Ghost carries no fill at all.
 		".btn.ghost {",
 		"background: transparent;",
-		// No hover rule in any variant: a push button does not tint under
-		// the pointer on this platform. Held, the press overlay goes over
-		// the fill as a one-colour gradient layer.
+		// No hover rule in any variant: the sheet is behind the components,
+		// which lay the platform's hover overlay on every one. Held, the
+		// press overlay goes over the fill as a one-colour gradient layer.
 		".btn:active, .btn.is-active {",
 		"background-image: linear-gradient(var(--platform-press-overlay), var(--platform-press-overlay));",
 		// One ring, one width, every variant, and its forcing twins: a

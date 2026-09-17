@@ -160,3 +160,28 @@ func gioBlend(coverage, surface uint8) uint8 {
 	kept := 1 - float64(coverage)/255
 	return uint8(math.Round(enc(kept*lin(float64(surface)/255)) * 255))
 }
+
+// TestFadeScalesTheCoverageItIsGiven: Fade is the one arithmetic a control
+// drawn at less than full strength uses. An opaque fill comes back at the
+// coverage asked for; a colour already carrying one comes back at that
+// coverage scaled; and the two ends return the value unchanged.
+func TestFadeScalesTheCoverageItIsGiven(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		in       stdcolor.NRGBA
+		coverage uint8
+		want     uint8
+	}{
+		{"an opaque fill at the disabled coverage", nrgba(0xececec, 0xff), 170, 170},
+		{"a seam at the disabled coverage", nrgba(0x000000, 25), 170, 17},
+		{"full coverage returns the colour", nrgba(0xececec, 0xff), 0xff, 0xff},
+		{"no coverage returns nothing", nrgba(0xececec, 0xff), 0, 0},
+	} {
+		if got := color.Fade(tc.in, tc.coverage); got.A != tc.want {
+			t.Errorf("%s: alpha = %d, want %d", tc.name, got.A, tc.want)
+		}
+		if got := color.Fade(tc.in, tc.coverage); got.R != tc.in.R || got.G != tc.in.G || got.B != tc.in.B {
+			t.Errorf("%s: Fade moved a channel: %v against %v", tc.name, got, tc.in)
+		}
+	}
+}

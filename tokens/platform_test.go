@@ -493,3 +493,44 @@ func TestAlphaNamesFlattenToTheCapturedBytes(t *testing.T) {
 		})
 	}
 }
+
+// TestDisabledCoverageLandsOnTheCapturedSwitchedOffFill pins the disabled
+// coverage against the pixels rather than against itself. MEASURED,
+// save-dialog-{light,dark}.png: the "Options:" checkbox is switched off in
+// both appearances and its box reads #f2f2f2 light and #2e3439 dark, on
+// sheets of #ffffff and #232a2f; the "File Format:" pop-up seventeen rows
+// above it is enabled on the same sheet and reads the push button's own
+// #ececec and #333a3f. Light lands to the byte and dark within one 255th,
+// which is the tolerance the hover overlay's dark reading carries.
+func TestDisabledCoverageLandsOnTheCapturedSwitchedOffFill(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		in    tokens.PlatformColors
+		sheet color.NRGBA
+		want  color.NRGBA
+		slack int
+	}{
+		{"light", tokens.PlatformLight, color.NRGBA{0xff, 0xff, 0xff, 0xff}, color.NRGBA{0xf2, 0xf2, 0xf2, 0xff}, 0},
+		{"dark", tokens.PlatformDark, color.NRGBA{0x23, 0x2a, 0x2f, 0xff}, color.NRGBA{0x2e, 0x34, 0x39, 0xff}, 1},
+	} {
+		got := vgcolor.Flatten(vgcolor.Fade(tc.in.PushButtonFill, tokens.DisabledCoverage), tc.sheet)
+		off := func(a, b uint8) int {
+			if a > b {
+				return int(a) - int(b)
+			}
+			return int(b) - int(a)
+		}
+		if off(got.R, tc.want.R) > tc.slack || off(got.G, tc.want.G) > tc.slack || off(got.B, tc.want.B) > tc.slack {
+			t.Errorf("%s: the push button's fill at the disabled coverage lands on %v, want the capture's %v within %d",
+				tc.name, got, tc.want, tc.slack)
+		}
+	}
+}
+
+// The disabled coverage is a fade and not an erasure: a control switched off
+// still draws, and it still moves off the fill it had.
+func TestDisabledCoverageIsAFade(t *testing.T) {
+	if tokens.DisabledCoverage == 0 || tokens.DisabledCoverage == 0xff {
+		t.Errorf("DisabledCoverage = %d; a switched-off control neither disappears nor draws at full strength", tokens.DisabledCoverage)
+	}
+}
