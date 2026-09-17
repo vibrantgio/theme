@@ -14,7 +14,7 @@
 //
 //	{
 //	  "themeColour": "#e8112d",
-//	  "base": {
+//	  "style": {
 //	    "light": "catppuccin-latte",
 //	    "dark": "catppuccin-mocha"
 //	  },
@@ -28,7 +28,7 @@
 //
 //	{
 //	  "followSystem": true,
-//	  "base": {
+//	  "style": {
 //	    "light": "catppuccin-latte",
 //	    "dark": "catppuccin-mocha"
 //	  },
@@ -63,30 +63,30 @@
 // colour under "seed"; [Load] reads that key for one release and writes the
 // current one. Keys this package does not know are ignored.
 //
-// "base" is the second thing a person chooses: the name of the syntax
-// palette code is coloured from, one per appearance. It is a name and not a
-// palette for the same reason the theme colour is not a set of colours —
+// "style" is the second thing a person chooses: the name of the syntax
+// highlighter style code is coloured from, one per appearance. It is a name
+// and not a set of colours for the same reason the theme colour is not one —
 // the styling is derived from it, and the derivation is entitled to
 // improve. This
 // package neither resolves the name nor judges it: it does not know what
 // styles exist, so an empty or unrecognised name is the reader's to fall
-// back on, and the fallback is whatever that reader's default base is.
+// back on, and the fallback is whatever that reader's default style is.
 //
 // "mono" is the third: the typeface name fenced code wears. It sits beside
-// "themeColour" and "base", not under a "fonts" object — that nesting is the
+// "themeColour" and "style", not under a "fonts" object — that nesting is the
 // export tree's, and an exported theme.json dropped in as this file still
 // loads because unknown object keys are ignored. Empty, absent, or a name
 // this package does not ship is Roboto Mono, the default Code face. The
 // one other name it knows is "JetBrains Mono".
 //
-// It is a pair because a syntax palette is fitted to a surface: a set of
+// It is a pair because a highlighter style is fitted to a surface: a set of
 // colours somebody balanced against a near-white page is not the set they
 // would balance against a near-black one, and the two appearances of one theme
 // therefore call for two names rather than one name and a rule. So the light
 // appearance and the dark appearance each name their own, and a person moving
 // between them moves between both.
 //
-// A file whose "base" is a plain string is the spelling that predates the
+// A file whose "style" is a plain string is the spelling that predates the
 // pair — one name, with no appearance attached to it. It loads with that name
 // in both members, because it is the only name the file has; which appearance
 // it was actually fitted to is measured off the style itself, and measuring a
@@ -165,17 +165,17 @@ type Brand struct {
 	// Nothing else derives from it.
 	ThemeColor color.NRGBA
 
-	// Base names the syntax palettes code is coloured from, one per
+	// Style names the syntax highlighter styles code is coloured from, one per
 	// appearance. It is carried as a name: what resolves it is the
 	// highlighting package the reader uses, and what an unknown name means
 	// is that reader's default. Empty is the ordinary state — nothing
 	// chosen, the reader's default applies — so a file written before this
-	// field existed reads as a brand with no base and behaves exactly as it
+	// field existed reads as a brand with no style and behaves exactly as it
 	// did.
-	Base BasePair
+	Style StylePair
 
 	// Mono names the typeface fenced code wears. It is a sibling of ThemeColor
-	// and Base, spelled under the file key "mono". Empty is Roboto Mono —
+	// and Style, spelled under the file key "mono". Empty is Roboto Mono —
 	// nothing chosen, the default Code face. The one other name this
 	// package applies is "JetBrains Mono"; any other string is stored as
 	// written and ignored at apply time, the same fallback empty uses.
@@ -193,7 +193,7 @@ type Brand struct {
 	// ([system.PlatformColor]). It is a state of its own and not an absent
 	// colour — a file that keeps nothing is not the same answer as a person
 	// choosing the platform's colour — and ThemeColor is the zero colour
-	// while it is set. Base and Mono are kept alongside it as they are
+	// while it is set. Style and Mono are kept alongside it as they are
 	// alongside a colour.
 	FollowSystem bool
 
@@ -203,9 +203,9 @@ type Brand struct {
 	Saved time.Time
 }
 
-// BasePair is the syntax palette names a kept theme carries: the one code is
-// coloured from under a light appearance and the one it is coloured from under
-// a dark one.
+// StylePair is the highlighter style names a kept theme carries: the one
+// code is coloured from under a light appearance and the one it is coloured
+// from under a dark one.
 //
 // The two are held apart and never derived from each other. A name is an
 // artifact somebody fitted to a surface, and the pair is a person's answer to
@@ -216,21 +216,21 @@ type Brand struct {
 // Either member may be empty, which means nothing was chosen for that
 // appearance and the reader's own default stands in. So may both, which is a
 // brand that says nothing about code at all.
-type BasePair struct {
+type StylePair struct {
 	Light string
 	Dark  string
 }
 
 // Names returns the pair as the two names a reader resolves, in light, dark
 // order. It exists so that resolving a kept pair is one call whatever the file
-// looked like: the spelling that predates the pair names one base with no
+// looked like: the spelling that predates the pair names one style with no
 // appearance attached, and it arrives here in both members, for the reader to
 // sort out by measuring the style — which this package cannot do.
-func (p BasePair) Names() (light, dark string) { return p.Light, p.Dark }
+func (p StylePair) Names() (light, dark string) { return p.Light, p.Dark }
 
-// Chosen reports whether either member names a palette. It is what a caller
+// Chosen reports whether either member names a style. It is what a caller
 // asks before writing the pair out or comparing it with another.
-func (p BasePair) Chosen() bool { return p.Light != "" || p.Dark != "" }
+func (p StylePair) Chosen() bool { return p.Light != "" || p.Dark != "" }
 
 // Chosen reports whether this Brand carries a colour. It is false for the
 // zero Brand — the value [Kept] returns when there is no file, or none that
@@ -341,7 +341,13 @@ func LoadFrom(path string) (Brand, bool, error) {
 	if err := json.Unmarshal(data, &f); err != nil {
 		return Brand{}, false, fmt.Errorf("brand: load %s: %w", path, err)
 	}
-	b := Brand{Base: f.Base.pair(), Mono: strings.TrimSpace(f.Mono), Source: f.Source, FollowSystem: f.FollowSystem}
+	// "base" is the key this pair carried before the style took its own name;
+	// it is read for one release and never written.
+	style := f.Style
+	if style == nil {
+		style = f.Base
+	}
+	b := Brand{Style: style.pair(), Mono: strings.TrimSpace(f.Mono), Source: f.Source, FollowSystem: f.FollowSystem}
 	if !f.FollowSystem {
 		// A file that follows the system carries no colour, so there is
 		// none to hold against it; a file that does not is the colour and
@@ -396,7 +402,7 @@ func SaveTo(path string, b Brand) error {
 	}
 	data, err := json.MarshalIndent(file{
 		ThemeColor:   hex,
-		Base:         baseFrom(b.Base),
+		Style:        styleFrom(b.Style),
 		Mono:         strings.TrimSpace(b.Mono),
 		Source:       b.Source,
 		FollowSystem: b.FollowSystem,
@@ -422,35 +428,39 @@ type file struct {
 	ThemeColor string `json:"themeColour,omitempty"`
 	// Seed is the retired key the colour was written under before it took its own
 	// name. Read for one release, never written.
-	Seed   string     `json:"seed,omitempty"`
-	Base   *baseField `json:"base,omitempty"`
-	Mono   string     `json:"mono,omitempty"`
-	Source string     `json:"source,omitempty"`
+	Seed  string      `json:"seed,omitempty"`
+	Style *styleField `json:"style,omitempty"`
+	// Base is the retired key the highlighter style was written under before
+	// it took chroma's own word for the thing. Read for one release and never
+	// written, exactly as "seed" is.
+	Base   *styleField `json:"base,omitempty"`
+	Mono   string      `json:"mono,omitempty"`
+	Source string      `json:"source,omitempty"`
 	// FollowSystem is absent from every file that pins a colour, so a file
 	// written before the flag existed reads as one that pins.
 	FollowSystem bool   `json:"followSystem,omitempty"`
 	Saved        string `json:"saved,omitempty"`
 }
 
-// baseField is how the pair is spelled on disk, and the only place the two
+// styleField is how the pair is spelled on disk, and the only place the two
 // spellings it has ever had are known: an object with a member per appearance,
 // and — from a file written before a theme carried a pair — a plain string
-// naming one base with no appearance attached.
+// naming one style with no appearance attached.
 //
 // The two are told apart by what JSON says they are rather than by a version
 // number: a string is a string, an object is an object, and a file cannot be
 // both. What is written is always the object, because a theme kept now knows
 // both members; the string is read and never emitted.
-type baseField struct {
+type styleField struct {
 	Light string `json:"light,omitempty"`
 	Dark  string `json:"dark,omitempty"`
 }
 
-// baseFrom is the pair as it goes to disk, or nothing at all when neither
-// member was chosen — an unchosen base leaves no key behind, so the file says
+// styleFrom is the pair as it goes to disk, or nothing at all when neither
+// member was chosen — an unchosen style leaves no key behind, so the file says
 // what was chosen and nothing else.
-func baseFrom(p BasePair) *baseField {
-	f := baseField{Light: strings.TrimSpace(p.Light), Dark: strings.TrimSpace(p.Dark)}
+func styleFrom(p StylePair) *styleField {
+	f := styleField{Light: strings.TrimSpace(p.Light), Dark: strings.TrimSpace(p.Dark)}
 	if f.Light == "" && f.Dark == "" {
 		return nil
 	}
@@ -458,13 +468,13 @@ func baseFrom(p BasePair) *baseField {
 }
 
 // pair reads the field back as the pair a caller holds. A field that is not
-// there at all — a file from before code had a base in it — is the empty pair,
+// there at all — a file from before code had a style in it — is the empty pair,
 // which is "nothing chosen" and behaves as it always did.
-func (f *baseField) pair() BasePair {
+func (f *styleField) pair() StylePair {
 	if f == nil {
-		return BasePair{}
+		return StylePair{}
 	}
-	return BasePair{Light: f.Light, Dark: f.Dark}
+	return StylePair{Light: f.Light, Dark: f.Dark}
 }
 
 // UnmarshalJSON accepts both spellings. A bare string fills both members with
@@ -472,21 +482,21 @@ func (f *baseField) pair() BasePair {
 // style was fitted to — nothing here can measure that — it is the whole of
 // what was kept, offered to whichever appearance the reader ends up asking
 // for.
-func (f *baseField) UnmarshalJSON(data []byte) error {
+func (f *styleField) UnmarshalJSON(data []byte) error {
 	var one string
 	if err := json.Unmarshal(data, &one); err == nil {
 		one = strings.TrimSpace(one)
-		*f = baseField{Light: one, Dark: one}
+		*f = styleField{Light: one, Dark: one}
 		return nil
 	}
 	// A named type without the method, so unmarshalling it does not call this
 	// one again.
-	type object baseField
+	type object styleField
 	var o object
 	if err := json.Unmarshal(data, &o); err != nil {
-		return fmt.Errorf("base is neither a name nor a light/dark pair: %w", err)
+		return fmt.Errorf("style is neither a name nor a light/dark pair: %w", err)
 	}
-	*f = baseField{Light: strings.TrimSpace(o.Light), Dark: strings.TrimSpace(o.Dark)}
+	*f = styleField{Light: strings.TrimSpace(o.Light), Dark: strings.TrimSpace(o.Dark)}
 	return nil
 }
 

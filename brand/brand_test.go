@@ -339,17 +339,17 @@ func TestThePathIsOneSharedFileUnderTheConfigDir(t *testing.T) {
 	}
 }
 
-// TestTheChosenBaseSurvivesTheRoundTrip: the second choice the file carries is
+// TestTheChosenStyleSurvivesTheRoundTrip: the second choice the file carries is
 // a name per appearance, and both come back as they went in, under one key
 // beside the theme colour.
-func TestTheChosenBaseSurvivesTheRoundTrip(t *testing.T) {
+func TestTheChosenStyleSurvivesTheRoundTrip(t *testing.T) {
 	path := file(t)
-	pair := brand.BasePair{Light: "catppuccin-latte", Dark: "catppuccin-mocha"}
-	if err := brand.SaveTo(path, brand.Brand{ThemeColor: harbourRed, Base: pair}); err != nil {
+	pair := brand.StylePair{Light: "catppuccin-latte", Dark: "catppuccin-mocha"}
+	if err := brand.SaveTo(path, brand.Brand{ThemeColor: harbourRed, Style: pair}); err != nil {
 		t.Fatalf("save: %v", err)
 	}
-	if got := brand.KeptFrom(path); got.Base != pair {
-		t.Errorf("the base came back as %+v, want %+v", got.Base, pair)
+	if got := brand.KeptFrom(path); got.Style != pair {
+		t.Errorf("the style came back as %+v, want %+v", got.Style, pair)
 	}
 	var raw map[string]any
 	data, err := os.ReadFile(path)
@@ -359,22 +359,25 @@ func TestTheChosenBaseSurvivesTheRoundTrip(t *testing.T) {
 	if err := json.Unmarshal(data, &raw); err != nil {
 		t.Fatalf("the file is not JSON: %v", err)
 	}
-	base, ok := raw["base"].(map[string]any)
+	style, ok := raw["style"].(map[string]any)
 	if !ok {
-		t.Fatalf("the file spells the base as %#v, want an object with a member per appearance", raw["base"])
+		t.Fatalf("the file spells the style as %#v, want an object with a member per appearance", raw["style"])
 	}
-	if base["light"] != "catppuccin-latte" || base["dark"] != "catppuccin-mocha" {
-		t.Errorf("the file reads light=%v dark=%v, want catppuccin-latte and catppuccin-mocha", base["light"], base["dark"])
+	if _, retired := raw["base"]; retired {
+		t.Error(`the file still writes the retired "base" key`)
+	}
+	if style["light"] != "catppuccin-latte" || style["dark"] != "catppuccin-mocha" {
+		t.Errorf("the file reads light=%v dark=%v, want catppuccin-latte and catppuccin-mocha", style["light"], style["dark"])
 	}
 }
 
-// TestOneKeptBaseReachesBothAppearances is the migration: every theme.json
-// written while a base was one name has that name and no appearance attached
-// to it, and it has to arrive somewhere. It arrives in both members — the only
+// TestOneKeptStyleReachesBothAppearances is the migration: every theme.json
+// written while a style was one name carries it under the retired "base" key
+// with no appearance attached to it, and it has to arrive somewhere. It arrives in both members — the only
 // honest answer a package that cannot measure a style has — and the reader,
 // which can measure one, keeps it for the appearance it was fitted to and
 // takes its own default for the other.
-func TestOneKeptBaseReachesBothAppearances(t *testing.T) {
+func TestOneKeptStyleReachesBothAppearances(t *testing.T) {
 	path := file(t)
 	const older = `{"themeColour":"#e8112d","base":"dracula","source":"harbour.jpg"}`
 	if err := os.WriteFile(path, []byte(older), 0o644); err != nil {
@@ -387,9 +390,9 @@ func TestOneKeptBaseReachesBothAppearances(t *testing.T) {
 	if got.ThemeColor != harbourRed {
 		t.Errorf("the colour came back as %v, want %v", got.ThemeColor, harbourRed)
 	}
-	light, dark := got.Base.Names()
+	light, dark := got.Style.Names()
 	if light != "dracula" || dark != "dracula" {
-		t.Errorf("one kept base loaded as light=%q dark=%q, want it offered to both appearances", light, dark)
+		t.Errorf("one kept style loaded as light=%q dark=%q, want it offered to both appearances", light, dark)
 	}
 }
 
@@ -399,24 +402,24 @@ func TestOneKeptBaseReachesBothAppearances(t *testing.T) {
 // own default applies.
 func TestAPairMayNameOneAppearance(t *testing.T) {
 	path := file(t)
-	const half = `{"themeColour":"#e8112d","base":{"dark":"dracula"}}`
+	const half = `{"themeColour":"#e8112d","style":{"dark":"dracula"}}`
 	if err := os.WriteFile(path, []byte(half), 0o644); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 	got := brand.KeptFrom(path)
-	if got.Base.Dark != "dracula" || got.Base.Light != "" {
-		t.Errorf("the pair came back as %+v, want the dark member alone", got.Base)
+	if got.Style.Dark != "dracula" || got.Style.Light != "" {
+		t.Errorf("the pair came back as %+v, want the dark member alone", got.Style)
 	}
-	if !got.Base.Chosen() {
+	if !got.Style.Chosen() {
 		t.Error("a pair naming one appearance reports nothing chosen")
 	}
 }
 
-// TestAFileWithNoBaseIsStillAKeptBrand: every theme.json written before the
-// field existed has no base in it, and reading one has to be uneventful —
-// the brand loads, the colour is intact, and the base comes back empty, which
+// TestAFileWithNoStyleIsStillAKeptBrand: every theme.json written before the
+// field existed has no style in it, and reading one has to be uneventful —
+// the brand loads, the colour is intact, and the style comes back empty, which
 // is the value that means "the reader's own default applies".
-func TestAFileWithNoBaseIsStillAKeptBrand(t *testing.T) {
+func TestAFileWithNoStyleIsStillAKeptBrand(t *testing.T) {
 	path := file(t)
 	const older = `{"themeColour":"#e8112d","source":"harbour.jpg"}`
 	if err := os.WriteFile(path, []byte(older), 0o644); err != nil {
@@ -429,14 +432,14 @@ func TestAFileWithNoBaseIsStillAKeptBrand(t *testing.T) {
 	if got.ThemeColor != harbourRed {
 		t.Errorf("the colour came back as %v, want %v", got.ThemeColor, harbourRed)
 	}
-	if got.Base.Chosen() {
-		t.Errorf("a file with no base loaded base %+v, want none", got.Base)
+	if got.Style.Chosen() {
+		t.Errorf("a file with no style loaded style %+v, want none", got.Style)
 	}
 }
 
-// TestNoBaseIsNotWritten: an unchosen base leaves no key behind, so the file
+// TestNoStyleIsNotWritten: an unchosen style leaves no key behind, so the file
 // says what was chosen and nothing else.
-func TestNoBaseIsNotWritten(t *testing.T) {
+func TestNoStyleIsNotWritten(t *testing.T) {
 	path := file(t)
 	if err := brand.SaveTo(path, brand.Brand{ThemeColor: harbourRed}); err != nil {
 		t.Fatalf("save: %v", err)
@@ -449,8 +452,25 @@ func TestNoBaseIsNotWritten(t *testing.T) {
 	if err := json.Unmarshal(data, &raw); err != nil {
 		t.Fatalf("the file is not JSON: %v", err)
 	}
-	if _, ok := raw["base"]; ok {
-		t.Errorf("a brand with no base wrote %q into the file", "base")
+	if _, ok := raw["style"]; ok {
+		t.Errorf("a brand with no style wrote %q into the file", "style")
+	}
+}
+
+// TestTheRetiredBaseKeyIsStillRead: the pair was spelled under "base" before
+// the style took chroma's own word for the thing. That key is read for one
+// release — a theme kept by the previous build opens on the styles it kept —
+// and never written, exactly as "seed" is read and never written.
+func TestTheRetiredBaseKeyIsStillRead(t *testing.T) {
+	path := file(t)
+	const older = `{"themeColour":"#e8112d","base":{"light":"catppuccin-latte","dark":"catppuccin-mocha"}}`
+	if err := os.WriteFile(path, []byte(older), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	got := brand.KeptFrom(path)
+	want := brand.StylePair{Light: "catppuccin-latte", Dark: "catppuccin-mocha"}
+	if got.Style != want {
+		t.Errorf("a file under the retired key loaded %+v, want %+v", got.Style, want)
 	}
 }
 
@@ -708,8 +728,8 @@ func (f fixed) Read() (system.Appearance, error) { return f.a, nil }
 // rather than from anything on disk.
 func TestABrandCanFollowTheSystem(t *testing.T) {
 	path := file(t)
-	pair := brand.BasePair{Light: "catppuccin-latte", Dark: "catppuccin-mocha"}
-	if err := brand.SaveTo(path, brand.Brand{FollowSystem: true, Base: pair, Mono: "JetBrains Mono"}); err != nil {
+	pair := brand.StylePair{Light: "catppuccin-latte", Dark: "catppuccin-mocha"}
+	if err := brand.SaveTo(path, brand.Brand{FollowSystem: true, Style: pair, Mono: "JetBrains Mono"}); err != nil {
 		t.Fatalf("save: %v", err)
 	}
 	got, ok, err := brand.LoadFrom(path)
@@ -722,8 +742,8 @@ func TestABrandCanFollowTheSystem(t *testing.T) {
 	if got.ThemeColor != (color.NRGBA{}) {
 		t.Errorf("a brand that follows the system came back carrying %v, want no colour", got.ThemeColor)
 	}
-	if got.Base != pair {
-		t.Errorf("the base came back as %+v, want %+v", got.Base, pair)
+	if got.Style != pair {
+		t.Errorf("the style came back as %+v, want %+v", got.Style, pair)
 	}
 	if got.Mono != "JetBrains Mono" {
 		t.Errorf("the mono came back as %q, want the one that was kept", got.Mono)
