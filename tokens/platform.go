@@ -20,8 +20,9 @@
 // for every one of these names itself; these recorded sets are what the
 // other platforms — and every test — read.
 //
-// Eleven fields are not AppKit's. The platform paints a sidebar, a grouped
-// box, a selected sidebar row, a push button, a hovered and a pressed
+// Twelve fields are not AppKit's. The platform paints a sidebar, a grouped
+// box, a selected sidebar row, a search field's recess on a sidebar, a push
+// button, a hovered and a pressed
 // control, the shadow under a
 // floating pane, a text field's hairline, an overlay scrollbar's knob, a
 // list's alternating row and the dim a sheet lays over the window it
@@ -47,12 +48,14 @@
 //	ScrollbarThumb   #000000 a0.572 #ffffff a0.572 measured: the overlay scrollbar's knob over its track
 //	AlternatingContentBackground  #f4f5f5  #ffffff a0.05  measured: the second of alternatingContentBackgroundColors, and Finder's list stripes
 //	Scrim            #000000 a0.20  #000000 a0.26  measured: the dim under a Save sheet in save-dialog-{light,dark}.png
+//	SidebarSearchFill  #e8e8e8      #2f3234        measured: the recess a search field is on a sidebar
 //
 // The chrome material and the sidebar's pill were read with "Tint window
 // background with wallpaper colour" off, so they carry the platform's own
 // shade and not the desktop picture's. The grouped box, the push button,
-// the field edge and the scrim were read with it on, which is what carries
-// them off neutral grey in the dark scheme.
+// the field edge, the scrim and the sidebar search field's dark recess were
+// read with it on, which is what carries them off neutral grey in the dark
+// scheme.
 package tokens
 
 import (
@@ -277,6 +280,24 @@ type PlatformColors struct {
 	// it stands: a scrim covers whatever the window happens to be showing,
 	// so there is no one surface to flatten it onto.
 	Scrim color.NRGBA `appkit:"-"`
+
+	// SidebarSearchFill is the recess a search field standing on chrome is
+	// drawn as: #e8e8e8 light and #2f3234 dark, measured off the field at
+	// the top of System Settings' sidebar in
+	// system-settings-grouped-box-light.png and -dark.png. The recess
+	// carries no edge, its ends are fully rounded, and it measures 28 px
+	// tall with 8 px of sidebar on either side of it.
+	//
+	// It is a fill and not a coverage over what it stands on: the same
+	// #e8e8e8 stands on System Settings' #fafaf9 sidebar and on
+	// Voice Memos' #ffffff toolbar band, and the direction does not survive the
+	// scheme — light the recess is 18 levels darker than the material,
+	// dark it is 19 levels lighter.
+	//
+	// The dark value was read with wallpaper tinting on, as CardFill's
+	// was, over a #1c2124 sidebar; no stored capture holds a sidebar
+	// search field in the dark appearance untinted.
+	SidebarSearchFill color.NRGBA `appkit:"-"`
 }
 
 // PlatformLight and PlatformDark are the recorded sets, aqua and darkAqua,
@@ -350,6 +371,7 @@ var (
 
 		AlternatingContentBackground: color.NRGBA{R: 0xf4, G: 0xf5, B: 0xf5, A: 0xff},
 		Scrim:                        color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x33},
+		SidebarSearchFill:            color.NRGBA{R: 0xe8, G: 0xe8, B: 0xe8, A: 0xff},
 	}
 
 	PlatformDark = PlatformColors{
@@ -418,6 +440,7 @@ var (
 
 		AlternatingContentBackground: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x0d},
 		Scrim:                        color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x42},
+		SidebarSearchFill:            color.NRGBA{R: 0x2f, G: 0x32, B: 0x34, A: 0xff},
 	}
 )
 
