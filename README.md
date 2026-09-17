@@ -17,17 +17,16 @@ an `rx.Observable[theme.Theme]`; `window.New` binds that observable to an
 that constructs the layers. Every [components](https://github.com/vibrantgio/components)
 component already takes a theme observable as its first argument, so the
 appearance change arrives at the buttons with no application code at all — which
-is why all seven [workbench](https://github.com/vibrantgio/workbench)
-applications bootstrap the same two lines and none of them asks the OS about
-appearance a second time. The same stream carries the OS accent colour — an
-accent change re-emits the theme just like a dark-mode flip — and while the OS
-reports increased contrast, there is no branch at all: the platform paints
-its own semantic colours differently under "Increase Contrast", and a live
-read carries what it paints. The only light/dark
-branches left in the seven are the two that pick a chroma syntax theme for a
-markdown code block, and they branch on the luminance of the background token
-rather than on the OS, because chroma's themes are the one visual thing the
-token set does not cover.
+is why an application's bootstrap is the same two lines, and none of them
+asks the OS about appearance a second time. The same stream carries the OS
+accent colour — an accent change re-emits the theme just like a dark-mode
+flip — and while the OS reports increased contrast, there is no branch at
+all: the platform paints its own semantic colours differently under
+"Increase Contrast", and a live read carries what it paints. The only
+light/dark branches left anywhere are the two that pick a chroma syntax
+theme for a markdown code block, and they branch on the luminance of the
+background token rather than on the OS, because chroma's themes are the one
+visual thing the token set does not cover.
 
 The module is deliberately small and, below the `window` package, nearly
 Gio-free: `system`, `preferences`, `a11y`, `export` and `color` talk to the OS,
@@ -71,9 +70,8 @@ default `Typography`'s faces — and nothing above it. The deprecated
 F3.3 of the [org plan](https://github.com/vibrantgio/.github) deleted it in
 v0.2.0, and the layer check now records no transitional edge at all.
 Everything above imports theme — components, effects, patterns and markdown all
-read `theme` and `tokens` from here, and the
-[workbench](https://github.com/vibrantgio/workbench) applications bootstrap
-`system` and `window`. The [organization page](https://github.com/vibrantgio)
+read `theme` and `tokens` from here, and an application bootstraps `system`
+and `window`. The [organization page](https://github.com/vibrantgio)
 has the full tier table.
 
 ```sh

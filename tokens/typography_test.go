@@ -302,7 +302,7 @@ func TestDefaultShaperResolvesRobotoMono(t *testing.T) {
 
 // symbolProbes are characters outside Roboto's and Roboto Mono's coverage that
 // real text genuinely contains — U+2193 is the one that exposed the defect,
-// emitted by a language model into mindchat and drawn as tofu in both
+// emitted by a language model into a conversation and drawn as tofu in both
 // appearances. They are deliberately never rendered into a golden image: the
 // face that serves them is machine-dependent under the default shaper, which
 // is exactly what a golden cannot pin.
@@ -707,7 +707,7 @@ func TestWithCodeFaceAppendsJetBrainsToTheReceiver(t *testing.T) {
 	}
 }
 
-// TestIsCodeFaceNamesTheTwoFaces the themer will offer: exactly those,
+// TestIsCodeFaceNamesTheTwoFaces an application can offer: exactly those,
 // and nothing a person typed by hand.
 func TestIsCodeFaceNamesTheTwoFaces(t *testing.T) {
 	for _, name := range []string{"Roboto Mono", "JetBrains Mono"} {

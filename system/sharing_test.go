@@ -219,7 +219,7 @@ func TestFromSourceThemeSharesOnePollLoopPerSource(t *testing.T) {
 
 // TestFromSourceLateSubscriberReplaysLatest pins the replay half of the
 // FX.5 contract: a subscriber that attaches after the first read — the
-// second layer of every workbench window — immediately observes the
+// second layer of every window — immediately observes the
 // current appearance instead of waiting out a poll interval.
 func TestFromSourceLateSubscriberReplaysLatest(t *testing.T) {
 	src := newGatedSource()

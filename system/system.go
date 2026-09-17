@@ -11,7 +11,7 @@
 // in the values it reports.
 //
 // Reach for it as the theme argument of a window: LiveTheme(time.Second) is
-// what every workbench application hands to theme/window, and from there
+// what every application hands to theme/window, and from there
 // an appearance change reaches every component with no application code.
 // Pass your own Source to [FromSource] or [FromSourceTheme] to stub the OS
 // out in a test. The package never imports Gio — it speaks to the OS
@@ -219,7 +219,7 @@ func (c *config) a11yStream(interval time.Duration, fallback rx.Observable[a11y.
 
 // WithThemeColor pins the theme colour: the colour the emitted set's accent
 // rows are rebuilt for, through [tokens.PlatformColors.WithAccent]. It is
-// what the themer keeps and what a brand carries, and it beats the accent
+// the colour a chosen brand carries, and it beats the accent
 // the OS reports — the application chose its colour.
 //
 // Nothing else in the set moves. The accent is the one thing the platform

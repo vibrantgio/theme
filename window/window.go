@@ -6,7 +6,7 @@
 // It is the application's entry point to the whole theme runtime, and
 // three lines wide: build an mvu window, wrap it with a theme, render.
 //
-//	w := window.New(mvu.NewWindow(app.Title("Todos")), system.LiveTheme(time.Second))
+//	w := window.New(mvu.NewWindow(app.Title("My app")), system.LiveTheme(time.Second))
 //	err := w.Render(buildLayers(modelObs)).Wait()
 //
 // Below the window the theme contract is per component — every components
