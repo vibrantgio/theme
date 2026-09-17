@@ -98,26 +98,28 @@ github.com/reactivego/rx v0.3.0 and Go 1.25.1.
 
 ## Usage
 
-The whole bootstrap, from `main.go` in
-[workbench/todos](https://github.com/vibrantgio/workbench/tree/master/todos) —
-the smallest complete Vibrant Gio application. Two of these lines are theme:
+The whole bootstrap of a Vibrant Gio application, in its smallest complete
+form. Two of these lines are theme:
 
 ```go
 mvuWin := mvu.NewWindow(
-	app.Title("Todos"),
+	app.Title("My app"),
 	app.Size(unit.Dp(650), unit.Dp(600)),
 )
 w := specwin.New(mvuWin, specsystem.LiveTheme(time.Second))
 
 models, runner := mvu.Loop(mvuWin.Messages(), Init, Update)
 defer func() { runner.Unsubscribe(); runner.Wait() }()
-modelObs := models.Publish().AutoConnect(modelObsConsumers)
 
-if err := w.Render(buildLayers(modelObs)).Wait(); err != nil {
-	fmt.Fprintln(os.Stderr, "todos:", err)
+if err := w.Render(buildLayers(models)).Wait(); err != nil {
+	fmt.Fprintln(os.Stderr, "my app:", err)
 	os.Exit(1)
 }
 ```
+
+`mvu.Loop` returns the model observable already multicast, carrying the model
+in force to every subscriber the moment it attaches, so the layer builder
+subscribes it as often as its topology needs and nothing counts consumers.
 
 One second is the intended poll interval — the OS caches these values and will
 not report a toggle much sooner.
