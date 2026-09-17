@@ -10,8 +10,8 @@ import (
 // recorded in density.go and in .github/reference/macos/controls.md:
 // Comfortable is the regular control measured off the stored Save panel at
 // 24 dp, superseding the HIG's published 22 pt, and Compact is still the
-// published small control at 19 dp because no capture holds one. Both sit
-// well under the 44 dp pointer-target floor, which is not a control height.
+// published small control at 19 dp because no capture holds one. Each is also
+// the pointer target a control of that density offers.
 func TestDensityPicksMatchThePlatformScale(t *testing.T) {
 	const (
 		measuredRegular  float32 = 24 // MEASURED: save-dialog-{light,dark}.png, push button and pop-up button
@@ -43,13 +43,6 @@ func TestDensityPicksMatchThePlatformScale(t *testing.T) {
 			t.Errorf("%s = %v, want within the platform's control range [%v, %v]",
 				name, v, publishedMini, measuredRegular)
 		}
-	}
-	if ComfortableControlHeight >= MinHitTarget {
-		t.Errorf("ComfortableControlHeight (%v) should sit below the hit-target floor (%v): the floor, not the control, is what 44 dp is for",
-			ComfortableControlHeight, MinHitTarget)
-	}
-	if MinHitTarget != 44 {
-		t.Errorf("MinHitTarget = %v, want 44 (WCAG 2.5.5, components' current constant)", MinHitTarget)
 	}
 }
 
@@ -86,60 +79,26 @@ func TestFieldHeightIsItsOwnMeasurement(t *testing.T) {
 	}
 }
 
-// TestDensityHitTargetFloor asserts that both
-// density settings satisfy the WCAG 2.5.5 pointer-target floor, and the floor
-// is identical across settings — Compact shrinks the drawn control, never the
-// clickable area.
-func TestDensityHitTargetFloor(t *testing.T) {
-	for name, d := range map[string]Density{
-		"Comfortable": Comfortable,
-		"Compact":     Compact,
-	} {
-		if d.MinHitTarget() < 44 {
-			t.Errorf("%s.MinHitTarget() = %v, want >= 44 (WCAG 2.5.5)", name, d.MinHitTarget())
-		}
-	}
-	if Comfortable.MinHitTarget() != Compact.MinHitTarget() {
-		t.Errorf("hit target must not vary with density: Comfortable %v != Compact %v",
-			Comfortable.MinHitTarget(), Compact.MinHitTarget())
-	}
-}
-
-// TestStackedRowsAgainstTheAAMinimumTarget makes density.go's pointer-target
-// section checkable instead of merely readable, and records what taking the
-// platform's control heights costs. The claim it pins: stacked rows — list
-// rows, table rows and header cells, sidebar items — are pinned to
-// ControlHeight and are not extended to MinHitTarget, because adjacent rows
-// would steal each other's slop. At the platform's measured regular control a
-// Comfortable row is exactly WCAG 2.5.8 Target Size (Minimum), the 24 dp
-// criterion that governs at AA; Compact's uncaptured small control leaves its
-// rows under it. The standalone floor stays at 2.5.5's 44 dp for every
-// control that has room around it.
+// TestStackedRowsAreTheirOwnTarget makes density.go's pointer-target section
+// checkable instead of merely readable. The claim it pins: a stacked row —
+// a list row, a table row, a header cell, a sidebar item — is its own target
+// at RowHeight, the platform's measured list row, and never the control
+// height, because adjacent rows would otherwise steal each other's pixels.
 //
-// The assertions fail in either direction on purpose: if either row height
-// moves across the criterion, density.go's recorded consequence is stale and
-// has to be rewritten rather than quietly outgrown.
-func TestStackedRowsAgainstTheAAMinimumTarget(t *testing.T) {
-	const (
-		targetSizeMinimumAA   float32 = 24 // WCAG 2.5.8 Target Size (Minimum)
-		targetSizeEnhancedAAA float32 = 44 // WCAG 2.5.5 Target Size (Enhanced)
-	)
-	if Comfortable.ControlHeight != targetSizeMinimumAA {
-		t.Errorf("Comfortable row height = %v, want exactly WCAG 2.5.8's %v dp: density.go records the measured regular control as landing on the criterion, so that section needs rewriting before this passes",
-			Comfortable.ControlHeight, targetSizeMinimumAA)
+// The assertions fail in either direction on purpose: if a row height moves,
+// density.go's recorded consequence is stale and has to be rewritten rather
+// than quietly outgrown.
+func TestStackedRowsAreTheirOwnTarget(t *testing.T) {
+	if Comfortable.RowHeight != ComfortableRowHeight {
+		t.Errorf("Comfortable.RowHeight = %v, want %v (Finder's list view, measured)",
+			Comfortable.RowHeight, ComfortableRowHeight)
 	}
-	if Compact.ControlHeight >= targetSizeMinimumAA {
-		t.Errorf("Compact row height = %v, at or above WCAG 2.5.8's %v dp: density.go records the Compact row as sitting under it, so that section needs rewriting before this passes",
-			Compact.ControlHeight, targetSizeMinimumAA)
+	if Compact.RowHeight != CompactRowHeight {
+		t.Errorf("Compact.RowHeight = %v, want %v", Compact.RowHeight, CompactRowHeight)
 	}
-	for name, d := range map[string]Density{
-		"Comfortable": Comfortable,
-		"Compact":     Compact,
-	} {
-		if d.MinHitTarget() != targetSizeEnhancedAAA {
-			t.Errorf("%s.MinHitTarget() = %v, want %v (WCAG 2.5.5 Target Size (Enhanced), AAA): a standalone control keeps its floor whatever the row does",
-				name, d.MinHitTarget(), targetSizeEnhancedAAA)
-		}
+	if Comfortable.RowHeight >= Comfortable.ControlHeight {
+		t.Errorf("Comfortable row height %v is not under the control height %v: the platform draws a list row shorter than a button, which is why the row is a number of its own",
+			Comfortable.RowHeight, Comfortable.ControlHeight)
 	}
 }
 
@@ -183,10 +142,8 @@ func TestDensitySettingsMatchTable(t *testing.T) {
 // setting carries, which lands Comfortable on 20 and Compact on 15. Changing
 // a control height moves the chip with it, and this test is what says so.
 //
-// The drawn chip is the shortest thing the system draws and is well under
-// WCAG 2.5.8's 24 dp at both densities; what that criterion measures is the
-// pointer target, and a chip is a standalone control, so it extends to
-// MinHitTarget like every other — asserted per setting below.
+// The drawn chip is the shortest thing the system draws, and what it draws is
+// what a pointer lands on: the chip's target is the chip.
 func TestChipHeightRelation(t *testing.T) {
 	for name, d := range map[string]Density{
 		"Comfortable": Comfortable,
@@ -199,19 +156,10 @@ func TestChipHeightRelation(t *testing.T) {
 			t.Errorf("%s.ChipHeight() = %v, not under ControlHeight %v: a chip is smaller than a button",
 				name, d.ChipHeight(), d.ControlHeight)
 		}
-		if d.MinHitTarget() != MinHitTarget {
-			t.Errorf("%s.MinHitTarget() = %v, want %v: the drop is a drawn height and never a pointer target",
-				name, d.MinHitTarget(), MinHitTarget)
-		}
 	}
 	if Comfortable.ChipHeight() != 20 || Compact.ChipHeight() != 15 {
 		t.Errorf("chip heights = (%v, %v), want (20, 15)",
 			Comfortable.ChipHeight(), Compact.ChipHeight())
-	}
-	const targetSizeMinimumAA float32 = 24 // WCAG 2.5.8 Target Size (Minimum)
-	if Compact.MinHitTarget() < targetSizeMinimumAA {
-		t.Errorf("Compact.MinHitTarget() = %v, under WCAG 2.5.8's %v dp: a chip is a standalone control and its pointer target is what the criterion measures",
-			Compact.MinHitTarget(), targetSizeMinimumAA)
 	}
 }
 

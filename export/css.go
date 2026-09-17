@@ -221,8 +221,7 @@ var shadowLevels = []struct {
 }
 
 // densityMetrics orders the per-setting density metrics under their CSS
-// names. The WCAG pointer-target floor is not here: it is not a per-setting
-// metric — see densityVars.
+// names.
 var densityMetrics = []struct {
 	name string
 	pick func(tokens.Density) float32
@@ -307,7 +306,6 @@ func scaleVars(s Snapshot) []cssVar {
 		)
 	}
 	vars = append(vars, densityVars(tokens.Comfortable)...)
-	vars = append(vars, cssVar{"--density-min-hit-target", px(tokens.Comfortable.MinHitTarget())})
 	for _, key := range spaceKeys {
 		vars = append(vars, cssVar{"--space-" + key.name, px(key.pick(s.Spacing))})
 	}
@@ -338,10 +336,9 @@ const focusRingWidthDp = 2
 
 // densityVars renders one density setting's per-setting metrics. The :root
 // block carries tokens.Comfortable's; the .compact override block carries
-// tokens.Compact's. --density-min-hit-target is deliberately not among
-// them: the WCAG 2.5.5 pointer-target floor does not scale with density, so
-// it is emitted once in :root and never overridden — the CSS mirror of
-// Density.MinHitTarget being a method, not a field.
+// tokens.Compact's. A control's pointer target is not among them because it
+// is not a metric of its own: a control's target is the box it draws, which
+// --density-control-height already gives.
 func densityVars(d tokens.Density) []cssVar {
 	var vars []cssVar
 	for _, m := range densityMetrics {

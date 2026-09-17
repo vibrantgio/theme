@@ -364,12 +364,9 @@ const layoutPageCSS = `.space-row {
   border: thin solid var(--platform-separator);
   border-radius: var(--radius-md);
 }
-.hit-target {
+.control-row {
   display: flex;
   align-items: center;
-  min-height: var(--density-min-hit-target);
-  border: thin dashed var(--platform-field-edge);
-  border-radius: var(--radius-sm);
   margin: var(--space-2) 0;
 }
 .control-bar {
@@ -463,8 +460,8 @@ func layoutHTML(s Snapshot) string {
 	b.WriteString("<p class=\"intro\">Two published settings share one variable family: <code>:root</code> carries comfortable, " +
 		"and a <code>.compact</code> class block overrides every per-setting metric of the <code>--density-*</code> family " +
 		"the way <code>.dark</code> overrides the colours &mdash; the right column below is the same markup inside a <code>class=\"compact\"</code> wrapper. " +
-		"The dashed outline is <code>--density-min-hit-target</code>, the WCAG 2.5.5 pointer-target floor: it is not overridden, " +
-		"so compact shrinks the drawn control but never the clickable area.</p>\n")
+		"A control's pointer target is the control: what it draws at <code>--density-control-height</code> is what a pointer lands on, " +
+		"so compact shrinks the target with the pixels.</p>\n")
 	b.WriteString("<div class=\"density-pair\">\n")
 	for _, setting := range []struct {
 		class string
@@ -475,9 +472,9 @@ func layoutHTML(s Snapshot) string {
 		{"density-col compact", "compact (.compact)", tokens.Compact},
 	} {
 		fmt.Fprintf(&b, "<div class=\"%s\">\n<h3>%s</h3>\n", setting.class, html.EscapeString(setting.label))
-		b.WriteString("<div class=\"hit-target\">\n<span class=\"control-bar\">Control</span>\n<span class=\"chip-bar\">Chip</span>\n</div>\n")
-		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-control-height</code> &middot; %s &middot; <code>--density-chip-height</code> &middot; %s &middot; hit target &ge; %s</p>\n",
-			px(setting.d.ControlHeight), px(setting.d.ChipHeight()), px(setting.d.MinHitTarget()))
+		b.WriteString("<div class=\"control-row\">\n<span class=\"control-bar\">Control</span>\n<span class=\"chip-bar\">Chip</span>\n</div>\n")
+		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-control-height</code> &middot; %s &middot; <code>--density-chip-height</code> &middot; %s &mdash; each control's own pointer target</p>\n",
+			px(setting.d.ControlHeight), px(setting.d.ChipHeight()))
 		b.WriteString("<div><span class=\"field-bar\">Text field</span></div>\n")
 		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-field-height</code> &middot; %s &mdash; the platform draws a field taller than a button</p>\n",
 			px(setting.d.FieldHeight))

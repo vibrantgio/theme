@@ -36,8 +36,7 @@ type Parameters struct {
 	Radius float64 `json:"radius"`
 
 	// Density records the theme's active setting by name plus both
-	// published settings' metrics, and the density-invariant pointer-target
-	// floor.
+	// published settings' metrics.
 	Density DensityParams `json:"density"`
 
 	// Elevation records the shadow depth each of the six levels casts, from
@@ -53,13 +52,13 @@ type Parameters struct {
 }
 
 // DensityParams records the density model: the active setting's name
-// ("comfortable" or "compact"), both settings' metrics, and the WCAG 2.5.5
-// pointer-target minimum in dp, which no setting scales.
+// ("comfortable" or "compact") and both settings' metrics. A control's
+// pointer target is not a number here — it is the control's own height,
+// which the metrics already carry.
 type DensityParams struct {
-	Setting      string         `json:"setting"`
-	Comfortable  DensityMetrics `json:"comfortable"`
-	Compact      DensityMetrics `json:"compact"`
-	MinHitTarget float64        `json:"minHitTarget"`
+	Setting     string         `json:"setting"`
+	Comfortable DensityMetrics `json:"comfortable"`
+	Compact     DensityMetrics `json:"compact"`
 }
 
 // DensityMetrics is one density setting's per-setting metrics in dp.
@@ -190,10 +189,9 @@ func parameters(s Snapshot) Parameters {
 		Fonts:      Fonts{Heading: s.Typography.HeadlineLarge.Typeface, Body: s.Typography.BodyLarge.Typeface, Mono: s.Typography.Code.Typeface},
 		Radius:     float64(s.Radius.Base),
 		Density: DensityParams{
-			Setting:      setting,
-			Comfortable:  densityMetricsOf(tokens.Comfortable),
-			Compact:      densityMetricsOf(tokens.Compact),
-			MinHitTarget: f64(s.Density.MinHitTarget()),
+			Setting:     setting,
+			Comfortable: densityMetricsOf(tokens.Comfortable),
+			Compact:     densityMetricsOf(tokens.Compact),
 		},
 		Elevation: elev,
 		Motion: MotionParams{

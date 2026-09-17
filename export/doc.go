@@ -39,9 +39,8 @@
 //     tracking in px, weights as CSS numeric weights.
 //   - --density-control-height, --density-padding-x and --density-padding-y
 //     from tokens.Density: :root carries tokens.Comfortable, the .compact
-//     block overrides with tokens.Compact. --density-min-hit-target is the
-//     WCAG 2.5.5 pointer-target floor, emitted once and never overridden —
-//     density scales the drawn control, never the clickable area.
+//     block overrides with tokens.Compact. A control's pointer target is the
+//     box it draws, so --density-control-height is that number too.
 //   - --space-<key> from tokens.SpacingScale, keys as the Go scale names
 //     them (0, 1, 2, … 24), in px.
 //   - --radius-<key> from tokens.RadiusScale in Tailwind naming (none, sm,
@@ -83,8 +82,8 @@
 // theme.json records what reproduces the theme: the theme colour as
 // lowercase #rrggbb, the platform's whole set per appearance keyed by the
 // sheet's names, the heading, body and mono faces, the base radius, the
-// density model (the active setting by name, both settings' metrics and the
-// invariant hit-target minimum), the shadow depth per level and the motion
+// density model (the active setting by name and both settings' metrics),
+// the shadow depth per level and the motion
 // set (durations in ms, easing control points, spring presets). The
 // platform's own reading of the theme colour is what the accent rows carry,
 // so the file rebuilds the set exactly — the round-trip test asserts it.

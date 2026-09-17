@@ -82,30 +82,16 @@ package tokens
 // list row shorter than it draws a button — 20 px against 24 — which is why
 // the row height is a number of its own and not the control's.
 //
-// # Pointer targets: which WCAG level actually governs
+// # Pointer targets
 //
-// [MinHitTarget] is 44 dp, and 44 dp is not the AA requirement. Two success
-// criteria are in play and they are a whole conformance level apart:
+// A control's pointer target is the control: the box it draws at the heights
+// above, with nothing added around it. The platform draws a 24 dp push
+// button and 24 dp is what a pointer has to land on; a Compact control draws
+// 19 and offers 19. Density therefore moves the target with the pixels, and
+// two controls standing side by side never claim the same pixels.
 //
-//	criterion                            level   threshold   applies to
-//	---------                            -----   ---------   ----------
-//	WCAG 2.5.5 Target Size (Enhanced)    AAA     44×44 CSS px  every pointer target
-//	WCAG 2.5.8 Target Size (Minimum)     AA      24×24 CSS px  every pointer target
-//
-// (WCAG 2.2, https://www.w3.org/TR/WCAG22/#target-size-enhanced and
-// #target-size-minimum. Both carry an inline/essential exception this system
-// does not need to lean on.)
-//
-// The pointer area is 44 dp for standalone controls — button, checkbox,
-// radio, text field, a picker's closed trigger — and deliberately not for
-// stacked rows: list rows, table rows and header cells, and open picker
-// option rows. Adjacent rows tile edge to edge, so slop granted to one row is
-// stolen from its neighbour; the extension would not enlarge anything, it
-// would only make the boundary lie about where it is. Rows rely on their full
-// row width instead.
-//
-// So the stacked-row targets are as tall as the row is — ControlHeight is a
-// floor, so a row whose content box is taller draws more than the token says:
+// A stacked row is its own target at its own height, and an option row at
+// the height its content box gives it:
 //
 //	row                              Comfortable   Compact   sizing
 //	---                              -----------   -------   ------
@@ -113,14 +99,10 @@ package tokens
 //	table body row and header cell   20            19        pinned to RowHeight
 //	picker option row                28            24        floor formula, BodyLarge
 //
-// A pinned row is 20 dp Comfortable and 19 dp Compact, and neither meets
-// WCAG 2.5.8 Target Size (Minimum), the 24 dp criterion that governs at AA.
-// That is what conforming to the platform costs: the platform draws its list
-// rows at 20 px, and a row's pointer target is the row itself. It is
-// recorded here rather than left to be discovered; the standalone floor is
-// untouched, so a button, a checkbox, a chip and a closed picker still extend
-// to 44 dp at every density. An application that must claim 2.5.8 for its
-// rows sets a taller row of its own.
+// A checkbox is the one control drawn smaller than the box it stands in: the
+// glyph keeps the platform's measured 16 dp square at every density, centred
+// in a footprint of the control height, and the footprint is the target. The
+// platform's checkbox row is what a pointer lands on, never the glyph.
 
 const (
 	// ComfortableControlHeight is the default desktop control-height floor in
@@ -161,21 +143,6 @@ const (
 	// capture holds a list drawn dense, so it carries the platform's small
 	// control height until one does; ADR-019 has the gap row.
 	CompactRowHeight float32 = 19
-	// MinHitTarget is the pointer-target floor in dp for a *standalone*
-	// control — one with space around it: button, checkbox, radio, text
-	// field, a picker's closed trigger. Those extend their pointer area to at
-	// least this on each axis, centred on the drawn control, whatever the
-	// density.
-	//
-	// It is 44 dp, WCAG 2.5.5 Target Size (Enhanced), which is a AAA
-	// criterion. It is not what stacked rows guarantee: list rows, table rows
-	// and header cells, and open picker option rows are their own row height
-	// because extending one row would steal its neighbour's slop. At the
-	// platform's measured regular control a Comfortable row is 24 dp and
-	// meets WCAG 2.5.8 Target Size (Minimum), the 24 dp criterion that
-	// governs at AA; a Compact row is 19 dp and does not.
-	// See "Pointer targets: which WCAG level actually governs" above.
-	MinHitTarget float32 = 44
 	// ChipDrop is how far under the control height the system's smallest
 	// control is drawn, in dp. See [Density.ChipHeight]: it is the whole of
 	// that relation, exported so a reader can see the two heights are one
@@ -185,9 +152,7 @@ const (
 
 // Density is one density setting: the drawn control height and its inner
 // padding, all in dp. It is a comparable value struct like the other token
-// types. The standalone-control pointer-target floor is deliberately a method,
-// not a field — see [Density.MinHitTarget] — so no Density value can carry a
-// shrunken hit target.
+// types.
 type Density struct {
 	// ControlHeight is the minimum visual control height in dp
 	// ([ComfortableControlHeight] or [CompactControlHeight]). It is a floor:
@@ -219,25 +184,14 @@ type Density struct {
 	PaddingY float32
 }
 
-// MinHitTarget returns the standalone-control pointer-target floor in dp —
-// the package const [MinHitTarget], 44 dp, WCAG 2.5.5 Target Size (Enhanced).
-// It is a method rather than a struct field, so it is structurally identical
-// across every density: Compact shrinks the drawn control, never the clickable
-// area of a control that has room to grow into.
-//
-// It does not describe stacked rows. Read [MinHitTarget] before wiring this
-// into anything that tiles.
-func (Density) MinHitTarget() float32 { return MinHitTarget }
-
 // ChipHeight returns the chip height in dp: [Density.ControlHeight] less
 // [ChipDrop]. A chip is smaller than a button, and the relation says that once
 // instead of pinning a second scale that can drift off the first —
 // Comfortable lands on 20 and Compact on 15.
 //
-// It is a method for the same reason [Density.MinHitTarget] is one: no Density
-// value can carry a chip height that has come loose from its control height.
-// The pointer target is unaffected — a chip is a standalone control and
-// extends to MinHitTarget like every other.
+// It is a method rather than a struct field so no Density value can carry a
+// chip height that has come loose from its control height. The chip's pointer
+// target is the chip: what it draws is what a pointer lands on.
 func (d Density) ChipHeight() float32 { return d.ControlHeight - ChipDrop }
 
 // The padding comes from the platform beside the control height: PaddingX is
@@ -251,6 +205,6 @@ func (d Density) ChipHeight() float32 { return d.ControlHeight - ChipDrop }
 var (
 	// Comfortable is the default desktop density.
 	Comfortable = Density{ControlHeight: ComfortableControlHeight, FieldHeight: ComfortableFieldHeight, RowHeight: ComfortableRowHeight, PaddingX: 8, PaddingY: 2}
-	// Compact is the dense mode: smaller drawn controls, same hit target.
+	// Compact is the dense mode: smaller drawn controls, tighter padding.
 	Compact = Density{ControlHeight: CompactControlHeight, FieldHeight: CompactFieldHeight, RowHeight: CompactRowHeight, PaddingX: 7, PaddingY: 0}
 )

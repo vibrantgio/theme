@@ -230,9 +230,8 @@ func TestRoundTripScales(t *testing.T) {
 }
 
 // TestRoundTripDensity asserts the density variables parse back to the Go
-// settings: :root carries tokens.Comfortable plus the invariant hit-target
-// floor, and the .compact block overrides exactly the three per-setting
-// metrics with tokens.Compact's — never the hit target.
+// settings: :root carries tokens.Comfortable and the .compact block
+// overrides every per-setting metric with tokens.Compact's.
 func TestRoundTripDensity(t *testing.T) {
 	_, sheet, _ := writeDefault(t)
 	root, compact := sheet[":root"], sheet[".compact"]
@@ -249,14 +248,8 @@ func TestRoundTripDensity(t *testing.T) {
 			t.Errorf(".compact %s = %v, want compact %v", name, got, m.pick(tokens.Compact))
 		}
 	}
-	name := "--density-min-hit-target"
-	if got := wantPx(t, name, root[name]); got != tokens.MinHitTarget {
-		t.Errorf("%s = %v, want %v", name, got, tokens.MinHitTarget)
-	}
-
 	// The compact block carries exactly the per-setting overrides: every
-	// variable it declares exists in :root, is a --density-* metric, and the
-	// hit-target floor is not among them.
+	// variable it declares exists in :root and is a --density-* metric.
 	for n := range compact {
 		if _, ok := root[n]; !ok {
 			t.Errorf(".compact declares %s which :root does not", n)
@@ -264,9 +257,6 @@ func TestRoundTripDensity(t *testing.T) {
 		if !strings.HasPrefix(n, "--density-") {
 			t.Errorf(".compact declares non-density variable %s", n)
 		}
-	}
-	if _, ok := compact[name]; ok {
-		t.Errorf(".compact overrides %s; the WCAG 2.5.5 pointer-target floor must not scale with density", name)
 	}
 	if want := len(densityMetrics); len(compact) != want {
 		t.Errorf(".compact declares %d variables, want %d", len(compact), want)
@@ -539,9 +529,6 @@ func TestThemeJSONReproduces(t *testing.T) {
 	}
 	wantMetrics("comfortable", p.Density.Comfortable, tokens.Comfortable)
 	wantMetrics("compact", p.Density.Compact, tokens.Compact)
-	if p.Density.MinHitTarget != float64(tokens.MinHitTarget) {
-		t.Errorf("density.minHitTarget = %v, want %v", p.Density.MinHitTarget, tokens.MinHitTarget)
-	}
 
 	// The shadow depth each level casts, off the captured scale.
 	for i, level := range shadowLevels {

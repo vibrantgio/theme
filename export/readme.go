@@ -69,7 +69,7 @@ func readmeMD(s Snapshot) string {
 		typeNames[i] = role.name
 	}
 	fmt.Fprintf(&b, "| `--font-<role>-*` | roles %s; each with `-size`, `-line-height`, `-weight`, `-tracking` | px sizes, CSS numeric weights; code is the mono style outside the type grid, at body-medium's metrics |\n", strings.Join(typeNames, ", "))
-	fmt.Fprintf(&b, "| `--density-<metric>` | %s, `--density-min-hit-target` | control metrics, px; `:root` is comfortable, `.compact` overrides all but the hit-target floor |\n", joinTokens("--density-", densityNames()))
+	fmt.Fprintf(&b, "| `--density-<metric>` | %s | control metrics, px; `:root` is comfortable, `.compact` overrides every one of them |\n", joinTokens("--density-", densityNames()))
 	fmt.Fprintf(&b, "| `--space-<key>` | %s | the 4-pt spacing grid, px |\n", joinTokens("--space-", spaceNames()))
 	fmt.Fprintf(&b, "| `--radius-<key>` | %s | corner radii, Tailwind naming, px |\n", joinTokens("--radius-", radiusNames()))
 	fmt.Fprintf(&b, "| `--shadow-<level>` | %s | dp box-shadows — the cue a floating transient carries (menus, dialogs, tooltips) over the platform fill it stands in; resting surfaces cast none |\n", joinTokens("--shadow-", shadowNames()))
@@ -195,8 +195,9 @@ func readmeMD(s Snapshot) string {
 		"scale. A text field and a stacked row are not controls and carry their own\n" +
 		"measured heights: `--density-field-height` (27 dp comfortable, 21 compact)\n" +
 		"and `--density-row-height` (20 dp, 19 compact).\n" +
-		"`--density-min-hit-target` (44 dp, WCAG 2.5.5) is deliberately not\n" +
-		"overridden: compact shrinks the drawn control, never the clickable area.\n" +
+		"A control's pointer target is the control: what it draws at\n" +
+		"`--density-control-height` is what a pointer has to land on, so compact\n" +
+		"shrinks the target with the pixels.\n" +
 		"`theme.json` records both settings' metrics plus which one the theme runs.\n\n")
 
 	b.WriteString("## Motion\n\n" +

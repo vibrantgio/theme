@@ -202,7 +202,6 @@ func TestReadmeNamesFamilies(t *testing.T) {
 	for _, m := range densityMetrics {
 		want = append(want, "--density-"+m.name)
 	}
-	want = append(want, "--density-min-hit-target")
 	for _, role := range easeRoles {
 		want = append(want, "--ease-"+role.name)
 	}
@@ -252,9 +251,6 @@ func TestLayoutPageDensityAndShadow(t *testing.T) {
 		if !strings.Contains(src, "var(--density-"+m.name+")") {
 			t.Errorf("layout.html does not style through var(--density-%s)", m.name)
 		}
-	}
-	if !strings.Contains(src, "var(--density-min-hit-target)") {
-		t.Error("layout.html does not render the invariant hit-target floor")
 	}
 	for _, level := range shadowLevels {
 		if !strings.Contains(src, fmt.Sprintf("box-shadow: var(--shadow-%s)", level.name)) {
