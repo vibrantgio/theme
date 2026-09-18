@@ -50,6 +50,7 @@
 //	Scrim            #000000 a0.20  #000000 a0.26  measured: the dim under a Save sheet in save-dialog-{light,dark}.png
 //	SidebarSearchFill  #e8e8e8      #2f3234        measured: the recess a search field is on a sidebar
 //	ToolbarControlFill #ffffff      #262626        measured: a bordered control in a frontmost window's toolbar
+//	ToolbarControlRim  #000000 a0.00 #404040       measured: the rim that control wears in a dark toolbar; none in light
 //	ToolbarSearchFill  #e8e8e8      #363636        measured: the recess a search field is in a toolbar
 //	ToolbarSearchRim   #000000 a0.00 #4d4d4d       measured: the rim that recess wears in a dark toolbar; none in light
 //	ToolbarControlShadow  #000000 a0.035  #000000 a0.024  measured: the drop shadow a bordered toolbar control casts, per appearance in reach and offset
@@ -354,6 +355,31 @@ type PlatformColors struct {
 	// not a control's own fill.
 	ToolbarControlFill color.NRGBA `appkit:"-"`
 
+	// ToolbarControlRim is the hairline a BORDERED TOOLBAR CONTROL wears
+	// round its own edge: #404040 in the dark appearance and no colour at
+	// all in the light one, where the platform draws none. It is a value of
+	// its own beside [PlatformColors.ToolbarControlFill] because no alpha
+	// name lands it — the platform's separator over that fill falls five of
+	// 255 short — and apart from [PlatformColors.ToolbarSearchRim], which is
+	// what the toolbar's search recess wears: a different pixel over a
+	// different fill.
+	//
+	// MEASURED, finder-window-untinted-dark.png, a frontmost window: the
+	// rows immediately above and below a bordered control's #262626 fill
+	// read 64 at every column of its flat middle, and the columns at either
+	// end read 61-62 through the corner's antialiasing. It is lighter than
+	// both the fill and the #1e1e1e band — the highlight every bordered
+	// control in a dark toolbar band wears. separatorColor over that fill
+	// gives #3b3b3b and over the band #323232, so neither name lands it.
+	//
+	// MEASURED, finder-window-light.png and finder-window-untinted-light.png:
+	// a light band steps straight to the fill in one row with no stroke row
+	// on any side, so the light value is black at zero coverage — no colour,
+	// and a caller draws nothing where it answers one. What falls outside the
+	// control there is its drop shadow, which darkens away from the control
+	// and never sits against it.
+	ToolbarControlRim color.NRGBA `appkit:"-"`
+
 	// ToolbarSearchFill is the recess a search field standing in a TOOLBAR
 	// is drawn as: #e8e8e8 light and #363636 dark. It is a second material
 	// from [PlatformColors.SidebarSearchFill] because the platform draws the
@@ -545,6 +571,7 @@ var (
 		Scrim:                        color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x33},
 		SidebarSearchFill:            color.NRGBA{R: 0xe8, G: 0xe8, B: 0xe8, A: 0xff},
 		ToolbarControlFill:           color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
+		ToolbarControlRim:            color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x00},
 		ToolbarSearchFill:            color.NRGBA{R: 0xe8, G: 0xe8, B: 0xe8, A: 0xff},
 		ToolbarSearchRim:             color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x00},
 		ToolbarControlShadow:         color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x09},
@@ -619,6 +646,7 @@ var (
 		Scrim:                        color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x42},
 		SidebarSearchFill:            color.NRGBA{R: 0x2f, G: 0x32, B: 0x34, A: 0xff},
 		ToolbarControlFill:           color.NRGBA{R: 0x26, G: 0x26, B: 0x26, A: 0xff},
+		ToolbarControlRim:            color.NRGBA{R: 0x40, G: 0x40, B: 0x40, A: 0xff},
 		ToolbarSearchFill:            color.NRGBA{R: 0x36, G: 0x36, B: 0x36, A: 0xff},
 		ToolbarSearchRim:             color.NRGBA{R: 0x4d, G: 0x4d, B: 0x4d, A: 0xff},
 		ToolbarControlShadow:         color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x06},
