@@ -111,7 +111,7 @@ var platformNames = []struct {
 	{"push-button-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.PushButtonFill }},
 	{"hover-overlay", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.HoverOverlay }},
 	{"press-overlay", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.PressOverlay }},
-	{"floating-shadow", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.FloatingShadow }},
+	{"floating-shadow", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.FloatingShadow.Peak }},
 	{"field-edge", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.FieldEdge }},
 	{"scrollbar-thumb", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ScrollbarThumb }},
 	{"alternating-content-background", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.AlternatingContentBackground }},
@@ -123,10 +123,10 @@ var platformNames = []struct {
 	{"toolbar-search-rim", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ToolbarSearchRim }},
 	{"toolbar-label", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ToolbarLabel }},
 	{"toolbar-control-seam", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ToolbarControlSeam }},
-	{"toolbar-control-shadow", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ToolbarControlShadow }},
+	{"toolbar-control-shadow", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ToolbarControlShadow.Peak }},
 	{"toolbar-checked-overlay", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ToolbarCheckedOverlay }},
 	{"pane-rim", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.PaneRim }},
-	{"pane-shadow", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.PaneShadow }},
+	{"pane-shadow", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.PaneShadow.Peak }},
 }
 
 // platformVars is the platform's colour set as custom properties, one per
@@ -153,33 +153,13 @@ func platformVars(p tokens.PlatformColors) []cssVar {
 // colour set. Its peak coverage is
 // --platform-toolbar-control-shadow, a platform name like every other.
 //
-// MEASURED, components/internal/control's fit, restated here because the
-// module graph runs the other way (components imports theme): light,
-// finder-window-light.png, 23 px of reach with the shadow's rectangle sunk
-// 9 px, which is what tells a #ffffff control from a #ffffff band; dark,
-// finder-window-untinted-dark.png and notes-toolbar.png, 2 px of reach with
-// the rectangle sunk 6 px, the band one 255th deep over seven rows. Which
-// reading answers is the platform's own behaviour and not an appearance this
-// code tests for: where the platform gives the control a rim the control is
-// told from its band by that rim and its fill, and the shadow is a hint sunk
-// under it; where it gives none the shadow is the whole of the step.
-const (
-	toolbarShadowReachLightDp  = 23
-	toolbarShadowOffsetLightDp = 9
-	toolbarShadowReachDarkDp   = 2
-	toolbarShadowOffsetDarkDp  = 6
-)
-
-// toolbarShadowVars renders that geometry for one appearance, told apart by
-// whether the platform draws the control a rim there.
+// Both numbers are the token's own: tokens.PlatformColors.ToolbarControlShadow
+// carries the coverage with the reach and the offset it was fitted at, so
+// this sheet restates no measurement and cannot drift off one.
 func toolbarShadowVars(p tokens.PlatformColors) []cssVar {
-	reach, offset := float32(toolbarShadowReachLightDp), float32(toolbarShadowOffsetLightDp)
-	if p.ToolbarControlRim.A != 0 {
-		reach, offset = toolbarShadowReachDarkDp, toolbarShadowOffsetDarkDp
-	}
 	return []cssVar{
-		{"--toolbar-control-shadow-reach", px(reach)},
-		{"--toolbar-control-shadow-offset", px(offset)},
+		{"--toolbar-control-shadow-reach", px(p.ToolbarControlShadow.Reach)},
+		{"--toolbar-control-shadow-offset", px(p.ToolbarControlShadow.Offset)},
 	}
 }
 

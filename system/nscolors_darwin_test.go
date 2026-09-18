@@ -88,15 +88,18 @@ func liveSetMatchesCatalogue(t *testing.T, dark bool) {
 	typ := set.Type()
 	for i := range typ.NumField() {
 		field := typ.Field(i).Name
-		got := set.Field(i).Interface().(color.NRGBA)
 		if typ.Field(i).Tag.Get("appkit") == "-" {
 			// A measured material: the platform gives it no NSColor
 			// name, so the reader leaves the recorded value standing.
-			if want := reflect.ValueOf(recorded).Field(i).Interface().(color.NRGBA); got != want {
-				t.Errorf("%s = %s, want the measured %s: the live reader must not touch a field tagged `appkit:\"-\"`", field, hex(got), hex(want))
+			// Compared as whatever the field is — some of them carry a
+			// measured geometry beside their coverage.
+			got, want := set.Field(i).Interface(), reflect.ValueOf(recorded).Field(i).Interface()
+			if got != want {
+				t.Errorf("%s = %v, want the measured %v: the live reader must not touch a field tagged `appkit:\"-\"`", field, got, want)
 			}
 			continue
 		}
+		got := set.Field(i).Interface().(color.NRGBA)
 		if field == "FindHighlight" {
 			// The one field that is not AppKit's answer: the reader does
 			// not ask for findHighlightColor, so Mail's measured pair

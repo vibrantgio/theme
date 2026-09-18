@@ -32,10 +32,20 @@ var mailFindHighlight = struct{ light, dark color.NRGBA }{
 
 // catalogueEntry is one row: the two appearances AppKit reported. A row of
 // the measured-materials section carries its provenance as well, which the
-// AppKit rows have no column for.
+// AppKit rows have no column for, and a shadow's row carries the geometry
+// its coverage was fitted at beside each appearance's value.
 type catalogueEntry struct {
-	light, dark color.NRGBA
-	provenance  string
+	light, dark         color.NRGBA
+	lightGeom, darkGeom shadowGeometry
+	provenance          string
+}
+
+// shadowGeometry is the reach and the offset a row records beside a fitted
+// coverage, in dp. spelt reports whether the row spelt them at all: a fill is
+// a colour and nothing more.
+type shadowGeometry struct {
+	reach, offset float64
+	spelt         bool
 }
 
 // measuredSection marks where the catalogue's AppKit rows stop and the
@@ -95,7 +105,15 @@ func readCatalogue(t *testing.T) (appKit, measured map[string]catalogueEntry) {
 			t.Fatalf("catalogue line %d, dark: %v", line, err)
 		}
 		if inMeasured {
-			measured[cols[0]] = catalogueEntry{light: light, dark: dark, provenance: cols[3]}
+			lg, err := parseCatalogueGeometry(cols[1])
+			if err != nil {
+				t.Fatalf("catalogue line %d, light: %v", line, err)
+			}
+			dg, err := parseCatalogueGeometry(cols[2])
+			if err != nil {
+				t.Fatalf("catalogue line %d, dark: %v", line, err)
+			}
+			measured[cols[0]] = catalogueEntry{light: light, dark: dark, lightGeom: lg, darkGeom: dg, provenance: cols[3]}
 			continue
 		}
 		appKit[cols[0]] = catalogueEntry{light: light, dark: dark}
@@ -163,6 +181,32 @@ func parseCatalogueColor(s string) (color.NRGBA, error) {
 		c.A = uint8(math.Round(a * 255))
 	}
 	return c, nil
+}
+
+// parseCatalogueGeometry reads the reach and the offset a shadow row spells
+// after its coverage: "#000000 a0.035 reach 23 offset 9", both in dp. A row
+// that spells neither is a fill and answers a zero value.
+func parseCatalogueGeometry(s string) (shadowGeometry, error) {
+	fields := strings.Fields(s)
+	var g shadowGeometry
+	for i := 2; i < len(fields); i += 2 {
+		if i+1 >= len(fields) {
+			return g, fmt.Errorf("%q: %q names no number", s, fields[i])
+		}
+		v, err := strconv.ParseFloat(fields[i+1], 64)
+		if err != nil {
+			return g, fmt.Errorf("%q: %w", s, err)
+		}
+		switch fields[i] {
+		case "reach":
+			g.reach, g.spelt = v, true
+		case "offset":
+			g.offset, g.spelt = v, true
+		default:
+			return g, fmt.Errorf("%q: unknown field %q, want reach or offset", s, fields[i])
+		}
+	}
+	return g, nil
 }
 
 // appKitName is the inverse of the field-naming rule: AppKit's trailing
@@ -268,14 +312,17 @@ func TestWithAccentMovesOnlyTheAccentRows(t *testing.T) {
 		typ := want.Type()
 		for i := 0; i < typ.NumField(); i++ {
 			field := typ.Field(i).Name
-			g := got.Field(i).Interface().(color.NRGBA)
-			w := want.Field(i).Interface().(color.NRGBA)
 			if !follows[field] {
-				if g != w {
+				// Compared as whatever the field is: a shadow carries a
+				// measured geometry beside its coverage, and the accent
+				// moves neither.
+				if g, w := got.Field(i).Interface(), want.Field(i).Interface(); g != w {
 					t.Errorf("%s %s = %v, want the recorded %v: it does not follow the accent", set.name, field, g, w)
 				}
 				continue
 			}
+			g := got.Field(i).Interface().(color.NRGBA)
+			w := want.Field(i).Interface().(color.NRGBA)
 			if g == w {
 				t.Errorf("%s %s did not follow the accent", set.name, field)
 			}
@@ -353,12 +400,8 @@ func TestMeasuredMaterialsMatchTheCatalogue(t *testing.T) {
 		if _, clash := appKit[appKitName(field)]; clash {
 			t.Errorf("%s carries `appkit:\"-\"` but the catalogue answers for %q; it belongs in the AppKit rows", field, appKitName(field))
 		}
-		if got := light.Field(i).Interface().(color.NRGBA); got != row.light {
-			t.Errorf("%s light = %v, catalogue %s = %v", field, got, name, row.light)
-		}
-		if got := dark.Field(i).Interface().(color.NRGBA); got != row.dark {
-			t.Errorf("%s dark = %v, catalogue %s = %v", field, got, name, row.dark)
-		}
+		checkMeasuredRow(t, field, name, "light", light.Field(i).Interface(), row.light, row.lightGeom)
+		checkMeasuredRow(t, field, name, "dark", dark.Field(i).Interface(), row.dark, row.darkGeom)
 	}
 	for name := range measured {
 		if !seen[name] {
@@ -367,6 +410,36 @@ func TestMeasuredMaterialsMatchTheCatalogue(t *testing.T) {
 	}
 	if len(seen) == 0 {
 		t.Error("no field carries `appkit:\"-\"`; the measured materials have lost their rule")
+	}
+}
+
+// checkMeasuredRow compares one field of one appearance against its
+// catalogue row. A shadow answers a coverage and the geometry it was fitted
+// at, and the row spells both; every other field is a colour and its row
+// spells one.
+func checkMeasuredRow(t *testing.T, field, name, appearance string, got any, want color.NRGBA, geom shadowGeometry) {
+	t.Helper()
+	switch v := got.(type) {
+	case color.NRGBA:
+		if geom.spelt {
+			t.Errorf("%s: the catalogue's %s row spells a shadow geometry the field does not carry", field, name)
+		}
+		if v != want {
+			t.Errorf("%s %s = %v, catalogue %s = %v", field, appearance, v, name, want)
+		}
+	case tokens.DropShadow:
+		if !geom.spelt {
+			t.Errorf("%s: the catalogue's %s row spells no reach or offset for a shadow", field, name)
+		}
+		if v.Peak != want {
+			t.Errorf("%s %s peak = %v, catalogue %s = %v", field, appearance, v.Peak, name, want)
+		}
+		if float64(v.Reach) != geom.reach || float64(v.Offset) != geom.offset {
+			t.Errorf("%s %s = reach %v offset %v, catalogue %s = reach %v offset %v",
+				field, appearance, v.Reach, v.Offset, name, geom.reach, geom.offset)
+		}
+	default:
+		t.Errorf("%s: a measured material is a colour or a shadow, got %T", field, got)
 	}
 }
 
@@ -637,7 +710,7 @@ func TestToolbarControlShadowIsTheMeasuredDarkening(t *testing.T) {
 			color.NRGBA{R: 0x1d, G: 0x1d, B: 0x1d, A: 0xff},
 		},
 	} {
-		got := c.in.ToolbarControlShadow
+		got := c.in.ToolbarControlShadow.Peak
 		if got != c.want {
 			t.Errorf("%s ToolbarControlShadow = %v, want the measured peak %v", c.name, got, c.want)
 		}
@@ -654,9 +727,9 @@ func TestToolbarControlShadowIsTheMeasuredDarkening(t *testing.T) {
 	// The light shadow is the deeper one: it is all that tells a #ffffff
 	// control from a #ffffff band, where the dark control carries a fill and
 	// a rim of its own and the platform leaves its band all but untouched.
-	if tokens.PlatformLight.ToolbarControlShadow.A <= tokens.PlatformDark.ToolbarControlShadow.A {
+	if tokens.PlatformLight.ToolbarControlShadow.Peak.A <= tokens.PlatformDark.ToolbarControlShadow.Peak.A {
 		t.Errorf("the light shadow's coverage %d does not exceed the dark one's %d",
-			tokens.PlatformLight.ToolbarControlShadow.A, tokens.PlatformDark.ToolbarControlShadow.A)
+			tokens.PlatformLight.ToolbarControlShadow.Peak.A, tokens.PlatformDark.ToolbarControlShadow.Peak.A)
 	}
 	// It is not the floating surface's shadow: a control standing in a
 	// toolbar is not a surface floating over the window.

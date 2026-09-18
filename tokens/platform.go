@@ -47,7 +47,7 @@
 //	PushButtonFill   #ececec        #333a3f        measured: the Save dialog's push button at rest
 //	HoverOverlay     #000000 a0.051 #ffffff a0.094 measured: a toolbar button under the pointer
 //	PressOverlay     #000000 a0.098 #ffffff a0.098 measured: a push button held down
-//	FloatingShadow   #000000 a0.075 #000000 a0.075 measured: the sidebar shadow's peak coverage, 24 px of reach
+//	FloatingShadow   #000000 a0.075 #000000 a0.075 measured: the sidebar shadow, 24 px of reach centred on the surface
 //	FieldEdge        #f3f3f3        #2c3338        measured: the unfocused text field's hairline in the Save dialog
 //	ScrollbarThumb   #000000 a0.572 #ffffff a0.572 measured: the overlay scrollbar's knob over its track
 //	AlternatingContentBackground  #f4f5f5  #ffffff a0.05  measured: the second of alternatingContentBackgroundColors, and Finder's list stripes
@@ -59,7 +59,7 @@
 //	ToolbarSearchRim   #000000 a0.00 #4d4d4d       measured: the rim that recess wears in a dark toolbar; none in light
 //	ToolbarLabel     #4d4d4d        #e9e9e9        measured: what a toolbar's own title and glyphs are drawn in
 //	ToolbarControlSeam #f2f2f2      #3a3a3a        measured: the line dividing one bordered toolbar control into segments
-//	ToolbarControlShadow  #000000 a0.035  #000000 a0.024  measured: the drop shadow a bordered toolbar control casts, per appearance in reach and offset
+//	ToolbarControlShadow  #000000 a0.035  #000000 a0.024  measured: the drop shadow a bordered toolbar control casts, 23 px of reach sunk 9 light and 2 sunk 6 dark
 //	ToolbarCheckedOverlay #000000 a0.102  #ffffff a0.161  measured: the chosen segment of a segmented toolbar control, over the control's own fill
 //	PaneRim          #ffffff        #3a3a3a        measured: the 1 px rim the inset sidebar panel wears on every side
 //	PaneShadow       #000000 a0.051 #000000 a0.051 measured: the shadow that panel casts, 24 px of reach with its rectangle sunk 9
@@ -284,9 +284,14 @@ type PlatformColors struct {
 	// 1 px edge stroke the window's #232a2e plane reads #20272b, then
 	// recovers to #232a2e over 24 px. Black at 0.075 reproduces that
 	// darkest pixel on every channel, so the shadow is 0.075 at the edge
-	// falling to nothing 24 px out; this field carries the peak and the
-	// caller spreads it.
-	FloatingShadow color.NRGBA `appkit:"-"`
+	// falling to nothing 24 px out, centred on the surface: the captures
+	// are of a vertical edge and nothing measured lights this one from
+	// above, so its rectangle is the surface's own.
+	//
+	// It does not vary with what is floating — the platform draws one
+	// shadow — which is why one reading serves a dialog, a menu, a popover
+	// and a toast alike.
+	FloatingShadow DropShadow `appkit:"-"`
 
 	// FieldEdge is the hairline a text field draws around itself,
 	// unfocused: #f3f3f3 light and #2c3338 dark, the single border row of
@@ -517,11 +522,12 @@ type PlatformColors struct {
 	// [PlatformColors.FloatingShadow] does, the caller spreading it over the
 	// measured reach.
 	//
-	// The reach and the offset are ONE geometry for both appearances and are
-	// spent by the drawing: 23 px of reach with the shadow's rectangle sunk
-	// 9 px below the control, which is what makes it heavier under the
-	// control than over it. They are not this field's to carry because they
-	// are lengths and not colours.
+	// The reach and the offset are this field's own, per appearance: light
+	// the ramp carries 23 px from a rectangle sunk 9 px below the control,
+	// dark 2 px from one sunk 6. That is what makes the shadow heavier under
+	// the control than over it, and it is carried here because a coverage
+	// fitted at one reach is not the same coverage at another — see
+	// [DropShadow].
 	//
 	// MEASURED, finder-window-light.png, the view pop-up at x 694-742,
 	// y 8-43, on a band flat at #ffffff: the row under the control reads 244
@@ -538,11 +544,20 @@ type PlatformColors struct {
 	// nothing above or beside them; finder-window.png and mail-window.png
 	// agree on their tinted #232a2e band (#222a2d under the control), and
 	// notes-toolbar.png agrees on its own. Black at 0.024 reproduces all four
-	// of those bytes exactly. Spread over the one geometry it darkens a wider
-	// halo than the platform's seven rows, which is a miss of one 255th on a
-	// band this dark; the dark control is told from its band by its fill and
-	// its rim, not by this.
-	ToolbarControlShadow color.NRGBA `appkit:"-"`
+	// of those bytes exactly; the dark control is told from its band by its
+	// fill and its rim rather than by this, which is why so little of it
+	// shows.
+	//
+	// MEASURED, dark, finder-window-untinted-dark.png and notes-toolbar.png,
+	// re-read 2026-09-18: fitted over 10,575 band pixels around the Finder
+	// search field (x 1155-1379, y 46-81) and the Notes compose control
+	// (x 8-44, y 8-43) at this coverage, the best whole-pixel pair is 2 px of
+	// reach with the rectangle sunk 6 px — 312 of 31,725 channel samples off
+	// by one 255th and none by more except at the control's own antialiased
+	// corner. The light pair fitted to the same samples is eleven times
+	// worse, which is why the geometry is per appearance rather than one
+	// shape drawn twice.
+	ToolbarControlShadow DropShadow `appkit:"-"`
 
 	// ToolbarCheckedOverlay is what a bordered toolbar control lays over its
 	// own fill while it records a yes: black at 0.102 light and white at
@@ -601,9 +616,9 @@ type PlatformColors struct {
 	// PaneShadow is the peak coverage of the shadow an inset sidebar panel
 	// casts on what lies around it: black at 0.051 — 13 of 255 — in both
 	// appearances, as [PlatformColors.FloatingShadow] is one value in both.
-	// This field carries the peak and the caller spreads it, 24 px of reach
-	// with the shadow's rectangle sunk 9 px below the panel, which is what
-	// makes it heavier under the panel than over it.
+	// It is spread over 24 px of reach with its rectangle sunk 9 px below
+	// the panel, which is what makes it heavier under the panel than over
+	// it.
 	//
 	// MEASURED, voicememos-multi-folder-2026-09-18.png: the panel at
 	// x 64-283, y 46-786 stands on a white plane and a white content column.
@@ -626,7 +641,7 @@ type PlatformColors struct {
 	// and recovers to 28 within 6 columns, the content beside its trailing
 	// rim 29 against its own #1e1e1e — which is what this coverage lands on
 	// a plane that dark, so one value serves both appearances.
-	PaneShadow color.NRGBA `appkit:"-"`
+	PaneShadow DropShadow `appkit:"-"`
 }
 
 // PlatformLight and PlatformDark are the recorded sets, aqua and darkAqua,
@@ -695,7 +710,7 @@ var (
 		PushButtonFill:   color.NRGBA{R: 0xec, G: 0xec, B: 0xec, A: 0xff},
 		HoverOverlay:     color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x0d},
 		PressOverlay:     color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x19},
-		FloatingShadow:   color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13},
+		FloatingShadow:   DropShadow{Peak: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13}, Reach: 24},
 		FieldEdge:        color.NRGBA{R: 0xf3, G: 0xf3, B: 0xf3, A: 0xff},
 		ScrollbarThumb:   color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x92},
 
@@ -708,10 +723,10 @@ var (
 		ToolbarSearchRim:             color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x00},
 		ToolbarLabel:                 color.NRGBA{R: 0x4d, G: 0x4d, B: 0x4d, A: 0xff},
 		ToolbarControlSeam:           color.NRGBA{R: 0xf2, G: 0xf2, B: 0xf2, A: 0xff},
-		ToolbarControlShadow:         color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x09},
+		ToolbarControlShadow:         DropShadow{Peak: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x09}, Reach: 23, Offset: 9},
 		ToolbarCheckedOverlay:        color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x1a},
 		PaneRim:                      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
-		PaneShadow:                   color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x0d},
+		PaneShadow:                   DropShadow{Peak: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x0d}, Reach: 24, Offset: 9},
 	}
 
 	PlatformDark = PlatformColors{
@@ -775,7 +790,7 @@ var (
 		PushButtonFill:   color.NRGBA{R: 0x33, G: 0x3a, B: 0x3f, A: 0xff},
 		HoverOverlay:     color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x18},
 		PressOverlay:     color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x19},
-		FloatingShadow:   color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13},
+		FloatingShadow:   DropShadow{Peak: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13}, Reach: 24},
 		FieldEdge:        color.NRGBA{R: 0x2c, G: 0x33, B: 0x38, A: 0xff},
 		ScrollbarThumb:   color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x92},
 
@@ -788,10 +803,10 @@ var (
 		ToolbarSearchRim:             color.NRGBA{R: 0x4d, G: 0x4d, B: 0x4d, A: 0xff},
 		ToolbarLabel:                 color.NRGBA{R: 0xe9, G: 0xe9, B: 0xe9, A: 0xff},
 		ToolbarControlSeam:           color.NRGBA{R: 0x3a, G: 0x3a, B: 0x3a, A: 0xff},
-		ToolbarControlShadow:         color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x06},
+		ToolbarControlShadow:         DropShadow{Peak: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x06}, Reach: 2, Offset: 6},
 		ToolbarCheckedOverlay:        color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x29},
 		PaneRim:                      color.NRGBA{R: 0x3a, G: 0x3a, B: 0x3a, A: 0xff},
-		PaneShadow:                   color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x0d},
+		PaneShadow:                   DropShadow{Peak: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x0d}, Reach: 24, Offset: 9},
 	}
 )
 
