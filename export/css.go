@@ -874,7 +874,8 @@ const componentClasses = `/* ---- Component classes ----
    clear row between them - and its last column stands 9 clear of the fill's
    trailing edge. The size is FIXED: the Finder toolbar draws the same 8 by 11
    in a control 36 px tall, so the mark does not scale with what it stands in.
-   The arm's weight is 1.5 px perpendicular, fitted to the capture's coverage.
+   The arm's weight is the icon set's one measured band, 1.4 px perpendicular,
+   which the capture's own 1.36 to 1.44 brackets.
 
    It is a masked SVG rather than a border-built triangle because the platform
    draws two strokes and not a solid wedge: the mask carries the two chevrons
@@ -894,12 +895,12 @@ const componentClasses = `/* ---- Component classes ----
   background: var(--platform-control-text);
   /* The two chevrons as control.DrawMark strokes them: each arm a V from
      (0,5) to (4,0) to (8,5) closed back along the base, the closing side
-     offset by the 1.5 px arm's own half-width resolved along the base
-     (1.921 across, 2.401 down at the apex, which is (stroke/2) x sqrt(1+k2)/k
-     for the centreline's k = 2h/w = 1.25). The lower chevron is the same
-     figure inverted one clear row below it. */
-  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%228%22%20height=%2211%22%20viewBox=%220%200%208%2011%22%3E%3Cpath%20d=%22M0%205L4%200L8%205L6.079%205L4%202.401L1.921%205ZM0%206L4%2011L8%206L6.079%206L4%208.599L1.921%206Z%22/%3E%3C/svg%3E") center / 8px 11px no-repeat;
-  mask: url("data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%228%22%20height=%2211%22%20viewBox=%220%200%208%2011%22%3E%3Cpath%20d=%22M0%205L4%200L8%205L6.079%205L4%202.401L1.921%205ZM0%206L4%2011L8%206L6.079%206L4%208.599L1.921%206Z%22/%3E%3C/svg%3E") center / 8px 11px no-repeat;
+     offset by the 1.4 px arm's own weight resolved along the base: 1.7929
+     across, which is stroke x sqrt(1+k2)/k, and 2.2411 down at the apex,
+     which is stroke x sqrt(1+k2), for the centreline's k = 2h/w = 1.25. The
+     lower chevron is the same figure inverted one clear row below it. */
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%228%22%20height=%2211%22%20viewBox=%220%200%208%2011%22%3E%3Cpath%20d=%22M0%205L4%200L8%205L6.2071%205L4%202.2411L1.7929%205ZM0%206L4%2011L8%206L6.2071%206L4%208.7589L1.7929%206Z%22/%3E%3C/svg%3E") center / 8px 11px no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%228%22%20height=%2211%22%20viewBox=%220%200%208%2011%22%3E%3Cpath%20d=%22M0%205L4%200L8%205L6.2071%205L4%202.2411L1.7929%205ZM0%206L4%2011L8%206L6.2071%206L4%208.7589L1.7929%206Z%22/%3E%3C/svg%3E") center / 8px 11px no-repeat;
   pointer-events: none;
 }
 .select-wrap:has(.select:disabled)::after {
