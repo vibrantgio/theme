@@ -534,3 +534,37 @@ func TestDisabledCoverageIsAFade(t *testing.T) {
 		t.Errorf("DisabledCoverage = %d; a switched-off control neither disappears nor draws at full strength", tokens.DisabledCoverage)
 	}
 }
+
+// TestToolbarControlFillStandsOffTheChrome pins the toolbar control's fill to
+// the pixels it was read at and holds the one property the reading was taken
+// for: on the chrome material this set paints, the control is lighter than
+// the band it stands on in both appearances, so it reads as a figure on the
+// band rather than as part of it.
+func TestToolbarControlFillStandsOffTheChrome(t *testing.T) {
+	for _, c := range []struct {
+		name string
+		in   tokens.PlatformColors
+		want color.NRGBA
+	}{
+		{"light", tokens.PlatformLight, color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff}},
+		{"dark", tokens.PlatformDark, color.NRGBA{R: 0x26, G: 0x26, B: 0x26, A: 0xff}},
+	} {
+		if c.in.ToolbarControlFill != c.want {
+			t.Errorf("%s ToolbarControlFill = %v, want the measured toolbar control %v",
+				c.name, c.in.ToolbarControlFill, c.want)
+		}
+		if c.in.ToolbarControlFill == c.in.SidebarMaterial {
+			t.Errorf("%s ToolbarControlFill = %v, the chrome material itself; a control that reads as its band is not a control",
+				c.name, c.in.ToolbarControlFill)
+		}
+		fill, band := c.in.ToolbarControlFill, c.in.SidebarMaterial
+		if fill.R <= band.R || fill.G <= band.G || fill.B <= band.B {
+			t.Errorf("%s ToolbarControlFill = %v is not lighter than the chrome %v on every channel",
+				c.name, fill, band)
+		}
+		if c.in.ToolbarControlFill == c.in.PushButtonFill {
+			t.Errorf("%s ToolbarControlFill = %v, the push button's fill; the two controls were measured apart",
+				c.name, c.in.ToolbarControlFill)
+		}
+	}
+}

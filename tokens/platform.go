@@ -49,6 +49,7 @@
 //	AlternatingContentBackground  #f4f5f5  #ffffff a0.05  measured: the second of alternatingContentBackgroundColors, and Finder's list stripes
 //	Scrim            #000000 a0.20  #000000 a0.26  measured: the dim under a Save sheet in save-dialog-{light,dark}.png
 //	SidebarSearchFill  #e8e8e8      #2f3234        measured: the recess a search field is on a sidebar
+//	ToolbarControlFill #ffffff      #262626        measured: a bordered control in a frontmost window's toolbar
 //
 // The chrome material and the sidebar's pill were read with "Tint window
 // background with wallpaper colour" off, so they carry the platform's own
@@ -326,6 +327,28 @@ type PlatformColors struct {
 	// was, over a #1c2124 sidebar; no stored capture holds a sidebar
 	// search field in the dark appearance untinted.
 	SidebarSearchFill color.NRGBA `appkit:"-"`
+
+	// ToolbarControlFill is what a control standing in a toolbar is filled
+	// with: #ffffff light and #262626 dark.
+	//
+	// The dark value is a flat-region sample of every bordered control in
+	// the toolbar of finder-window-untinted-dark.png — that window is
+	// frontmost, its traffic lights saturated — over a band reading
+	// #1e1e1e, eight levels lighter than what it stands on. The tinted
+	// capture of the same window agrees in direction: #242d32 on a #232a2e
+	// band in finder-window.png. The light value is the same control in
+	// finder-window-light.png, where the band beneath it is the content's
+	// own #ffffff and the control is told from it by its shadow alone, so
+	// what the capture fixes is the fill's value and not its step; on the
+	// chrome material this set paints it is eight levels lighter, the dark
+	// appearance's step to the level.
+	//
+	// The light reading is the frontmost window's. finder-window-untinted-light.png
+	// is an inactive window — no traffic light in it carries a hue — and its
+	// controls are faded: they read #f7f7f7 on a #ffffff band with their
+	// glyphs at TertiaryLabel, which is the platform's inactive drawing and
+	// not a control's own fill.
+	ToolbarControlFill color.NRGBA `appkit:"-"`
 }
 
 // PlatformLight and PlatformDark are the recorded sets, aqua and darkAqua,
@@ -400,6 +423,7 @@ var (
 		AlternatingContentBackground: color.NRGBA{R: 0xf4, G: 0xf5, B: 0xf5, A: 0xff},
 		Scrim:                        color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x33},
 		SidebarSearchFill:            color.NRGBA{R: 0xe8, G: 0xe8, B: 0xe8, A: 0xff},
+		ToolbarControlFill:           color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
 	}
 
 	PlatformDark = PlatformColors{
@@ -469,6 +493,7 @@ var (
 		AlternatingContentBackground: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x0d},
 		Scrim:                        color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x42},
 		SidebarSearchFill:            color.NRGBA{R: 0x2f, G: 0x32, B: 0x34, A: 0xff},
+		ToolbarControlFill:           color.NRGBA{R: 0x26, G: 0x26, B: 0x26, A: 0xff},
 	}
 )
 
