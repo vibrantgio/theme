@@ -608,3 +608,61 @@ func TestToolbarSearchFillIsMeasuredApart(t *testing.T) {
 			tokens.PlatformDark.ToolbarSearchFill)
 	}
 }
+
+// TestToolbarControlShadowIsTheMeasuredDarkening pins the toolbar control's
+// drop shadow to the bytes it was read at: the peak is a coverage of black in
+// both appearances, and laid over the band each capture holds it reproduces
+// the darkening that capture shows.
+func TestToolbarControlShadowIsTheMeasuredDarkening(t *testing.T) {
+	for _, c := range []struct {
+		name string
+		in   tokens.PlatformColors
+		want color.NRGBA
+		// band is the capture's own toolbar band and darkened what the peak
+		// lands on it. Dark, that is the byte the capture reads under the
+		// control exactly; light, the capture reads 244 there against this
+		// 246, the two 255ths the fitted ramp misses the darkest row by.
+		band, darkened color.NRGBA
+	}{
+		{
+			"light", tokens.PlatformLight,
+			color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x09},
+			color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
+			color.NRGBA{R: 0xf6, G: 0xf6, B: 0xf6, A: 0xff},
+		},
+		{
+			"dark", tokens.PlatformDark,
+			color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x06},
+			color.NRGBA{R: 0x1e, G: 0x1e, B: 0x1e, A: 0xff},
+			color.NRGBA{R: 0x1d, G: 0x1d, B: 0x1d, A: 0xff},
+		},
+	} {
+		got := c.in.ToolbarControlShadow
+		if got != c.want {
+			t.Errorf("%s ToolbarControlShadow = %v, want the measured peak %v", c.name, got, c.want)
+		}
+		if got.R != 0 || got.G != 0 || got.B != 0 {
+			t.Errorf("%s ToolbarControlShadow = %v, want a coverage of black: the platform darkens its band and never tints it", c.name, got)
+		}
+		if got.A == 0 || got.A == 0xff {
+			t.Errorf("%s ToolbarControlShadow alpha = %d, want the platform's partial coverage", c.name, got.A)
+		}
+		if flat := vgcolor.Flatten(got, c.band); flat != c.darkened {
+			t.Errorf("%s: the peak over the band gives %v, want %v", c.name, flat, c.darkened)
+		}
+	}
+	// The light shadow is the deeper one: it is all that tells a #ffffff
+	// control from a #ffffff band, where the dark control carries a fill and
+	// a rim of its own and the platform leaves its band all but untouched.
+	if tokens.PlatformLight.ToolbarControlShadow.A <= tokens.PlatformDark.ToolbarControlShadow.A {
+		t.Errorf("the light shadow's coverage %d does not exceed the dark one's %d",
+			tokens.PlatformLight.ToolbarControlShadow.A, tokens.PlatformDark.ToolbarControlShadow.A)
+	}
+	// It is not the floating surface's shadow: a control standing in a
+	// toolbar is not a surface floating over the window.
+	for _, c := range []tokens.PlatformColors{tokens.PlatformLight, tokens.PlatformDark} {
+		if c.ToolbarControlShadow == c.FloatingShadow {
+			t.Errorf("ToolbarControlShadow = %v, the floating surface's own; the two were measured apart", c.ToolbarControlShadow)
+		}
+	}
+}

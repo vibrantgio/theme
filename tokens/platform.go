@@ -51,6 +51,7 @@
 //	SidebarSearchFill  #e8e8e8      #2f3234        measured: the recess a search field is on a sidebar
 //	ToolbarControlFill #ffffff      #262626        measured: a bordered control in a frontmost window's toolbar
 //	ToolbarSearchFill  #e8e8e8      #363636        measured: the recess a search field is in a toolbar
+//	ToolbarControlShadow  #000000 a0.035  #000000 a0.024  measured: the drop shadow a bordered toolbar control casts, 23 px of reach 9 px below the control
 //
 // The chrome material and the sidebar's pill were read with "Tint window
 // background with wallpaper colour" off, so they carry the platform's own
@@ -379,6 +380,41 @@ type PlatformColors struct {
 	// The application this library reads the toolbar search field from is
 	// Voice Memos, which is the one the Language names.
 	ToolbarSearchFill color.NRGBA `appkit:"-"`
+
+	// ToolbarControlShadow is the peak coverage of the drop shadow a
+	// BORDERED TOOLBAR CONTROL casts on the band it stands in: black at
+	// 0.035 light and at 0.024 dark. It is the shadow that tells a light
+	// control from its band — the platform draws no edge there and the fill
+	// is the band's own white — and this field carries the peak the way
+	// [PlatformColors.FloatingShadow] does, the caller spreading it over the
+	// measured reach.
+	//
+	// The reach and the offset are ONE geometry for both appearances and are
+	// spent by the drawing: 23 px of reach with the shadow's rectangle sunk
+	// 9 px below the control, which is what makes it heavier under the
+	// control than over it. They are not this field's to carry because they
+	// are lengths and not colours.
+	//
+	// MEASURED, finder-window-light.png, the view pop-up at x 694-742,
+	// y 8-43, on a band flat at #ffffff: the row under the control reads 244
+	// and the row over it 250, the columns beside it 248, and the band
+	// recovers to #ffffff 39 rows below the control, 31 columns beside it and
+	// — extrapolated, the window's own top edge cutting the reading off at 8
+	// rows — about 15 rows above it. A linear ramp at this coverage over that
+	// reach, sunk by that offset, lands every one of the 77 sampled pixels
+	// within two 255ths and most within one.
+	//
+	// MEASURED, finder-window-untinted-dark.png: the same shadow in the dark
+	// appearance is one 255th deep and seven rows tall. Under each of the
+	// five bordered controls the #1e1e1e band reads #1d1d1d over y 82-88 and
+	// nothing above or beside them; finder-window.png and mail-window.png
+	// agree on their tinted #232a2e band (#222a2d under the control), and
+	// notes-toolbar.png agrees on its own. Black at 0.024 reproduces all four
+	// of those bytes exactly. Spread over the one geometry it darkens a wider
+	// halo than the platform's seven rows, which is a miss of one 255th on a
+	// band this dark; the dark control is told from its band by its fill and
+	// its rim, not by this.
+	ToolbarControlShadow color.NRGBA `appkit:"-"`
 }
 
 // PlatformLight and PlatformDark are the recorded sets, aqua and darkAqua,
@@ -455,6 +491,7 @@ var (
 		SidebarSearchFill:            color.NRGBA{R: 0xe8, G: 0xe8, B: 0xe8, A: 0xff},
 		ToolbarControlFill:           color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
 		ToolbarSearchFill:            color.NRGBA{R: 0xe8, G: 0xe8, B: 0xe8, A: 0xff},
+		ToolbarControlShadow:         color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x09},
 	}
 
 	PlatformDark = PlatformColors{
@@ -526,6 +563,7 @@ var (
 		SidebarSearchFill:            color.NRGBA{R: 0x2f, G: 0x32, B: 0x34, A: 0xff},
 		ToolbarControlFill:           color.NRGBA{R: 0x26, G: 0x26, B: 0x26, A: 0xff},
 		ToolbarSearchFill:            color.NRGBA{R: 0x36, G: 0x36, B: 0x36, A: 0xff},
+		ToolbarControlShadow:         color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x06},
 	}
 )
 
