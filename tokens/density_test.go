@@ -79,6 +79,40 @@ func TestFieldHeightIsItsOwnMeasurement(t *testing.T) {
 	}
 }
 
+// TestToolbarControlIsItsOwnMeasurement pins the toolbar control's height to
+// the platform's own reading of it. Every bordered control in the Finder
+// toolbar captures measures 36 px — the frontmost untinted dark window's five
+// controls between their rim rows, the inactive light window's fill, and the
+// view pop-up in both frontmost captures — where the same window's dialog
+// pop-up measures 24. The two are different controls in different places, so
+// the toolbar's is a number of its own and neither reading corrects the other.
+//
+// Compact carries the same 36: no capture holds a toolbar drawn at the
+// platform's small size, which is the one gap this number has.
+func TestToolbarControlIsItsOwnMeasurement(t *testing.T) {
+	const measuredToolbar float32 = 36 // MEASURED: the Finder toolbar captures, every bordered control
+	if ComfortableToolbarControlHeight != measuredToolbar {
+		t.Errorf("ComfortableToolbarControlHeight = %v, want %v (the platform's toolbar control, measured)",
+			ComfortableToolbarControlHeight, measuredToolbar)
+	}
+	if CompactToolbarControlHeight != measuredToolbar {
+		t.Errorf("CompactToolbarControlHeight = %v, want %v (carried until a capture holds a small toolbar)",
+			CompactToolbarControlHeight, measuredToolbar)
+	}
+	for name, d := range map[string]Density{"Comfortable": Comfortable, "Compact": Compact} {
+		if d.ToolbarControlHeight != measuredToolbar {
+			t.Errorf("%s.ToolbarControlHeight = %v, want %v", name, d.ToolbarControlHeight, measuredToolbar)
+		}
+		if d.ToolbarControlHeight <= d.ControlHeight {
+			t.Errorf("%s.ToolbarControlHeight = %v, not above ControlHeight %v: the platform draws a toolbar control taller than a dialog's, which is why this is a second number",
+				name, d.ToolbarControlHeight, d.ControlHeight)
+		}
+		if d.ToolbarControlHeight <= d.FieldHeight {
+			t.Errorf("%s.ToolbarControlHeight = %v, not above FieldHeight %v", name, d.ToolbarControlHeight, d.FieldHeight)
+		}
+	}
+}
+
 // TestStackedRowsAreTheirOwnTarget makes density.go's pointer-target section
 // checkable instead of merely readable. The claim it pins: a stacked row —
 // a list row, a table row, a header cell, a sidebar item — is its own target

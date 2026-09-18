@@ -65,8 +65,12 @@ type DensityParams struct {
 type DensityMetrics struct {
 	ControlHeight float64 `json:"controlHeight"`
 	ChipHeight    float64 `json:"chipHeight"`
-	PaddingX      float64 `json:"paddingX"`
-	PaddingY      float64 `json:"paddingY"`
+	// ToolbarControlHeight is the height of a bordered control standing in a
+	// toolbar band, which the platform draws taller than the control height
+	// above — 36 against 24, measured.
+	ToolbarControlHeight float64 `json:"toolbarControlHeight"`
+	PaddingX             float64 `json:"paddingX"`
+	PaddingY             float64 `json:"paddingY"`
 }
 
 // ElevationParams records the shadow depth of each of the six levels, from
@@ -154,10 +158,11 @@ type Fonts struct {
 // densityMetricsOf reads one setting's metrics.
 func densityMetricsOf(d tokens.Density) DensityMetrics {
 	return DensityMetrics{
-		ControlHeight: f64(d.ControlHeight),
-		ChipHeight:    f64(d.ChipHeight()),
-		PaddingX:      f64(d.PaddingX),
-		PaddingY:      f64(d.PaddingY),
+		ControlHeight:        f64(d.ControlHeight),
+		ChipHeight:           f64(d.ChipHeight()),
+		ToolbarControlHeight: f64(d.ToolbarControlHeight),
+		PaddingX:             f64(d.PaddingX),
+		PaddingY:             f64(d.PaddingY),
 	}
 }
 

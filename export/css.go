@@ -239,6 +239,11 @@ var densityMetrics = []struct {
 	// the control height.
 	{"field-height", func(d tokens.Density) float32 { return d.FieldHeight }},
 	{"row-height", func(d tokens.Density) float32 { return d.RowHeight }},
+	// The toolbar control's own height. A bordered control standing in a
+	// toolbar band is 36 on this platform against the dialog control's 24,
+	// measured, so the sheet states it rather than leaving a consumer to
+	// reach for the control height there.
+	{"toolbar-control-height", func(d tokens.Density) float32 { return d.ToolbarControlHeight }},
 	{"padding-x", func(d tokens.Density) float32 { return d.PaddingX }},
 	{"padding-y", func(d tokens.Density) float32 { return d.PaddingY }},
 }

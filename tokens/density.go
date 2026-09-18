@@ -27,6 +27,8 @@ package tokens
 //	Compact row height          19 dp   PUBLISHED: the platform's small control, carried until a capture holds a list drawn dense
 //	Comfortable checkbox row    22 dp   MEASURED: the pitch between the two "Options:" checkboxes in the same pair — squares at y 372–387 and y 394–409, so 394 − 372
 //	Compact checkbox row        17 dp   DERIVED: 22 × 19/24 = 17.4, rounded — the same ratio the compact field height takes, until a small checkbox is captured — no stored capture does
+//	Comfortable toolbar control 36 dp   MEASURED: every bordered control in the Finder toolbar captures — finder-window-untinted-dark.png (five controls, rim row y=46, fill y 47-80, rim row y=81), finder-window-untinted-light.png (fill y 34-69), finder-window-light.png (the view pop-up, y 8-43) and finder-window.png (the same pop-up, y 8-43); mail-window.png's search field and notes-toolbar.png agree at y 8-43
+//	Compact toolbar control     36 dp   CARRIED: no stored capture holds a toolbar drawn at the platform's small size, and all five stored windows draw one toolbar control size, so Compact carries the measured 36 until a capture holds otherwise
 //
 // What is measured and what is not. One Save panel, captured at 1x in both
 // appearances, holds the regular push button, pop-up button, text field and
@@ -34,9 +36,11 @@ package tokens
 // read off its pixels. No capture holds a control at the platform's small
 // size, so Compact's height is still the published 19 and its field height
 // is derived from the measured ratio; ADR-019 carries that gap row. The
-// stored windows also measure the unified toolbar's controls at 36 px and
-// Finder's info-pane text field at 33 px — different controls in different
-// places, recorded beside these and correcting nothing here.
+// stored windows measure Finder's info-pane text field at 33 px — a different
+// control in a different place, recorded beside these and correcting nothing
+// here. Their unified toolbars measure their controls at 36 px, and that one
+// IS a number here: a control standing in a toolbar is its own control, and
+// [Density.ToolbarControlHeight] carries it.
 //
 // A control height is a floor, not a height. A control is as tall as its
 // content box needs, and never shorter than the density says:
@@ -100,6 +104,7 @@ package tokens
 //	list row                         20            19        pinned to RowHeight
 //	table body row and header cell   20            19        pinned to RowHeight
 //	picker option row                28            24        floor formula, BodyLarge
+//	toolbar control                  36            36        pinned to ToolbarControlHeight
 //
 // A checkbox is the one control drawn smaller than the box it stands in: the
 // glyph keeps the platform's measured 16 dp square at every density, centred
@@ -161,6 +166,41 @@ const (
 	// ratio applied to the measured row, the same derivation
 	// [CompactFieldHeight] takes, since no capture holds a small checkbox.
 	CompactCheckboxRowHeight float32 = 17
+	// ComfortableToolbarControlHeight is the height of a bordered control
+	// standing in a toolbar band, in dp: a search field, a capsule button, a
+	// segmented control and a pop-up button alike. It is a floor in the same
+	// sense as [ComfortableControlHeight].
+	//
+	// MEASURED off the Finder toolbar captures in
+	// .github/reference/macos, each read as a luminance run down a column
+	// through the control's own middle:
+	//
+	//   - finder-window-untinted-dark.png, a frontmost window: all five
+	//     bordered controls in its toolbar carry a rim row at y=46, the
+	//     #262626 fill over y 47-80 and a rim row at y=81 — 36 px outer.
+	//   - finder-window-untinted-light.png: the #f7f7f7 fill over y 34-69,
+	//     36 px, no rim. That window is NOT frontmost, so its fills are the
+	//     platform's inactive drawing; its extent is not.
+	//   - finder-window-light.png, frontmost: the view pop-up's #ffffff over
+	//     y 8-43 at x=715, told from the band it stands on by the drop shadow
+	//     alone — 250 above it, 244 below.
+	//   - finder-window.png, the same pop-up in the dark appearance: rim rows
+	//     at y=8 and y=43 with the fill between them, 36 px.
+	//
+	// mail-window.png's toolbar search field (y 8-43) and notes-toolbar.png
+	// (rim rows at y=8 and y=43) agree, so the number is the platform's and
+	// not one application's.
+	//
+	// It is a number of its own because the platform draws it as one: 36
+	// against the dialog pop-up's measured 24, in a 52 px unified toolbar
+	// band that leaves 8 above and 8 below.
+	ComfortableToolbarControlHeight float32 = 36
+	// CompactToolbarControlHeight is the dense-mode toolbar control in dp. No
+	// stored capture holds a toolbar drawn at the platform's small size, and
+	// all five stored windows draw their toolbar controls at one height, so
+	// this carries the measured 36 until a capture holds otherwise. A capture
+	// of a small toolbar is on the reference's list.
+	CompactToolbarControlHeight float32 = 36
 	// ChipDrop is how far under the control height the system's smallest
 	// control is drawn, in dp. See [Density.ChipHeight]: it is the whole of
 	// that relation, exported so a reader can see the two heights are one
@@ -205,6 +245,18 @@ type Density struct {
 	// separately — 22 px against the push button's 24 and the list row's 20
 	// in the stored captures.
 	CheckboxRowHeight float32
+	// ToolbarControlHeight is the height floor of a bordered control standing
+	// in a toolbar band in dp ([ComfortableToolbarControlHeight] or
+	// [CompactToolbarControlHeight]) — the picker's chrome trigger, and
+	// anything else this library draws bordered in a chrome region. It is
+	// separate because the platform draws it separately: 36 px against the
+	// dialog pop-up's 24 in the stored captures, which is the whole of why a
+	// control that took the control height there would read as a dialog's
+	// control standing in a toolbar.
+	//
+	// A recess is not one of these. The search field's chrome variant is the
+	// platform's flat recess and takes FieldHeight, not this.
+	ToolbarControlHeight float32
 	// PaddingX is the horizontal inner padding of a control in dp.
 	PaddingX float32
 	// PaddingY is the vertical inner padding of a control in dp.
@@ -231,7 +283,7 @@ func (d Density) ChipHeight() float32 { return d.ControlHeight - ChipDrop }
 // provenance table at the top of this file.
 var (
 	// Comfortable is the default desktop density.
-	Comfortable = Density{ControlHeight: ComfortableControlHeight, FieldHeight: ComfortableFieldHeight, RowHeight: ComfortableRowHeight, CheckboxRowHeight: ComfortableCheckboxRowHeight, PaddingX: 8, PaddingY: 2}
+	Comfortable = Density{ControlHeight: ComfortableControlHeight, FieldHeight: ComfortableFieldHeight, RowHeight: ComfortableRowHeight, CheckboxRowHeight: ComfortableCheckboxRowHeight, ToolbarControlHeight: ComfortableToolbarControlHeight, PaddingX: 8, PaddingY: 2}
 	// Compact is the dense mode: smaller drawn controls, tighter padding.
-	Compact = Density{ControlHeight: CompactControlHeight, FieldHeight: CompactFieldHeight, RowHeight: CompactRowHeight, CheckboxRowHeight: CompactCheckboxRowHeight, PaddingX: 7, PaddingY: 0}
+	Compact = Density{ControlHeight: CompactControlHeight, FieldHeight: CompactFieldHeight, RowHeight: CompactRowHeight, CheckboxRowHeight: CompactCheckboxRowHeight, ToolbarControlHeight: CompactToolbarControlHeight, PaddingX: 7, PaddingY: 0}
 )

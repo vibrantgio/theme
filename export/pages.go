@@ -413,6 +413,17 @@ const layoutPageCSS = `.space-row {
   color: var(--platform-label);
   font-size: var(--font-body-large-size);
 }
+.toolbar-bar {
+  height: var(--density-toolbar-control-height);
+  padding: 0 var(--space-3);
+  display: inline-flex;
+  align-items: center;
+  background: var(--platform-toolbar-control-fill);
+  color: var(--platform-control-text);
+  border-radius: calc(var(--density-toolbar-control-height) / 2);
+  font-size: var(--font-label-large-size);
+  font-weight: var(--font-label-large-weight);
+}
 .pad-box {
   display: inline-block;
   padding: var(--density-padding-y) var(--density-padding-x);
@@ -481,6 +492,9 @@ func layoutHTML(s Snapshot) string {
 		b.WriteString("<div class=\"row-bar\">Stacked row</div>\n")
 		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-row-height</code> &middot; %s &mdash; a pin, not a floor: rows tile</p>\n",
 			px(setting.d.RowHeight))
+		b.WriteString("<div><span class=\"toolbar-bar\">Toolbar control</span></div>\n")
+		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-toolbar-control-height</code> &middot; %s &mdash; a control standing in a toolbar band is its own control, taller than the one in a dialog</p>\n",
+			px(setting.d.ToolbarControlHeight))
 		b.WriteString("<div class=\"pad-box\">padding</div>\n")
 		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-padding-x</code> %s &middot; <code>--density-padding-y</code> %s</p>\n",
 			px(setting.d.PaddingX), px(setting.d.PaddingY))
