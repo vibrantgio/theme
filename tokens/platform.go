@@ -52,7 +52,8 @@
 //	ToolbarControlFill #ffffff      #262626        measured: a bordered control in a frontmost window's toolbar
 //	ToolbarSearchFill  #e8e8e8      #363636        measured: the recess a search field is in a toolbar
 //	ToolbarSearchRim   #000000 a0.00 #4d4d4d       measured: the rim that recess wears in a dark toolbar; none in light
-//	ToolbarControlShadow  #000000 a0.035  #000000 a0.024  measured: the drop shadow a bordered toolbar control casts, 23 px of reach 9 px below the control
+//	ToolbarControlShadow  #000000 a0.035  #000000 a0.024  measured: the drop shadow a bordered toolbar control casts, per appearance in reach and offset
+//	ToolbarCheckedOverlay #000000 a0.102  #ffffff a0.161  measured: the chosen segment of a segmented toolbar control, over the control's own fill
 //
 // The chrome material and the sidebar's pill were read with "Tint window
 // background with wallpaper colour" off, so they carry the platform's own
@@ -441,6 +442,34 @@ type PlatformColors struct {
 	// band this dark; the dark control is told from its band by its fill and
 	// its rim, not by this.
 	ToolbarControlShadow color.NRGBA `appkit:"-"`
+
+	// ToolbarCheckedOverlay is what a bordered toolbar control lays over its
+	// own fill while it records a yes: black at 0.102 light and white at
+	// 0.161 dark, the coverage the platform draws the chosen segment of a
+	// segmented control at. The patch it fills is not the control's whole
+	// box — see components/internal/toolbarface, which draws it inset and
+	// cornered as measured.
+	//
+	// MEASURED, finder-window-untinted-dark.png, the four-segment view
+	// control at x 796-943, y 46-81 with its list segment chosen: the patch
+	// spans x 836-867, y 51-76 and reads #494949 flat against the control's
+	// own #262626, which is white at 41 of 255 over it to the byte.
+	//
+	// MEASURED, finder-window-untinted-light.png, the same control in that
+	// window: the patch spans x 814-845, y 39-64 — the same 32 by 26 — and
+	// reads #dedede against the control's #f7f7f7, which is black at 26 of
+	// 255 over it to the byte.
+	// That window is NOT frontmost, so both its fill and its patch are the
+	// platform's faded drawing and the PIXEL is not an active control's; the
+	// COVERAGE between the two is what this field carries, and over the
+	// frontmost light control's own #ffffff it lands #e5e5e5. No stored
+	// capture holds a frontmost light window with a chosen segment in it,
+	// which is on the capture list.
+	//
+	// It is a coverage rather than a fill because the fill beneath it moves:
+	// a checked control still tints under the pointer, and the patch is laid
+	// over whatever that leaves.
+	ToolbarCheckedOverlay color.NRGBA `appkit:"-"`
 }
 
 // PlatformLight and PlatformDark are the recorded sets, aqua and darkAqua,
@@ -519,6 +548,7 @@ var (
 		ToolbarSearchFill:            color.NRGBA{R: 0xe8, G: 0xe8, B: 0xe8, A: 0xff},
 		ToolbarSearchRim:             color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x00},
 		ToolbarControlShadow:         color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x09},
+		ToolbarCheckedOverlay:        color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x1a},
 	}
 
 	PlatformDark = PlatformColors{
@@ -592,6 +622,7 @@ var (
 		ToolbarSearchFill:            color.NRGBA{R: 0x36, G: 0x36, B: 0x36, A: 0xff},
 		ToolbarSearchRim:             color.NRGBA{R: 0x4d, G: 0x4d, B: 0x4d, A: 0xff},
 		ToolbarControlShadow:         color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x06},
+		ToolbarCheckedOverlay:        color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x29},
 	}
 )
 

@@ -119,6 +119,7 @@ var platformNames = []struct {
 	{"toolbar-search-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ToolbarSearchFill }},
 	{"toolbar-search-rim", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ToolbarSearchRim }},
 	{"toolbar-control-shadow", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ToolbarControlShadow }},
+	{"toolbar-checked-overlay", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ToolbarCheckedOverlay }},
 }
 
 // platformVars is the platform's colour set as custom properties, one per
