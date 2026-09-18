@@ -116,6 +116,7 @@ var platformNames = []struct {
 	{"scrim", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Scrim }},
 	{"sidebar-search-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarSearchFill }},
 	{"toolbar-control-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ToolbarControlFill }},
+	{"toolbar-search-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ToolbarSearchFill }},
 }
 
 // platformVars is the platform's colour set as custom properties, one per

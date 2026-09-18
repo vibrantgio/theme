@@ -50,6 +50,7 @@
 //	Scrim            #000000 a0.20  #000000 a0.26  measured: the dim under a Save sheet in save-dialog-{light,dark}.png
 //	SidebarSearchFill  #e8e8e8      #2f3234        measured: the recess a search field is on a sidebar
 //	ToolbarControlFill #ffffff      #262626        measured: a bordered control in a frontmost window's toolbar
+//	ToolbarSearchFill  #e8e8e8      #363636        measured: the recess a search field is in a toolbar
 //
 // The chrome material and the sidebar's pill were read with "Tint window
 // background with wallpaper colour" off, so they carry the platform's own
@@ -349,6 +350,35 @@ type PlatformColors struct {
 	// glyphs at TertiaryLabel, which is the platform's inactive drawing and
 	// not a control's own fill.
 	ToolbarControlFill color.NRGBA `appkit:"-"`
+
+	// ToolbarSearchFill is the recess a search field standing in a TOOLBAR
+	// is drawn as: #e8e8e8 light and #363636 dark. It is a second material
+	// from [PlatformColors.SidebarSearchFill] because the platform draws the
+	// two recesses apart — one fill on a sidebar, another in a toolbar — and
+	// from [PlatformColors.ToolbarControlFill] because a search field is not
+	// the bordered control beside it.
+	//
+	// MEASURED, voicememos-sidebar-light.png and voicememos-window.png, one
+	// capture per appearance of a frontmost Voice Memos window whose toolbar
+	// carries a search field at its trailing end. Light: the field spans
+	// y 46-81 and its interior is flat #e8e8e8, the same value the sidebar
+	// recess carries. Dark: the field spans y 8-43 at x 643-967, its interior
+	// #363636 over a #1e1e1e band, where the sidebar recess reads #2f3234 and
+	// a bordered toolbar control reads #262626. Neither stored capture of the
+	// sidebar recess corrects this one and neither is corrected by it, so both
+	// are recorded.
+	//
+	// Both Voice Memos captures are untinted — every channel of the fill and
+	// of the band it stands on is equal — so the dark value carries no
+	// wallpaper cast, unlike SidebarSearchFill's.
+	//
+	// Two other stored windows draw a toolbar search field at their own
+	// bordered control's fill instead — Finder's #262626 in
+	// finder-window-untinted-dark.png and Mail's #242d32 in mail-window.png —
+	// and neither light toolbar in those two holds a recess to read at all.
+	// The application this library reads the toolbar search field from is
+	// Voice Memos, which is the one the Language names.
+	ToolbarSearchFill color.NRGBA `appkit:"-"`
 }
 
 // PlatformLight and PlatformDark are the recorded sets, aqua and darkAqua,
@@ -424,6 +454,7 @@ var (
 		Scrim:                        color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x33},
 		SidebarSearchFill:            color.NRGBA{R: 0xe8, G: 0xe8, B: 0xe8, A: 0xff},
 		ToolbarControlFill:           color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
+		ToolbarSearchFill:            color.NRGBA{R: 0xe8, G: 0xe8, B: 0xe8, A: 0xff},
 	}
 
 	PlatformDark = PlatformColors{
@@ -494,6 +525,7 @@ var (
 		Scrim:                        color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x42},
 		SidebarSearchFill:            color.NRGBA{R: 0x2f, G: 0x32, B: 0x34, A: 0xff},
 		ToolbarControlFill:           color.NRGBA{R: 0x26, G: 0x26, B: 0x26, A: 0xff},
+		ToolbarSearchFill:            color.NRGBA{R: 0x36, G: 0x36, B: 0x36, A: 0xff},
 	}
 )
 

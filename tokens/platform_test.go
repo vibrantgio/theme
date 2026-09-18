@@ -568,3 +568,43 @@ func TestToolbarControlFillStandsOffTheChrome(t *testing.T) {
 		}
 	}
 }
+
+// TestToolbarSearchFillIsMeasuredApart pins the toolbar search recess to the
+// pixels it was read at and holds it apart from the two fills it would
+// otherwise be taken for: the sidebar recess, which the platform draws at a
+// different value in the dark appearance, and the bordered toolbar control,
+// which it draws at a different value in both.
+func TestToolbarSearchFillIsMeasuredApart(t *testing.T) {
+	for _, c := range []struct {
+		name string
+		in   tokens.PlatformColors
+		want color.NRGBA
+	}{
+		{"light", tokens.PlatformLight, color.NRGBA{R: 0xe8, G: 0xe8, B: 0xe8, A: 0xff}},
+		{"dark", tokens.PlatformDark, color.NRGBA{R: 0x36, G: 0x36, B: 0x36, A: 0xff}},
+	} {
+		if c.in.ToolbarSearchFill != c.want {
+			t.Errorf("%s ToolbarSearchFill = %v, want the measured toolbar recess %v",
+				c.name, c.in.ToolbarSearchFill, c.want)
+		}
+		if c.in.ToolbarSearchFill == c.in.ToolbarControlFill {
+			t.Errorf("%s ToolbarSearchFill = %v, the bordered control's own fill; the two were measured apart",
+				c.name, c.in.ToolbarSearchFill)
+		}
+		fill, band := c.in.ToolbarSearchFill, c.in.SidebarMaterial
+		if fill == band {
+			t.Errorf("%s ToolbarSearchFill = %v, the chrome material itself; a recess that reads as its band is not a recess",
+				c.name, fill)
+		}
+	}
+	// Light, the two recesses are one value; dark they are not, which is why
+	// the toolbar's is a name of its own rather than the sidebar's reused.
+	if tokens.PlatformLight.ToolbarSearchFill != tokens.PlatformLight.SidebarSearchFill {
+		t.Errorf("light ToolbarSearchFill = %v against SidebarSearchFill %v; the two captures read one value",
+			tokens.PlatformLight.ToolbarSearchFill, tokens.PlatformLight.SidebarSearchFill)
+	}
+	if tokens.PlatformDark.ToolbarSearchFill == tokens.PlatformDark.SidebarSearchFill {
+		t.Errorf("dark ToolbarSearchFill = %v is the sidebar recess; the two were measured apart",
+			tokens.PlatformDark.ToolbarSearchFill)
+	}
+}
