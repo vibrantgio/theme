@@ -105,6 +105,7 @@ var platformNames = []struct {
 	{"highlight", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Highlight }},
 	{"sidebar-material", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarMaterial }},
 	{"sidebar-selection", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarSelection }},
+	{"sidebar-count", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarCount }},
 	{"card-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.CardFill }},
 	{"push-button-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.PushButtonFill }},
 	{"hover-overlay", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.HoverOverlay }},
@@ -1081,18 +1082,25 @@ const componentClasses = `/* ---- Component classes ----
   background: var(--platform-secondary-label);
 }
 
-/* An item row (drawItem): a 48 dp leading icon column (iconColDp) with the
-   glyph centred in it, the label-large label starting at exactly the column
-   edge, vertically centred, one line, clipped rather than wrapped — which is
-   also what hides the labels at the collapsed width. Selected wears the
-   platform's sidebar pill; nothing else moves, and nothing tints under the
-   pointer.
+/* An item row (drawItem): a symbol, a label and, at the trailing end, a count
+   when the entry has one. The symbol stands in a 24 dp square set 17 in from
+   the rail's leading edge, the label-large label starts at 48 in, and the
+   count's trailing edge is 17 in from the rail's trailing edge; each part is
+   vertically centred, one line, clipped rather than wrapped — which is also
+   what hides the label and the count at the collapsed width. Selected wears
+   the platform's sidebar pill, and on it the label and the count both take
+   the foreground the platform pairs with that fill; nothing else moves, and
+   nothing tints under the pointer.
 
-   The row height, the pill's inset and its corner are MEASURED off the
-   organization's macOS reference (patterns/sidebar RowHeight,
-   SelectionInset, SelectionRadius): Finder's and Voice Memos' selected
-   sidebar rows span 32 px at 1x, the pill is inset 10 from each edge of the
-   rail, and a circular fit to its corner reads 8. */
+   The row height, the pill's inset and its corner, the three columns and the
+   heading's block are MEASURED off the organization's macOS reference
+   (patterns/sidebar RowHeight, SelectionInset, SelectionRadius, SymbolBox,
+   SymbolInset, LabelInset, CountInset, SectionHeight, SectionInset,
+   SectionBaseline): Finder's and Voice Memos' selected sidebar rows span 32 px
+   at 1x, the pill is inset 10 from each edge of the rail, and a circular fit
+   to its corner reads 8; Voice Memos' folder mark is centred on 29 in from the
+   panel's edge, its names start at 48 and its counts end 17 in from the
+   trailing edge. */
 .sidebar-item {
   box-sizing: border-box;
   position: relative;
@@ -1132,8 +1140,52 @@ const componentClasses = `/* ---- Component classes ----
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;  /* iconColDp */
+  width: 24px;  /* SymbolBox */
   height: 100%;
+  margin-left: 17px;  /* SymbolInset */
+  margin-right: 7px;  /* LabelInset less SymbolInset and SymbolBox */
+}
+/* A row with no symbol still starts its label at the same column, so the
+   names of a list whose entries differ still line up. */
+.sidebar-item-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar-item-label:first-child { margin-left: 48px; }  /* LabelInset */
+.sidebar-item-count {
+  flex: none;
+  margin-left: var(--space-2);
+  margin-right: 17px;  /* CountInset */
+  color: var(--platform-sidebar-count);
+}
+.sidebar-item.selected .sidebar-item-count {
+  color: var(--platform-alternate-selected-control-text);
+}
+
+/* A section's heading: a small label in the platform's secondary label,
+   17 in from the rail's leading edge, its baseline 30 down a block of 42,
+   and parted from the rows around it by that air alone — the platform draws
+   no line there and neither does this.
+
+   A sheet cannot place a baseline, so what is written is where the library's
+   own placement puts the line box: 30 less the role's ascent inside its line
+   box, which for the shipped face at 11 dp on a 16 dp line is 18. */
+.sidebar-section {
+  box-sizing: border-box;
+  flex: none;
+  display: flex;
+  align-items: flex-start;
+  height: 42px;  /* SectionHeight */
+  padding: 18px 17px 0;  /* SectionBaseline less the role's ascent; SectionInset */
+  font-family: var(--font-family);
+  font-size: var(--font-label-small-size);
+  line-height: var(--font-label-small-line-height);
+  font-weight: var(--font-label-small-weight);
+  letter-spacing: var(--font-label-small-tracking);
+  color: var(--platform-secondary-label);
+  user-select: none;
 }
 
 /* Breadcrumb (components/breadcrumb breadcrumb.go): a row of title-small

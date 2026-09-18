@@ -275,6 +275,7 @@ var platformPairs = []struct {
 	{"alternate selected control text on the accent", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.AlternateSelectedControlText }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ControlAccent }},
 	{"alternate selected control text on the selected row", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.AlternateSelectedControlText }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SelectedContentBackground }},
 	{"alternate selected control text on the sidebar pill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.AlternateSelectedControlText }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarSelection }},
+	{"the sidebar count on the chrome material", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarCount }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarMaterial }},
 	{"link on the window", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Link }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.WindowBackground }},
 	{"disabled control text on the push button", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.DisabledControlText }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.PushButtonFill }},
 }

@@ -20,12 +20,14 @@
 // for every one of these names itself; these recorded sets are what the
 // other platforms — and every test — read.
 //
-// Fourteen fields are not AppKit's. The platform paints a sidebar, a grouped
-// box, a selected sidebar row, a search field's recess on a sidebar, a push
+// Twenty-two fields are not AppKit's. The platform paints a sidebar, a
+// grouped box, a selected sidebar row, the count at a sidebar row's trailing
+// end, a search field's recess on a sidebar, a push
 // button, a hovered and a pressed
 // control, the shadow under a
 // floating pane, a text field's hairline, an overlay scrollbar's knob, a
-// list's alternating row, the rim and the shadow of an inset sidebar panel
+// list's alternating row, the rim and the shadow of an inset sidebar panel,
+// the several fills a toolbar band's controls take
 // and the dim a sheet lays over the window it
 // interrupts without giving any of them an NSColor name, so those fills
 // were read off the stored captures in the organization's macOS
@@ -40,6 +42,7 @@
 //	-----            -----          ----           ----------
 //	SidebarMaterial  #f7f7f7        #1c1c1c        measured: the chrome band, wallpaper tinting off
 //	SidebarSelection #178bfb        #1994fc        measured: the selected sidebar row's pill
+//	SidebarCount     #6d6d6d        #a4a4a4        measured: the count at the trailing end of a sidebar row
 //	CardFill         #f7f7f7        #2a3034        measured: the System Settings grouped box
 //	PushButtonFill   #ececec        #333a3f        measured: the Save dialog's push button at rest
 //	HoverOverlay     #000000 a0.051 #ffffff a0.094 measured: a toolbar button under the pointer
@@ -207,6 +210,23 @@ type PlatformColors struct {
 	// list's selected row wears a different colour again. So the lift is
 	// recorded as the pixel in both appearances.
 	SidebarSelection color.NRGBA `appkit:"-"`
+
+	// SidebarCount is what the count at the trailing end of a sidebar row
+	// is drawn in: #6d6d6d light and #a4a4a4 dark, the plateau every count
+	// holds in voicememos-multi-folder-2026-09-18.png and
+	// voicememos-sidebar-dark.png over the panel's own #f9f9f9 and #1c1c1c.
+	//
+	// It is not SecondaryLabel, which is what the section label above those
+	// rows IS: that label plateaus at #7d7d7d and #999999 on the same fills,
+	// black at 0.5 and white at 0.55 to the byte, and the count plateaus 16
+	// of 255 darker in light and 11 lighter in dark. Both are plateaux over
+	// whole pixels, so the gap is the drawn colour and not a stem's
+	// shortfall. No field of this set flattens within a level of either
+	// reading — the nearest is ScrollbarThumb at 3 and 6, which is a
+	// scrollbar's knob — so the count is recorded as a measured value of the
+	// sidebar, as the pill is. See reference/macos/controls.md, "What a
+	// sidebar row measures".
+	SidebarCount color.NRGBA `appkit:"-"`
 
 	// CardFill is the fill of the platform's box — a card, a grouped
 	// box, a filled inset: #f7f7f7 over a #ffffff plane light, #2a3034
@@ -618,6 +638,7 @@ var (
 
 		SidebarMaterial:  color.NRGBA{R: 0xf7, G: 0xf7, B: 0xf7, A: 0xff},
 		SidebarSelection: color.NRGBA{R: 0x17, G: 0x8b, B: 0xfb, A: 0xff},
+		SidebarCount:     color.NRGBA{R: 0x6d, G: 0x6d, B: 0x6d, A: 0xff},
 		CardFill:         color.NRGBA{R: 0xf7, G: 0xf7, B: 0xf7, A: 0xff},
 		PushButtonFill:   color.NRGBA{R: 0xec, G: 0xec, B: 0xec, A: 0xff},
 		HoverOverlay:     color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x0d},
@@ -695,6 +716,7 @@ var (
 
 		SidebarMaterial:  color.NRGBA{R: 0x1c, G: 0x1c, B: 0x1c, A: 0xff},
 		SidebarSelection: color.NRGBA{R: 0x19, G: 0x94, B: 0xfc, A: 0xff},
+		SidebarCount:     color.NRGBA{R: 0xa4, G: 0xa4, B: 0xa4, A: 0xff},
 		CardFill:         color.NRGBA{R: 0x2a, G: 0x30, B: 0x34, A: 0xff},
 		PushButtonFill:   color.NRGBA{R: 0x33, G: 0x3a, B: 0x3f, A: 0xff},
 		HoverOverlay:     color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x18},
