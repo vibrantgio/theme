@@ -117,6 +117,7 @@ var platformNames = []struct {
 	{"sidebar-search-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarSearchFill }},
 	{"toolbar-control-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ToolbarControlFill }},
 	{"toolbar-search-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ToolbarSearchFill }},
+	{"toolbar-search-rim", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ToolbarSearchRim }},
 	{"toolbar-control-shadow", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ToolbarControlShadow }},
 }
 

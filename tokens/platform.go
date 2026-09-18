@@ -51,6 +51,7 @@
 //	SidebarSearchFill  #e8e8e8      #2f3234        measured: the recess a search field is on a sidebar
 //	ToolbarControlFill #ffffff      #262626        measured: a bordered control in a frontmost window's toolbar
 //	ToolbarSearchFill  #e8e8e8      #363636        measured: the recess a search field is in a toolbar
+//	ToolbarSearchRim   #000000 a0.00 #4d4d4d       measured: the rim that recess wears in a dark toolbar; none in light
 //	ToolbarControlShadow  #000000 a0.035  #000000 a0.024  measured: the drop shadow a bordered toolbar control casts, 23 px of reach 9 px below the control
 //
 // The chrome material and the sidebar's pill were read with "Tint window
@@ -381,6 +382,31 @@ type PlatformColors struct {
 	// Voice Memos, which is the one the Language names.
 	ToolbarSearchFill color.NRGBA `appkit:"-"`
 
+	// ToolbarSearchRim is the hairline the toolbar search recess wears round
+	// its own edge: #4d4d4d in the dark appearance and no colour at all in
+	// the light one, where the platform draws none. It is a value of its own
+	// beside [PlatformColors.ToolbarSearchFill] because no alpha name lands
+	// it — the platform's separator over that fill falls three of 255 short
+	// — and apart from the rim a BORDERED toolbar control wears, which is a
+	// different pixel over a different fill.
+	//
+	// MEASURED, voicememos-window.png, the search field at the trailing end
+	// of a frontmost dark Voice Memos toolbar, x 643-967, y 8-43: the rows at
+	// y=8 and y=43 read #4d4d4d flat over x 669-941 and fall away through the
+	// corners' antialiasing, and the columns at x=643 and x=967 read #4b4b4b
+	// and #4a4a4a at the control's own middle row. It runs the whole way
+	// round, so it is the control's own edge and not the band's seam, and it
+	// is lighter than both its #363636 fill and the #1e1e1e band — the
+	// highlight every bordered control in a dark toolbar band wears.
+	// Separator over that fill gives #4a4a4a, three of 255 short of the
+	// pixel, which is why the name is carried here rather than flattened.
+	//
+	// MEASURED, voicememos-sidebar-light.png and finder-window-light.png: a
+	// light toolbar band steps straight to the fill with no stroke row on any
+	// side, so the light value is black at zero coverage — no colour, and a
+	// caller draws nothing where it answers one.
+	ToolbarSearchRim color.NRGBA `appkit:"-"`
+
 	// ToolbarControlShadow is the peak coverage of the drop shadow a
 	// BORDERED TOOLBAR CONTROL casts on the band it stands in: black at
 	// 0.035 light and at 0.024 dark. It is the shadow that tells a light
@@ -491,6 +517,7 @@ var (
 		SidebarSearchFill:            color.NRGBA{R: 0xe8, G: 0xe8, B: 0xe8, A: 0xff},
 		ToolbarControlFill:           color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
 		ToolbarSearchFill:            color.NRGBA{R: 0xe8, G: 0xe8, B: 0xe8, A: 0xff},
+		ToolbarSearchRim:             color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x00},
 		ToolbarControlShadow:         color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x09},
 	}
 
@@ -563,6 +590,7 @@ var (
 		SidebarSearchFill:            color.NRGBA{R: 0x2f, G: 0x32, B: 0x34, A: 0xff},
 		ToolbarControlFill:           color.NRGBA{R: 0x26, G: 0x26, B: 0x26, A: 0xff},
 		ToolbarSearchFill:            color.NRGBA{R: 0x36, G: 0x36, B: 0x36, A: 0xff},
+		ToolbarSearchRim:             color.NRGBA{R: 0x4d, G: 0x4d, B: 0x4d, A: 0xff},
 		ToolbarControlShadow:         color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x06},
 	}
 )
