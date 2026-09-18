@@ -20,12 +20,13 @@
 // for every one of these names itself; these recorded sets are what the
 // other platforms — and every test — read.
 //
-// Twelve fields are not AppKit's. The platform paints a sidebar, a grouped
+// Fourteen fields are not AppKit's. The platform paints a sidebar, a grouped
 // box, a selected sidebar row, a search field's recess on a sidebar, a push
 // button, a hovered and a pressed
 // control, the shadow under a
 // floating pane, a text field's hairline, an overlay scrollbar's knob, a
-// list's alternating row and the dim a sheet lays over the window it
+// list's alternating row, the rim and the shadow of an inset sidebar panel
+// and the dim a sheet lays over the window it
 // interrupts without giving any of them an NSColor name, so those fills
 // were read off the stored captures in the organization's macOS
 // reference — the alternating row off the array AppKit answers with
@@ -55,6 +56,8 @@
 //	ToolbarSearchRim   #000000 a0.00 #4d4d4d       measured: the rim that recess wears in a dark toolbar; none in light
 //	ToolbarControlShadow  #000000 a0.035  #000000 a0.024  measured: the drop shadow a bordered toolbar control casts, per appearance in reach and offset
 //	ToolbarCheckedOverlay #000000 a0.102  #ffffff a0.161  measured: the chosen segment of a segmented toolbar control, over the control's own fill
+//	PaneRim          #ffffff        #3a3a3a        measured: the 1 px rim the inset sidebar panel wears on every side
+//	PaneShadow       #000000 a0.051 #000000 a0.051 measured: the shadow that panel casts, 24 px of reach with its rectangle sunk 9
 //
 // The chrome material and the sidebar's pill were read with "Tint window
 // background with wallpaper colour" off, so they carry the platform's own
@@ -496,6 +499,62 @@ type PlatformColors struct {
 	// a checked control still tints under the pointer, and the patch is laid
 	// over whatever that leaves.
 	ToolbarCheckedOverlay color.NRGBA `appkit:"-"`
+
+	// PaneRim is the 1 px rim the platform draws round an inset sidebar
+	// panel, on every side: opaque #ffffff light and #3a3a3a dark. It is the
+	// boundary between the panel and what stands around it — the window's
+	// own plane on three sides, the content on the fourth — which is why a
+	// panel set into the window needs no seam.
+	//
+	// MEASURED, voicememos-multi-folder-2026-09-18.png at 1x, the panel at
+	// x 64-283, y 46-786 in a window at x 56-1031, y 38-794: the rim reads
+	// #ffffff flat down the column at x=64, along the rows at y=46 and
+	// y=786 and down x=283, with the panel's own #f9f9f9 inside it and the
+	// window's plane or the content outside. It is opaque and not a
+	// coverage: white at any coverage over a fill that light lands short of
+	// 255, and the pixel is 255 on every channel.
+	//
+	// MEASURED, finder-window-untinted-dark.png, the panel at x 64-373,
+	// y 46-1024 in a window at x 56-1442, y 38-1032: the rim reads #3a3a3a
+	// flat down x=64 and along y=46 and y=1024, over the panel's own
+	// #1c1c1c and the plane beside it. Down the trailing edge at x=373 it
+	// reads #404040 through the band and #434343 below it, the panel's own
+	// sidebar material lifting toward that edge; the three sides over the
+	// plane are what this field carries. Separator over the dark fill gives #3b3b3b,
+	// one of 255 off the three flat sides and nine off the trailing one, and
+	// over the light fill #e6e6e6, nowhere near white — so the value is
+	// carried rather than flattened.
+	PaneRim color.NRGBA `appkit:"-"`
+
+	// PaneShadow is the peak coverage of the shadow an inset sidebar panel
+	// casts on what lies around it: black at 0.051 — 13 of 255 — in both
+	// appearances, as [PlatformColors.FloatingShadow] is one value in both.
+	// This field carries the peak and the caller spreads it, 24 px of reach
+	// with the shadow's rectangle sunk 9 px below the panel, which is what
+	// makes it heavier under the panel than over it.
+	//
+	// MEASURED, voicememos-multi-folder-2026-09-18.png: the panel at
+	// x 64-283, y 46-786 stands on a white plane and a white content column.
+	// Beside its trailing rim the content reads 244 and recovers to #ffffff
+	// 33 columns out; the 8 px of plane at its leading edge reads 239 at the
+	// rim and 245 at the window's edge; the 8 px above it reads 247 at the
+	// rim and 251 at the window's edge. A linear ramp of black at 13 of 255
+	// over 24 px of reach, its rectangle sunk 9 px, lands those 9,096
+	// sampled pixels at an rms of 1.19 of 255 and a worst miss of 3.4.
+	//
+	// The 8 px of plane BELOW the panel reads 227 at the rim and 234 at the
+	// window's edge, 8 to 11 of 255 deeper than one sunk rectangle puts it:
+	// the platform's own shadow is blurred and lit from above, and a single
+	// rectangle with one peak cannot be both that deep below and that light
+	// beside. The same limit is recorded for
+	// [PlatformColors.ToolbarControlShadow], fitted the same way.
+	//
+	// MEASURED, finder-window-untinted-dark.png: the same shadow is one to
+	// two of 255 deep — the plane beside the panel's leading rim reads 27
+	// and recovers to 28 within 6 columns, the content beside its trailing
+	// rim 29 against its own #1e1e1e — which is what this coverage lands on
+	// a plane that dark, so one value serves both appearances.
+	PaneShadow color.NRGBA `appkit:"-"`
 }
 
 // PlatformLight and PlatformDark are the recorded sets, aqua and darkAqua,
@@ -576,6 +635,8 @@ var (
 		ToolbarSearchRim:             color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x00},
 		ToolbarControlShadow:         color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x09},
 		ToolbarCheckedOverlay:        color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x1a},
+		PaneRim:                      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
+		PaneShadow:                   color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x0d},
 	}
 
 	PlatformDark = PlatformColors{
@@ -651,6 +712,8 @@ var (
 		ToolbarSearchRim:             color.NRGBA{R: 0x4d, G: 0x4d, B: 0x4d, A: 0xff},
 		ToolbarControlShadow:         color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x06},
 		ToolbarCheckedOverlay:        color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x29},
+		PaneRim:                      color.NRGBA{R: 0x3a, G: 0x3a, B: 0x3a, A: 0xff},
+		PaneShadow:                   color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x0d},
 	}
 )
 
