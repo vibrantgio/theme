@@ -24,7 +24,9 @@ package tokens
 //	Compact PaddingY             0 dp   DERIVED: LabelLarge's line box is already over 19, so there is nothing to pad with
 //	checkbox                    16 dp   MEASURED: 16 px square in the same pair. Not a token here: the checkbox carries its own side length in components/input, which is where this number lands when a consumer takes it.
 //	Comfortable row height      20 dp   MEASURED: Finder's list view in finder-window-light.png — the stripes alternate on a 20 px pitch with no row seam between them (x=965, rows at y 85, 105, 125 … 284)
-//	Compact row height          19 dp   PUBLISHED: the platform's small control, carried until a capture holds a list drawn dense — no stored capture does
+//	Compact row height          19 dp   PUBLISHED: the platform's small control, carried until a capture holds a list drawn dense
+//	Comfortable checkbox row    22 dp   MEASURED: the pitch between the two "Options:" checkboxes in the same pair — squares at y 372–387 and y 394–409, so 394 − 372
+//	Compact checkbox row        17 dp   DERIVED: 22 × 19/24 = 17.4, rounded — the same ratio the compact field height takes, until a small checkbox is captured — no stored capture does
 //
 // What is measured and what is not. One Save panel, captured at 1x in both
 // appearances, holds the regular push button, pop-up button, text field and
@@ -101,8 +103,10 @@ package tokens
 //
 // A checkbox is the one control drawn smaller than the box it stands in: the
 // glyph keeps the platform's measured 16 dp square at every density, centred
-// in a footprint of the control height, and the footprint is the target. The
-// platform's checkbox row is what a pointer lands on, never the glyph.
+// in a footprint of [Density.CheckboxRowHeight], and the footprint is the
+// target. The platform's checkbox row is what a pointer lands on, never the
+// glyph. The radio takes the same row: it is drawn at the checkbox's side
+// length, and the two stand in one form.
 
 const (
 	// ComfortableControlHeight is the default desktop control-height floor in
@@ -143,6 +147,20 @@ const (
 	// capture holds a list drawn dense, so it carries the platform's small
 	// control height until one does; ADR-019 has the gap row.
 	CompactRowHeight float32 = 19
+	// ComfortableCheckboxRowHeight is the height of a checkbox's row in dp:
+	// the footprint the 16 dp glyph is centred in, and the pointer target.
+	// It is a pin, not a floor — a checkbox draws no content box of its own.
+	// MEASURED off the Save panel in .github/reference/macos/save-dialog-light.png
+	// and save-dialog-dark.png as the pitch between the two "Options:"
+	// checkboxes, whose squares run y 372–387 and y 394–409: 22 px, both
+	// appearances agreeing to the pixel. It is neither the control height nor
+	// the stacked row's, which is why it is a number of its own.
+	ComfortableCheckboxRowHeight float32 = 22
+	// CompactCheckboxRowHeight is the dense-mode checkbox row in dp, derived
+	// at 22 × 19/24 = 17.4, rounded: the platform's regular-to-small control
+	// ratio applied to the measured row, the same derivation
+	// [CompactFieldHeight] takes, since no capture holds a small checkbox.
+	CompactCheckboxRowHeight float32 = 17
 	// ChipDrop is how far under the control height the system's smallest
 	// control is drawn, in dp. See [Density.ChipHeight]: it is the whole of
 	// that relation, exported so a reader can see the two heights are one
@@ -178,6 +196,15 @@ type Density struct {
 	// cost the virtualised list the constant-time look-ahead that lets it
 	// lay out only what is on screen.
 	RowHeight float32
+	// CheckboxRowHeight is the height of a checkbox's row in dp
+	// ([ComfortableCheckboxRowHeight] or [CompactCheckboxRowHeight]) — the
+	// square footprint the checkbox's and the radio's 16 dp glyph is centred
+	// in, and the pointer target both of them offer. Like RowHeight it is a
+	// pin rather than a floor: the glyph does not grow, so there is no
+	// content box to clear. It is separate because the platform draws it
+	// separately — 22 px against the push button's 24 and the list row's 20
+	// in the stored captures.
+	CheckboxRowHeight float32
 	// PaddingX is the horizontal inner padding of a control in dp.
 	PaddingX float32
 	// PaddingY is the vertical inner padding of a control in dp.
@@ -204,7 +231,7 @@ func (d Density) ChipHeight() float32 { return d.ControlHeight - ChipDrop }
 // provenance table at the top of this file.
 var (
 	// Comfortable is the default desktop density.
-	Comfortable = Density{ControlHeight: ComfortableControlHeight, FieldHeight: ComfortableFieldHeight, RowHeight: ComfortableRowHeight, PaddingX: 8, PaddingY: 2}
+	Comfortable = Density{ControlHeight: ComfortableControlHeight, FieldHeight: ComfortableFieldHeight, RowHeight: ComfortableRowHeight, CheckboxRowHeight: ComfortableCheckboxRowHeight, PaddingX: 8, PaddingY: 2}
 	// Compact is the dense mode: smaller drawn controls, tighter padding.
-	Compact = Density{ControlHeight: CompactControlHeight, FieldHeight: CompactFieldHeight, RowHeight: CompactRowHeight, PaddingX: 7, PaddingY: 0}
+	Compact = Density{ControlHeight: CompactControlHeight, FieldHeight: CompactFieldHeight, RowHeight: CompactRowHeight, CheckboxRowHeight: CompactCheckboxRowHeight, PaddingX: 7, PaddingY: 0}
 )
