@@ -65,6 +65,16 @@ type DensityParams struct {
 type DensityMetrics struct {
 	ControlHeight float64 `json:"controlHeight"`
 	ChipHeight    float64 `json:"chipHeight"`
+	// FieldHeight is a text field's own floor and RowHeight a stacked row's
+	// pitch. The platform draws a field taller than a push button and a list
+	// row shorter than both, all three measured, so each is a number of its
+	// own rather than one derived from the control height.
+	FieldHeight float64 `json:"fieldHeight"`
+	RowHeight   float64 `json:"rowHeight"`
+	// CheckboxRowHeight is the square footprint the checkbox's and the
+	// radio's 16 dp glyph is centred in, and the pointer target both offer —
+	// 22 against the push button's 24 and the list row's 20, measured.
+	CheckboxRowHeight float64 `json:"checkboxRowHeight"`
 	// ToolbarControlHeight is the height of a bordered control standing in a
 	// toolbar band, which the platform draws taller than the control height
 	// above — 36 against 24, measured.
@@ -160,6 +170,9 @@ func densityMetricsOf(d tokens.Density) DensityMetrics {
 	return DensityMetrics{
 		ControlHeight:        f64(d.ControlHeight),
 		ChipHeight:           f64(d.ChipHeight()),
+		FieldHeight:          f64(d.FieldHeight),
+		RowHeight:            f64(d.RowHeight),
+		CheckboxRowHeight:    f64(d.CheckboxRowHeight),
 		ToolbarControlHeight: f64(d.ToolbarControlHeight),
 		PaddingX:             f64(d.PaddingX),
 		PaddingY:             f64(d.PaddingY),

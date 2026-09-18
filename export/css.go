@@ -3,6 +3,7 @@ package export
 import (
 	"fmt"
 	stdcolor "image/color"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -144,6 +145,42 @@ func platformVars(p tokens.PlatformColors) []cssVar {
 	return vars
 }
 
+// The bordered toolbar control's drop shadow is the one thing this sheet
+// draws whose GEOMETRY flips with the appearance rather than only its colour,
+// so its reach and offset are emitted per appearance beside the platform's
+// colour set. Its peak coverage is
+// --platform-toolbar-control-shadow, a platform name like every other.
+//
+// MEASURED, components/internal/control's fit, restated here because the
+// module graph runs the other way (components imports theme): light,
+// finder-window-light.png, 23 px of reach with the shadow's rectangle sunk
+// 9 px, which is what tells a #ffffff control from a #ffffff band; dark,
+// finder-window-untinted-dark.png and notes-toolbar.png, 2 px of reach with
+// the rectangle sunk 6 px, the band one 255th deep over seven rows. Which
+// reading answers is the platform's own behaviour and not an appearance this
+// code tests for: where the platform gives the control a rim the control is
+// told from its band by that rim and its fill, and the shadow is a hint sunk
+// under it; where it gives none the shadow is the whole of the step.
+const (
+	toolbarShadowReachLightDp  = 23
+	toolbarShadowOffsetLightDp = 9
+	toolbarShadowReachDarkDp   = 2
+	toolbarShadowOffsetDarkDp  = 6
+)
+
+// toolbarShadowVars renders that geometry for one appearance, told apart by
+// whether the platform draws the control a rim there.
+func toolbarShadowVars(p tokens.PlatformColors) []cssVar {
+	reach, offset := float32(toolbarShadowReachLightDp), float32(toolbarShadowOffsetLightDp)
+	if p.ToolbarControlRim.A != 0 {
+		reach, offset = toolbarShadowReachDarkDp, toolbarShadowOffsetDarkDp
+	}
+	return []cssVar{
+		{"--toolbar-control-shadow-reach", px(reach)},
+		{"--toolbar-control-shadow-offset", px(offset)},
+	}
+}
+
 // typeRoles orders the fifteen type roles under their CSS names, plus
 // code — the sixteenth style outside the type scale, the mono face at
 // body-medium's metrics (G-F0) — emitted last.
@@ -247,6 +284,11 @@ var densityMetrics = []struct {
 	// the control height.
 	{"field-height", func(d tokens.Density) float32 { return d.FieldHeight }},
 	{"row-height", func(d tokens.Density) float32 { return d.RowHeight }},
+	// The checkbox's row: the square footprint the 16 dp glyph is centred in
+	// and the pointer target both the checkbox and the radio offer. Measured
+	// at 22 against the push button's 24 and the list row's 20, so it is a
+	// number of its own and not either of theirs.
+	{"checkbox-row-height", func(d tokens.Density) float32 { return d.CheckboxRowHeight }},
 	// The toolbar control's own height. A bordered control standing in a
 	// toolbar band is 36 on this platform against the dialog control's 24,
 	// measured, so the sheet states it rather than leaving a consumer to
@@ -335,18 +377,37 @@ func scaleVars(s Snapshot) []cssVar {
 	for _, stop := range durationStops {
 		vars = append(vars, cssVar{"--duration-" + stop.name, ms(stop.pick(s.Motion))})
 	}
-	// The focus ring's 2 dp stroke width, mode-invariant, which is why it
-	// is here and the ring's COLOUR is not: the ring wears
+	// The focus halo's band width, mode-invariant, which is why it is here
+	// and the halo's COLOUR is not: the halo wears
 	// --platform-keyboard-focus-indicator, which flips with the appearance.
-	vars = append(vars, cssVar{"--focus-ring-width", px(focusRingWidthDp)})
+	// The platform's measured disabled coverage sits beside it: a switched-off
+	// control is its own fill at that coverage over the surface it stands on,
+	// which is a number rather than a colour and belongs to no appearance.
+	vars = append(vars,
+		cssVar{"--focus-halo-width", px(focusHaloWidthDp)},
+		cssVar{"--disabled-coverage", coverage(tokens.DisabledCoverage)},
+	)
 	return vars
 }
 
-// focusRingWidthDp is the focus ring's stroke width — the 2 dp
-// components/button draws (drawButton's gtx.Dp(2) stroke), identical in
-// every emphasis because keyboard visibility is not a matter of
-// prominence.
-const focusRingWidthDp = 2
+// focusHaloWidthDp is the focus halo's band width — the 4 dp every control in
+// this library draws (components/internal/focus.Width), half of it past the
+// control's own box and half over the control's outermost band. It is
+// identical in every variant because keyboard visibility is not a matter of
+// prominence, and identical at every density because a halo is a keyboard
+// affordance rather than an ornament.
+//
+// MEASURED, save-dialog-{light,dark}.png, the focused "Save As:" field: four
+// px on every side of a box running x 264-495, hard-edged, straddling the box.
+const focusHaloWidthDp = 4
+
+// coverage formats a 0-255 coverage as a CSS percentage, which is the form
+// color-mix() takes it in: a rule states the platform's own colour at the
+// platform's own coverage and lets the browser composite it over whatever is
+// beneath, exactly as theme/color.Fade and Flatten do on the Gio side.
+func coverage(a uint8) string {
+	return strconv.FormatFloat(math.Round(float64(a)/255*1e4)/100, 'f', -1, 64) + "%"
+}
 
 // densityVars renders one density setting's per-setting metrics. The :root
 // block carries tokens.Comfortable's; the .compact override block carries
@@ -405,9 +466,10 @@ func stylesCSS(s Snapshot) string {
 	fontFace("Roboto", "500", "roboto-medium.ttf")
 	fontFace("Roboto Mono", "400", "robotomono-regular.ttf")
 	b.WriteString("\n")
-	block(&b, ":root", append(platformVars(s.PlatformLight), scaleVars(s)...))
+	light := append(platformVars(s.PlatformLight), toolbarShadowVars(s.PlatformLight)...)
+	block(&b, ":root", append(light, scaleVars(s)...))
 	b.WriteString("\n")
-	block(&b, ".dark", platformVars(s.PlatformDark))
+	block(&b, ".dark", append(platformVars(s.PlatformDark), toolbarShadowVars(s.PlatformDark)...))
 	b.WriteString("\n")
 	block(&b, ".compact", densityVars(tokens.Compact))
 	b.WriteString("\n")
@@ -447,18 +509,28 @@ func stylesCSS(s Snapshot) string {
 // The states are the platform's own answers. A press lays
 // --platform-press-overlay over whatever fill the variant carries, and
 // over the page where it carries none, which is how a ghost gets a fill at
-// all. Focus is --platform-keyboard-focus-indicator at --focus-ring-width,
-// the same ring in every variant. Disabled falls a fill back to the push
-// button's own and takes every foreground to
-// --platform-disabled-control-text.
+// all. Focus is the halo: --platform-keyboard-focus-indicator at
+// --focus-halo-width on the control's own outline, the same band in every
+// variant. Disabled fades a fill to the push button's own at
+// --disabled-coverage over the surface the control stands on and takes every
+// foreground to --platform-disabled-control-text.
 //
-// This sheet emits no hover rule and no fade on the disabled fill, and the
-// components draw both: the library lays --platform-hover-overlay over the
-// fill a control carries and fades a switched-off control toward the
-// surface it stands on. The sheet has not been brought in step, and neither
-// has the trigger this sheet still draws with a hairline and a solid
-// triangle; a reader comparing the two is reading a sheet behind the
-// components, not two answers deliberately kept apart.
+// The pointer overlays and the switched-off fade are the platform's answers
+// too, and this sheet states them the way the components draw them: hover
+// lays --platform-hover-overlay over whatever fill the variant carries, a
+// press lays --platform-press-overlay there instead, and a switched-off
+// control is the push button's own fill at --disabled-coverage over the
+// surface it stands on. A coverage over a fill is what color-mix() renders
+// and what theme/color.Fade computes, so the two sides land on the same
+// pixel.
+//
+// No rule in this layer spends a type role's tracking. The library's typeset
+// lays a label out at the role's size, weight and line height and spends no
+// letter spacing at all, so a sheet that spent the role's tracking token
+// would set every label a fraction wider than the component beside it.
+// Whether the token should ever be spent is a typography question and is not
+// answered here; what is answered is that the sheet draws what the library
+// draws.
 //
 // Every pointer/keyboard state rule also carries a forcing twin class
 // (.is-hover, .is-active, .is-focus, .is-checked) grouped into the same
@@ -503,7 +575,7 @@ const componentClasses = `/* ---- Component classes ----
   font-size: var(--font-label-large-size);
   line-height: var(--font-label-large-line-height);
   font-weight: var(--font-label-large-weight);
-  letter-spacing: var(--font-label-large-tracking);
+  letter-spacing: 0;
   background: var(--platform-control-accent);
   color: var(--platform-alternate-selected-control-text);
 }
@@ -550,42 +622,99 @@ const componentClasses = `/* ---- Component classes ----
   fill: currentColor;
 }
 
-/* No hover rule in any variant, and the absence is a sheet behind the
-   components rather than a measurement: no stored capture holds a push
-   button under the pointer, so nothing measures one as exempt, and the
-   library lays the platform's hover overlay on every variant.
-   Held, the platform lays its press overlay over the fill the
-   variant carries - written as a one-colour gradient layer over the
-   background colour, which is how CSS composites a coverage onto a fill in
-   the same space Flatten does, and straight onto the page where the variant
-   carries no fill, which is how a held ghost gets one at all. */
-.btn:active, .btn.is-active {
+/* The bordered toolbar control (components/button's chrome variant, drawn
+   through internal/toolbarface): a capsule at the toolbar band's own measured
+   height - 36 against a dialog control's 24 - cornered at half of it, filled
+   with the platform's measured toolbar control fill, rimmed with the
+   platform's measured value for that rim (which answers no colour in the
+   light appearance, where the platform draws none) and casting the measured
+   drop shadow that tells a light control from a light band. The rim is an
+   inset ring rather than a border so the control's box does not grow, exactly
+   as toolbarface lays its band ON the shape's outline.
+
+   The shadow's ramp is the linear falloff effects/depth draws, approximated
+   by eight stacked spreads each carrying an eighth of the peak, sunk the
+   measured offset below the control and reaching the measured reach out (the
+   two --toolbar-control-shadow-* lengths). Both flip with the appearance,
+   which is why they are emitted per appearance beside the colour set: this is
+   the one thing here whose geometry the platform draws differently light and
+   dark. */
+.btn.chrome {
+  min-height: var(--density-toolbar-control-height);
+  height: var(--density-toolbar-control-height);
+  border: none;
+  border-radius: calc(var(--density-toolbar-control-height) / 2);
+  padding: 0 var(--space-3);
+  background: var(--platform-toolbar-control-fill);
+  color: var(--platform-control-text);
+  --toolbar-shadow-step: color-mix(in srgb, var(--platform-toolbar-control-shadow) 12.5%, transparent);
+  box-shadow:
+    0 var(--toolbar-control-shadow-offset) 0 calc(var(--toolbar-control-shadow-reach) / 8) var(--toolbar-shadow-step),
+    0 var(--toolbar-control-shadow-offset) 0 calc(var(--toolbar-control-shadow-reach) / 4) var(--toolbar-shadow-step),
+    0 var(--toolbar-control-shadow-offset) 0 calc(var(--toolbar-control-shadow-reach) * 3 / 8) var(--toolbar-shadow-step),
+    0 var(--toolbar-control-shadow-offset) 0 calc(var(--toolbar-control-shadow-reach) / 2) var(--toolbar-shadow-step),
+    0 var(--toolbar-control-shadow-offset) 0 calc(var(--toolbar-control-shadow-reach) * 5 / 8) var(--toolbar-shadow-step),
+    0 var(--toolbar-control-shadow-offset) 0 calc(var(--toolbar-control-shadow-reach) * 3 / 4) var(--toolbar-shadow-step),
+    0 var(--toolbar-control-shadow-offset) 0 calc(var(--toolbar-control-shadow-reach) * 7 / 8) var(--toolbar-shadow-step),
+    0 var(--toolbar-control-shadow-offset) 0 var(--toolbar-control-shadow-reach) var(--toolbar-shadow-step),
+    inset 0 0 0 1px var(--platform-toolbar-control-rim);
+}
+/* A chrome control whose whole label is a symbol: the measured 24 dp mark
+   box with the measured 7 dp of clear room a side, so the capsule is 38
+   across at the band's own height. */
+.btn.chrome.icon {
+  width: calc(24px + 2 * 7px);  /* ChromeMarkDp + 2 x ChromeMarkSideDp */
+  height: var(--density-toolbar-control-height);
+  padding: 0;
+}
+.btn.chrome.icon svg {
+  width: 24px;  /* ChromeMarkDp */
+  height: 24px;
+  margin: auto;
+}
+
+/* Under the pointer the platform lays its hover overlay over whatever fill
+   the variant carries, and held its press overlay over that same fill - each
+   written as a one-colour gradient layer over the background colour, which is
+   how CSS composites a coverage onto a fill in the same space Flatten does,
+   and straight onto the page where the variant carries no fill, which is how
+   a ghost gets one at all. A press wins over a hover: the two are one answer
+   and not two laid on each other, so the held rule stands after the hovered
+   one and replaces its layer. */
+.btn:hover:not(:disabled), .btn.is-hover {
+  background-image: linear-gradient(var(--platform-hover-overlay), var(--platform-hover-overlay));
+}
+.btn:active:not(:disabled), .btn.is-active {
   background-image: linear-gradient(var(--platform-press-overlay), var(--platform-press-overlay));
 }
 
-/* Keyboard focus: the platform's own indicator, inset in the control's
-   outermost 2 dp so the button's box does not grow, and the same ring at the
-   same width in every variant - keyboard visibility is not a prominence
-   property. The coverage composites over whatever the ring lies on, which is
-   the fill where the variant has one and the page where it has none: exactly
-   what focus.Ring is handed on the Gio side. */
+/* Keyboard focus: the platform's halo, a --focus-halo-width band lying on the
+   control's own outline with half of it past the box and half over the box's
+   outermost band, so the button's box does not grow and the fill and edge
+   under it stay where they are. The same band at the same width in every
+   variant - keyboard visibility is not a prominence property. The indicator
+   carries a coverage, so the half past the box composites over the page and
+   the half on the box over the control's own fill, which is exactly the pair
+   of colours focus.Halo is handed on the Gio side. */
 .btn:focus-visible, .btn.is-focus {
-  outline: var(--focus-ring-width) solid var(--platform-keyboard-focus-indicator);
-  outline-offset: calc(var(--focus-ring-width) / -2);
+  outline: var(--focus-halo-width) solid var(--platform-keyboard-focus-indicator);
+  outline-offset: calc(var(--focus-halo-width) / -2);
 }
 
-/* Disabled falls a variant that carries a fill back to the push button's
-   fill inside the separator hairline and takes every foreground to the
-   platform's disabled control text. The library fades that fill and that
-   hairline toward the surface the control stands on as well, at the
-   coverage the Save dialog's switched-off checkbox measures; this sheet
-   does not, and is behind it. The padding gives back the hairline's
-   1px, as everywhere else in this sheet, so the drawn box does not grow. A
-   ghost keeps its absence of fill: there is nothing to fall back to. */
+/* Disabled is the platform's fade: a variant that carries a fill falls back
+   to the push button's own fill at --disabled-coverage over the surface the
+   control stands on, its hairline is the separator at that same coverage, and
+   every foreground becomes the platform's disabled control text. The fill is
+   clipped to the padding box so the faded fill and the faded hairline each
+   composite over the page rather than over one another, which is where
+   control.Faded lands them. The padding gives back the hairline's 1px, as
+   everywhere else in this sheet, so the drawn box does not grow. A ghost
+   keeps its absence of fill: there is nothing to fall back to. */
 .btn:disabled {
   cursor: default;
-  background: var(--platform-push-button-fill);
-  border: 1px solid var(--platform-separator);
+  background: color-mix(in srgb, var(--platform-push-button-fill) var(--disabled-coverage), transparent);
+  background-clip: padding-box;
+  border: 1px solid color-mix(in srgb, var(--platform-separator) var(--disabled-coverage), transparent);
   padding: calc(var(--density-padding-y) - 1px) calc(var(--density-padding-x) - 1px);
   color: var(--platform-disabled-control-text);
 }
@@ -628,7 +757,7 @@ const componentClasses = `/* ---- Component classes ----
   font-size: var(--font-label-medium-size);
   line-height: var(--font-label-medium-line-height);
   font-weight: var(--font-label-medium-weight);
-  letter-spacing: var(--font-label-medium-tracking);
+  letter-spacing: 0;
   background: var(--platform-system-gray);
   color: var(--platform-alternate-selected-control-text);
 }
@@ -675,18 +804,19 @@ const componentClasses = `/* ---- Component classes ----
   font-size: var(--font-body-large-size);
   line-height: var(--font-body-large-line-height);
   font-weight: var(--font-body-large-weight);
-  letter-spacing: var(--font-body-large-tracking);
+  letter-spacing: 0;
 }
 .input::placeholder { color: var(--platform-placeholder-text); opacity: 1; }
 
-/* Focus replaces the edge with the ring and draws it at focus.Width, the
-   2 dp the Gio side draws, with the padding giving the two pixels back so the
-   field's outer geometry and its text position do not move. */
+/* Focus adds the halo and moves nothing: the field keeps its own edge, its
+   own fill and its own insets, and wears the --focus-halo-width band on the
+   box it already draws, half past it and half over its outermost band. That
+   is the one focus idiom every control in this library wears (focus.Halo),
+   and the indicator's coverage composites over the page outside the box and
+   over the field's own edge and fill inside it. */
 .input:focus-visible, .input.is-focus {
-  outline: none;
-  border-width: var(--focus-ring-width);
-  border-color: var(--platform-keyboard-focus-indicator);
-  padding: calc(var(--density-padding-y) - var(--focus-ring-width)) calc(var(--space-3) - var(--focus-ring-width));
+  outline: var(--focus-halo-width) solid var(--platform-keyboard-focus-indicator);
+  outline-offset: calc(var(--focus-halo-width) / -2);
 }
 .input:disabled {
   color: var(--platform-disabled-control-text);
@@ -695,93 +825,166 @@ const componentClasses = `/* ---- Component classes ----
   color: var(--platform-disabled-control-text);
 }
 
-/* Dropdown (components/input dropdown.go, drawn by components/picker's field
-   trigger): a trigger is a BUTTON and not a field, so it takes the push
-   button's own fill inside the separator hairline, the control height as its
-   floor, and the control text — a prompt standing in for an unmade choice
-   takes the placeholder instead. Its right side reserves S3 + the 16 dp
-   chevron + S3, the same inset drawTrigger keeps clear of the label. The
-   chevron is drawn by the .select-wrap wrapper — a native select cannot carry
-   a generated child — as a border-built triangle 16 dp across and 8 dp tall
-   (drawChevron's half/quarter geometry) in the platform's secondary label.
-   The whole family's padding-box clip is overridden here: this edge is the
-   separator over the trigger's own fill, so the fill paints under it. */
+/* The pop-up trigger (components/picker's form trigger, which
+   components/input's dropdown forwards to): a BUTTON and not a field, and
+   drawn as the platform's pop-up button rather than as the field beside it.
+
+   MEASURED, save-dialog-{light,dark}.png, the "File Format:" pop-up: the
+   control is 24 px tall, the same height the push button beside it draws and
+   not the text field's 27; a run down its middle gives the push button's own
+   fill from its first row to its last with no darker column at either end, so
+   it draws NO edge and its fill meets the surface directly; its label's
+   origin is 11 columns in from that fill's edge (the measured twelve less the
+   one column of bearing the capture's own first letter carries), five deeper
+   than the field's; and the mark's last column stands 9 clear of the trailing
+   edge. Because there is no edge column, both insets are spent from the
+   fill's own edge and nothing gives a hairline back.
+
+   The pointer states are the pop-up's own. MEASURED,
+   control-hover-{light,dark}.png - the Finder toolbar's view pop-up, the
+   control drawing this very mark, under the pointer: the platform's hover
+   overlay over the fill it stands on. Held, the press overlay over the same
+   fill. Switched off, the fill is the push button's at --disabled-coverage
+   over the surface the trigger stands on, and every foreground over it
+   becomes the platform's disabled control text.
+
+   The trailing room the label is kept clear of is the S3 gap plus the mark's
+   own 8 px plus the measured 9 px of clearance - the gap is the trigger's,
+   what stops a long value running into the mark, and not one of its two
+   ends. */
 .select {
   min-height: var(--density-control-height);
-  padding-right: calc(var(--space-3) * 2 + 16px - 1px);
-  border-color: var(--platform-separator);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 0 calc(var(--space-3) + 8px + 9px) 0 11px;  /* S3 gap + MarkWDp + PopupMarkTrailDp; PopupLeadDp */
   background-color: var(--platform-push-button-fill);
   background-clip: border-box;
   color: var(--platform-control-text);
 }
-.select:focus-visible, .select.is-focus {
-  border-color: var(--platform-keyboard-focus-indicator);
-  padding-right: calc(var(--space-3) * 2 + 16px - var(--focus-ring-width));
+.select:hover:not(:disabled), .select.is-hover {
+  background-image: linear-gradient(var(--platform-hover-overlay), var(--platform-hover-overlay));
 }
-.select:disabled { color: var(--platform-disabled-control-text); }
+.select:active:not(:disabled), .select.is-active {
+  background-image: linear-gradient(var(--platform-press-overlay), var(--platform-press-overlay));
+}
+/* Focus is the halo on the edgeless shape the trigger already draws, and
+   adds nothing else: the insets and the height do not move. */
+.select:focus-visible, .select.is-focus {
+  border: none;
+  padding: 0 calc(var(--space-3) + 8px + 9px) 0 11px;
+  outline: var(--focus-halo-width) solid var(--platform-keyboard-focus-indicator);
+  outline-offset: calc(var(--focus-halo-width) / -2);
+}
+.select:disabled {
+  background-color: color-mix(in srgb, var(--platform-push-button-fill) var(--disabled-coverage), transparent);
+  background-image: none;
+  color: var(--platform-disabled-control-text);
+}
 .select-wrap { position: relative; display: block; }
+
+/* The mark is the platform's pop-up mark: two chevrons stacked point to
+   point, the upper pointing up and the lower down, saying the control holds
+   one of several values and never which way its menu goes. A native select
+   cannot carry a generated child, so the .select-wrap wrapper draws it.
+
+   MEASURED, save-dialog-{light,dark}.png, both appearances agreeing to the
+   pixel: the pair spans 8 columns and 11 rows - each chevron 5 rows with one
+   clear row between them - and its last column stands 9 clear of the fill's
+   trailing edge. The size is FIXED: the Finder toolbar draws the same 8 by 11
+   in a control 36 px tall, so the mark does not scale with what it stands in.
+   The arm's weight is 1.5 px perpendicular, fitted to the capture's coverage.
+
+   It is a masked SVG rather than a border-built triangle because the platform
+   draws two strokes and not a solid wedge: the mask carries the two chevrons
+   at exactly the geometry control.DrawMark strokes, and what shows through is
+   the platform's own name for a control's own marks, --platform-control-text
+   (MEASURED: the pair's covered pixels read the control text's coverage over
+   the trigger's fill to the byte; the secondary label's would land a hundred
+   levels away). */
 .select-wrap::after {
   content: "";
   position: absolute;
-  right: var(--space-3);
+  right: 9px;  /* PopupMarkTrailDp */
   top: 50%;
-  margin-top: -4px; /* half the 8px glyph height */
-  width: 0;
-  height: 0;
-  border-left: 8px solid transparent;  /* 16 dp chevron width */
-  border-right: 8px solid transparent;
-  border-top: 8px solid var(--platform-secondary-label);
+  margin-top: -5.5px;  /* half MarkHDp */
+  width: 8px;   /* MarkWDp */
+  height: 11px; /* MarkHDp: two 5-row chevrons and the clear row between */
+  background: var(--platform-control-text);
+  /* The two chevrons as control.DrawMark strokes them: each arm a V from
+     (0,5) to (4,0) to (8,5) closed back along the base, the closing side
+     offset by the 1.5 px arm's own half-width resolved along the base
+     (1.921 across, 2.401 down at the apex, which is (stroke/2) x sqrt(1+k2)/k
+     for the centreline's k = 2h/w = 1.25). The lower chevron is the same
+     figure inverted one clear row below it. */
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%228%22%20height=%2211%22%20viewBox=%220%200%208%2011%22%3E%3Cpath%20d=%22M0%205L4%200L8%205L6.079%205L4%202.401L1.921%205ZM0%206L4%2011L8%206L6.079%206L4%208.599L1.921%206Z%22/%3E%3C/svg%3E") center / 8px 11px no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%228%22%20height=%2211%22%20viewBox=%220%200%208%2011%22%3E%3Cpath%20d=%22M0%205L4%200L8%205L6.079%205L4%202.401L1.921%205ZM0%206L4%2011L8%206L6.079%206L4%208.599L1.921%206Z%22/%3E%3C/svg%3E") center / 8px 11px no-repeat;
   pointer-events: none;
 }
 .select-wrap:has(.select:disabled)::after {
-  border-top-color: var(--platform-disabled-control-text);
+  background: var(--platform-disabled-control-text);
 }
 
-/* Checkbox (components/input checkbox.go): a 16 dp glyph (checkboxBoxSize,
-   measured off save-dialog-{light,dark}.png — a component constant, not a
-   token; it does not follow density) over the platform's text background,
-   inside the 2 dp field edge every control in this row wears. Checked, the
-   box is the platform's accent under a check mark in
+/* Checkbox (components/input checkbox.go): the 16 dp glyph the Save dialog
+   measures, centred in the density's checkbox row - the square footprint the
+   platform gives a pointer, 22 dp comfortable against the push button's 24
+   and the list row's 20. The glyph does not follow density and the footprint
+   does, so the slack around it is written as the margin that centres it;
+   nothing else in this family moves with the density.
+
+   The corner is the measured 5 dp: a circular fit to the per-row coverage of
+   the switched-off boxes' corner ramp in save-dialog-{light,dark}.png answers
+   5.04 and 5.34 against the same fit's habit of sitting a fifth over
+   everywhere in that reference. The edge is the measured 1 dp of the
+   platform's field hairline - the Save dialog's "Tags:" field is the sheet's
+   one unfocused enabled control that draws an edge at all, and it draws a
+   single pixel of it.
+
+   Checked, the box is the platform's accent under a check mark in
    alternateSelectedControlText, because a fill says a colour was applied and
    only the mark says what that means: a column of fills carries completion in
    hue alone, which is the one channel a reader may not have.
 
-   The mark is drawn, not encoded. Gio strokes the icon set's centre line —
+   The mark is drawn, not encoded. Gio strokes the icon set's centre line -
    (4.5,12) -> (9,16.5) -> (19.5,6) on the set's 24-unit grid, a 2-unit
-   DIAGONAL band, round caps and joins — and at the 16 px glyph one grid unit
+   DIAGONAL band, round caps and joins - and at the 16 px glyph one grid unit
    is 2/3 px, so the band is 1.333 px wide (+/-0.667 either side of the centre)
    and the arms run from (3,8) to (6,11) to (13,4). Each arm is one background
    layer: a linear-gradient banding its own box perpendicular to the arm,
    45deg for the short "\" arm and 135deg for the long "/" one. Every stop is
-   written from 50% because each box is sized to its arm — the segment grown
+   written from 50% because each box is sized to its arm - the segment grown
    by half a band along its own axis, which makes the arm the box's diagonal
    and the box's corners the round caps' own tips:
      short arm: 3.943 px square at 2.529,7.529   (3,8)->(6,11)
      long arm:  7.943 px square at 5.529,3.529   (6,11)->(13,4)
    CSS has no line cap, so the caps come out cut square inside those tips
-   rather than rounded — the same trade the icon set's own SVG files make when
+   rather than rounded - the same trade the icon set's own SVG files make when
    they draw their caps as an explicit contour, and a sub-pixel one at this
    size. background-origin is the border box so the grid is the 16 px glyph
-   the Gio side scales on, not the 12 px inside the edge. */
+   the Gio side scales on, not the 15 px inside the edge. */
 .checkbox, .radio {
   box-sizing: border-box;
   appearance: none;
   flex: none;
   width: 16px;  /* checkboxBoxSize / radioCircleSize: 16 dp, measured */
   height: 16px;
-  margin: 0;
-  border: 2px solid var(--platform-field-edge);
+  /* The slack the density's footprint holds around the glyph, which is what
+     centres it in the row and what a pointer is given. */
+  margin: calc((var(--density-checkbox-row-height) - 16px) / 2);
+  border: 1px solid var(--platform-field-edge);  /* controlEdgeWidth: 1 dp, measured */
   background: var(--platform-text-background);
   background-clip: padding-box;
   cursor: pointer;
 }
+/* Focus is the same halo every other control wears, on the glyph's own
+   outline, riding in the slack the footprint holds around it - so nothing
+   about the control moves when it takes the keyboard. */
 .checkbox:focus-visible, .checkbox.is-focus,
 .radio:focus-visible, .radio.is-focus {
-  outline: var(--focus-ring-width) solid var(--platform-keyboard-focus-indicator);
-  outline-offset: 1px;
+  outline: var(--focus-halo-width) solid var(--platform-keyboard-focus-indicator);
+  outline-offset: calc(var(--focus-halo-width) / -2);
 }
 .checkbox {
-  border-radius: var(--radius-sm);
+  border-radius: 5px;  /* checkboxCornerRadius: measured */
 }
 .checkbox:checked, .checkbox.is-checked {
   border-color: var(--platform-control-accent);
@@ -795,35 +998,46 @@ const componentClasses = `/* ---- Component classes ----
   background-position: 2.529px 7.529px, 5.529px 3.529px;
   background-size: 3.943px 3.943px, 7.943px 7.943px;
 }
-/* Disabled: unchecked, the platform's disabled control text takes the edge
-   and the fill stays; checked, the accent drains — the fill is the
-   platform's disabled control text over the surface, with the mark in the
-   platform's own control text so it still reads. */
+/* Switched off, the glyph is ONE FILL AND NO EDGE at all. MEASURED,
+   save-dialog-{light,dark}.png: both switched-off "Options:" checkboxes read
+   the push button's own fill faded to --disabled-coverage over the sheet, to
+   the byte light and one 255th over on dark green and blue, and neither box
+   draws an edge column in either appearance - its rim is a one-pixel antialiased ramp from this fill
+   to the sheet. The border is kept at its width in transparent so the glyph's
+   drawn box does not move. Checked, the mark takes the colour the
+   switched-off label beside it takes, the platform's tertiary label, no
+   stored capture holding a switched-off checked box. */
 .checkbox:disabled, .radio:disabled {
   cursor: default;
-  border-color: var(--platform-disabled-control-text);
+  border-color: transparent;
+  background-color: color-mix(in srgb, var(--platform-push-button-fill) var(--disabled-coverage), transparent);
+  background-clip: border-box;
 }
 .checkbox:checked:disabled, .checkbox.is-checked:disabled {
-  border-color: var(--platform-disabled-control-text);
-  background-color: var(--platform-disabled-control-text);
   background-image:
-    linear-gradient(45deg, transparent calc(50% - 0.667px), var(--platform-control-text) calc(50% - 0.667px), var(--platform-control-text) calc(50% + 0.667px), transparent calc(50% + 0.667px)),
-    linear-gradient(135deg, transparent calc(50% - 0.667px), var(--platform-control-text) calc(50% - 0.667px), var(--platform-control-text) calc(50% + 0.667px), transparent calc(50% + 0.667px));
+    linear-gradient(45deg, transparent calc(50% - 0.667px), var(--platform-tertiary-label) calc(50% - 0.667px), var(--platform-tertiary-label) calc(50% + 0.667px), transparent calc(50% + 0.667px)),
+    linear-gradient(135deg, transparent calc(50% - 0.667px), var(--platform-tertiary-label) calc(50% - 0.667px), var(--platform-tertiary-label) calc(50% + 0.667px), transparent calc(50% + 0.667px));
 }
 
 /* Radio (components/input radio.go): the same 16 dp glyph as a circle.
-   Selected is the platform's accent filling the whole circle with an 8 dp dot
-   (radioDotSize) in alternateSelectedControlText at its centre — one fill and
-   one mark, exactly the Gio nested ellipses, and no gap ring. */
+   Selected is the platform's accent filling the whole disc with the dot in
+   alternateSelectedControlText at its centre - one fill and one mark, exactly
+   the Gio nested ellipses, and no gap ring.
+
+   The dot is 5 dp across, MEASURED off System Settings' selected radio in
+   both appearances: a least-squares circle fitted to the white dot's
+   sub-pixel edges reads 5.00 px across inside a 16 px disc - five sixteenths
+   of the glyph, not the half a fill drawn to the glyph's own ratio would
+   give. */
 .radio { border-radius: var(--radius-full); }
 .radio:checked, .radio.is-checked {
   border-color: var(--platform-control-accent);
-  background: radial-gradient(circle, var(--platform-alternate-selected-control-text) 4px, var(--platform-control-accent) 4px); /* 8 dp dot */
+  background: radial-gradient(circle, var(--platform-alternate-selected-control-text) 2.5px, var(--platform-control-accent) 2.5px); /* radioDotSize: 5 dp, measured */
   background-clip: border-box;
 }
 .radio:checked:disabled, .radio.is-checked:disabled {
-  border-color: var(--platform-disabled-control-text);
-  background: radial-gradient(circle, var(--platform-control-text) 4px, var(--platform-disabled-control-text) 4px);
+  background: radial-gradient(circle, var(--platform-tertiary-label) 2.5px, color-mix(in srgb, var(--platform-push-button-fill) var(--disabled-coverage), transparent) 2.5px);
+  background-clip: border-box;
 }
 
 /* ---- Card and group ----
@@ -872,7 +1086,7 @@ const componentClasses = `/* ---- Component classes ----
   font-size: var(--font-label-large-size);
   line-height: var(--font-label-large-line-height);
   font-weight: var(--font-label-large-weight);
-  letter-spacing: var(--font-label-large-tracking);
+  letter-spacing: 0;
   color: var(--platform-secondary-label);
 }
 
@@ -905,7 +1119,7 @@ const componentClasses = `/* ---- Component classes ----
   font-size: var(--font-body-medium-size);
   line-height: var(--font-body-medium-line-height);
   font-weight: var(--font-body-medium-weight);
-  letter-spacing: var(--font-body-medium-tracking);
+  letter-spacing: 0;
 }
 .table th, .table td {
   box-sizing: border-box;
@@ -932,7 +1146,7 @@ const componentClasses = `/* ---- Component classes ----
   font-size: var(--font-label-large-size);
   line-height: var(--font-label-large-line-height);
   font-weight: var(--font-label-large-weight);
-  letter-spacing: var(--font-label-large-tracking);
+  letter-spacing: 0;
 }
 .table th.sortable { cursor: pointer; }
 .table th.sort-asc::after, .table th.sort-desc::after {
@@ -1009,7 +1223,7 @@ const componentClasses = `/* ---- Component classes ----
   font-size: var(--font-label-large-size);
   line-height: var(--font-label-large-line-height);
   font-weight: var(--font-label-large-weight);
-  letter-spacing: var(--font-label-large-tracking);
+  letter-spacing: 0;
   color: var(--platform-label);
   border-bottom: 2px solid transparent;  /* underlineDp: the underline slot */
 }
@@ -1116,7 +1330,7 @@ const componentClasses = `/* ---- Component classes ----
   font-size: var(--font-label-large-size);
   line-height: var(--font-label-large-line-height);
   font-weight: var(--font-label-large-weight);
-  letter-spacing: var(--font-label-large-tracking);
+  letter-spacing: 0;
   color: var(--platform-label);
   text-decoration: none;
   user-select: none;
@@ -1144,6 +1358,19 @@ const componentClasses = `/* ---- Component classes ----
   height: 100%;
   margin-left: 17px;  /* SymbolInset */
   margin-right: 7px;  /* LabelInset less SymbolInset and SymbolBox */
+}
+/* Collapsed a row is its symbol and nothing else: drawItem returns after the
+   symbol, so the label, the count and the section heading are not drawn at
+   all, and the symbol box is centred in the rail rather than set at the
+   leading inset. */
+.sidebar.collapsed .sidebar-item-icon {
+  margin-left: calc((48px - 24px) / 2);  /* collapsedDp less SymbolBox, halved */
+  margin-right: 0;
+}
+.sidebar.collapsed .sidebar-item-label,
+.sidebar.collapsed .sidebar-item-count,
+.sidebar.collapsed .sidebar-section {
+  display: none;
 }
 /* A row with no symbol still starts its label at the same column, so the
    names of a list whose entries differ still line up. */
@@ -1183,7 +1410,7 @@ const componentClasses = `/* ---- Component classes ----
   font-size: var(--font-label-small-size);
   line-height: var(--font-label-small-line-height);
   font-weight: var(--font-label-small-weight);
-  letter-spacing: var(--font-label-small-tracking);
+  letter-spacing: 0;
   color: var(--platform-secondary-label);
   user-select: none;
 }
@@ -1201,7 +1428,7 @@ const componentClasses = `/* ---- Component classes ----
   font-size: var(--font-title-small-size);
   line-height: var(--font-title-small-line-height);
   font-weight: var(--font-title-small-weight);
-  letter-spacing: var(--font-title-small-tracking);
+  letter-spacing: 0;
 }
 .crumb {
   color: var(--platform-link);
@@ -1230,15 +1457,15 @@ const componentClasses = `/* ---- Component classes ----
   border-left: 6px solid var(--platform-secondary-label);  /* 6 dp deep, apex along +X */
 }
 
-/* The keyboard ring, identical to every other control's: per-cell for the
+/* The keyboard halo, identical to every other control's: per-cell for the
    navbar, tabs and breadcrumb (each cell is its own Clickable focus tag); on
    the rail itself for the sidebar, whose single stop is the item list. */
 .navbar-link:focus-visible, .navbar-link.is-focus,
 .tab:focus-visible, .tab.is-focus,
 .crumb:focus-visible, .crumb.is-focus,
 .sidebar:focus-visible, .sidebar.is-focus {
-  outline: var(--focus-ring-width) solid var(--platform-keyboard-focus-indicator);
-  outline-offset: calc(var(--focus-ring-width) / -2);
+  outline: var(--focus-halo-width) solid var(--platform-keyboard-focus-indicator);
+  outline-offset: calc(var(--focus-halo-width) / -2);
 }
 
 /* ---- Overlays ----
@@ -1327,7 +1554,7 @@ const componentClasses = `/* ---- Component classes ----
   font-size: var(--font-title-medium-size);
   line-height: var(--font-title-medium-line-height);
   font-weight: var(--font-title-medium-weight);
-  letter-spacing: var(--font-title-medium-tracking);
+  letter-spacing: 0;
 }
 
 /* The footer row (modal.go footerWidget): right-aligned actions with S2
@@ -1384,6 +1611,127 @@ const componentClasses = `/* ---- Component classes ----
   border-right: 6px solid var(--platform-window-background);
 }
 
+/* Menu (components/picker menu.go, the surface its trigger opens): the
+   platform's menu as the Level entry gives every floating surface - the
+   window's own background under the measured floating shadow, which is the
+   whole of what tells the menu's fill from the window's behind it, inside the
+   platform's separator laid ON the plane's outline so the edge costs the
+   plane no height.
+
+   The plane's corner and the rows' pill are NOT MEASURED: no stored capture
+   holds an open menu at all, so each is the corner and the inset of the one
+   pill the reference does measure - the sidebar's selected row, inset 10 from
+   its rail and cornered at 8 - and the capture that would settle a menu's own
+   is on the reference's list.
+
+   A row is the control height tall with the density's vertical padding, its
+   mark box standing 10 in from the leading edge at the 16 dp size a mark
+   beside a line of body text is drawn at, its label starting a text lead
+   after that box, and 16 clear at the trailing end. The current row wears the
+   pill and takes the foreground the platform pairs with that fill; nothing
+   else moves.
+
+   An open menu stands OVER its trigger with the current row on the trigger's
+   own label rather than dropping below it, which is placement and the page's
+   to arrange - the class carries the surface and the rows. */
+.menu {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-width: 48px;
+  overflow: hidden;
+  border-radius: 8px;  /* planeRadius: the sidebar pill's own corner */
+  background: var(--platform-window-background);
+  color: var(--platform-label);
+  font-family: var(--font-family);
+  font-size: var(--font-body-large-size);
+  line-height: var(--font-body-large-line-height);
+  font-weight: var(--font-body-large-weight);
+  letter-spacing: 0;
+  --floating-shadow-step: color-mix(in srgb, var(--platform-floating-shadow) 12.5%, transparent);
+  box-shadow:
+    0 0 0 3px var(--floating-shadow-step),
+    0 0 0 6px var(--floating-shadow-step),
+    0 0 0 9px var(--floating-shadow-step),
+    0 0 0 12px var(--floating-shadow-step),
+    0 0 0 15px var(--floating-shadow-step),
+    0 0 0 18px var(--floating-shadow-step),
+    0 0 0 21px var(--floating-shadow-step),
+    0 0 0 24px var(--floating-shadow-step),
+    inset 0 0 0 1px var(--platform-separator);  /* edgeDp, laid on the outline */
+}
+.menu-item {
+  box-sizing: border-box;
+  position: relative;
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  min-height: var(--density-control-height);
+  padding: var(--density-padding-y) 16px var(--density-padding-y) 32px;  /* selectionInset + TextTrail; selectionInset + markBox + TextLead */
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+/* The pill is a layer behind the row's own content rather than the row's
+   fill, because it is inset from the plane while the mark column is not. */
+.menu-item.selected { color: var(--platform-alternate-selected-control-text); }
+.menu-item.selected::before {
+  content: "";
+  position: absolute;
+  inset: 0 10px;  /* selectionInsetDp */
+  z-index: -1;
+  border-radius: 8px;  /* selectionRadiusDp */
+  background: var(--platform-sidebar-selection);
+}
+/* The check beside the current item, drawn in the row's own foreground out of
+   the same two gradient bands the checkbox's mark is drawn from, in a 16 dp
+   box standing 10 in from the plane's leading edge. */
+.menu-item.selected::after {
+  content: "";
+  position: absolute;
+  left: 10px;  /* selectionInsetDp */
+  top: 50%;
+  margin-top: -8px;
+  width: 16px;  /* markBoxDp */
+  height: 16px;
+  background-image:
+    linear-gradient(45deg, transparent calc(50% - 0.667px), currentColor calc(50% - 0.667px), currentColor calc(50% + 0.667px), transparent calc(50% + 0.667px)),
+    linear-gradient(135deg, transparent calc(50% - 0.667px), currentColor calc(50% - 0.667px), currentColor calc(50% + 0.667px), transparent calc(50% + 0.667px));
+  background-repeat: no-repeat;
+  background-position: 2.529px 7.529px, 5.529px 3.529px;
+  background-size: 3.943px 3.943px, 7.943px 7.943px;
+}
+
+/* Pane (patterns/pane): the platform's sidebar is an inset rounded panel
+   standing inside the window, not a flush column parted by a seam. MEASURED
+   off the stored Voice Memos captures: the panel is inset 8 from the window's
+   leading, top and bottom edges, cornered at 18 - concentric with the
+   window's own 26 one margin out - wears a 1 px rim just inside its edge in
+   the platform's measured value for it, and casts a shadow onto what lies
+   beside it from a rectangle sunk 9 below the panel, carrying 24 out. The
+   rim is an inset ring so the panel's box does not grow, and the shadow is
+   the same eight-step approximation of effects/depth's linear falloff the
+   floating surfaces take. The content beside it is the window's own plane:
+   the rim and the shadow are the boundary, and no seam is drawn. */
+.pane {
+  box-sizing: border-box;
+  overflow: hidden;
+  margin: 8px;  /* MarginDp */
+  border-radius: 18px;  /* RadiusDp: the window's 26 less one margin */
+  background: var(--platform-sidebar-material);
+  --pane-shadow-step: color-mix(in srgb, var(--platform-pane-shadow) 12.5%, transparent);
+  box-shadow:
+    0 9px 0 3px var(--pane-shadow-step),
+    0 9px 0 6px var(--pane-shadow-step),
+    0 9px 0 9px var(--pane-shadow-step),
+    0 9px 0 12px var(--pane-shadow-step),
+    0 9px 0 15px var(--pane-shadow-step),
+    0 9px 0 18px var(--pane-shadow-step),
+    0 9px 0 21px var(--pane-shadow-step),
+    0 9px 0 24px var(--pane-shadow-step),  /* ShadowSinkDp, ShadowReachDp */
+    inset 0 0 0 1px var(--platform-pane-rim);  /* RimDp */
+}
+
 /* Tooltip (components/tooltip tooltip.go drawSurface): the window background
    inside the platform's separator under a label in the platform's label
    colour, label-small, radius Sm, S2/S1 padding measured from the outer edge,
@@ -1406,7 +1754,7 @@ const componentClasses = `/* ---- Component classes ----
   font-size: var(--font-label-small-size);
   line-height: var(--font-label-small-line-height);
   font-weight: var(--font-label-small-weight);
-  letter-spacing: var(--font-label-small-tracking);
+  letter-spacing: 0;
 }
 
 /* Toast: one queued notification — 240 dp wide, a 36 dp legibility floor that
@@ -1433,7 +1781,7 @@ const componentClasses = `/* ---- Component classes ----
   font-size: var(--font-label-medium-size);
   line-height: var(--font-label-medium-line-height);
   font-weight: var(--font-label-medium-weight);
-  letter-spacing: var(--font-label-medium-tracking);
+  letter-spacing: 0;
 }
 .toast.success {
   background: linear-gradient(to right, var(--platform-system-green) 0 var(--space-2), var(--platform-window-background) var(--space-2));

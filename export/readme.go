@@ -75,7 +75,8 @@ func readmeMD(s Snapshot) string {
 	fmt.Fprintf(&b, "| `--shadow-<level>` | %s | dp box-shadows — the cue a floating transient carries (menus, dialogs, tooltips) over the platform fill it stands in; resting surfaces cast none |\n", joinTokens("--shadow-", shadowNames()))
 	fmt.Fprintf(&b, "| `--ease-<name>` | %s | easing presets as `cubic-bezier()`; emphasized is the documented single-bezier stand-in for the published two-segment path |\n", joinTokens("--ease-", easeNames()))
 	fmt.Fprintf(&b, "| `--duration-<stop>` | %s | duration stops, ms; the reduce-motion variant zeroes them |\n", joinTokens("--duration-", durationNames()))
-	b.WriteString("| interaction states | `--focus-ring-width` | the ring's 2 px stroke, mode-invariant, unlike the ring's colour, which is `--platform-keyboard-focus-indicator` and flips with the appearance |\n\n")
+	b.WriteString("| interaction states | `--focus-halo-width`, `--disabled-coverage` | the focus halo's 4 px band and the platform's measured disabled coverage as a percentage, both mode-invariant, unlike the halo's colour, which is `--platform-keyboard-focus-indicator` and flips with the appearance |\n")
+	b.WriteString("| `--toolbar-control-shadow-*` | `--toolbar-control-shadow-reach`, `--toolbar-control-shadow-offset` | the bordered toolbar control's drop shadow is the one material whose GEOMETRY the platform draws differently under the two appearances, so its reach and the depth its rectangle is sunk are stated per appearance beside the colour set; its peak is `--platform-toolbar-control-shadow` |\n\n")
 
 	b.WriteString("## Component classes\n\n" +
 		"`styles.css` ends with the component class layer, defined over the tokens\n" +
@@ -107,20 +108,28 @@ func readmeMD(s Snapshot) string {
 		"pronounced variants — `.btn.tonal`, the platform's ordinary push button\n" +
 		"(`--platform-push-button-fill` under `--platform-control-text`, inside a\n" +
 		"`--platform-separator` hairline), and `.btn.ghost`, its borderless kind\n" +
-		"(no fill, `--platform-control-text`). Nothing tints on hover: a Finder\n" +
-		"toolbar button does and a Save dialog's push button does not, and this\n" +
-		"sheet's classes are push buttons. Held (`:active`),\n" +
-		"`--platform-press-overlay` goes over whatever fill the variant carries\n" +
-		"and over the page where it carries none. Keyboard focus\n" +
-		"(`:focus-visible`) keeps the resting fill and insets\n" +
-		"`--platform-keyboard-focus-indicator` at `--focus-ring-width` — the same\n" +
-		"ring at the same width in every variant, because keyboard visibility is\n" +
-		"not a prominence property. Disabled (`:disabled`) is the platform's own\n" +
-		"answer rather than a fade: the fill falls back to the push button's\n" +
-		"inside the separator hairline and every foreground becomes\n" +
-		"`--platform-disabled-control-text`. `.btn.icon` is the icon-only form: a\n" +
-		"square the density's control height on a side, the glyph (an inline SVG\n" +
-		"on `currentColor`) inset by the density's vertical padding.\n\n" +
+		"(no fill, `--platform-control-text`). Under the pointer (`:hover`)\n" +
+		"`--platform-hover-overlay` goes over whatever fill the variant carries,\n" +
+		"and held (`:active`) `--platform-press-overlay` goes there instead, a\n" +
+		"press winning over a hover; over the page where the variant carries no\n" +
+		"fill, which is how a ghost gets one at all. Keyboard focus\n" +
+		"(`:focus-visible`) keeps the resting fill and lays\n" +
+		"`--platform-keyboard-focus-indicator` on the control's own outline at\n" +
+		"`--focus-halo-width`, half the band past the box and half over it — the\n" +
+		"same band at the same width in every variant, because keyboard\n" +
+		"visibility is not a prominence property. Disabled (`:disabled`) is the\n" +
+		"platform's fade: the fill falls back to the push button's own at\n" +
+		"`--disabled-coverage` over the surface the control stands on, its\n" +
+		"hairline to the separator at that same coverage, and every foreground\n" +
+		"becomes `--platform-disabled-control-text`. `.btn.icon` is the icon-only\n" +
+		"form: a square the density's control height on a side, the glyph (an\n" +
+		"inline SVG on `currentColor`) inset by the density's vertical padding.\n" +
+		"`.btn.chrome` is the bordered toolbar control: a capsule at\n" +
+		"`--density-toolbar-control-height` cornered at half of it, filled with\n" +
+		"`--platform-toolbar-control-fill` inside `--platform-toolbar-control-rim`\n" +
+		"(which answers no colour in the light appearance, where the platform\n" +
+		"draws none) and casting the measured drop shadow that tells a light\n" +
+		"control from a light band.\n\n" +
 		"`.badge` is the inline annotation: `label-medium` text on the platform's\n" +
 		"system colour for the status it carries, under\n" +
 		"`--platform-alternate-selected-control-text` — white in both\n" +
@@ -139,20 +148,28 @@ func readmeMD(s Snapshot) string {
 		"native input types with `appearance: none`. They resolve exactly as\n" +
 		"`components/input` does: `--platform-text-background` under\n" +
 		"`--platform-text`, `--platform-placeholder-text` for a prompt,\n" +
-		"`--platform-field-edge` on the resting edge, focus replacing that edge\n" +
-		"with `--platform-keyboard-focus-indicator` at `--focus-ring-width`, and\n" +
+		"`--platform-field-edge` on the resting edge, focus adding the halo on\n" +
+		"the box the control already draws and moving nothing, and\n" +
 		"`--platform-disabled-control-text` where the control cannot be used —\n" +
 		"the fill staying exactly where it was, because the platform fades the\n" +
 		"wording and leaves the control. A text field's height floor is\n" +
 		"`--density-field-height`, not the control height: the platform draws a\n" +
-		"field shorter than the button beside it. The dropdown trigger is the\n" +
-		"exception in this family and is a BUTTON rather than a field, so\n" +
-		"`.select` takes the push button's fill, the separator hairline and the\n" +
-		"control height. Checked, the box is `--platform-control-accent` under a\n" +
-		"check mark drawn from the icon set's grid as two gradient bands — a fill\n" +
-		"says a colour was applied and only the mark says what it means. The\n" +
-		"radio's selected state is the same accent filling the circle with an\n" +
-		"8 dp white dot at its centre.\n\n" +
+		"field shorter than the button beside it. The pop-up trigger is the\n" +
+		"exception in this family and is a BUTTON rather than a field: `.select`\n" +
+		"takes the push button's fill at the control height, draws NO edge at\n" +
+		"all — its fill meets the surface directly, measured — sets its label\n" +
+		"11 px in from that fill's edge, and wears the platform's pop-up mark,\n" +
+		"the 8 by 11 chevron pair masked out of `--platform-control-text` with\n" +
+		"its last column 9 px clear of the trailing edge. `.menu` is the surface\n" +
+		"it opens. The checkbox and the radio draw their 16 px glyph centred in\n" +
+		"`--density-checkbox-row-height`, the square footprint the platform gives\n" +
+		"a pointer, with the measured 5 px corner and the measured 1 px edge.\n" +
+		"Checked, the box is `--platform-control-accent` under a check mark drawn\n" +
+		"from the icon set's grid as two gradient bands — a fill says a colour was\n" +
+		"applied and only the mark says what it means. The radio's selected state\n" +
+		"is the same accent filling the disc with a 5 px white dot at its centre,\n" +
+		"the measured five sixteenths of the glyph. Switched off, both are one\n" +
+		"fill and no edge: the push button's own fill at `--disabled-coverage`.\n\n" +
 		"`.card` is the platform's grouped box: `--platform-card-fill`, a small\n" +
 		"step of fill from the surface it stands on, with no hairline and no\n" +
 		"shadow. `.group` is the other half of that ruling — a\n" +
@@ -164,10 +181,15 @@ func readmeMD(s Snapshot) string {
 		"and `.crumbs` — stands on `--platform-sidebar-material`, the chrome, and\n" +
 		"draws the separator where two flush regions meet; selection is\n" +
 		"`--platform-selected-content-background`, as an underline on a link or a\n" +
-		"tab and as the row's own fill on a rail. The overlay family —\n" +
-		"`.scrim`/`.dialog`, `.popover`, `.tooltip`, `.toast` — is filled with\n" +
-		"`--platform-window-background`, which is what every floating surface on\n" +
-		"this platform is filled with, and floats on\n" +
+		"tab and as the row's own fill on a rail. `.pane` is the platform's\n" +
+		"sidebar as it actually stands: an inset rounded panel 8 px off the\n" +
+		"window's edges, cornered at 18, wearing `--platform-pane-rim` just\n" +
+		"inside its edge and casting `--platform-pane-shadow` onto what stands\n" +
+		"beside it — the rim and the shadow are the boundary, and no seam is\n" +
+		"drawn. The overlay family —\n" +
+		"`.scrim`/`.dialog`, `.popover`, `.tooltip`, `.toast`, `.menu` — is filled\n" +
+		"with `--platform-window-background`, which is what every floating surface\n" +
+		"on this platform is filled with, and floats on\n" +
 		"`--platform-floating-shadow`.\n\n")
 
 	b.WriteString("## Levels and the shadow\n\n" +
@@ -192,9 +214,13 @@ func readmeMD(s Snapshot) string {
 		"controls, 15 dp chips, 7/0 dp padding) is the `.compact` class override,\n" +
 		"scoping to any subtree the way `.dark` scopes colours. The chip height is\n" +
 		"the control height less 4 dp in both settings — one relation, not a second\n" +
-		"scale. A text field and a stacked row are not controls and carry their own\n" +
-		"measured heights: `--density-field-height` (27 dp comfortable, 21 compact)\n" +
-		"and `--density-row-height` (20 dp, 19 compact).\n" +
+		"scale. A text field, a stacked row, a checkbox's row and a toolbar\n" +
+		"control are not that control and carry their own measured heights:\n" +
+		"`--density-field-height` (27 dp comfortable, 21 compact),\n" +
+		"`--density-row-height` (20 dp, 19 compact),\n" +
+		"`--density-checkbox-row-height` (22 dp, 17 compact) and\n" +
+		"`--density-toolbar-control-height` (36 dp in both, no capture holding a\n" +
+		"toolbar drawn small).\n" +
 		"A control's pointer target is the control: what it draws at\n" +
 		"`--density-control-height` is what a pointer has to land on, so compact\n" +
 		"shrinks the target with the pixels.\n" +

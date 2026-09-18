@@ -31,7 +31,7 @@ const chromeCSS = `body {
   font-family: var(--font-family), system-ui, sans-serif;
   font-size: var(--font-body-medium-size);
   line-height: var(--font-body-medium-line-height);
-  letter-spacing: var(--font-body-medium-tracking);
+  letter-spacing: 0;
 }
 main {
   max-width: 64rem;
@@ -48,21 +48,21 @@ h1 {
   font-size: var(--font-headline-large-size);
   line-height: var(--font-headline-large-line-height);
   font-weight: var(--font-headline-large-weight);
-  letter-spacing: var(--font-headline-large-tracking);
+  letter-spacing: 0;
   margin: var(--space-6) 0 var(--space-2);
 }
 h2 {
   font-size: var(--font-title-large-size);
   line-height: var(--font-title-large-line-height);
   font-weight: var(--font-title-large-weight);
-  letter-spacing: var(--font-title-large-tracking);
+  letter-spacing: 0;
   margin: var(--space-10) 0 var(--space-3);
 }
 h3 {
   font-size: var(--font-title-medium-size);
   line-height: var(--font-title-medium-line-height);
   font-weight: var(--font-title-medium-weight);
-  letter-spacing: var(--font-title-medium-tracking);
+  letter-spacing: 0;
   margin: var(--space-6) 0 var(--space-2);
 }
 .intro {
@@ -73,7 +73,7 @@ h3 {
   font-size: var(--font-label-small-size);
   line-height: var(--font-label-small-line-height);
   font-weight: var(--font-label-small-weight);
-  letter-spacing: var(--font-label-small-tracking);
+  letter-spacing: 0;
   color: var(--platform-secondary-label);
   margin: var(--space-1) 0 0;
 }
@@ -82,7 +82,7 @@ h3 {
   font-size: var(--font-label-large-size);
   line-height: var(--font-label-large-line-height);
   font-weight: var(--font-label-large-weight);
-  letter-spacing: var(--font-label-large-tracking);
+  letter-spacing: 0;
   padding: var(--space-2) var(--space-4);
   color: var(--platform-label);
   background: var(--platform-card-fill);
@@ -292,8 +292,16 @@ const typePageCSS = `.type-role {
 `
 
 // typeHTML renders foundations/type.html: the fifteen type roles plus the
-// code style at their real size, weight, line height and tracking, each styled
-// entirely through its --font-<role>-* vars and annotated with the numbers.
+// code style at their real size, weight and line height, each styled entirely
+// through its --font-<role>-* vars and annotated with the numbers, the
+// recorded tracking among them.
+//
+// No specimen SPENDS that tracking. The library's typeset lays a label out at
+// the role's size, weight and line height and spends no letter spacing at
+// all, so a specimen set with the token would be a fraction wider than the
+// component beside it and the page would picture something nothing draws.
+// The number is printed because the token carries it; the drawing is the
+// library's.
 // The code specimen additionally names its own family through
 // var(--font-family-code) — the one role that does not inherit the body face.
 func typeHTML(s Snapshot) string {
@@ -307,16 +315,19 @@ func typeHTML(s Snapshot) string {
 			specimen = "if mono[0] != prose { align() }"
 		}
 		fmt.Fprintf(&b, "<section class=\"type-role\">\n")
-		fmt.Fprintf(&b, "<p class=\"specimen\" style=\"%[2]sfont-size: var(--font-%[1]s-size); line-height: var(--font-%[1]s-line-height); font-weight: var(--font-%[1]s-weight); letter-spacing: var(--font-%[1]s-tracking)\">%[3]s</p>\n",
+		fmt.Fprintf(&b, "<p class=\"specimen\" style=\"%[2]sfont-size: var(--font-%[1]s-size); line-height: var(--font-%[1]s-line-height); font-weight: var(--font-%[1]s-weight); letter-spacing: 0\">%[3]s</p>\n",
 			role.name, family, html.EscapeString(specimen))
-		fmt.Fprintf(&b, "<p class=\"annot\">%s &middot; %s / %s &middot; weight %d &middot; tracking %s</p>\n",
+		fmt.Fprintf(&b, "<p class=\"annot\">%s &middot; %s / %s &middot; weight %d &middot; tracking %s, spent nowhere</p>\n",
 			role.name, px(style.Size), px(style.LineHeight), style.Weight, px(style.Tracking))
 		b.WriteString("</section>\n")
 	}
-	intro := fmt.Sprintf("Every type role at its real size, weight, line height and tracking, styled through the "+
+	intro := fmt.Sprintf("Every type role at its real size, weight and line height, styled through the "+
 		"<code>--font-&lt;role&gt;-*</code> tokens. The face is the family the tokens name &mdash; %s, and %s for the "+
 		"code style &mdash; via <code>var(--font-family)</code> and <code>var(--font-family-code)</code>; the browser "+
-		"must have them installed, otherwise the system fallback face renders at the same metrics.",
+		"must have them installed, otherwise the system fallback face renders at the same metrics. "+
+		"Each role's recorded tracking is printed beside it and spent by nothing: the library's typeset "+
+		"lays a label out at the role's size, weight and line height and spends no letter spacing at all, "+
+		"so a specimen set with the token would be a fraction wider than the component beside it.",
 		html.EscapeString(s.Typography.BodyLarge.Typeface), html.EscapeString(s.Typography.Code.Typeface))
 	return page("Type — Vibrant Gio foundations", "Type", intro, typePageCSS, b.String())
 }
@@ -414,6 +425,15 @@ const layoutPageCSS = `.space-row {
   color: var(--platform-label);
   font-size: var(--font-body-large-size);
 }
+/* The checkbox's footprint, shown with the sheet's own .checkbox standing in
+   it: the glyph's margin is the slack that centres it, so the wrapper comes
+   out exactly the density's checkbox row square. The min-height states the
+   metric the wrapper is pinned by. */
+.checkbox-row-bar {
+  display: inline-block;
+  min-height: var(--density-checkbox-row-height);
+  background: var(--platform-alternating-content-background);
+}
 .toolbar-bar {
   height: var(--density-toolbar-control-height);
   padding: 0 var(--space-3);
@@ -493,6 +513,9 @@ func layoutHTML(s Snapshot) string {
 		b.WriteString("<div class=\"row-bar\">Stacked row</div>\n")
 		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-row-height</code> &middot; %s &mdash; a pin, not a floor: rows tile</p>\n",
 			px(setting.d.RowHeight))
+		b.WriteString("<div><span class=\"checkbox-row-bar\"><input class=\"checkbox\" type=\"checkbox\" aria-label=\"checkbox row specimen\"></span></div>\n")
+		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-checkbox-row-height</code> &middot; %s &mdash; the square footprint the 16 px glyph is centred in, and the pointer target a checkbox and a radio offer</p>\n",
+			px(setting.d.CheckboxRowHeight))
 		b.WriteString("<div><span class=\"toolbar-bar\">Toolbar control</span></div>\n")
 		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-toolbar-control-height</code> &middot; %s &mdash; a control standing in a toolbar band is its own control, taller than the one in a dialog</p>\n",
 			px(setting.d.ToolbarControlHeight))

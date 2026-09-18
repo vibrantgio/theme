@@ -140,18 +140,36 @@ func TestRoundTripColors(t *testing.T) {
 		}
 	}
 
+	// The bordered toolbar control's shadow is the one thing here whose
+	// GEOMETRY the platform draws differently under the two appearances —
+	// 23 px of reach sunk 9 light against 2 sunk 6 dark — so its two lengths
+	// are emitted per appearance beside the colour set and must parse back
+	// to what toolbarShadowVars read.
+	for _, scheme := range schemes {
+		for _, v := range toolbarShadowVars(scheme.platform) {
+			if got := scheme.vars[v.name]; got != v.value {
+				t.Errorf("%s = %q, want %q", v.name, got, v.value)
+			}
+		}
+	}
+
 	// The dark block carries exactly the overrides that resolve against an
 	// appearance — every variable it declares must exist in :root, and
-	// nothing but the platform's own set may differ between the two.
+	// nothing but what the appearance itself decides may differ between the
+	// two: the platform's own colour set, plus the toolbar shadow's geometry.
+	appearanceOnly := map[string]bool{}
+	for _, v := range toolbarShadowVars(snap.PlatformDark) {
+		appearanceOnly[v.name] = true
+	}
 	for name := range dark {
 		if _, ok := root[name]; !ok {
 			t.Errorf(".dark declares %s which :root does not", name)
 		}
-		if !strings.HasPrefix(name, "--platform-") {
+		if !strings.HasPrefix(name, "--platform-") && !appearanceOnly[name] {
 			t.Errorf(".dark declares non-scheme variable %s", name)
 		}
 	}
-	if want := len(platformNames); len(dark) != want {
+	if want := len(platformNames) + len(appearanceOnly); len(dark) != want {
 		t.Errorf(".dark declares %d variables, want %d", len(dark), want)
 	}
 }
@@ -308,8 +326,13 @@ func TestRoundTripButtonClasses(t *testing.T) {
 	snap, sheet, _ := writeDefault(t)
 	root := sheet[":root"]
 
-	if got := wantPx(t, "--focus-ring-width", root["--focus-ring-width"]); got != 2 {
-		t.Errorf("--focus-ring-width = %v, want the 2 dp stroke components/button draws", got)
+	if got := wantPx(t, "--focus-halo-width", root["--focus-halo-width"]); got != 4 {
+		t.Errorf("--focus-halo-width = %v, want the 4 dp band every control in this library draws", got)
+	}
+	// The platform's measured disabled coverage, as the percentage
+	// color-mix() takes: 170 of 255.
+	if got, want := root["--disabled-coverage"], coverage(tokens.DisabledCoverage); got != want {
+		t.Errorf("--disabled-coverage = %q, want %q", got, want)
 	}
 	// The class layer itself: the platform's names only, and no literal
 	// colour anywhere.
@@ -347,21 +370,35 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		// Ghost carries no fill at all.
 		".btn.ghost {",
 		"background: transparent;",
-		// No hover rule in any variant: the sheet is behind the components,
-		// which lay the platform's hover overlay on every one. Held, the
-		// press overlay goes over the fill as a one-colour gradient layer.
-		".btn:active, .btn.is-active {",
+		// The pointer overlays the platform draws on every variant, each a
+		// one-colour gradient layer over whatever fill the variant carries,
+		// with the press standing after the hover so it replaces it.
+		".btn:hover:not(:disabled), .btn.is-hover {",
+		"background-image: linear-gradient(var(--platform-hover-overlay), var(--platform-hover-overlay));",
+		".btn:active:not(:disabled), .btn.is-active {",
 		"background-image: linear-gradient(var(--platform-press-overlay), var(--platform-press-overlay));",
-		// One ring, one width, every variant, and its forcing twins: a
+		// One halo, one width, every variant, and its forcing twins: a
 		// static page shows a state through a class grouped into the same
 		// rule as the live pseudo-class, never through duplicated
 		// declarations.
-		"outline: var(--focus-ring-width) solid var(--platform-keyboard-focus-indicator);",
+		"outline: var(--focus-halo-width) solid var(--platform-keyboard-focus-indicator);",
+		"outline-offset: calc(var(--focus-halo-width) / -2);",
 		".btn:focus-visible, .btn.is-focus {",
 		".checkbox:focus-visible, .checkbox.is-focus,",
 		".radio:focus-visible, .radio.is-focus {",
-		// Disabled is the platform's pair, not a fade of the resting colours.
+		// Disabled fades the fill to the push button's own at the platform's
+		// measured coverage and takes every foreground to its disabled text.
+		"background: color-mix(in srgb, var(--platform-push-button-fill) var(--disabled-coverage), transparent);",
 		"color: var(--platform-disabled-control-text);",
+		// The bordered toolbar control: the band's own measured height,
+		// capsule corners at half of it, the platform's toolbar fill and rim,
+		// and the measured shadow whose geometry flips with the appearance.
+		".btn.chrome {",
+		"min-height: var(--density-toolbar-control-height);",
+		"border-radius: calc(var(--density-toolbar-control-height) / 2);",
+		"background: var(--platform-toolbar-control-fill);",
+		"inset 0 0 0 1px var(--platform-toolbar-control-rim);",
+		"0 var(--toolbar-control-shadow-offset) 0 var(--toolbar-control-shadow-reach) var(--toolbar-shadow-step),",
 		// Icon-only: a control-height square, glyph inset by PaddingY.
 		"width: var(--density-control-height);",
 		"padding: var(--density-padding-y);",
@@ -383,20 +420,30 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"min-height: var(--density-field-height);",
 		"font-size: var(--font-body-large-size);",
 		".input::placeholder { color: var(--platform-placeholder-text); opacity: 1; }",
-		"border-color: var(--platform-keyboard-focus-indicator);",
-		// The dropdown trigger is a button, not a field.
+		// The pop-up trigger is a button and not a field: the control
+		// height, no edge at all, the measured 11 dp lead and the 9 dp the
+		// mark stands clear of the trailing edge, and the mark itself as the
+		// platform's 8 by 11 chevron pair masked out of the platform's own
+		// name for a control's marks.
 		".select {",
 		"background-color: var(--platform-push-button-fill);",
-		"border-top: 8px solid var(--platform-secondary-label);",
-		// Checkbox/radio: the 16 dp measured glyph inside the 2 dp field
-		// edge; checked is the accent under a mark drawn out of gradients
-		// rather than encoded as an image, so the no-literal guard above
-		// still holds over the whole layer.
-		"border: 2px solid var(--platform-field-edge);",
+		"padding: 0 calc(var(--space-3) + 8px + 9px) 0 11px;",
+		"right: 9px;  /* PopupMarkTrailDp */",
+		"width: 8px;   /* MarkWDp */",
+		"height: 11px; /* MarkHDp: two 5-row chevrons and the clear row between */",
+		"background: var(--platform-control-text);",
+		// Checkbox/radio: the 16 dp measured glyph centred in the density's
+		// checkbox row, inside the 1 dp measured field edge, cornered at the
+		// measured 5; checked is the accent under a mark drawn out of
+		// gradients rather than encoded as an image, and the radio's dot is
+		// the measured five sixteenths of its disc.
+		"margin: calc((var(--density-checkbox-row-height) - 16px) / 2);",
+		"border: 1px solid var(--platform-field-edge);",
+		"border-radius: 5px;  /* checkboxCornerRadius: measured */",
 		".checkbox:checked, .checkbox.is-checked {",
 		"background-position: 2.529px 7.529px, 5.529px 3.529px;",
 		"background-size: 3.943px 3.943px, 7.943px 7.943px;",
-		"radial-gradient(circle, var(--platform-alternate-selected-control-text) 4px, var(--platform-control-accent) 4px)",
+		"radial-gradient(circle, var(--platform-alternate-selected-control-text) 2.5px, var(--platform-control-accent) 2.5px)",
 		// Card and group: the grouped box with no hairline, and the
 		// hairline with no box.
 		"background: var(--platform-card-fill);",
@@ -451,6 +498,21 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"border-top: 6px solid var(--platform-window-background);",
 		"--floating-shadow-step: color-mix(in srgb, var(--platform-floating-shadow) 12.5%, transparent);",
 		"0 0 0 24px var(--floating-shadow-step);",
+		// The menu the pop-up trigger opens: the window background under the
+		// same floating shadow inside the platform's separator, its rows at
+		// the control height with the pill and the check the current one
+		// wears.
+		".menu {",
+		".menu-item {",
+		"padding: var(--density-padding-y) 16px var(--density-padding-y) 32px;",
+		"inset: 0 10px;  /* selectionInsetDp */",
+		"background: var(--platform-sidebar-selection);",
+		// The pane: the platform's sidebar as an inset rounded panel with
+		// its measured rim and the shadow it casts on what stands beside it.
+		".pane {",
+		"margin: 8px;  /* MarginDp */",
+		"border-radius: 18px;  /* RadiusDp: the window's 26 less one margin */",
+		"inset 0 0 0 1px var(--platform-pane-rim);  /* RimDp */",
 		// Tooltip: the window background inside the separator, S2/S1 padding
 		// measured from the outer edge.
 		"border-radius: var(--radius-sm);",
@@ -520,6 +582,9 @@ func TestThemeJSONReproduces(t *testing.T) {
 		want := DensityMetrics{
 			ControlHeight:        float64(d.ControlHeight),
 			ChipHeight:           float64(d.ChipHeight()),
+			FieldHeight:          float64(d.FieldHeight),
+			RowHeight:            float64(d.RowHeight),
+			CheckboxRowHeight:    float64(d.CheckboxRowHeight),
 			ToolbarControlHeight: float64(d.ToolbarControlHeight),
 			PaddingX:             float64(d.PaddingX),
 			PaddingY:             float64(d.PaddingY),
