@@ -57,6 +57,8 @@
 //	ToolbarControlRim  #000000 a0.00 #404040       measured: the rim that control wears in a dark toolbar; none in light
 //	ToolbarSearchFill  #e8e8e8      #363636        measured: the recess a search field is in a toolbar
 //	ToolbarSearchRim   #000000 a0.00 #4d4d4d       measured: the rim that recess wears in a dark toolbar; none in light
+//	ToolbarLabel     #4d4d4d        #e9e9e9        measured: what a toolbar's own title and glyphs are drawn in
+//	ToolbarControlSeam #f2f2f2      #3a3a3a        measured: the line dividing one bordered toolbar control into segments
 //	ToolbarControlShadow  #000000 a0.035  #000000 a0.024  measured: the drop shadow a bordered toolbar control casts, per appearance in reach and offset
 //	ToolbarCheckedOverlay #000000 a0.102  #ffffff a0.161  measured: the chosen segment of a segmented toolbar control, over the control's own fill
 //	PaneRim          #ffffff        #3a3a3a        measured: the 1 px rim the inset sidebar panel wears on every side
@@ -457,6 +459,56 @@ type PlatformColors struct {
 	// caller draws nothing where it answers one.
 	ToolbarSearchRim color.NRGBA `appkit:"-"`
 
+	// ToolbarLabel is what a TOOLBAR draws its own words and its own glyphs
+	// in: #4d4d4d light and #e9e9e9 dark. It is the band's title standing
+	// bare, the wording inside a bordered control, and every mark a chrome
+	// control carries — one foreground for everything a toolbar says.
+	//
+	// It is a value of its own beside [PlatformColors.ControlText] because
+	// no name in the catalogue flattens there. Light, over the band's
+	// #ffffff: ControlText's 216 of 255 gives #272727, SecondaryLabel's 127
+	// gives #808080 and TertiaryLabel's 66 gives #bdbdbd, against the
+	// measured #4d4d4d, which is black at 178 of 255 and no name's coverage.
+	// Dark, over the #1e1e1e band: ControlText gives #dcdcdc against the
+	// measured #e9e9e9, white at 230 of 255.
+	//
+	// A FORM control is not this: the Save dialog's pop-up draws its mark and
+	// its label at ControlText exactly, which is why that name stays where a
+	// dialog's controls are drawn and this one answers for the toolbar.
+	//
+	// MEASURED at 1x, finder-window-light.png, a frontmost light Finder
+	// window whose band is #ffffff: the title "Applications" standing bare in
+	// the band (x 413-499) plateaus at #4d4d4d over 131 pixels, the group
+	// pull-down's grid glyph (x 769-786, y 17-34) over 24 and the search
+	// capsule's magnifier (x 965-980, y 18-34) over 15. A word and a glyph
+	// hold the same plateau, so it is the drawn colour and not the partial
+	// coverage a thin stroke reaches.
+	//
+	// MEASURED at 1x, finder-window-untinted-dark.png (the window's own
+	// origin at x=56, y=38 in that capture): the pull-down's glyph plateaus
+	// at #e9e9e9 over its own fill and the window's title at #e8e8e8 over the
+	// band, one 255th below it — text against a vector mark, which takes no
+	// stem darkening. The glyph's reading is the one carried.
+	ToolbarLabel color.NRGBA `appkit:"-"`
+
+	// ToolbarControlSeam is the line that divides ONE bordered toolbar
+	// control into segments: #f2f2f2 light over that control's #ffffff fill
+	// and #3a3a3a dark over its #262626. The segments are divisions of one
+	// capsule and not controls side by side, so the seam is the control's own
+	// and stops short of its top and its foot.
+	//
+	// It is a value of its own beside [PlatformColors.ToolbarControlRim], as
+	// that rim is, because the platform's separator over the fill lands
+	// neither: light it gives #e6e6e6, twelve of 255 short of the pixel, and
+	// dark #3b3b3b, one over it.
+	//
+	// MEASURED at 1x, finder-window-light.png and
+	// finder-window-untinted-dark.png, the back/forward pair each window
+	// keeps at the leading end of its content column: the control spans
+	// 73 × 36 px and its seam is one column wide and twenty rows tall, eight
+	// rows clear of the control's top and eight of its foot.
+	ToolbarControlSeam color.NRGBA `appkit:"-"`
+
 	// ToolbarControlShadow is the peak coverage of the drop shadow a
 	// BORDERED TOOLBAR CONTROL casts on the band it stands in: black at
 	// 0.035 light and at 0.024 dark. It is the shadow that tells a light
@@ -654,6 +706,8 @@ var (
 		ToolbarControlRim:            color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x00},
 		ToolbarSearchFill:            color.NRGBA{R: 0xe8, G: 0xe8, B: 0xe8, A: 0xff},
 		ToolbarSearchRim:             color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x00},
+		ToolbarLabel:                 color.NRGBA{R: 0x4d, G: 0x4d, B: 0x4d, A: 0xff},
+		ToolbarControlSeam:           color.NRGBA{R: 0xf2, G: 0xf2, B: 0xf2, A: 0xff},
 		ToolbarControlShadow:         color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x09},
 		ToolbarCheckedOverlay:        color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x1a},
 		PaneRim:                      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
@@ -732,6 +786,8 @@ var (
 		ToolbarControlRim:            color.NRGBA{R: 0x40, G: 0x40, B: 0x40, A: 0xff},
 		ToolbarSearchFill:            color.NRGBA{R: 0x36, G: 0x36, B: 0x36, A: 0xff},
 		ToolbarSearchRim:             color.NRGBA{R: 0x4d, G: 0x4d, B: 0x4d, A: 0xff},
+		ToolbarLabel:                 color.NRGBA{R: 0xe9, G: 0xe9, B: 0xe9, A: 0xff},
+		ToolbarControlSeam:           color.NRGBA{R: 0x3a, G: 0x3a, B: 0x3a, A: 0xff},
 		ToolbarControlShadow:         color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x06},
 		ToolbarCheckedOverlay:        color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x29},
 		PaneRim:                      color.NRGBA{R: 0x3a, G: 0x3a, B: 0x3a, A: 0xff},
