@@ -76,6 +76,7 @@ func readmeMD(s Snapshot) string {
 	fmt.Fprintf(&b, "| `--ease-<name>` | %s | easing presets as `cubic-bezier()`; emphasized is the documented single-bezier stand-in for the published two-segment path |\n", joinTokens("--ease-", easeNames()))
 	fmt.Fprintf(&b, "| `--duration-<stop>` | %s | duration stops, ms; the reduce-motion variant zeroes them |\n", joinTokens("--duration-", durationNames()))
 	b.WriteString("| interaction states | `--focus-halo-width`, `--disabled-coverage` | the focus halo's 4 px band and the platform's measured disabled coverage as a percentage, both mode-invariant, unlike the halo's colour, which is `--platform-keyboard-focus-indicator` and flips with the appearance |\n")
+	b.WriteString("| `--dialog-corner` | the dialog surface's corner radius, px | measured off the platform's own sheet and identical in both appearances, which is why it is not a stop on the radius scale |\n")
 	b.WriteString("| `--toolbar-control-shadow-*` | `--toolbar-control-shadow-reach`, `--toolbar-control-shadow-offset` | the bordered toolbar control's drop shadow is the one material whose GEOMETRY the platform draws differently under the two appearances, so its reach and the depth its rectangle is sunk are stated per appearance beside the colour set; its peak is `--platform-toolbar-control-shadow` |\n\n")
 
 	b.WriteString("## Component classes\n\n" +

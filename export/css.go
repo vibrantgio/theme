@@ -367,12 +367,27 @@ func scaleVars(s Snapshot) []cssVar {
 	// The platform's measured disabled coverage sits beside it: a switched-off
 	// control is its own fill at that coverage over the surface it stands on,
 	// which is a number rather than a colour and belongs to no appearance.
+	// The dialog's corner joins them for the same reason: it is the sheet's
+	// own measured radius, identical in both appearances, and it is not a
+	// stop on the radius scale.
 	vars = append(vars,
 		cssVar{"--focus-halo-width", px(focusHaloWidthDp)},
 		cssVar{"--disabled-coverage", coverage(tokens.DisabledCoverage)},
+		cssVar{"--dialog-corner", px(dialogCornerDp)},
 	)
 	return vars
 }
+
+// dialogCornerDp is the radius a dialog's surface is rounded at — the same
+// reading patterns/modal draws (modal.go, dialogCornerDp).
+//
+// MEASURED, save-dialog-{light,dark}.png, the sheet's own corner: a circle
+// fitted to the sub-pixel leading edge the per-row coverage gives, the
+// sheet's hard-edged extremes pinned at x 165.000 and y 188.000. Light
+// r = 27.05, dark r = 27.04, rms 0.37 px over 26 rows apiece, and the
+// circular coverage of the corner block that differs least from the
+// capture's is r = 27 in both appearances.
+const dialogCornerDp = 27
 
 // focusHaloWidthDp is the focus halo's band width — the 4 dp every control in
 // this library draws (components/internal/focus.Width), half of it past the
@@ -1509,12 +1524,14 @@ const componentClasses = `/* ---- Component classes ----
 /* Dialog (modal.go drawModal): the centred surface — width 75% of the window
    plane clamped to 180-560 dp, height hugging its content between the 120 dp
    floor and the 560 dp cap (overflow clips), the window background under the
-   platform's shadow and no hairline at all, radius Lg, an S5 inset and S3
-   gaps between header, body and footer. G0A.2's two purposes share this one
-   surface: a PANEL carries a ghost icon close (.btn.ghost.icon) in its header
-   and no footer of its own; a DECISION carries no X anywhere and a
-   .dialog-footer whose right-aligned actions end in the Return-bound
-   default. */
+   platform's shadow and no hairline at all, the sheet's own measured corner
+   (--dialog-corner), an S5 inset and S3 gaps between header, body and footer.
+   G0A.2's two purposes share this one surface: a PANEL carries a ghost icon
+   close (.btn.ghost.icon) in its header and no footer of its own; a DECISION
+   carries no X anywhere and a .dialog-footer whose right-aligned actions end
+   in the Return-bound default, drawn as the platform draws a sheet's push
+   buttons: the default filled with the accent and the other an ordinary push
+   button (.btn.tonal), never borderless. */
 .dialog {
   box-sizing: border-box;
   display: flex;
@@ -1528,7 +1545,7 @@ const componentClasses = `/* ---- Component classes ----
   overflow: hidden;
   padding: var(--space-5);
   border: none;
-  border-radius: var(--radius-lg);
+  border-radius: var(--dialog-corner);
   background: var(--platform-window-background);
   color: var(--platform-label);
 }
