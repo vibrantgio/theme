@@ -278,6 +278,7 @@ var accentRows = []string{
 	"SelectedControl",
 	"KeyboardFocusIndicator",
 	"SidebarSelection",
+	"DefaultButtonFill",
 }
 
 // TestWithAccentKeepsThePlatformBlue pins that the recorded sets already
@@ -496,6 +497,37 @@ func TestPushButtonFillIsTheMeasuredPushButton(t *testing.T) {
 		}
 		if c.in.PushButtonFill.A != 0xff {
 			t.Errorf("%s PushButtonFill = %v; the fill was read as a pixel, so it is opaque", c.name, c.in.PushButtonFill)
+		}
+	}
+}
+
+// TestDefaultButtonFillIsTheMeasuredDefaultButton pins the default push
+// button's fill to the pixels of the Save dialog captures rather than to
+// controlAccentColor, which reports #007aff in both appearances: the
+// platform draws the sheet's default action at a fill of its own, the same
+// kind of lift off the accent that SidebarSelection carries. Both
+// appearances read the one value, and the label over it is the white
+// AlternateSelectedControlText already answers for.
+func TestDefaultButtonFillIsTheMeasuredDefaultButton(t *testing.T) {
+	want := color.NRGBA{R: 0x15, G: 0x7e, B: 0xfb, A: 0xff}
+	for _, c := range []struct {
+		name string
+		in   tokens.PlatformColors
+	}{{"light", tokens.PlatformLight}, {"dark", tokens.PlatformDark}} {
+		if c.in.DefaultButtonFill != want {
+			t.Errorf("%s DefaultButtonFill = %v, want the measured default button %v", c.name, c.in.DefaultButtonFill, want)
+		}
+		if c.in.DefaultButtonFill == c.in.ControlAccent {
+			t.Errorf("%s DefaultButtonFill = %v, controlAccentColor's own value; the button was measured apart from it", c.name, c.in.DefaultButtonFill)
+		}
+		if c.in.DefaultButtonFill == c.in.PushButtonFill {
+			t.Errorf("%s DefaultButtonFill = %v, the ordinary push button's fill; the sheet fills its default action apart from the rest", c.name, c.in.DefaultButtonFill)
+		}
+		if c.in.DefaultButtonFill.A != 0xff {
+			t.Errorf("%s DefaultButtonFill = %v; the fill was read as a pixel, so it is opaque", c.name, c.in.DefaultButtonFill)
+		}
+		if c.in.AlternateSelectedControlText != (color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff}) {
+			t.Errorf("%s AlternateSelectedControlText = %v, want the #ffffff the Save button's label measures", c.name, c.in.AlternateSelectedControlText)
 		}
 	}
 }

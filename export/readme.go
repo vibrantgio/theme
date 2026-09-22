@@ -102,7 +102,8 @@ func readmeMD(s Snapshot) string {
 		"checkbox's edge — the rule sets `background-clip: padding-box` so the\n" +
 		"edge composites over the page. That pair of clips is the whole of what\n" +
 		"a control needs to know about its host; nothing is handed down.\n\n" +
-		"`.btn` is the button, **filled** by default: `--platform-control-accent`\n" +
+		"`.btn` is the button, **filled** by default:\n" +
+		"`--platform-default-button-fill`\n" +
 		"under `--platform-alternate-selected-control-text`, which is the\n" +
 		"platform's default action. Two modifier classes select the less\n" +
 		"pronounced variants — `.btn.tonal`, the platform's ordinary push button\n" +

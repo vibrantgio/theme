@@ -46,6 +46,7 @@
 //	SidebarSymbol    #000000        #ffffff        measured: the symbol at the leading end of a sidebar row
 //	CardFill         #f7f7f7        #2a3034        measured: the System Settings grouped box
 //	PushButtonFill   #ececec        #333a3f        measured: the Save dialog's push button at rest
+//	DefaultButtonFill #157efb       #157efb        measured: the Save dialog's default push button at rest
 //	HoverOverlay     #000000 a0.051 #ffffff a0.094 measured: a toolbar button under the pointer
 //	PressOverlay     #000000 a0.098 #ffffff a0.098 measured: a push button held down
 //	FloatingShadow   #000000 a0.075 #000000 a0.075 measured: the sidebar shadow, 24 px of reach centred on the surface
@@ -272,6 +273,27 @@ type PlatformColors struct {
 	// coverage. So the fill is recorded as the pixel and Control is left
 	// answering for what AppKit says it answers for.
 	PushButtonFill color.NRGBA `appkit:"-"`
+
+	// DefaultButtonFill is what the DEFAULT push button — the one a sheet
+	// binds Return to — is actually filled with: #157efb in BOTH
+	// appearances, flat-region samples of the "Save" button in
+	// save-dialog-light.png and save-dialog-dark.png (x 445-460 and
+	// x 496-512, y 505-520, #157efb over every one of those 528 pixels in
+	// each capture). Its label is #ffffff on both sheets, which is
+	// AlternateSelectedControlText to the byte.
+	//
+	// It is not ControlAccent. AppKit's controlAccentColor reports #007aff
+	// in both appearances; the platform draws the default button's bezel
+	// over it and what reaches the screen is eleven of 255 off that on the
+	// red channel and four on the green. The lift is the same kind
+	// SidebarSelection carries and is recorded the same way — as the pixel,
+	// in both appearances — so the library paints what the platform draws
+	// rather than the published name. The bezel's own gradient is not
+	// recorded; a consumer paints this flat.
+	//
+	// It follows the user's accent, as SidebarSelection does:
+	// [PlatformColors.WithAccent] moves it.
+	DefaultButtonFill color.NRGBA `appkit:"-"`
 
 	// HoverOverlay and PressOverlay are what a control lays over its own
 	// fill while the pointer is on it and while it is held: black in
@@ -721,17 +743,18 @@ var (
 		Shadow:    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
 		Highlight: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
 
-		SidebarMaterial:  color.NRGBA{R: 0xf7, G: 0xf7, B: 0xf7, A: 0xff},
-		SidebarSelection: color.NRGBA{R: 0x17, G: 0x8b, B: 0xfb, A: 0xff},
-		SidebarCount:     color.NRGBA{R: 0x6d, G: 0x6d, B: 0x6d, A: 0xff},
-		SidebarSymbol:    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
-		CardFill:         color.NRGBA{R: 0xf7, G: 0xf7, B: 0xf7, A: 0xff},
-		PushButtonFill:   color.NRGBA{R: 0xec, G: 0xec, B: 0xec, A: 0xff},
-		HoverOverlay:     color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x0d},
-		PressOverlay:     color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x19},
-		FloatingShadow:   DropShadow{Peak: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13}, Reach: 24},
-		FieldEdge:        color.NRGBA{R: 0xf3, G: 0xf3, B: 0xf3, A: 0xff},
-		ScrollbarThumb:   color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x92},
+		SidebarMaterial:   color.NRGBA{R: 0xf7, G: 0xf7, B: 0xf7, A: 0xff},
+		SidebarSelection:  color.NRGBA{R: 0x17, G: 0x8b, B: 0xfb, A: 0xff},
+		SidebarCount:      color.NRGBA{R: 0x6d, G: 0x6d, B: 0x6d, A: 0xff},
+		SidebarSymbol:     color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
+		CardFill:          color.NRGBA{R: 0xf7, G: 0xf7, B: 0xf7, A: 0xff},
+		PushButtonFill:    color.NRGBA{R: 0xec, G: 0xec, B: 0xec, A: 0xff},
+		DefaultButtonFill: color.NRGBA{R: 0x15, G: 0x7e, B: 0xfb, A: 0xff},
+		HoverOverlay:      color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x0d},
+		PressOverlay:      color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x19},
+		FloatingShadow:    DropShadow{Peak: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13}, Reach: 24},
+		FieldEdge:         color.NRGBA{R: 0xf3, G: 0xf3, B: 0xf3, A: 0xff},
+		ScrollbarThumb:    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x92},
 
 		AlternatingContentBackground: color.NRGBA{R: 0xf4, G: 0xf5, B: 0xf5, A: 0xff},
 		Scrim:                        color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x33},
@@ -802,17 +825,18 @@ var (
 		Shadow:    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
 		Highlight: color.NRGBA{R: 0xb4, G: 0xb4, B: 0xb4, A: 0xff},
 
-		SidebarMaterial:  color.NRGBA{R: 0x1c, G: 0x1c, B: 0x1c, A: 0xff},
-		SidebarSelection: color.NRGBA{R: 0x19, G: 0x94, B: 0xfc, A: 0xff},
-		SidebarCount:     color.NRGBA{R: 0xa4, G: 0xa4, B: 0xa4, A: 0xff},
-		SidebarSymbol:    color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
-		CardFill:         color.NRGBA{R: 0x2a, G: 0x30, B: 0x34, A: 0xff},
-		PushButtonFill:   color.NRGBA{R: 0x33, G: 0x3a, B: 0x3f, A: 0xff},
-		HoverOverlay:     color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x18},
-		PressOverlay:     color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x19},
-		FloatingShadow:   DropShadow{Peak: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13}, Reach: 24},
-		FieldEdge:        color.NRGBA{R: 0x2c, G: 0x33, B: 0x38, A: 0xff},
-		ScrollbarThumb:   color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x92},
+		SidebarMaterial:   color.NRGBA{R: 0x1c, G: 0x1c, B: 0x1c, A: 0xff},
+		SidebarSelection:  color.NRGBA{R: 0x19, G: 0x94, B: 0xfc, A: 0xff},
+		SidebarCount:      color.NRGBA{R: 0xa4, G: 0xa4, B: 0xa4, A: 0xff},
+		SidebarSymbol:     color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
+		CardFill:          color.NRGBA{R: 0x2a, G: 0x30, B: 0x34, A: 0xff},
+		PushButtonFill:    color.NRGBA{R: 0x33, G: 0x3a, B: 0x3f, A: 0xff},
+		DefaultButtonFill: color.NRGBA{R: 0x15, G: 0x7e, B: 0xfb, A: 0xff},
+		HoverOverlay:      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x18},
+		PressOverlay:      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x19},
+		FloatingShadow:    DropShadow{Peak: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13}, Reach: 24},
+		FieldEdge:         color.NRGBA{R: 0x2c, G: 0x33, B: 0x38, A: 0xff},
+		ScrollbarThumb:    color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x92},
 
 		AlternatingContentBackground: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x0d},
 		Scrim:                        color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x42},
@@ -830,18 +854,18 @@ var (
 	}
 )
 
-// WithAccent returns the set with the six rows the platform derives from
+// WithAccent returns the set with the seven rows the platform derives from
 // the accent colour rebuilt for accent. Every other field is untouched: the
 // unemphasized selection pair is the inactive window's grey, Link is a fixed
 // blue, and the system colours are a fixed catalogue — none of them moves
 // when the user changes the accent.
 //
-// The six rows and their rule:
+// The seven rows and their rule:
 //
 //   - ControlAccent is the accent itself, at the recorded row's alpha.
 //   - SelectedContentBackground, SelectedTextBackground, SelectedControl,
-//     KeyboardFocusIndicator and SidebarSelection keep the accent's hue and
-//     saturation and
+//     KeyboardFocusIndicator, SidebarSelection and DefaultButtonFill keep
+//     the accent's hue and saturation and
 //     take the recorded row's HSL lightness and alpha. In the catalogue all
 //     four are the platform's blue at a lightness of their own — the
 //     emphasized selection darker than the accent, the text selection and
@@ -869,6 +893,7 @@ func (p PlatformColors) WithAccent(accent color.NRGBA) PlatformColors {
 	p.SelectedControl = atAccentHue(hue, sat, p.SelectedControl)
 	p.KeyboardFocusIndicator = atAccentHue(hue, sat, p.KeyboardFocusIndicator)
 	p.SidebarSelection = atAccentHue(hue, sat, p.SidebarSelection)
+	p.DefaultButtonFill = atAccentHue(hue, sat, p.DefaultButtonFill)
 	return p
 }
 

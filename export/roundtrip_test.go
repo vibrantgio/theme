@@ -361,7 +361,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"border-radius: var(--radius-md);",
 		"font-size: var(--font-label-large-size);",
 		// Filled is the platform's default action.
-		"background: var(--platform-control-accent);",
+		"background: var(--platform-default-button-fill);",
 		"color: var(--platform-alternate-selected-control-text);",
 		// Tonal is the platform's ordinary push button, inside the seam.
 		"background: var(--platform-push-button-fill);",

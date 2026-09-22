@@ -110,6 +110,7 @@ var platformNames = []struct {
 	{"sidebar-symbol", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarSymbol }},
 	{"card-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.CardFill }},
 	{"push-button-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.PushButtonFill }},
+	{"default-button-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.DefaultButtonFill }},
 	{"hover-overlay", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.HoverOverlay }},
 	{"press-overlay", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.PressOverlay }},
 	{"floating-shadow", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.FloatingShadow.Peak }},
@@ -559,7 +560,7 @@ const componentClasses = `/* ---- Component classes ----
   line-height: var(--font-label-large-line-height);
   font-weight: var(--font-label-large-weight);
   letter-spacing: 0;
-  background: var(--platform-control-accent);
+  background: var(--platform-default-button-fill);
   color: var(--platform-alternate-selected-control-text);
 }
 
