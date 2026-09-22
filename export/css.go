@@ -374,6 +374,7 @@ func scaleVars(s Snapshot) []cssVar {
 		cssVar{"--focus-halo-width", px(focusHaloWidthDp)},
 		cssVar{"--disabled-coverage", coverage(tokens.DisabledCoverage)},
 		cssVar{"--dialog-corner", px(dialogCornerDp)},
+		cssVar{"--dialog-button-width", px(dialogButtonWidthDp)},
 	)
 	return vars
 }
@@ -388,6 +389,18 @@ func scaleVars(s Snapshot) []cssVar {
 // circular coverage of the corner block that differs least from the
 // capture's is r = 27 in both appearances.
 const dialogCornerDp = 27
+
+// dialogButtonWidthDp is the width a dialog's footer lays each of its
+// actions out in — the same reading patterns/modal spends (modal.go,
+// dialogButtonWDp).
+//
+// MEASURED, save-dialog-{light,dark}.png: that sheet's two answers span
+// x 359-432 and x 441-514 — 74 px apiece, 8 apart (the footer's own S2 gap)
+// and 20 from the sheet's trailing edge and its foot (the dialog's S5
+// inset). It is the platform's minimum for a dialog button: a label that
+// does not fit widens its button by its own measure, which is what a
+// min-width states and a width would not.
+const dialogButtonWidthDp = 74
 
 // focusHaloWidthDp is the focus halo's band width — the 4 dp every control in
 // this library draws (components/internal/focus.Width), half of it past the
@@ -1555,13 +1568,20 @@ const componentClasses = `/* ---- Component classes ----
 }
 
 /* The footer row (modal.go footerWidget): right-aligned actions with S2
-   gaps. Each action is a bare component owning its own focus ring — the
-   dialog wraps and decorates nothing. */
+   gaps, each laid out in the platform's measured dialog button width
+   (--dialog-button-width). Each action is a bare component owning its own
+   focus ring — the dialog wraps and decorates nothing — and the row draws
+   nothing of its own: no band, no hairline, no rule between it and the body,
+   because the sheet it is drawn after draws none. The width is a floor, so a
+   label that does not fit widens its own button and nothing else. */
 .dialog-footer {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: var(--space-2);
+}
+.dialog-footer .btn {
+  min-width: var(--dialog-button-width);
 }
 
 /* Popover (popover.go drawPopover): the unscrimmed anchored surface —
