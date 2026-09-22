@@ -43,6 +43,7 @@
 //	SidebarMaterial  #f7f7f7        #1c1c1c        measured: the chrome band, wallpaper tinting off
 //	SidebarSelection #178bfb        #1994fc        measured: the selected sidebar row's pill
 //	SidebarCount     #6d6d6d        #a4a4a4        measured: the count at the trailing end of a sidebar row
+//	SidebarSymbol    #000000        #ffffff        measured: the symbol at the leading end of a sidebar row
 //	CardFill         #f7f7f7        #2a3034        measured: the System Settings grouped box
 //	PushButtonFill   #ececec        #333a3f        measured: the Save dialog's push button at rest
 //	HoverOverlay     #000000 a0.051 #ffffff a0.094 measured: a toolbar button under the pointer
@@ -229,6 +230,23 @@ type PlatformColors struct {
 	// sidebar, as the pill is. See reference/macos/controls.md, "What a
 	// sidebar row measures".
 	SidebarCount color.NRGBA `appkit:"-"`
+
+	// SidebarSymbol is what the symbol at the leading end of a sidebar row
+	// is drawn in: #000000 light and #ffffff dark, the plateau the folder
+	// mark holds over 45 pixels in voicememos-multi-folder-2026-09-18.png
+	// and over 30 in voicememos-sidebar-light.png, and #ffffff in
+	// voicememos-sidebar-dark.png.
+	//
+	// It is not Label, which is what the name beside it is: that label
+	// plateaus at #262626 and #dcdcdc on the same fills, black and white at
+	// 216 of 255, so the symbol stands 38 of 255 stronger in light and 35 in
+	// dark. A vector mark takes no stem darkening, so both readings are the
+	// drawn colour. No field of this set answers for black or white outright,
+	// so the symbol is recorded as a measured value of the sidebar, as the
+	// pill and the count are. On the pill it wears the pill's own foreground
+	// instead. See reference/macos/controls.md, "What a sidebar row
+	// measures".
+	SidebarSymbol color.NRGBA `appkit:"-"`
 
 	// CardFill is the fill of the platform's box — a card, a grouped
 	// box, a filled inset: #f7f7f7 over a #ffffff plane light, #2a3034
@@ -706,6 +724,7 @@ var (
 		SidebarMaterial:  color.NRGBA{R: 0xf7, G: 0xf7, B: 0xf7, A: 0xff},
 		SidebarSelection: color.NRGBA{R: 0x17, G: 0x8b, B: 0xfb, A: 0xff},
 		SidebarCount:     color.NRGBA{R: 0x6d, G: 0x6d, B: 0x6d, A: 0xff},
+		SidebarSymbol:    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
 		CardFill:         color.NRGBA{R: 0xf7, G: 0xf7, B: 0xf7, A: 0xff},
 		PushButtonFill:   color.NRGBA{R: 0xec, G: 0xec, B: 0xec, A: 0xff},
 		HoverOverlay:     color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x0d},
@@ -786,6 +805,7 @@ var (
 		SidebarMaterial:  color.NRGBA{R: 0x1c, G: 0x1c, B: 0x1c, A: 0xff},
 		SidebarSelection: color.NRGBA{R: 0x19, G: 0x94, B: 0xfc, A: 0xff},
 		SidebarCount:     color.NRGBA{R: 0xa4, G: 0xa4, B: 0xa4, A: 0xff},
+		SidebarSymbol:    color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
 		CardFill:         color.NRGBA{R: 0x2a, G: 0x30, B: 0x34, A: 0xff},
 		PushButtonFill:   color.NRGBA{R: 0x33, G: 0x3a, B: 0x3f, A: 0xff},
 		HoverOverlay:     color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x18},

@@ -107,6 +107,7 @@ var platformNames = []struct {
 	{"sidebar-material", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarMaterial }},
 	{"sidebar-selection", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarSelection }},
 	{"sidebar-count", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarCount }},
+	{"sidebar-symbol", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarSymbol }},
 	{"card-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.CardFill }},
 	{"push-button-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.PushButtonFill }},
 	{"hover-overlay", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.HoverOverlay }},
@@ -1239,10 +1240,13 @@ const componentClasses = `/* ---- Component classes ----
 }
 
 /* Sidebar (patterns/sidebar sidebar.go): a vertical chrome rail at the
-   pattern's two contractual widths — 192 dp expanded, 48 dp collapsed
+   pattern's two contractual widths — 220 dp expanded, 48 dp collapsed
    (expandedDp/collapsedDp: component constants, deliberately not tokens and
-   not density-responsive; a different rail copies the pattern) — closed by
-   the separator along its trailing edge. The toggle row is ControlHeight;
+   not density-responsive; a different rail copies the pattern). The 220 is
+   MEASURED: the panel in voicememos-multi-folder-2026-09-18.png spans
+   x 64–283. It draws no line down its trailing edge — the platform's sidebar
+   is an inset panel, and its rim and shadow are what part it from the content
+   (patterns/pane draws both). The toggle row is ControlHeight;
    every item row is the sidebar's OWN row height, the pattern's RowHeight
    rather than the density scale's, because a chrome rail draws a taller row
    than a content list. The whole rail is one keyboard stop — the
@@ -1252,9 +1256,8 @@ const componentClasses = `/* ---- Component classes ----
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  width: 192px;  /* expandedDp */
+  width: 220px;  /* expandedDp */
   background: var(--platform-sidebar-material);
-  box-shadow: inset -1px 0 0 var(--platform-separator);
   color: var(--platform-label);
   overflow: hidden;
 }
@@ -1284,10 +1287,11 @@ const componentClasses = `/* ---- Component classes ----
    the rail's leading edge, the label-large label starts at 48 in, and the
    count's trailing edge is 17 in from the rail's trailing edge; each part is
    vertically centred, one line, clipped rather than wrapped — which is also
-   what hides the label and the count at the collapsed width. Selected wears
-   the platform's sidebar pill, and on it the label and the count both take
-   the foreground the platform pairs with that fill; nothing else moves, and
-   nothing tints under the pointer.
+   what hides the label and the count at the collapsed width. The symbol wears
+   the sidebar's own measured symbol colour, which stands stronger than the
+   label beside it. Selected wears the platform's sidebar pill, and on it the
+   symbol, the label and the count all take the foreground the platform pairs
+   with that fill; nothing else moves, and nothing tints under the pointer.
 
    The row height, the pill's inset and its corner, the three columns and the
    heading's block are MEASURED off the organization's macOS reference
@@ -1341,6 +1345,10 @@ const componentClasses = `/* ---- Component classes ----
   height: 100%;
   margin-left: 17px;  /* SymbolInset */
   margin-right: 7px;  /* LabelInset less SymbolInset and SymbolBox */
+  color: var(--platform-sidebar-symbol);
+}
+.sidebar-item.selected .sidebar-item-icon {
+  color: var(--platform-alternate-selected-control-text);
 }
 /* Collapsed a row is its symbol and nothing else: drawItem returns after the
    symbol, so the label, the count and the section heading are not drawn at

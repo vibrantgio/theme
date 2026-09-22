@@ -463,12 +463,15 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		".table th.sort-desc::after { border-top: 5px solid var(--platform-header-text); }",
 		// Navigation: the chrome material under the platform's label, the
 		// separator where two flush regions meet, the tab strip's selected
-		// underline in the platform's selection colour, and the sidebar's
-		// own measured pill in the accent.
+		// underline in the platform's selection colour, the sidebar's own
+		// measured pill in the accent and its own measured symbol colour.
+		// The rail itself draws no line down its trailing edge: the
+		// platform's sidebar is an inset panel and the pane's rim and shadow
+		// are the boundary.
 		"min-height: calc(var(--density-control-height) + 2 * var(--density-padding-y));",
 		"background: var(--platform-sidebar-material);",
 		"box-shadow: inset 0 -1px 0 var(--platform-separator);",
-		"box-shadow: inset -1px 0 0 var(--platform-separator);",
+		"color: var(--platform-sidebar-symbol);",
 		".navbar-link.selected, .tab.selected {",
 		"border-bottom-color: var(--platform-selected-content-background);",
 		".sidebar.collapsed { width: 48px; }",
