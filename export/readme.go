@@ -108,8 +108,8 @@ func readmeMD(s Snapshot) string {
 		"under `--platform-alternate-selected-control-text`, which is the\n" +
 		"platform's default action. Two modifier classes select the less\n" +
 		"pronounced variants — `.btn.tonal`, the platform's ordinary push button\n" +
-		"(`--platform-push-button-fill` under `--platform-control-text`, inside a\n" +
-		"`--platform-separator` hairline), and `.btn.ghost`, its borderless kind\n" +
+		"(`--platform-push-button-fill` under `--platform-control-text`, with no\n" +
+		"edge around it), and `.btn.ghost`, its borderless kind\n" +
 		"(no fill, `--platform-control-text`). Under the pointer (`:hover`)\n" +
 		"`--platform-hover-overlay` goes over whatever fill the variant carries,\n" +
 		"and held (`:active`) `--platform-press-overlay` goes there instead, a\n" +
@@ -121,9 +121,9 @@ func readmeMD(s Snapshot) string {
 		"same band at the same width in every variant, because keyboard\n" +
 		"visibility is not a prominence property. Disabled (`:disabled`) is the\n" +
 		"platform's fade: the fill falls back to the push button's own at\n" +
-		"`--disabled-coverage` over the surface the control stands on, its\n" +
-		"hairline to the separator at that same coverage, and every foreground\n" +
-		"becomes `--platform-disabled-control-text`. `.btn.icon` is the icon-only\n" +
+		"`--disabled-coverage` over the surface the control stands on, and every\n" +
+		"foreground becomes `--platform-disabled-control-text`. A switched-off\n" +
+		"control draws no edge either. `.btn.icon` is the icon-only\n" +
 		"form: a square the density's control height on a side, the glyph (an\n" +
 		"inline SVG on `currentColor`) inset by the density's vertical padding.\n" +
 		"`.btn.chrome` is the bordered toolbar control: a capsule at\n" +
