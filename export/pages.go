@@ -276,6 +276,11 @@ var platformPairs = []struct {
 	{"alternate selected control text on the default button", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.AlternateSelectedControlText }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.DefaultButtonFill }},
 	{"alternate selected control text on the selected row", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.AlternateSelectedControlText }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SelectedContentBackground }},
 	{"alternate selected control text on the sidebar pill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.AlternateSelectedControlText }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarSelection }},
+	// The grey pill is a coverage over the rail, so the fill the label
+	// stands on is that coverage flattened onto the chrome material.
+	{"the unemphasized sidebar label on the unemphasized pill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarSelectionUnemphasizedLabel }, func(p tokens.PlatformColors) stdcolor.NRGBA {
+		return color.Flatten(p.SidebarSelectionUnemphasized, p.SidebarMaterial)
+	}},
 	{"the sidebar count on the chrome material", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarCount }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarMaterial }},
 	{"the sidebar symbol on the chrome material", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarSymbol }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarMaterial }},
 	{"link on the window", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Link }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.WindowBackground }},

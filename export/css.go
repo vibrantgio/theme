@@ -106,6 +106,8 @@ var platformNames = []struct {
 	{"highlight", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Highlight }},
 	{"sidebar-material", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarMaterial }},
 	{"sidebar-selection", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarSelection }},
+	{"sidebar-selection-unemphasized", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarSelectionUnemphasized }},
+	{"sidebar-selection-unemphasized-label", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarSelectionUnemphasizedLabel }},
 	{"sidebar-count", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarCount }},
 	{"sidebar-symbol", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarSymbol }},
 	{"card-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.CardFill }},
@@ -1352,6 +1354,19 @@ const componentClasses = `/* ---- Component classes ----
   z-index: -1;
   border-radius: 8px;  /* SelectionRadius */
   background: var(--platform-sidebar-selection);
+}
+/* A sidebar whose list does not hold the keyboard draws the platform's other
+   pill: the grey one, with the label, the symbol and the count on it in the
+   accent as the platform's vibrancy lands it there. Both are MEASURED off
+   finder-sidebar-unfocused-{light,dark}.png, where the pill keeps the
+   emphasized one's geometry exactly. */
+.sidebar.unfocused .sidebar-item.selected,
+.sidebar.unfocused .sidebar-item.selected .sidebar-item-icon,
+.sidebar.unfocused .sidebar-item.selected .sidebar-item-count {
+  color: var(--platform-sidebar-selection-unemphasized-label);
+}
+.sidebar.unfocused .sidebar-item.selected::before {
+  background: var(--platform-sidebar-selection-unemphasized);
 }
 .sidebar-item-icon {
   flex: none;

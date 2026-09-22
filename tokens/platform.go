@@ -41,7 +41,9 @@
 //	field            light          dark           provenance
 //	-----            -----          ----           ----------
 //	SidebarMaterial  #f7f7f7        #1c1c1c        measured: the chrome band, wallpaper tinting off
-//	SidebarSelection #178bfb        #1994fc        measured: the selected sidebar row's pill
+//	SidebarSelection #178bfb        #1994fc        measured: the selected sidebar row's pill, its list holding the keyboard
+//	SidebarSelectionUnemphasized       #000000 a0.043  #ffffff a0.063  measured: that pill while its list does not hold the keyboard, a coverage over the rail
+//	SidebarSelectionUnemphasizedLabel  #0072f7  #148fff  measured: the label, symbol and count on that grey pill
 //	SidebarCount     #6d6d6d        #a4a4a4        measured: the count at the trailing end of a sidebar row
 //	SidebarSymbol    #000000        #ffffff        measured: the symbol at the leading end of a sidebar row
 //	CardFill         #f7f7f7        #2a3034        measured: the System Settings grouped box
@@ -214,6 +216,52 @@ type PlatformColors struct {
 	// list's selected row wears a different colour again. So the lift is
 	// recorded as the pixel in both appearances.
 	SidebarSelection color.NRGBA `appkit:"-"`
+
+	// SidebarSelectionUnemphasized is that same pill while its list does
+	// not hold the keyboard: black at 11/255 light and white at 16/255
+	// dark, laid over whatever the rail is painting. It is a COVERAGE and
+	// not a value, which the capture says outright: in
+	// finder-sidebar-unfocused-light.png the rail alternates #fafafa and
+	// #fafaf9 down its own dither, and the pill over it alternates #efefef
+	// and #efefee in the same columns — 123 columns of one pair and 108 of
+	// the other, read across the pill's middle row. The dark capture does
+	// the same, #1c1c1c to #2a2a2a in 164 columns and #1b1b1b to #292929 in
+	// 59. A fill that carries the rail's own dither through it is
+	// translucent; an opaque paint would flatten it.
+	//
+	// The pill's box is x 18-307, y 212-243 in both captures — 290 by 32,
+	// inset 10 from the panel's rim and cornered at 8, the emphasized
+	// pill's own geometry unchanged between the two states.
+	//
+	// Flattened onto SidebarMaterial with [github.com/vibrantgio/theme/color.Flatten]
+	// the coverage lands #ececec light and #2a2a2a dark, an 11 of 255 step
+	// under the rail in light and 14 in dark — the step the captures hold,
+	// which recording the pixel instead would have shrunk to 8 in light,
+	// because the capture's rail carries wallpaper tinting and this set's
+	// material is the untinted reading.
+	//
+	// It is not UnemphasizedSelectedContentBackground, which reports
+	// #dcdcdc light and #464646 dark. It is black and white rather than a
+	// colour, so WithAccent leaves it where it stands. See
+	// reference/macos/controls.md, "What the unfocused sidebar pill
+	// measures".
+	SidebarSelectionUnemphasized color.NRGBA `appkit:"-"`
+
+	// SidebarSelectionUnemphasizedLabel is what the label, the symbol and
+	// the count on that grey pill are drawn in: #0072f7 light and #148fff
+	// dark, the plateau the row's name holds over 47 and 43 pixels in
+	// finder-sidebar-unfocused-{light,dark}.png, and the plateau the
+	// document mark beside it holds over 23 pixels in each. A vector mark
+	// takes no stem darkening, so the two rasterizations agreeing on one
+	// value is the drawn colour and not a stem's shortfall.
+	//
+	// It is the accent as the platform's vibrancy lands it on the pill, and
+	// no name in the set is it in both appearances: ControlAccent's #007aff
+	// is 8 of 255 off in light and 21 in dark, and SidebarSelection's own
+	// lift is 5 off in dark and 25 in light. The label follows the user's
+	// accent, so [PlatformColors.WithAccent] moves it, as it moves the
+	// emphasized pill.
+	SidebarSelectionUnemphasizedLabel color.NRGBA `appkit:"-"`
 
 	// SidebarCount is what the count at the trailing end of a sidebar row
 	// is drawn in: #6d6d6d light and #a4a4a4 dark, the plateau every count
@@ -743,18 +791,20 @@ var (
 		Shadow:    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
 		Highlight: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
 
-		SidebarMaterial:   color.NRGBA{R: 0xf7, G: 0xf7, B: 0xf7, A: 0xff},
-		SidebarSelection:  color.NRGBA{R: 0x17, G: 0x8b, B: 0xfb, A: 0xff},
-		SidebarCount:      color.NRGBA{R: 0x6d, G: 0x6d, B: 0x6d, A: 0xff},
-		SidebarSymbol:     color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
-		CardFill:          color.NRGBA{R: 0xf7, G: 0xf7, B: 0xf7, A: 0xff},
-		PushButtonFill:    color.NRGBA{R: 0xec, G: 0xec, B: 0xec, A: 0xff},
-		DefaultButtonFill: color.NRGBA{R: 0x15, G: 0x7e, B: 0xfb, A: 0xff},
-		HoverOverlay:      color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x0d},
-		PressOverlay:      color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x19},
-		FloatingShadow:    DropShadow{Peak: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13}, Reach: 24},
-		FieldEdge:         color.NRGBA{R: 0xf3, G: 0xf3, B: 0xf3, A: 0xff},
-		ScrollbarThumb:    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x92},
+		SidebarMaterial:                   color.NRGBA{R: 0xf7, G: 0xf7, B: 0xf7, A: 0xff},
+		SidebarSelection:                  color.NRGBA{R: 0x17, G: 0x8b, B: 0xfb, A: 0xff},
+		SidebarSelectionUnemphasized:      color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x0b},
+		SidebarSelectionUnemphasizedLabel: color.NRGBA{R: 0x00, G: 0x72, B: 0xf7, A: 0xff},
+		SidebarCount:                      color.NRGBA{R: 0x6d, G: 0x6d, B: 0x6d, A: 0xff},
+		SidebarSymbol:                     color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
+		CardFill:                          color.NRGBA{R: 0xf7, G: 0xf7, B: 0xf7, A: 0xff},
+		PushButtonFill:                    color.NRGBA{R: 0xec, G: 0xec, B: 0xec, A: 0xff},
+		DefaultButtonFill:                 color.NRGBA{R: 0x15, G: 0x7e, B: 0xfb, A: 0xff},
+		HoverOverlay:                      color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x0d},
+		PressOverlay:                      color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x19},
+		FloatingShadow:                    DropShadow{Peak: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13}, Reach: 24},
+		FieldEdge:                         color.NRGBA{R: 0xf3, G: 0xf3, B: 0xf3, A: 0xff},
+		ScrollbarThumb:                    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x92},
 
 		AlternatingContentBackground: color.NRGBA{R: 0xf4, G: 0xf5, B: 0xf5, A: 0xff},
 		Scrim:                        color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x33},
@@ -825,18 +875,20 @@ var (
 		Shadow:    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
 		Highlight: color.NRGBA{R: 0xb4, G: 0xb4, B: 0xb4, A: 0xff},
 
-		SidebarMaterial:   color.NRGBA{R: 0x1c, G: 0x1c, B: 0x1c, A: 0xff},
-		SidebarSelection:  color.NRGBA{R: 0x19, G: 0x94, B: 0xfc, A: 0xff},
-		SidebarCount:      color.NRGBA{R: 0xa4, G: 0xa4, B: 0xa4, A: 0xff},
-		SidebarSymbol:     color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
-		CardFill:          color.NRGBA{R: 0x2a, G: 0x30, B: 0x34, A: 0xff},
-		PushButtonFill:    color.NRGBA{R: 0x33, G: 0x3a, B: 0x3f, A: 0xff},
-		DefaultButtonFill: color.NRGBA{R: 0x15, G: 0x7e, B: 0xfb, A: 0xff},
-		HoverOverlay:      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x18},
-		PressOverlay:      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x19},
-		FloatingShadow:    DropShadow{Peak: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13}, Reach: 24},
-		FieldEdge:         color.NRGBA{R: 0x2c, G: 0x33, B: 0x38, A: 0xff},
-		ScrollbarThumb:    color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x92},
+		SidebarMaterial:                   color.NRGBA{R: 0x1c, G: 0x1c, B: 0x1c, A: 0xff},
+		SidebarSelection:                  color.NRGBA{R: 0x19, G: 0x94, B: 0xfc, A: 0xff},
+		SidebarSelectionUnemphasized:      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x10},
+		SidebarSelectionUnemphasizedLabel: color.NRGBA{R: 0x14, G: 0x8f, B: 0xff, A: 0xff},
+		SidebarCount:                      color.NRGBA{R: 0xa4, G: 0xa4, B: 0xa4, A: 0xff},
+		SidebarSymbol:                     color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
+		CardFill:                          color.NRGBA{R: 0x2a, G: 0x30, B: 0x34, A: 0xff},
+		PushButtonFill:                    color.NRGBA{R: 0x33, G: 0x3a, B: 0x3f, A: 0xff},
+		DefaultButtonFill:                 color.NRGBA{R: 0x15, G: 0x7e, B: 0xfb, A: 0xff},
+		HoverOverlay:                      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x18},
+		PressOverlay:                      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x19},
+		FloatingShadow:                    DropShadow{Peak: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13}, Reach: 24},
+		FieldEdge:                         color.NRGBA{R: 0x2c, G: 0x33, B: 0x38, A: 0xff},
+		ScrollbarThumb:                    color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x92},
 
 		AlternatingContentBackground: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x0d},
 		Scrim:                        color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x42},
@@ -893,6 +945,7 @@ func (p PlatformColors) WithAccent(accent color.NRGBA) PlatformColors {
 	p.SelectedControl = atAccentHue(hue, sat, p.SelectedControl)
 	p.KeyboardFocusIndicator = atAccentHue(hue, sat, p.KeyboardFocusIndicator)
 	p.SidebarSelection = atAccentHue(hue, sat, p.SidebarSelection)
+	p.SidebarSelectionUnemphasizedLabel = atAccentHue(hue, sat, p.SidebarSelectionUnemphasizedLabel)
 	p.DefaultButtonFill = atAccentHue(hue, sat, p.DefaultButtonFill)
 	return p
 }

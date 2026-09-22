@@ -278,6 +278,7 @@ var accentRows = []string{
 	"SelectedControl",
 	"KeyboardFocusIndicator",
 	"SidebarSelection",
+	"SidebarSelectionUnemphasizedLabel",
 	"DefaultButtonFill",
 }
 
@@ -294,7 +295,7 @@ func TestWithAccentKeepsThePlatformBlue(t *testing.T) {
 	}
 }
 
-// TestWithAccentMovesOnlyTheAccentRows pins the rule's reach: the five rows
+// TestWithAccentMovesOnlyTheAccentRows pins the rule's reach: the rows
 // the platform derives from the accent take the new colour's hue, and every
 // other field — the inactive window's grey selection, the link, the system
 // colours, the planes — is untouched.
