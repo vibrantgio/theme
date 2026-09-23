@@ -1,0 +1,3 @@
+# Windows cross-builds: `GOOS=windows go build ./...` writes one beside each
+# main package in the module. Artifacts, never source.
+*.exe

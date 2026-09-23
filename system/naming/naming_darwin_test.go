@@ -1,11 +1,14 @@
+//go:build darwin && cgo
+
 package naming
 
 import "testing"
 
 // The Go order is the platform's order, measured rather than assumed: every
-// pair of the fixture is compared both ways. The one measured divergence is
-// the sharp s against a name spelled with "ss", which the package doc names
-// and no fixture row carries.
+// pair of the fixture is compared both ways. It is a reading of the platform's
+// own comparison, so it is taken only in a build that can ask it. The one
+// measured divergence is the sharp s against a name spelled with "ss", which
+// the package doc names and no fixture row carries.
 func TestPlatformAndGoAgree(t *testing.T) {
 	sign := func(n int) int {
 		switch {
