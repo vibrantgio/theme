@@ -377,6 +377,7 @@ func scaleVars(s Snapshot) []cssVar {
 		cssVar{"--disabled-coverage", coverage(tokens.DisabledCoverage)},
 		cssVar{"--dialog-corner", px(dialogCornerDp)},
 		cssVar{"--dialog-button-width", px(dialogButtonWidthDp)},
+		cssVar{"--dialog-footer-air", px(dialogFooterAirDp)},
 		cssVar{"--navbar-band", px(navbarBandDp)},
 	)
 	return vars
@@ -416,6 +417,17 @@ const dialogCornerDp = 27
 // does not fit widens its button by its own measure, which is what a
 // min-width states and a width would not.
 const dialogButtonWidthDp = 74
+
+// dialogFooterAirDp is the clear air between a decision's footer hairline and
+// the actions standing under it — the same reading patterns/modal draws
+// (modal.go, footerAirDp).
+//
+// MEASURED, save-dialog-{light,dark}.png: the band under that sheet's second
+// hairline runs y 480-544, 65 px, and its push buttons run y 501-524 — 21
+// clear rows above and 20 below. The 20 is the sheet's own S5 inset, which the
+// dialog already spends; the 21 is that inset plus the half pixel an exact
+// centring of a 24 px control in a 65 px band leaves.
+const dialogFooterAirDp = 21
 
 // focusHaloWidthDp is the focus halo's band width — the 4 dp every control in
 // this library draws (components/internal/focus.Width), half of it past the
@@ -581,7 +593,15 @@ const componentClasses = `/* ---- Component classes ----
    .tooltip, .toast — the transient surfaces. Each state rule carries a
    forcing twin class (.is-hover, .is-active, .is-focus, .is-checked) so a
    static page can show the state with the very declarations the live
-   pseudo-class applies. */
+   pseudo-class applies.
+
+   The button's corner is the radius scale's Md, and Md is what the platform
+   draws. MEASURED, save-dialog-{light,dark}.png: a circular fit to the
+   per-row coverage of the "Cancel" button's corners, its extremes pinned,
+   gives r = 6.11 light (rms 0.088 px) and r = 6.17 dark (rms 0.069), all
+   four corners agreeing to the hundredth in both appearances; every circular
+   fit in that reference sits above the radius drawn, the platform's corner
+   being a continuous curve. */
 
 .btn {
   box-sizing: border-box;
@@ -1605,18 +1625,31 @@ const componentClasses = `/* ---- Component classes ----
   letter-spacing: 0;
 }
 
-/* The footer row (modal.go footerWidget): right-aligned actions with S2
-   gaps, each laid out in the platform's measured dialog button width
+/* The footer row (modal.go drawModal): right-aligned actions with S2 gaps,
+   each laid out in the platform's measured dialog button width
    (--dialog-button-width). Each action is a bare component owning its own
-   focus ring — the dialog wraps and decorates nothing — and the row draws
-   nothing of its own: no band, no hairline, no rule between it and the body,
-   because the sheet it is drawn after draws none. The width is a floor, so a
-   label that does not fit widens its own button and nothing else. */
+   focus ring — the dialog wraps and decorates nothing. The width is a floor,
+   so a label that does not fit widens its own button and nothing else.
+
+   The footer is a band of the SHEET and not of the inset column, which is why
+   it reaches back over the dialog's padding: a 1px separator hairline runs
+   edge to edge above it, and under that line the band holds the actions with
+   the air of --dialog-footer-air above and the dialog's own S5 inset below.
+   MEASURED,
+   save-dialog-{light,dark}.png: the line at y=479 runs x 165-534, the sheet's
+   own first column to its last, and the 65px band under it holds the 24px
+   push buttons with 21 rows clear above and 20 below. A PANEL has no footer
+   and so no line: the sheet's other hairline parts its own rows from an
+   accessory view, one body region from another, and a panel here has one
+   body. */
 .dialog-footer {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: var(--space-2);
+  margin: 0 calc(-1 * var(--space-5)) calc(-1 * var(--space-5));
+  padding: var(--dialog-footer-air) var(--space-5) var(--space-5);
+  border-top: 1px solid var(--platform-separator);
 }
 .dialog-footer .btn {
   min-width: var(--dialog-button-width);
