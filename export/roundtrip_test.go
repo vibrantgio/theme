@@ -468,7 +468,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		// The rail itself draws no line down its trailing edge: the
 		// platform's sidebar is an inset panel and the pane's rim and shadow
 		// are the boundary.
-		"min-height: calc(var(--density-control-height) + 2 * var(--density-padding-y));",
+		"min-height: var(--navbar-band);",
 		"background: var(--platform-sidebar-material);",
 		"box-shadow: inset 0 -1px 0 var(--platform-separator);",
 		"color: var(--platform-sidebar-symbol);",

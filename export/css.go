@@ -377,9 +377,22 @@ func scaleVars(s Snapshot) []cssVar {
 		cssVar{"--disabled-coverage", coverage(tokens.DisabledCoverage)},
 		cssVar{"--dialog-corner", px(dialogCornerDp)},
 		cssVar{"--dialog-button-width", px(dialogButtonWidthDp)},
+		cssVar{"--navbar-band", px(navbarBandDp)},
 	)
 	return vars
 }
+
+// navbarBandDp is the depth of the toolbar band a navbar stands in — the
+// same reading patterns/pane carries (pane.BandDp) and patterns/shell hands
+// the bar. It takes no density: the band is the platform's, settled by where
+// the window's control buttons stand, and no setting of how tightly a window
+// sets its rows moves it.
+//
+// MEASURED: the platform draws the window's control circles nineteen px in
+// from the glass on both axes and the circle is fourteen across, so the band
+// that holds them centred is 2*19 + 14 = 52 — the band every stored toolbar
+// capture reads, 8 px above a 36 px control and 8 below it.
+const navbarBandDp = 52
 
 // dialogCornerDp is the radius a dialog's surface is rounded at — the same
 // reading patterns/modal draws (modal.go, dialogCornerDp).
@@ -788,7 +801,15 @@ const componentClasses = `/* ---- Component classes ----
    than the button beside it — and the drawn height is max(that, line box +
    2*PaddingY). The horizontal inset is S3 (12 dp, static: it does not follow
    density) measured from the OUTER edge, so the padding gives back whatever
-   the border occupies and the text lands where the Gio side puts it. */
+   the border occupies and the text lands where the Gio side puts it.
+
+   The value carries --platform-label and not --platform-text: MEASURED,
+   voicememos-multi-folder-search-2026-09-18.png at 1x, where a typed query
+   standing unselected in the toolbar recess plateaus at the label's black at
+   216 of 255 over that recess's own fill, to the byte on every channel, where
+   an opaque text colour would plateau at black outright. The var carries that
+   coverage, so the browser composites it onto the field's own fill exactly as
+   the Gio side flattens it. */
 .input {
   box-sizing: border-box;
   display: block;
@@ -801,7 +822,7 @@ const componentClasses = `/* ---- Component classes ----
   border-radius: var(--radius-md);
   background: var(--platform-text-background);
   background-clip: padding-box;
-  color: var(--platform-text);
+  color: var(--platform-label);
   font-family: var(--font-family);
   font-size: var(--font-body-large-size);
   line-height: var(--font-body-large-line-height);
@@ -1182,8 +1203,8 @@ const componentClasses = `/* ---- Component classes ----
 
 /* Navbar (patterns/navbar navbar.go): a horizontal chrome bar — drawNavbar
    fills the material, insets PaddingY vertically and S4 horizontally, and
-   patterns/shell pins the bar to ControlHeight + 2*PaddingY (28 dp
-   comfortable, 19 compact). Slots run brand, centred links, actions; the
+   patterns/shell hands the bar the toolbar band, --navbar-band (pane.BandDp,
+   52 px), which takes no density. Slots run brand, centred links, actions; the
    links row centres in the space brand and actions leave over (that space
    halved), which margin-inline auto reproduces exactly. The foot hairline is
    an inset shadow rather than a border, because the Gio side paints it over
@@ -1192,7 +1213,7 @@ const componentClasses = `/* ---- Component classes ----
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  min-height: calc(var(--density-control-height) + 2 * var(--density-padding-y));
+  min-height: var(--navbar-band);
   padding: var(--density-padding-y) var(--space-4);
   background: var(--platform-sidebar-material);
   box-shadow: inset 0 -1px 0 var(--platform-separator);
@@ -1260,10 +1281,12 @@ const componentClasses = `/* ---- Component classes ----
 
 /* Sidebar (patterns/sidebar sidebar.go): a vertical chrome rail at the
    pattern's two contractual widths — 220 dp expanded, 48 dp collapsed
-   (expandedDp/collapsedDp: component constants, deliberately not tokens and
-   not density-responsive; a different rail copies the pattern). The 220 is
-   MEASURED: the panel in voicememos-multi-folder-2026-09-18.png spans
-   x 64–283. It draws no line down its trailing edge — the platform's sidebar
+   (sidebar.ExpandedWidth and collapsedDp: component constants, deliberately
+   not tokens and not density-responsive; a different rail copies the
+   pattern). The 220 is MEASURED: the panel in
+   voicememos-multi-folder-2026-09-18.png spans x 64–283, and
+   patterns/sidebar owns that reading — the Go side reads it there and
+   restates it nowhere. It draws no line down its trailing edge — the platform's sidebar
    is an inset panel, and its rim and shadow are what part it from the content
    (patterns/pane draws both). The toggle row is ControlHeight;
    every item row is the sidebar's OWN row height, the pattern's RowHeight
@@ -1275,7 +1298,7 @@ const componentClasses = `/* ---- Component classes ----
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  width: 220px;  /* expandedDp */
+  width: 220px;  /* sidebar.ExpandedWidth */
   background: var(--platform-sidebar-material);
   color: var(--platform-label);
   overflow: hidden;
