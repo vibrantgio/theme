@@ -1,4 +1,4 @@
-# macOS 26.5.2 (build 25F84), read 2026-09-10 by nscolors.swift under aqua then darkAqua and re-read 2026-09-13 with the alpha carried to the byte; sRGB. Every alpha AppKit names is exactly n/255, written here as "aN/255"; the measured-materials section below carries fitted coverages as fractions instead, since a fit is not a byte AppKit reported.
+# macOS 26.5.2 (build 25F84), read 2026-09-10 by nscolors.swift under aqua then darkAqua, re-read 2026-09-13 with the alpha carried to the byte, and unemphasizedSelectedTextColor added 2026-09-23 on the same machine and build; sRGB. Every alpha AppKit names is exactly n/255, written here as "aN/255"; the measured-materials section below carries fitted coverages as fractions instead, since a fit is not a byte AppKit reported.
 windowBackgroundColor	#ffffff	#1e1e1e
 underPageBackgroundColor	#969696 a229/255	#282828
 controlBackgroundColor	#ffffff	#1e1e1e
@@ -7,6 +7,7 @@ selectedContentBackgroundColor	#0064e1	#0059d1
 unemphasizedSelectedContentBackgroundColor	#dcdcdc	#464646
 selectedTextBackgroundColor	#b3d7ff	#3f638b
 unemphasizedSelectedTextBackgroundColor	#dcdcdc	#464646
+unemphasizedSelectedTextColor	#000000	#ffffff
 findHighlightColor	#ffff00	#ffff00
 separatorColor	#000000 a25/255	#ffffff a25/255
 gridColor	#e6e6e6	#1a1a1a

@@ -123,12 +123,15 @@ type PlatformColors struct {
 	TextBackground      color.NRGBA
 
 	// Selection. The emphasized rows are the active window's and follow
-	// the accent; the unemphasized pair is the inactive window's grey and
-	// does not.
+	// the accent; the unemphasized rows are the inactive window's grey and
+	// do not. UnemphasizedSelectedText is the colour a run reads in over
+	// that grey: AppKit answers the opaque black and white
+	// SelectedText does, and not the label's 216 of 255.
 	SelectedContentBackground             color.NRGBA
 	UnemphasizedSelectedContentBackground color.NRGBA
 	SelectedTextBackground                color.NRGBA
 	UnemphasizedSelectedTextBackground    color.NRGBA
+	UnemphasizedSelectedText              color.NRGBA
 
 	// FindHighlight is the find highlight as Mail paints it, measured off
 	// the stored captures of Mail's find bar in both appearances. It is
@@ -747,6 +750,7 @@ var (
 		UnemphasizedSelectedContentBackground: color.NRGBA{R: 0xdc, G: 0xdc, B: 0xdc, A: 0xff},
 		SelectedTextBackground:                color.NRGBA{R: 0xb3, G: 0xd7, B: 0xff, A: 0xff},
 		UnemphasizedSelectedTextBackground:    color.NRGBA{R: 0xdc, G: 0xdc, B: 0xdc, A: 0xff},
+		UnemphasizedSelectedText:              color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
 
 		FindHighlight: color.NRGBA{R: 0xfa, G: 0xef, B: 0xbd, A: 0xff},
 
@@ -831,6 +835,7 @@ var (
 		UnemphasizedSelectedContentBackground: color.NRGBA{R: 0x46, G: 0x46, B: 0x46, A: 0xff},
 		SelectedTextBackground:                color.NRGBA{R: 0x3f, G: 0x63, B: 0x8b, A: 0xff},
 		UnemphasizedSelectedTextBackground:    color.NRGBA{R: 0x46, G: 0x46, B: 0x46, A: 0xff},
+		UnemphasizedSelectedText:              color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
 
 		FindHighlight: color.NRGBA{R: 0x6e, G: 0x6e, B: 0x4d, A: 0xff},
 
