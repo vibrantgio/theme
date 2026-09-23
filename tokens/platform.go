@@ -654,7 +654,7 @@ type PlatformColors struct {
 	// own fill while it records a yes: black at 0.102 light and white at
 	// 0.161 dark, the coverage the platform draws the chosen segment of a
 	// segmented control at. The patch it fills is not the control's whole
-	// box — see components/internal/toolbarface, which draws it inset and
+	// box — see components/internal/controlface, which draws it inset and
 	// cornered as measured.
 	//
 	// MEASURED, finder-window-untinted-dark.png, the four-segment view
