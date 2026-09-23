@@ -29,7 +29,10 @@
 // of case, digits, punctuation and scripts turned up: a name spelled with the
 // sharp s, against one spelled with "ss" and differing in what follows,
 // orders the pair the other way round on macOS. A list holding both spellings
-// therefore draws one order on macOS and the other elsewhere.
+// therefore draws one order on macOS and the other elsewhere, and that is the
+// rule (2026-09-23): on macOS the platform's comparison decides, and where no
+// platform decides the collator's own order is what its users see; the Go
+// twin bends no case to imitate a platform that is not there.
 package naming
 
 import (
