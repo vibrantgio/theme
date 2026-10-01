@@ -503,14 +503,14 @@ func layoutHTML(s Snapshot) string {
 		"so compact shrinks the target with the pixels.</p>\n")
 	b.WriteString("<div class=\"density-pair\">\n")
 	for _, setting := range []struct {
-		class string
-		label string
-		d     tokens.Density
+		class   string
+		heading string
+		d       tokens.Density
 	}{
 		{"density-col", "comfortable (root)", tokens.Comfortable},
 		{"density-col compact", "compact (.compact)", tokens.Compact},
 	} {
-		fmt.Fprintf(&b, "<div class=\"%s\">\n<h3>%s</h3>\n", setting.class, html.EscapeString(setting.label))
+		fmt.Fprintf(&b, "<div class=\"%s\">\n<h3>%s</h3>\n", setting.class, html.EscapeString(setting.heading))
 		b.WriteString("<div class=\"control-row\">\n<span class=\"control-bar\">Control</span>\n<span class=\"chip-bar\">Chip</span>\n</div>\n")
 		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-control-height</code> &middot; %s &middot; <code>--density-chip-height</code> &middot; %s &mdash; each control's own pointer target</p>\n",
 			px(setting.d.ControlHeight), px(setting.d.ChipHeight()))

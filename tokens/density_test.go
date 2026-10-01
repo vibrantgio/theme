@@ -162,7 +162,7 @@ func TestDensitySettingsMatchTable(t *testing.T) {
 			Compact.PaddingX, Compact.PaddingY, Comfortable.PaddingX, Comfortable.PaddingY)
 	}
 	if Comfortable.PaddingX != 8 || Comfortable.PaddingY != 2 {
-		t.Errorf("Comfortable padding = (%v, %v), want (8, 2) — the HIG's inset beside a regular push button's label, and what the measured 24 leaves around LabelLarge's line box",
+		t.Errorf("Comfortable padding = (%v, %v), want (8, 2) — the HIG's inset beside a regular push button's title, and what the measured 24 leaves around LabelLarge's line box",
 			Comfortable.PaddingX, Comfortable.PaddingY)
 	}
 	if Compact.PaddingX != 7 || Compact.PaddingY != 0 {

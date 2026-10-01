@@ -18,7 +18,7 @@ package tokens
 //	Compact control height      19 dp   PUBLISHED: the HIG's small push button — no small control is captured yet
 //	Comfortable field height    27 dp   MEASURED: the text field in the same pair; the HIG publishes 22 pt, superseded
 //	Compact field height        21 dp   DERIVED: 27 × 19/24 = 21.4, rounded — the platform's field-to-control ratio applied to the small control, until a small field is captured
-//	Comfortable PaddingX         8 dp   PUBLISHED: the HIG's horizontal inset beside a regular push button's label — the captured buttons both sit at the platform's 74 px minimum width with their labels centred, so what they measure is centring, not an inset
+//	Comfortable PaddingX         8 dp   PUBLISHED: the HIG's horizontal inset beside a regular push button's title — the captured buttons both sit at the platform's 74 px minimum width with their titles centred, so what they measure is centring, not an inset
 //	Compact PaddingX             7 dp   DERIVED: 8 × 19/22, rounded — the published small-to-regular ratio, both operands published, since neither the inset nor the small control is captured
 //	Comfortable PaddingY         2 dp   DERIVED: (24 − LabelLarge's 20 dp line box) / 2, which lands a button exactly on 24
 //	Compact PaddingY             0 dp   DERIVED: LabelLarge's line box is already over 19, so there is nothing to pad with
@@ -274,11 +274,11 @@ type Density struct {
 func (d Density) ChipHeight() float32 { return d.ControlHeight - ChipDrop }
 
 // The padding comes from the platform beside the control height: PaddingX is
-// the HIG's inset beside a push button's label, PaddingY is what is left of
+// the HIG's inset beside a push button's title, PaddingY is what is left of
 // the control height once LabelLarge's 20 dp line box has taken its share —
 // 2 dp at Comfortable, nothing at Compact, whose line box is already over the
 // height. PaddingX did not move with the measured heights: both captured
-// buttons sit at the platform's minimum push-button width with their labels
+// buttons sit at the platform's minimum push-button width with their titles
 // centred, so the capture measures centring and not an inset. See the
 // provenance table at the top of this file.
 var (

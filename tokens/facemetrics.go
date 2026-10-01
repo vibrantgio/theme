@@ -11,14 +11,14 @@ import (
 // beside its text has to match: the height of its capitals and the width of
 // its upright stem, both in the dp [TextStyle.Size] is in.
 //
-// They exist because a mark set beside a label is read as part of that label's
+// They exist because a mark set beside text is read as part of that text's
 // line. The band the words occupy runs from the baseline to the cap height, so
 // a mark rises no higher and hangs no lower; and the strokes the words are
 // made of are one stem wide, so a stroked mark beside them is stroked at that
 // width. Measured on the platform's own marks — the plus, the check and the
-// cross set against a system-font label, rendered offscreen — the mark's drawn
-// box runs 1.11 to 1.21 times the label's cap height and its stroke band
-// equals the label's stem; the excess over the cap band is the optical licence
+// cross set against system-font text, rendered offscreen — the mark's drawn
+// box runs 1.11 to 1.21 times that text's cap height and its stroke band
+// equals its stem; the excess over the cap band is the optical licence
 // a stroke straddling that band takes on its own. See the measured macOS
 // reference.
 //
