@@ -29,6 +29,8 @@
 //
 // [Text] is that recipe in one call for the case every window has — a role, a
 // colour, a line count — and is what a window draws its own text with.
+// [TextWeight] is the same call for a draw site whose role may arrive without a
+// weight and is not Normal when it does.
 //
 // The correction is a deficit, not a floor, so it is right for wrapped text
 // too: Gio already spends the line height on each gap, so adding the one
@@ -218,11 +220,27 @@ func Layout(gtx layout.Context, sh *text.Shaper, lbl widget.Label, f font.Font, 
 // fits the constraints the caller handed down. Those constraints reach it
 // untouched, so a Min floor still centres the line box within the floor and a
 // caller wanting the text's own size relaxes the floor itself.
+//
+// A style without a weight of its own shapes Normal. [TextWeight] is the same
+// call for a draw site that needs another weight under that case.
 func Text(gtx layout.Context, sh *text.Shaper, txt string, style tokens.TextStyle, col color.NRGBA, maxLines int) layout.Dimensions {
+	return TextWeight(gtx, sh, txt, style, col, maxLines, font.Normal)
+}
+
+// TextWeight is [Text] with the weight a style carrying none of its own falls
+// back to. The rule is [Font]'s: a non-zero style weight is honoured and
+// fallback is spent only on a zero one, which is what an unset
+// [tokens.TextStyle] carries.
+//
+// It exists because a draw site cannot always take Normal for that case: a
+// title set against a body keeps its emphasis at SemiBold and a table's header
+// row at Bold, and both are drawn from styles a caller may hand over with the
+// size alone.
+func TextWeight(gtx layout.Context, sh *text.Shaper, txt string, style tokens.TextStyle, col color.NRGBA, maxLines int, fallback font.Weight) layout.Dimensions {
 	rec := op.Record(gtx.Ops)
 	paint.ColorOp{Color: col}.Add(gtx.Ops)
 	material := rec.Stop()
-	return Layout(gtx, sh, Label(style, maxLines), Font(style, font.Normal), unit.Sp(style.Size), txt, material)
+	return Layout(gtx, sh, Label(style, maxLines), Font(style, fallback), unit.Sp(style.Size), txt, material)
 }
 
 // naturalLine measures the ascent-plus-descent box Gio gives txt's own lines

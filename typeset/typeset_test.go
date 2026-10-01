@@ -466,3 +466,55 @@ func TestTextCapsTheLineCount(t *testing.T) {
 		}
 	}
 }
+
+// TestTextWeightSpendsTheFallbackOnAWeightlessRole pins the one option
+// typeset.Text carries: the weight a style without one of its own shapes in.
+// The library draws two of these — a title against a body, a table's header
+// row — from styles their callers may hand over with the size alone, so the
+// fallback has to reach the font and nothing else.
+func TestTextWeightSpendsTheFallbackOnAWeightlessRole(t *testing.T) {
+	sh := pinned()
+	fg := color.NRGBA{R: 0x20, G: 0x40, B: 0x60, A: 0xff}
+
+	weightless := styleAt(20)
+	weightless.Weight = 0
+
+	var recipe op.Ops
+	g := gtx(&recipe, 1<<20)
+	rec := op.Record(g.Ops)
+	paint.ColorOp{Color: fg}.Add(g.Ops)
+	material := rec.Stop()
+	want := typeset.Layout(g, sh, typeset.Label(weightless, 1),
+		typeset.Font(weightless, font.SemiBold), unit.Sp(weightless.Size), specimen, material)
+
+	var own op.Ops
+	h := gtx(&own, 1<<20)
+	if got := typeset.TextWeight(h, sh, specimen, weightless, fg, 1, font.SemiBold); got != want {
+		t.Errorf("TextWeight = %+v, want the recipe's %+v", got, want)
+	}
+
+	var normal op.Ops
+	n := gtx(&normal, 1<<20)
+	if got := typeset.Text(n, sh, specimen, weightless, fg, 1); got.Size.X >= want.Size.X {
+		t.Errorf("Text at Normal measured %d px wide, want narrower than SemiBold's %d: the fallback did not reach the font", got.Size.X, want.Size.X)
+	}
+}
+
+// TestTextWeightLeavesAStatedWeightAlone pins the other half of [typeset.Font]'s
+// rule through the option: a role that states its weight keeps it, so a draw
+// site naming a fallback cannot override the typography.
+func TestTextWeightLeavesAStatedWeightAlone(t *testing.T) {
+	sh := pinned()
+	fg := color.NRGBA{A: 0xff}
+	style := styleAt(20) // LabelLarge states Medium
+
+	var ops op.Ops
+	g := gtx(&ops, 1<<20)
+	want := typeset.Text(g, sh, specimen, style, fg, 1)
+
+	var own op.Ops
+	h := gtx(&own, 1<<20)
+	if got := typeset.TextWeight(h, sh, specimen, style, fg, 1, font.Bold); got != want {
+		t.Errorf("TextWeight at a Bold fallback = %+v, want the role's own weight %+v", got, want)
+	}
+}
