@@ -14,7 +14,7 @@ import (
 // channels, rounded — and opaque.
 //
 // Encoded sRGB is where the platform composites an alpha colour, measured
-// off the Save dialog captures in the organization's macOS reference:
+// off the Save panel captures in the organization's macOS reference:
 // labelColor, black at 0.85, lands on #242424 over a push button's #ececec
 // fill and its white lands on #e0e1e2 over the dark button's #333a3f, and
 // secondaryLabelColor's white lands on #9c9fa1 over the dark sheet's

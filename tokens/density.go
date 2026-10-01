@@ -30,7 +30,7 @@ package tokens
 //	Comfortable toolbar control 36 dp   MEASURED: every bordered control in the Finder toolbar captures — finder-window-untinted-dark.png (five controls, rim row y=46, fill y 47-80, rim row y=81), finder-window-untinted-light.png (fill y 34-69), finder-window-light.png (the view pop-up, y 8-43) and finder-window.png (the same pop-up, y 8-43); mail-window.png's search field and notes-toolbar.png agree at y 8-43
 //	Compact toolbar control     36 dp   CARRIED: no stored capture holds a toolbar drawn at the platform's small size, and all five stored windows draw one toolbar control size, so Compact carries the measured 36 until a capture holds otherwise
 //
-// What is measured and what is not. One Save dialog, captured at 1x in both
+// What is measured and what is not. One Save panel, captured at 1x in both
 // appearances, holds the regular push button, pop-up button, text field and
 // checkbox this scale is named after, and every Comfortable number above is
 // read off its pixels. No capture holds a control at the platform's small
@@ -117,7 +117,7 @@ const (
 	// ComfortableControlHeight is the default desktop control-height floor in
 	// dp: a Comfortable control is at least this tall, and taller when its
 	// content box needs it. It is the platform's regular control, measured
-	// off the Save dialog in .github/reference/macos/save-dialog-light.png and
+	// off the Save panel in .github/reference/macos/save-dialog-light.png and
 	// save-dialog-dark.png — a 24 px push button and pop-up button, both
 	// appearances agreeing to the pixel. The HIG publishes 22 pt; the capture
 	// supersedes it.
@@ -130,7 +130,7 @@ const (
 	// floor.
 	CompactControlHeight float32 = 19
 	// ComfortableFieldHeight is the text field's own height floor in dp,
-	// measured at 27 px off the same Save dialog. A field is not a button's
+	// measured at 27 px off the same Save panel. A field is not a button's
 	// height on this platform and does not take one: the HIG publishes 22 pt
 	// for both, and the capture draws 27 against 24.
 	ComfortableFieldHeight float32 = 27
@@ -155,7 +155,7 @@ const (
 	// ComfortableCheckboxRowHeight is the height of a checkbox's row in dp:
 	// the footprint the 16 dp symbol is centred in, and the pointer target.
 	// It is a pin, not a floor — a checkbox draws no content box of its own.
-	// MEASURED off the Save dialog in .github/reference/macos/save-dialog-light.png
+	// MEASURED off the Save panel in .github/reference/macos/save-dialog-light.png
 	// and save-dialog-dark.png as the pitch between the two "Options:"
 	// checkboxes, whose squares run y 372–387 and y 394–409: 22 px, both
 	// appearances agreeing to the pixel. It is neither the control height nor

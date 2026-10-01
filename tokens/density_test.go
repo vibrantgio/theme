@@ -8,7 +8,7 @@ import (
 // TestDensityPicksMatchThePlatformScale pins the two control heights to the
 // platform's scale as the reference now reads it, with the provenance
 // recorded in density.go and in .github/reference/macos/controls.md:
-// Comfortable is the regular control measured off the stored Save dialog at
+// Comfortable is the regular control measured off the stored Save panel at
 // 24 dp, superseding the HIG's published 22 pt, and Compact is still the
 // published small control at 19 dp because no capture holds one. Each is also
 // the pointer target a control of that density offers.
@@ -47,7 +47,7 @@ func TestDensityPicksMatchThePlatformScale(t *testing.T) {
 }
 
 // TestFieldHeightIsItsOwnMeasurement pins the text field's height to the
-// platform's own reading of it. The Save dialog measures the field at 27 px
+// platform's own reading of it. The Save panel measures the field at 27 px
 // against the push button's 24, so a field that took the control height
 // would be 3 dp short of the platform; Compact's 21 is that measured ratio
 // applied to the uncaptured small control, and is what a capture of one

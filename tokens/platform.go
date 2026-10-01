@@ -47,12 +47,12 @@
 //	SidebarCount     #6d6d6d        #a4a4a4        measured: the count at the trailing end of a sidebar row
 //	SidebarSymbol    #000000        #ffffff        measured: the symbol at the leading end of a sidebar row
 //	CardFill         #f7f7f7        #2a3034        measured: the System Settings grouped box
-//	PushButtonFill   #ececec        #333a3f        measured: the Save dialog's push button at rest
-//	DefaultButtonFill #157efb       #157efb        measured: the Save dialog's default push button at rest
+//	PushButtonFill   #ececec        #333a3f        measured: the Save panel's push button at rest
+//	DefaultButtonFill #157efb       #157efb        measured: the Save panel's default push button at rest
 //	HoverOverlay     #000000 a0.051 #ffffff a0.094 measured: a toolbar button under the pointer
 //	PressOverlay     #000000 a0.098 #ffffff a0.098 measured: a push button held down
 //	FloatingShadow   #000000 a0.075 #000000 a0.075 measured: the sidebar shadow, 24 px of reach centred on the surface
-//	FieldEdge        #f3f3f3        #2c3338        measured: the unfocused text field's hairline in the Save dialog
+//	FieldEdge        #f3f3f3        #2c3338        measured: the unfocused text field's hairline in the Save panel
 //	ScrollbarThumb   #000000 a0.572 #ffffff a0.572 measured: the overlay scrollbar's knob over its track
 //	AlternatingContentBackground  #f4f5f5  #ffffff a0.05  measured: the second of alternatingContentBackgroundColors, and Finder's list stripes
 //	Scrim            #000000 a0.20  #000000 a0.26  measured: the dim under a Save sheet in save-dialog-{light,dark}.png
@@ -351,7 +351,7 @@ type PlatformColors struct {
 	// light, white in dark, at the coverage that reproduces the captured
 	// state over the captured resting fill. Hover is a Finder toolbar
 	// button under the pointer (control-hover-light.png: #ffffff to
-	// #f2f2f2; -dark.png: #242d32 to #384146); press is a Save dialog's
+	// #f2f2f2; -dark.png: #242d32 to #384146); press is a Save panel's
 	// push button held down (control-pressed-light.png: #ececec to
 	// #d5d5d5; -dark.png: #333a3f to #474d52). The light readings are
 	// exact on every channel; the dark hover is exact on green and
@@ -568,7 +568,7 @@ type PlatformColors struct {
 	// Dark, over the #1e1e1e band: ControlText gives #dcdcdc against the
 	// measured #e9e9e9, white at 230 of 255.
 	//
-	// A FORM control is not this: the Save dialog's pop-up draws its mark and
+	// A FORM control is not this: the Save panel's pop-up draws its mark and
 	// its label at ControlText exactly, which is why that name stays where a
 	// dialog's controls are drawn and this one answers for the toolbar.
 	//

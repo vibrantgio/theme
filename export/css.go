@@ -969,7 +969,7 @@ const componentClasses = `/* ---- Component classes ----
   background: var(--platform-disabled-control-text);
 }
 
-/* Checkbox (components/input checkbox.go): the 16 dp symbol the Save dialog
+/* Checkbox (components/input checkbox.go): the 16 dp symbol the Save panel
    measures, centred in the density's checkbox row - the square footprint the
    platform gives a pointer, 22 dp comfortable against the push button's 24
    and the list row's 20. The symbol does not follow density and the footprint
@@ -980,7 +980,7 @@ const componentClasses = `/* ---- Component classes ----
    the switched-off boxes' corner ramp in save-dialog-{light,dark}.png answers
    5.04 and 5.34 against the same fit's habit of sitting a fifth over
    everywhere in that reference. The edge is the measured 1 dp of the
-   platform's field hairline - the Save dialog's "Tags:" field is the sheet's
+   platform's field hairline - the Save panel's "Tags:" field is the sheet's
    one unfocused enabled control that draws an edge at all, and it draws a
    single pixel of it.
 
@@ -1359,7 +1359,7 @@ const componentClasses = `/* ---- Component classes ----
    The row height, the pill's inset and its corner, the three columns and the
    heading's block are MEASURED off the organization's macOS reference
    (patterns/sidebar RowHeight, SelectionInset, SelectionRadius, SymbolBox,
-   SymbolInset, LabelInset, CountInset, SectionHeight, SectionInset,
+   SymbolInset, TitleInset, CountInset, SectionHeight, SectionInset,
    SectionBaseline): Finder's and Voice Memos' selected sidebar rows span 32 px
    at 1x, the pill is inset 10 from each edge of the rail, and a circular fit
    to its corner reads 8; Voice Memos' folder mark is centred on 29 in from the
@@ -1420,7 +1420,7 @@ const componentClasses = `/* ---- Component classes ----
   width: 24px;  /* SymbolBox */
   height: 100%;
   margin-left: 17px;  /* SymbolInset */
-  margin-right: 7px;  /* LabelInset less SymbolInset and SymbolBox */
+  margin-right: 7px;  /* TitleInset less SymbolInset and SymbolBox */
   color: var(--platform-sidebar-symbol);
 }
 .sidebar-item.selected .sidebar-item-icon {
@@ -1447,7 +1447,7 @@ const componentClasses = `/* ---- Component classes ----
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.sidebar-item-label:first-child { margin-left: 48px; }  /* LabelInset */
+.sidebar-item-label:first-child { margin-left: 48px; }  /* TitleInset */
 .sidebar-item-count {
   flex: none;
   margin-left: var(--space-2);
@@ -1582,7 +1582,7 @@ const componentClasses = `/* ---- Component classes ----
 }
 
 /* Dialog (modal.go drawModal): the centred surface — width 75% of the window
-   plane clamped to 180-560 dp, height hugging its content between the 120 dp
+   surface clamped to 180-560 dp, height hugging its content between the 120 dp
    floor and the 560 dp cap (overflow clips), the window background under the
    platform's shadow and no hairline at all, the sheet's own measured corner
    (--dialog-corner), an S5 inset and S3 gaps between header, body and footer.

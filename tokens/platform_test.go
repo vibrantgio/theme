@@ -2,6 +2,8 @@ package tokens_test
 
 import (
 	"bufio"
+	"bytes"
+	"crypto/sha256"
 	"fmt"
 	"image/color"
 	"math"
@@ -17,8 +19,20 @@ import (
 
 // The catalogue lives in the organization's macOS reference; testdata holds
 // a copy so this module tests on its own, without a sibling checkout. The
-// two files are byte-identical, header included.
+// two files are byte-identical, header included, and
+// TestTheCatalogueCopyIsTheReferenceCopy holds them so.
 const cataloguePath = "testdata/nscolors.tsv"
+
+// referencePath is the reference copy, which exists only where this module is
+// checked out beside the plan root; referenceDigest is that copy's SHA-256,
+// which is what the test has to go on when it is not. Both change together:
+// after editing either copy, re-record with
+//
+//	shasum -a 256 ../../.github/reference/macos/nscolors.tsv
+const (
+	referencePath   = "../../.github/reference/macos/nscolors.tsv"
+	referenceDigest = "8bdb1d4ff052827c3254c5da434d202f2afa4d88e6479dd527eb7bb4d6802f6a"
+)
 
 // mailFindHighlight is the find highlight as Mail paints it, measured off
 // the stored captures of its find bar in both appearances. The catalogue's
@@ -476,7 +490,7 @@ func TestCardFillIsTheMeasuredGroupedBox(t *testing.T) {
 }
 
 // TestPushButtonFillIsTheMeasuredPushButton pins the push button's fill to
-// the pixels of the Save dialog captures rather than to controlColor, which
+// the pixels of the Save panel captures rather than to controlColor, which
 // reports a different colour in both appearances: the platform draws the
 // ordinary push button at a fill of its own, and a consumer that wore
 // controlColor would paint white on the light sheet where the platform
@@ -503,7 +517,7 @@ func TestPushButtonFillIsTheMeasuredPushButton(t *testing.T) {
 }
 
 // TestDefaultButtonFillIsTheMeasuredDefaultButton pins the default push
-// button's fill to the pixels of the Save dialog captures rather than to
+// button's fill to the pixels of the Save panel captures rather than to
 // controlAccentColor, which reports #007aff in both appearances: the
 // platform draws the sheet's default action at a fill of its own, the same
 // kind of lift off the accent that SidebarSelection carries. Both
@@ -770,5 +784,32 @@ func TestToolbarControlShadowIsTheMeasuredDarkening(t *testing.T) {
 		if c.ToolbarControlShadow == c.FloatingShadow {
 			t.Errorf("ToolbarControlShadow = %v, the floating surface's own; the two were measured apart", c.ToolbarControlShadow)
 		}
+	}
+}
+
+// TestTheCatalogueCopyIsTheReferenceCopy keeps the two copies of the platform
+// colour catalogue one document. Where the plan root is a sibling the two
+// files are compared byte for byte; where it is not — a clone of this module
+// alone — the recorded digest is all there is to compare against, and a drift
+// in the reference copy then shows up as a stale digest rather than as a
+// difference this test can print.
+func TestTheCatalogueCopyIsTheReferenceCopy(t *testing.T) {
+	copyBytes, err := os.ReadFile(cataloguePath)
+	if err != nil {
+		t.Fatalf("read %s: %v", cataloguePath, err)
+	}
+	sum := fmt.Sprintf("%x", sha256.Sum256(copyBytes))
+	if sum != referenceDigest {
+		t.Errorf("%s hashes to %s, and the recorded digest of the reference copy is %s", cataloguePath, sum, referenceDigest)
+	}
+	referenceBytes, err := os.ReadFile(referencePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return
+		}
+		t.Fatalf("read %s: %v", referencePath, err)
+	}
+	if !bytes.Equal(copyBytes, referenceBytes) {
+		t.Errorf("%s and %s differ; the two are one document", cataloguePath, referencePath)
 	}
 }
