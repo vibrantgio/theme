@@ -61,7 +61,7 @@
 //	ToolbarControlRim  #000000 a0.00 #404040       measured: the rim that control wears in a dark toolbar; none in light
 //	ToolbarSearchFill  #e8e8e8      #363636        measured: the recess a search field is in a toolbar
 //	ToolbarSearchRim   #000000 a0.00 #4d4d4d       measured: the rim that recess wears in a dark toolbar; none in light
-//	ToolbarLabel     #4d4d4d        #e9e9e9        measured: what a toolbar's own title and glyphs are drawn in
+//	ToolbarLabel     #4d4d4d        #e9e9e9        measured: what a toolbar's own title and symbols are drawn in
 //	ToolbarControlSeam #f2f2f2      #3a3a3a        measured: the line dividing one bordered toolbar control into segments
 //	ToolbarControlShadow  #000000 a0.035  #000000 a0.024  measured: the drop shadow a bordered toolbar control casts, 23 px of reach sunk 9 light and 2 sunk 6 dark
 //	ToolbarCheckedOverlay #000000 a0.102  #ffffff a0.161  measured: the chosen segment of a segmented toolbar control, over the control's own fill
@@ -472,7 +472,7 @@ type PlatformColors struct {
 	// The light reading is the frontmost window's. finder-window-untinted-light.png
 	// is an inactive window — no traffic light in it carries a hue — and its
 	// controls are faded: they read #f7f7f7 on a #ffffff band with their
-	// glyphs at TertiaryLabel, which is the platform's inactive drawing and
+	// symbols at TertiaryLabel, which is the platform's inactive drawing and
 	// not a control's own fill.
 	ToolbarControlFill color.NRGBA `appkit:"-"`
 
@@ -555,7 +555,7 @@ type PlatformColors struct {
 	// caller draws nothing where it answers one.
 	ToolbarSearchRim color.NRGBA `appkit:"-"`
 
-	// ToolbarLabel is what a TOOLBAR draws its own words and its own glyphs
+	// ToolbarLabel is what a TOOLBAR draws its own words and its own symbols
 	// in: #4d4d4d light and #e9e9e9 dark. It is the band's title standing
 	// bare, the wording inside a bordered control, and every mark a chrome
 	// control carries — one foreground for everything a toolbar says.
@@ -575,16 +575,16 @@ type PlatformColors struct {
 	// MEASURED at 1x, finder-window-light.png, a frontmost light Finder
 	// window whose band is #ffffff: the title "Applications" standing bare in
 	// the band (x 413-499) plateaus at #4d4d4d over 131 pixels, the group
-	// pull-down's grid glyph (x 769-786, y 17-34) over 24 and the search
-	// capsule's magnifier (x 965-980, y 18-34) over 15. A word and a glyph
+	// pull-down's grid symbol (x 769-786, y 17-34) over 24 and the search
+	// capsule's magnifier (x 965-980, y 18-34) over 15. A word and a symbol
 	// hold the same plateau, so it is the drawn colour and not the partial
 	// coverage a thin stroke reaches.
 	//
 	// MEASURED at 1x, finder-window-untinted-dark.png (the window's own
-	// origin at x=56, y=38 in that capture): the pull-down's glyph plateaus
+	// origin at x=56, y=38 in that capture): the pull-down's symbol plateaus
 	// at #e9e9e9 over its own fill and the window's title at #e8e8e8 over the
 	// band, one 255th below it — text against a vector mark, which takes no
-	// stem darkening. The glyph's reading is the one carried.
+	// stem darkening. The symbol's reading is the one carried.
 	ToolbarLabel color.NRGBA `appkit:"-"`
 
 	// ToolbarControlSeam is the line that divides ONE bordered toolbar

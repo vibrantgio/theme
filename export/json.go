@@ -72,7 +72,7 @@ type DensityMetrics struct {
 	FieldHeight float64 `json:"fieldHeight"`
 	RowHeight   float64 `json:"rowHeight"`
 	// CheckboxRowHeight is the square footprint the checkbox's and the
-	// radio's 16 dp glyph is centred in, and the pointer target both offer —
+	// radio's 16 dp symbol is centred in, and the pointer target both offer —
 	// 22 against the push button's 24 and the list row's 20, measured.
 	CheckboxRowHeight float64 `json:"checkboxRowHeight"`
 	// ToolbarControlHeight is the height of a bordered control standing in a

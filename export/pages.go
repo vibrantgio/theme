@@ -433,7 +433,7 @@ const layoutPageCSS = `.space-row {
   font-size: var(--font-body-large-size);
 }
 /* The checkbox's footprint, shown with the sheet's own .checkbox standing in
-   it: the glyph's margin is the slack that centres it, so the wrapper comes
+   it: the symbol's margin is the slack that centres it, so the wrapper comes
    out exactly the density's checkbox row square. The min-height states the
    metric the wrapper is pinned by. */
 .checkbox-row-bar {
@@ -521,7 +521,7 @@ func layoutHTML(s Snapshot) string {
 		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-row-height</code> &middot; %s &mdash; a pin, not a floor: rows tile</p>\n",
 			px(setting.d.RowHeight))
 		b.WriteString("<div><span class=\"checkbox-row-bar\"><input class=\"checkbox\" type=\"checkbox\" aria-label=\"checkbox row specimen\"></span></div>\n")
-		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-checkbox-row-height</code> &middot; %s &mdash; the square footprint the 16 px glyph is centred in, and the pointer target a checkbox and a radio offer</p>\n",
+		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-checkbox-row-height</code> &middot; %s &mdash; the square footprint the 16 px symbol is centred in, and the pointer target a checkbox and a radio offer</p>\n",
 			px(setting.d.CheckboxRowHeight))
 		b.WriteString("<div><span class=\"toolbar-bar\">Toolbar control</span></div>\n")
 		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-toolbar-control-height</code> &middot; %s &mdash; a control standing in a toolbar band is its own control, taller than the one in a dialog</p>\n",

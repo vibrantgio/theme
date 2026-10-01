@@ -107,10 +107,10 @@ package tokens
 //	toolbar control                  36            36        pinned to ToolbarControlHeight
 //
 // A checkbox is the one control drawn smaller than the box it stands in: the
-// glyph keeps the platform's measured 16 dp square at every density, centred
+// symbol keeps the platform's measured 16 dp square at every density, centred
 // in a footprint of [Density.CheckboxRowHeight], and the footprint is the
 // target. The platform's checkbox row is what a pointer lands on, never the
-// glyph. The radio takes the same row: it is drawn at the checkbox's side
+// symbol. The radio takes the same row: it is drawn at the checkbox's side
 // length, and the two stand in one form.
 
 const (
@@ -153,7 +153,7 @@ const (
 	// control height until one does; ADR-019 has the gap row.
 	CompactRowHeight float32 = 19
 	// ComfortableCheckboxRowHeight is the height of a checkbox's row in dp:
-	// the footprint the 16 dp glyph is centred in, and the pointer target.
+	// the footprint the 16 dp symbol is centred in, and the pointer target.
 	// It is a pin, not a floor — a checkbox draws no content box of its own.
 	// MEASURED off the Save panel in .github/reference/macos/save-dialog-light.png
 	// and save-dialog-dark.png as the pitch between the two "Options:"
@@ -238,9 +238,9 @@ type Density struct {
 	RowHeight float32
 	// CheckboxRowHeight is the height of a checkbox's row in dp
 	// ([ComfortableCheckboxRowHeight] or [CompactCheckboxRowHeight]) — the
-	// square footprint the checkbox's and the radio's 16 dp glyph is centred
+	// square footprint the checkbox's and the radio's 16 dp symbol is centred
 	// in, and the pointer target both of them offer. Like RowHeight it is a
-	// pin rather than a floor: the glyph does not grow, so there is no
+	// pin rather than a floor: the symbol does not grow, so there is no
 	// content box to clear. It is separate because the platform draws it
 	// separately — 22 px against the push button's 24 and the list row's 20
 	// in the stored captures.

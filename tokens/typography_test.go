@@ -530,7 +530,7 @@ func TestSymbolFaceResolvesSymbols(t *testing.T) {
 	for _, p := range symbolProbes {
 		gid, faceIdx := resolvedGlyph(t, shaper, p.r)
 		if gid == 0 {
-			t.Errorf("%s U+%04X: resolved to the missing-glyph glyph; the symbol face did not serve it", p.name, p.r)
+			t.Errorf("%s U+%04X: resolved to .notdef; the symbol face did not serve it", p.name, p.r)
 			continue
 		}
 		if faceIdx != symbolFace {

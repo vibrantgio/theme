@@ -75,7 +75,7 @@ func readmeMD(s Snapshot) string {
 	fmt.Fprintf(&b, "| `--shadow-<level>` | %s | dp box-shadows — the cue a floating transient carries (menus, dialogs, tooltips) over the platform fill it stands in; resting surfaces cast none |\n", joinTokens("--shadow-", shadowNames()))
 	fmt.Fprintf(&b, "| `--ease-<name>` | %s | easing presets as `cubic-bezier()`; emphasized is the documented single-bezier stand-in for the published two-segment path |\n", joinTokens("--ease-", easeNames()))
 	fmt.Fprintf(&b, "| `--duration-<stop>` | %s | duration stops, ms; the reduce-motion variant zeroes them |\n", joinTokens("--duration-", durationNames()))
-	b.WriteString("| interaction states | `--focus-halo-width`, `--disabled-coverage` | the focus halo's 4 px band and the platform's measured disabled coverage as a percentage, both mode-invariant, unlike the halo's colour, which is `--platform-keyboard-focus-indicator` and flips with the appearance |\n")
+	b.WriteString("| interaction states | `--focus-ring-width`, `--disabled-coverage` | the focus ring's 4 px band and the platform's measured disabled coverage as a percentage, both mode-invariant, unlike the ring's colour, which is `--platform-keyboard-focus-indicator` and flips with the appearance |\n")
 	b.WriteString("| `--navbar-band` | the toolbar band a navbar stands in, px | the platform's: nineteen px of inset either side of a fourteen px window control circle, so it takes no density and no setting of how tightly a window sets its rows moves it |\n")
 	b.WriteString("| `--dialog-corner` | the dialog surface's corner radius, px | measured off the platform's own sheet and identical in both appearances, which is why it is not a stop on the radius scale |\n")
 	b.WriteString("| `--dialog-button-width` | the width a dialog's footer lays each action out in, px | measured off the platform's own sheet, where both answers are 74 wide; it is a floor, so a label that does not fit widens its own button |\n")
@@ -86,7 +86,7 @@ func readmeMD(s Snapshot) string {
 		"`styles.css` ends with the component class layer, defined over the tokens\n" +
 		"above — no literal colours anywhere, the only literal lengths being the\n" +
 		"component constants the Gio side also hardcodes (the 16 dp\n" +
-		"checkbox/radio glyph, its 8 dp dot, the 16 dp dropdown chevron, the\n" +
+		"checkbox/radio symbol, its 8 dp dot, the 16 dp dropdown chevron, the\n" +
 		"1/2 dp input borders) — so it flips to `.dark` and densifies to\n" +
 		"`.compact` with the sheet. Every colour in it is the platform's own\n" +
 		"name for what that element is on the platform, the same mapping the Gio\n" +
@@ -120,14 +120,14 @@ func readmeMD(s Snapshot) string {
 		"fill, which is how a ghost gets one at all. Keyboard focus\n" +
 		"(`:focus-visible`) keeps the resting fill and lays\n" +
 		"`--platform-keyboard-focus-indicator` on the control's own outline at\n" +
-		"`--focus-halo-width`, half the band past the box and half over it — the\n" +
+		"`--focus-ring-width`, half the band past the box and half over it — the\n" +
 		"same band at the same width in every variant, because keyboard\n" +
 		"visibility is not a prominence property. Disabled (`:disabled`) is the\n" +
 		"platform's fade: the fill falls back to the push button's own at\n" +
 		"`--disabled-coverage` over the surface the control stands on, and every\n" +
 		"foreground becomes `--platform-disabled-control-text`. A switched-off\n" +
 		"control draws no edge either. `.btn.icon` is the icon-only\n" +
-		"form: a square the density's control height on a side, the glyph (an\n" +
+		"form: a square the density's control height on a side, the symbol (an\n" +
 		"inline SVG on `currentColor`) inset by the density's vertical padding.\n" +
 		"`.btn.chrome` is the bordered toolbar control: a capsule at\n" +
 		"`--density-toolbar-control-height` cornered at half of it, filled with\n" +
@@ -153,7 +153,7 @@ func readmeMD(s Snapshot) string {
 		"native input types with `appearance: none`. They resolve exactly as\n" +
 		"`components/input` does: `--platform-text-background` under\n" +
 		"`--platform-text`, `--platform-placeholder-text` for a prompt,\n" +
-		"`--platform-field-edge` on the resting edge, focus adding the halo on\n" +
+		"`--platform-field-edge` on the resting edge, focus adding the ring on\n" +
 		"the box the control already draws and moving nothing, and\n" +
 		"`--platform-disabled-control-text` where the control cannot be used —\n" +
 		"the fill staying exactly where it was, because the platform fades the\n" +
@@ -166,14 +166,14 @@ func readmeMD(s Snapshot) string {
 		"11 px in from that fill's edge, and wears the platform's pop-up mark,\n" +
 		"the 8 by 11 chevron pair masked out of `--platform-control-text` with\n" +
 		"its last column 9 px clear of the trailing edge. `.menu` is the surface\n" +
-		"it opens. The checkbox and the radio draw their 16 px glyph centred in\n" +
+		"it opens. The checkbox and the radio draw their 16 px symbol centred in\n" +
 		"`--density-checkbox-row-height`, the square footprint the platform gives\n" +
 		"a pointer, with the measured 5 px corner and the measured 1 px edge.\n" +
 		"Checked, the box is `--platform-control-accent` under a check mark drawn\n" +
 		"from the icon set's grid as two gradient bands — a fill says a colour was\n" +
 		"applied and only the mark says what it means. The radio's selected state\n" +
 		"is the same accent filling the disc with a 5 px white dot at its centre,\n" +
-		"the measured five sixteenths of the glyph. Switched off, both are one\n" +
+		"the measured five sixteenths of the symbol. Switched off, both are one\n" +
 		"fill and no edge: the push button's own fill at `--disabled-coverage`.\n\n" +
 		"`.card` is the platform's grouped box: `--platform-card-fill`, a small\n" +
 		"step of fill from the surface it stands on, with no hairline and no\n" +

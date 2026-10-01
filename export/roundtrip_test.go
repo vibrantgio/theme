@@ -326,8 +326,8 @@ func TestRoundTripButtonClasses(t *testing.T) {
 	snap, sheet, _ := writeDefault(t)
 	root := sheet[":root"]
 
-	if got := wantPx(t, "--focus-halo-width", root["--focus-halo-width"]); got != 4 {
-		t.Errorf("--focus-halo-width = %v, want the 4 dp band every control in this library draws", got)
+	if got := wantPx(t, "--focus-ring-width", root["--focus-ring-width"]); got != 4 {
+		t.Errorf("--focus-ring-width = %v, want the 4 dp band every control in this library draws", got)
 	}
 	// The platform's measured disabled coverage, as the percentage
 	// color-mix() takes: 170 of 255.
@@ -377,12 +377,12 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"background-image: linear-gradient(var(--platform-hover-overlay), var(--platform-hover-overlay));",
 		".btn:active:not(:disabled), .btn.is-active {",
 		"background-image: linear-gradient(var(--platform-press-overlay), var(--platform-press-overlay));",
-		// One halo, one width, every variant, and its forcing twins: a
+		// One ring, one width, every variant, and its forcing twins: a
 		// static page shows a state through a class grouped into the same
 		// rule as the live pseudo-class, never through duplicated
 		// declarations.
-		"outline: var(--focus-halo-width) solid var(--platform-keyboard-focus-indicator);",
-		"outline-offset: calc(var(--focus-halo-width) / -2);",
+		"outline: var(--focus-ring-width) solid var(--platform-keyboard-focus-indicator);",
+		"outline-offset: calc(var(--focus-ring-width) / -2);",
 		".btn:focus-visible, .btn.is-focus {",
 		".checkbox:focus-visible, .checkbox.is-focus,",
 		".radio:focus-visible, .radio.is-focus {",
@@ -399,7 +399,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"background: var(--platform-toolbar-control-fill);",
 		"inset 0 0 0 1px var(--platform-toolbar-control-rim);",
 		"0 var(--toolbar-control-shadow-offset) 0 var(--toolbar-control-shadow-reach) var(--toolbar-shadow-step),",
-		// Icon-only: a control-height square, glyph inset by PaddingY.
+		// Icon-only: a control-height square, symbol inset by PaddingY.
 		"width: var(--density-control-height);",
 		"padding: var(--density-padding-y);",
 		// Badge: the platform's system colour for the status under white.
@@ -432,7 +432,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"width: 8px;   /* MarkWDp */",
 		"height: 11px; /* MarkHDp: two 5-row chevrons and the clear row between */",
 		"background: var(--platform-control-text);",
-		// Checkbox/radio: the 16 dp measured glyph centred in the density's
+		// Checkbox/radio: the 16 dp measured symbol centred in the density's
 		// checkbox row, inside the 1 dp measured field edge, cornered at the
 		// measured 5; checked is the accent under a mark drawn out of
 		// gradients rather than encoded as an image, and the radio's dot is

@@ -271,7 +271,7 @@ var densityMetrics = []struct {
 	// the control height.
 	{"field-height", func(d tokens.Density) float32 { return d.FieldHeight }},
 	{"row-height", func(d tokens.Density) float32 { return d.RowHeight }},
-	// The checkbox's row: the square footprint the 16 dp glyph is centred in
+	// The checkbox's row: the square footprint the 16 dp symbol is centred in
 	// and the pointer target both the checkbox and the radio offer. Measured
 	// at 22 against the push button's 24 and the list row's 20, so it is a
 	// number of its own and not either of theirs.
@@ -364,8 +364,8 @@ func scaleVars(s Snapshot) []cssVar {
 	for _, stop := range durationStops {
 		vars = append(vars, cssVar{"--duration-" + stop.name, ms(stop.pick(s.Motion))})
 	}
-	// The focus halo's band width, mode-invariant, which is why it is here
-	// and the halo's COLOUR is not: the halo wears
+	// The focus ring's band width, mode-invariant, which is why it is here
+	// and the ring's COLOUR is not: the ring wears
 	// --platform-keyboard-focus-indicator, which flips with the appearance.
 	// The platform's measured disabled coverage sits beside it: a switched-off
 	// control is its own fill at that coverage over the surface it stands on,
@@ -374,7 +374,7 @@ func scaleVars(s Snapshot) []cssVar {
 	// own measured radius, identical in both appearances, and it is not a
 	// stop on the radius scale.
 	vars = append(vars,
-		cssVar{"--focus-halo-width", px(focusHaloWidthDp)},
+		cssVar{"--focus-ring-width", px(focusRingWidthDp)},
 		cssVar{"--disabled-coverage", coverage(tokens.DisabledCoverage)},
 		cssVar{"--dialog-corner", px(dialogCornerDp)},
 		cssVar{"--dialog-button-width", px(dialogButtonWidthDp)},
@@ -430,16 +430,16 @@ const dialogButtonWidthDp = 74
 // centring of a 24 px control in a 65 px band leaves.
 const dialogFooterAirDp = 21
 
-// focusHaloWidthDp is the focus halo's band width — the 4 dp every control in
+// focusRingWidthDp is the focus ring's band width — the 4 dp every control in
 // this library draws (components/internal/focus.Width), half of it past the
 // control's own box and half over the control's outermost band. It is
 // identical in every variant because keyboard visibility is not a matter of
-// prominence, and identical at every density because a halo is a keyboard
+// prominence, and identical at every density because a ring is a keyboard
 // affordance rather than an ornament.
 //
 // MEASURED, save-dialog-{light,dark}.png, the focused "Save As:" field: four
 // px on every side of a box running x 264-495, hard-edged, straddling the box.
-const focusHaloWidthDp = 4
+const focusRingWidthDp = 4
 
 // coverage formats a 0-255 coverage as a CSS percentage, which is the form
 // color-mix() takes it in: a rule states the platform's own colour at the
@@ -549,8 +549,8 @@ func stylesCSS(s Snapshot) string {
 // The states are the platform's own answers. A press lays
 // --platform-press-overlay over whatever fill the variant carries, and
 // over the page where it carries none, which is how a ghost gets a fill at
-// all. Focus is the halo: --platform-keyboard-focus-indicator at
-// --focus-halo-width on the control's own outline, the same band in every
+// all. Focus is the ring: --platform-keyboard-focus-indicator at
+// --focus-ring-width on the control's own outline, the same band in every
 // variant. Disabled fades a fill to the push button's own at
 // --disabled-coverage over the surface the control stands on and takes every
 // foreground to --platform-disabled-control-text.
@@ -649,10 +649,10 @@ const componentClasses = `/* ---- Component classes ----
 }
 
 /* Icon-only form (components/button drawIconButton): a square the density's
-   control height on a side, the glyph inset by the density's vertical
+   control height on a side, the symbol inset by the density's vertical
    padding - content box ControlHeight - 2*PaddingY, icon.Size's rule. The
    variant reaches the colours and stops there: the square never shrinks. The
-   glyph inherits the variant's text colour via currentColor. */
+   symbol inherits the variant's text colour via currentColor. */
 .btn.icon {
   width: var(--density-control-height);
   height: var(--density-control-height);
@@ -731,17 +731,17 @@ const componentClasses = `/* ---- Component classes ----
   background-image: linear-gradient(var(--platform-press-overlay), var(--platform-press-overlay));
 }
 
-/* Keyboard focus: the platform's halo, a --focus-halo-width band lying on the
+/* Keyboard focus: the platform's ring, a --focus-ring-width band lying on the
    control's own outline with half of it past the box and half over the box's
    outermost band, so the button's box does not grow and the fill and edge
    under it stay where they are. The same band at the same width in every
    variant - keyboard visibility is not a prominence property. The indicator
    carries a coverage, so the half past the box composites over the page and
    the half on the box over the control's own fill, which is exactly the pair
-   of colours focus.Halo is handed on the Gio side. */
+   of colours focus.Ring is handed on the Gio side. */
 .btn:focus-visible, .btn.is-focus {
-  outline: var(--focus-halo-width) solid var(--platform-keyboard-focus-indicator);
-  outline-offset: calc(var(--focus-halo-width) / -2);
+  outline: var(--focus-ring-width) solid var(--platform-keyboard-focus-indicator);
+  outline-offset: calc(var(--focus-ring-width) / -2);
 }
 
 /* Disabled is the platform's fade: a variant that carries a fill falls back
@@ -852,15 +852,15 @@ const componentClasses = `/* ---- Component classes ----
 }
 .input::placeholder { color: var(--platform-placeholder-text); opacity: 1; }
 
-/* Focus adds the halo and moves nothing: the field keeps its own edge, its
-   own fill and its own insets, and wears the --focus-halo-width band on the
+/* Focus adds the ring and moves nothing: the field keeps its own edge, its
+   own fill and its own insets, and wears the --focus-ring-width band on the
    box it already draws, half past it and half over its outermost band. That
-   is the one focus idiom every control in this library wears (focus.Halo),
+   is the one focus idiom every control in this library wears (focus.Ring),
    and the indicator's coverage composites over the page outside the box and
    over the field's own edge and fill inside it. */
 .input:focus-visible, .input.is-focus {
-  outline: var(--focus-halo-width) solid var(--platform-keyboard-focus-indicator);
-  outline-offset: calc(var(--focus-halo-width) / -2);
+  outline: var(--focus-ring-width) solid var(--platform-keyboard-focus-indicator);
+  outline-offset: calc(var(--focus-ring-width) / -2);
 }
 .input:disabled {
   color: var(--platform-disabled-control-text);
@@ -911,13 +911,13 @@ const componentClasses = `/* ---- Component classes ----
 .select:active:not(:disabled), .select.is-active {
   background-image: linear-gradient(var(--platform-press-overlay), var(--platform-press-overlay));
 }
-/* Focus is the halo on the edgeless shape the trigger already draws, and
+/* Focus is the ring on the edgeless shape the trigger already draws, and
    adds nothing else: the insets and the height do not move. */
 .select:focus-visible, .select.is-focus {
   border: none;
   padding: 0 calc(var(--space-3) + 8px + 9px) 0 11px;
-  outline: var(--focus-halo-width) solid var(--platform-keyboard-focus-indicator);
-  outline-offset: calc(var(--focus-halo-width) / -2);
+  outline: var(--focus-ring-width) solid var(--platform-keyboard-focus-indicator);
+  outline-offset: calc(var(--focus-ring-width) / -2);
 }
 .select:disabled {
   background-color: color-mix(in srgb, var(--platform-push-button-fill) var(--disabled-coverage), transparent);
@@ -969,10 +969,10 @@ const componentClasses = `/* ---- Component classes ----
   background: var(--platform-disabled-control-text);
 }
 
-/* Checkbox (components/input checkbox.go): the 16 dp glyph the Save dialog
+/* Checkbox (components/input checkbox.go): the 16 dp symbol the Save dialog
    measures, centred in the density's checkbox row - the square footprint the
    platform gives a pointer, 22 dp comfortable against the push button's 24
-   and the list row's 20. The glyph does not follow density and the footprint
+   and the list row's 20. The symbol does not follow density and the footprint
    does, so the slack around it is written as the margin that centres it;
    nothing else in this family moves with the density.
 
@@ -991,7 +991,7 @@ const componentClasses = `/* ---- Component classes ----
 
    The mark is drawn, not encoded. Gio strokes the icon set's centre line -
    (4.5,12) -> (9,16.5) -> (19.5,6) on the set's 24-unit grid, a 2-unit
-   DIAGONAL band, round caps and joins - and at the 16 px glyph one grid unit
+   DIAGONAL band, round caps and joins - and at the 16 px symbol one grid unit
    is 2/3 px, so the band is 1.333 px wide (+/-0.667 either side of the centre)
    and the arms run from (3,8) to (6,11) to (13,4). Each arm is one background
    layer: a linear-gradient banding its own box perpendicular to the arm,
@@ -1004,7 +1004,7 @@ const componentClasses = `/* ---- Component classes ----
    CSS has no line cap, so the caps come out cut square inside those tips
    rather than rounded - the same trade the icon set's own SVG files make when
    they draw their caps as an explicit contour, and a sub-pixel one at this
-   size. background-origin is the border box so the grid is the 16 px glyph
+   size. background-origin is the border box so the grid is the 16 px symbol
    the Gio side scales on, not the 15 px inside the edge. */
 .checkbox, .radio {
   box-sizing: border-box;
@@ -1012,7 +1012,7 @@ const componentClasses = `/* ---- Component classes ----
   flex: none;
   width: 16px;  /* checkboxBoxSize / radioCircleSize: 16 dp, measured */
   height: 16px;
-  /* The slack the density's footprint holds around the glyph, which is what
+  /* The slack the density's footprint holds around the symbol, which is what
      centres it in the row and what a pointer is given. */
   margin: calc((var(--density-checkbox-row-height) - 16px) / 2);
   border: 1px solid var(--platform-field-edge);  /* controlEdgeWidth: 1 dp, measured */
@@ -1020,13 +1020,13 @@ const componentClasses = `/* ---- Component classes ----
   background-clip: padding-box;
   cursor: pointer;
 }
-/* Focus is the same halo every other control wears, on the glyph's own
+/* Focus is the same ring every other control wears, on the symbol's own
    outline, riding in the slack the footprint holds around it - so nothing
    about the control moves when it takes the keyboard. */
 .checkbox:focus-visible, .checkbox.is-focus,
 .radio:focus-visible, .radio.is-focus {
-  outline: var(--focus-halo-width) solid var(--platform-keyboard-focus-indicator);
-  outline-offset: calc(var(--focus-halo-width) / -2);
+  outline: var(--focus-ring-width) solid var(--platform-keyboard-focus-indicator);
+  outline-offset: calc(var(--focus-ring-width) / -2);
 }
 .checkbox {
   border-radius: 5px;  /* checkboxCornerRadius: measured */
@@ -1043,12 +1043,12 @@ const componentClasses = `/* ---- Component classes ----
   background-position: 2.529px 7.529px, 5.529px 3.529px;
   background-size: 3.943px 3.943px, 7.943px 7.943px;
 }
-/* Switched off, the glyph is ONE FILL AND NO EDGE at all. MEASURED,
+/* Switched off, the symbol is ONE FILL AND NO EDGE at all. MEASURED,
    save-dialog-{light,dark}.png: both switched-off "Options:" checkboxes read
    the push button's own fill faded to --disabled-coverage over the sheet, to
    the byte light and one 255th over on dark green and blue, and neither box
    draws an edge column in either appearance - its rim is a one-pixel antialiased ramp from this fill
-   to the sheet. The border is kept at its width in transparent so the glyph's
+   to the sheet. The border is kept at its width in transparent so the symbol's
    drawn box does not move. Checked, the mark takes the colour the
    switched-off label beside it takes, the platform's tertiary label, no
    stored capture holding a switched-off checked box. */
@@ -1064,7 +1064,7 @@ const componentClasses = `/* ---- Component classes ----
     linear-gradient(135deg, transparent calc(50% - 0.667px), var(--platform-tertiary-label) calc(50% - 0.667px), var(--platform-tertiary-label) calc(50% + 0.667px), transparent calc(50% + 0.667px));
 }
 
-/* Radio (components/input radio.go): the same 16 dp glyph as a circle.
+/* Radio (components/input radio.go): the same 16 dp symbol as a circle.
    Selected is the platform's accent filling the whole disc with the dot in
    alternateSelectedControlText at its centre - one fill and one mark, exactly
    the Gio nested ellipses, and no gap ring.
@@ -1072,7 +1072,7 @@ const componentClasses = `/* ---- Component classes ----
    The dot is 5 dp across, MEASURED off System Settings' selected radio in
    both appearances: a least-squares circle fitted to the white dot's
    sub-pixel edges reads 5.00 px across inside a 16 px disc - five sixteenths
-   of the glyph, not the half a fill drawn to the glyph's own ratio would
+   of the symbol, not the half a fill drawn to the symbol's own ratio would
    give. */
 .radio { border-radius: var(--radius-full); }
 .radio:checked, .radio.is-checked {
@@ -1524,15 +1524,15 @@ const componentClasses = `/* ---- Component classes ----
   border-left: 6px solid var(--platform-secondary-label);  /* 6 dp deep, apex along +X */
 }
 
-/* The keyboard halo, identical to every other control's: per-cell for the
+/* The keyboard ring, identical to every other control's: per-cell for the
    navbar, tabs and breadcrumb (each cell is its own Clickable focus tag); on
    the rail itself for the sidebar, whose single stop is the item list. */
 .navbar-link:focus-visible, .navbar-link.is-focus,
 .tab:focus-visible, .tab.is-focus,
 .crumb:focus-visible, .crumb.is-focus,
 .sidebar:focus-visible, .sidebar.is-focus {
-  outline: var(--focus-halo-width) solid var(--platform-keyboard-focus-indicator);
-  outline-offset: calc(var(--focus-halo-width) / -2);
+  outline: var(--focus-ring-width) solid var(--platform-keyboard-focus-indicator);
+  outline-offset: calc(var(--focus-ring-width) / -2);
 }
 
 /* ---- Overlays ----
