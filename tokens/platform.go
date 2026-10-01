@@ -26,7 +26,7 @@
 // button, a hovered and a pressed
 // control, the shadow under a
 // floating pane, a text field's hairline, an overlay scrollbar's knob, a
-// list's alternating row, the rim and the shadow of an inset sidebar panel,
+// list's alternating row, the rim and the shadow of an inset sidebar pane,
 // the several fills a toolbar band's controls take
 // and the dim a sheet lays over the window it
 // interrupts without giving any of them an NSColor name, so those fills
@@ -65,8 +65,8 @@
 //	ToolbarControlSeam #f2f2f2      #3a3a3a        measured: the line dividing one bordered toolbar control into segments
 //	ToolbarControlShadow  #000000 a0.035  #000000 a0.024  measured: the drop shadow a bordered toolbar control casts, 23 px of reach sunk 9 light and 2 sunk 6 dark
 //	ToolbarCheckedOverlay #000000 a0.102  #ffffff a0.161  measured: the chosen segment of a segmented toolbar control, over the control's own fill
-//	PaneRim          #ffffff        #3a3a3a        measured: the 1 px rim the inset sidebar panel wears on every side
-//	PaneShadow       #000000 a0.051 #000000 a0.051 measured: the shadow that panel casts, 24 px of reach with its rectangle sunk 9
+//	PaneRim          #ffffff        #3a3a3a        measured: the 1 px rim the inset sidebar pane wears on every side
+//	PaneShadow       #000000 a0.051 #000000 a0.051 measured: the shadow that pane casts, 24 px of reach with its rectangle sunk 9
 //
 // The chrome material and the sidebar's pill were read with "Tint window
 // background with wallpaper colour" off, so they carry the platform's own
@@ -233,7 +233,7 @@ type PlatformColors struct {
 	// translucent; an opaque paint would flatten it.
 	//
 	// The pill's box is x 18-307, y 212-243 in both captures — 290 by 32,
-	// inset 10 from the panel's rim and cornered at 8, the emphasized
+	// inset 10 from the pane's rim and cornered at 8, the emphasized
 	// pill's own geometry unchanged between the two states.
 	//
 	// Flattened onto SidebarMaterial with [github.com/vibrantgio/theme/color.Flatten]
@@ -269,7 +269,7 @@ type PlatformColors struct {
 	// SidebarCount is what the count at the trailing end of a sidebar row
 	// is drawn in: #6d6d6d light and #a4a4a4 dark, the plateau every count
 	// holds in voicememos-multi-folder-2026-09-18.png and
-	// voicememos-sidebar-dark.png over the panel's own #f9f9f9 and #1c1c1c.
+	// voicememos-sidebar-dark.png over the pane's own #f9f9f9 and #1c1c1c.
 	//
 	// It is not SecondaryLabel, which is what the section label above those
 	// rows IS: that label plateaus at #7d7d7d and #999999 on the same fills,
@@ -679,24 +679,24 @@ type PlatformColors struct {
 	ToolbarCheckedOverlay color.NRGBA `appkit:"-"`
 
 	// PaneRim is the 1 px rim the platform draws round an inset sidebar
-	// panel, on every side: opaque #ffffff light and #3a3a3a dark. It is the
-	// boundary between the panel and what stands around it — the window's
+	// pane, on every side: opaque #ffffff light and #3a3a3a dark. It is the
+	// boundary between the pane and what stands around it — the window's
 	// own plane on three sides, the content on the fourth — which is why a
-	// panel set into the window needs no seam.
+	// pane set into the window needs no seam.
 	//
-	// MEASURED, voicememos-multi-folder-2026-09-18.png at 1x, the panel at
+	// MEASURED, voicememos-multi-folder-2026-09-18.png at 1x, the pane at
 	// x 64-283, y 46-786 in a window at x 56-1031, y 38-794: the rim reads
 	// #ffffff flat down the column at x=64, along the rows at y=46 and
-	// y=786 and down x=283, with the panel's own #f9f9f9 inside it and the
+	// y=786 and down x=283, with the pane's own #f9f9f9 inside it and the
 	// window's plane or the content outside. It is opaque and not a
 	// coverage: white at any coverage over a fill that light lands short of
 	// 255, and the pixel is 255 on every channel.
 	//
-	// MEASURED, finder-window-untinted-dark.png, the panel at x 64-373,
+	// MEASURED, finder-window-untinted-dark.png, the pane at x 64-373,
 	// y 46-1024 in a window at x 56-1442, y 38-1032: the rim reads #3a3a3a
-	// flat down x=64 and along y=46 and y=1024, over the panel's own
+	// flat down x=64 and along y=46 and y=1024, over the pane's own
 	// #1c1c1c and the plane beside it. Down the trailing edge at x=373 it
-	// reads #404040 through the band and #434343 below it, the panel's own
+	// reads #404040 through the band and #434343 below it, the pane's own
 	// sidebar material lifting toward that edge; the three sides over the
 	// plane are what this field carries. Separator over the dark fill gives #3b3b3b,
 	// one of 255 off the three flat sides and nine off the trailing one, and
@@ -704,14 +704,14 @@ type PlatformColors struct {
 	// carried rather than flattened.
 	PaneRim color.NRGBA `appkit:"-"`
 
-	// PaneShadow is the peak coverage of the shadow an inset sidebar panel
+	// PaneShadow is the peak coverage of the shadow an inset sidebar pane
 	// casts on what lies around it: black at 0.051 — 13 of 255 — in both
 	// appearances, as [PlatformColors.FloatingShadow] is one value in both.
 	// It is spread over 24 px of reach with its rectangle sunk 9 px below
-	// the panel, which is what makes it heavier under the panel than over
+	// the pane, which is what makes it heavier under the pane than over
 	// it.
 	//
-	// MEASURED, voicememos-multi-folder-2026-09-18.png: the panel at
+	// MEASURED, voicememos-multi-folder-2026-09-18.png: the pane at
 	// x 64-283, y 46-786 stands on a white plane and a white content column.
 	// Beside its trailing rim the content reads 244 and recovers to #ffffff
 	// 33 columns out; the 8 px of plane at its leading edge reads 239 at the
@@ -720,7 +720,7 @@ type PlatformColors struct {
 	// over 24 px of reach, its rectangle sunk 9 px, lands those 9,096
 	// sampled pixels at an rms of 1.19 of 255 and a worst miss of 3.4.
 	//
-	// The 8 px of plane BELOW the panel reads 227 at the rim and 234 at the
+	// The 8 px of the window's surface BELOW the pane reads 227 at the rim and 234 at the
 	// window's edge, 8 to 11 of 255 deeper than one sunk rectangle puts it:
 	// the platform's own shadow is blurred and lit from above, and a single
 	// rectangle with one peak cannot be both that deep below and that light
@@ -728,10 +728,10 @@ type PlatformColors struct {
 	// [PlatformColors.ToolbarControlShadow], fitted the same way.
 	//
 	// MEASURED, finder-window-untinted-dark.png: the same shadow is one to
-	// two of 255 deep — the plane beside the panel's leading rim reads 27
+	// two of 255 deep — the surface beside the pane's leading rim reads 27
 	// and recovers to 28 within 6 columns, the content beside its trailing
 	// rim 29 against its own #1e1e1e — which is what this coverage lands on
-	// a plane that dark, so one value serves both appearances.
+	// a surface that dark, so one value serves both appearances.
 	PaneShadow DropShadow `appkit:"-"`
 }
 

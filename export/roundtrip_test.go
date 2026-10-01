@@ -466,7 +466,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		// underline in the platform's selection colour, the sidebar's own
 		// measured pill in the accent and its own measured symbol colour.
 		// The rail itself draws no line down its trailing edge: the
-		// platform's sidebar is an inset panel and the pane's rim and shadow
+		// platform's sidebar is an inset pane and the pane's rim and shadow
 		// are the boundary.
 		"min-height: var(--navbar-band);",
 		"background: var(--platform-sidebar-material);",
@@ -510,7 +510,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"padding: var(--density-padding-y) 16px var(--density-padding-y) 32px;",
 		"inset: 0 10px;  /* selectionInsetDp */",
 		"background: var(--platform-sidebar-selection);",
-		// The pane: the platform's sidebar as an inset rounded panel with
+		// The pane: the platform's sidebar as an inset rounded pane with
 		// its measured rim and the shadow it casts on what stands beside it.
 		".pane {",
 		"margin: 8px;  /* MarginDp */",

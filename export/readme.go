@@ -187,7 +187,7 @@ func readmeMD(s Snapshot) string {
 		"draws the separator where two flush regions meet; selection is\n" +
 		"`--platform-selected-content-background`, as an underline on a link or a\n" +
 		"tab and as the row's own fill on a rail. `.pane` is the platform's\n" +
-		"sidebar as it actually stands: an inset rounded panel 8 px off the\n" +
+		"sidebar as it actually stands: an inset rounded pane 8 px off the\n" +
 		"window's edges, cornered at 18, wearing `--platform-pane-rim` just\n" +
 		"inside its edge and casting `--platform-pane-shadow` onto what stands\n" +
 		"beside it — the rim and the shadow are the boundary, and no seam is\n" +
