@@ -30,7 +30,10 @@
 // [Text] is that recipe in one call for the case every window has — a role, a
 // colour, a line count — and is what a window draws its own text with.
 // [TextWeight] is the same call for a draw site whose role may arrive without a
-// weight and is not Normal when it does.
+// weight and is not Normal when it does, and [TextAligned] is that call again
+// for a line standing at an alignment of its own. [LineWidth] measures what
+// those three draw, for a caller sizing a cell to the line that will stand in
+// it.
 //
 // The correction is a deficit, not a floor, so it is right for wrapped text
 // too: Gio already spends the line height on each gap, so adding the one
@@ -237,10 +240,51 @@ func Text(gtx layout.Context, sh *text.Shaper, txt string, style tokens.TextStyl
 // row at Bold, and both are drawn from styles a caller may hand over with the
 // size alone.
 func TextWeight(gtx layout.Context, sh *text.Shaper, txt string, style tokens.TextStyle, col color.NRGBA, maxLines int, fallback font.Weight) layout.Dimensions {
+	return TextAligned(gtx, sh, txt, style, col, maxLines, fallback, text.Start)
+}
+
+// TextAligned is [TextWeight] with the alignment its lines stand at within the
+// width the caller hands down. [text.Start] is widget.Label's own alignment and
+// the zero value, so it is what the two calls above pass and the three are the
+// same pixels for a site wanting no alignment of its own.
+//
+// It carries the weight as well as the alignment because the two are not
+// independent at the draw sites that centre a line: one shapes an initial at a
+// SemiBold fallback, the other a line in a role that states its weight.
+//
+// The alignment is spent on the width the call is given and never on the
+// text's own, so a centred line needs a Max.X the caller means. A caller
+// handing an exact width down gets the line centred across it.
+func TextAligned(gtx layout.Context, sh *text.Shaper, txt string, style tokens.TextStyle, col color.NRGBA, maxLines int, fallback font.Weight, align text.Alignment) layout.Dimensions {
 	rec := op.Record(gtx.Ops)
 	paint.ColorOp{Color: col}.Add(gtx.Ops)
 	material := rec.Stop()
-	return Layout(gtx, sh, Label(style, maxLines), Font(style, fallback), unit.Sp(style.Size), txt, material)
+	lbl := Label(style, maxLines)
+	lbl.Alignment = align
+	return Layout(gtx, sh, lbl, Font(style, fallback), unit.Sp(style.Size), txt, material)
+}
+
+// LineWidth reports the width one line of txt wants in a role at a weight: the
+// Size.X [Text] reports for it with nothing capping the width, so the answer is
+// the text's own rather than the cell's. Nothing is painted — the paint source
+// is empty and the ops are recorded and dropped — so it is the measurement
+// alone, for a caller sizing a cell to the line that will stand in it.
+//
+// The weight is [Font]'s fallback, spent only on a style carrying none of its
+// own, so the measurement shapes in the face the matching draw will.
+//
+// The constraints are replaced rather than relaxed, Min included: a width the
+// caller's Max capped would be the cell's answer and not the text's, and the
+// caller's Min.Y would centre the line box in a floor rather than widen it.
+// The metric and the locale reach the shaper from gtx untouched, since both
+// move the answer.
+func LineWidth(gtx layout.Context, sh *text.Shaper, txt string, style tokens.TextStyle, fallback font.Weight) int {
+	m := gtx
+	m.Constraints = layout.Constraints{Max: image.Pt(1<<20, 1<<20)}
+	rec := op.Record(gtx.Ops)
+	dims := Layout(m, sh, Label(style, 1), Font(style, fallback), unit.Sp(style.Size), txt, op.CallOp{})
+	rec.Stop()
+	return dims.Size.X
 }
 
 // naturalLine measures the ascent-plus-descent box Gio gives txt's own lines

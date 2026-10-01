@@ -518,3 +518,117 @@ func TestTextWeightLeavesAStatedWeightAlone(t *testing.T) {
 		t.Errorf("TextWeight at a Bold fallback = %+v, want the role's own weight %+v", got, want)
 	}
 }
+
+// TestTextAlignedCentresWithinTheWidth pins the second option against the
+// explicit form it replaces: the recipe with an alignment set on the label,
+// drawn in a cell wider than the text. The two draw sites that centre a line
+// differ in the weight as well, so the case runs at both fallbacks.
+func TestTextAlignedCentresWithinTheWidth(t *testing.T) {
+	sh := pinned()
+	fg := color.NRGBA{R: 0x20, G: 0x40, B: 0x60, A: 0xff}
+
+	weightless := styleAt(20)
+	weightless.Weight = 0
+
+	cases := []struct {
+		name     string
+		style    tokens.TextStyle
+		fallback font.Weight
+		align    text.Alignment
+	}{
+		{"centred at a stated weight", styleAt(20), font.Normal, text.Middle},
+		{"centred at a fallback weight", weightless, font.SemiBold, text.Middle},
+		{"ended at a stated weight", styleAt(20), font.Normal, text.End},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var recipe op.Ops
+			g := gtx(&recipe, 200)
+			g.Constraints.Min.X = 200
+			rec := op.Record(g.Ops)
+			paint.ColorOp{Color: fg}.Add(g.Ops)
+			material := rec.Stop()
+			wl := typeset.Label(c.style, 1)
+			wl.Alignment = c.align
+			want := typeset.Layout(g, sh, wl, typeset.Font(c.style, c.fallback),
+				unit.Sp(c.style.Size), specimen, material)
+
+			var own op.Ops
+			h := gtx(&own, 200)
+			h.Constraints.Min.X = 200
+			got := typeset.TextAligned(h, sh, specimen, c.style, fg, 1, c.fallback, c.align)
+			if got != want {
+				t.Errorf("TextAligned = %+v, want the recipe's %+v", got, want)
+			}
+		})
+	}
+}
+
+// TestTextAlignedAtStartIsTextWeight pins the alignment the calls above pass:
+// text.Start is widget.Label's own, so the option changes nothing for a site
+// that does not ask for it.
+func TestTextAlignedAtStartIsTextWeight(t *testing.T) {
+	sh := pinned()
+	fg := color.NRGBA{A: 0xff}
+	style := styleAt(20)
+
+	var ops op.Ops
+	g := gtx(&ops, 200)
+	g.Constraints.Min.X = 200
+	want := typeset.TextWeight(g, sh, specimen, style, fg, 1, font.Bold)
+
+	var own op.Ops
+	h := gtx(&own, 200)
+	h.Constraints.Min.X = 200
+	if got := typeset.TextAligned(h, sh, specimen, style, fg, 1, font.Bold, text.Start); got != want {
+		t.Errorf("TextAligned at text.Start = %+v, want TextWeight's %+v", got, want)
+	}
+}
+
+// TestLineWidthIsTheTextsOwnWidth pins the measuring call against the explicit
+// measurement a pattern wrote out — the role's widget.Label laid out with an
+// empty paint source under opened constraints, the width kept — and the two ways
+// a caller's own constraints could distort it: a Max.X narrower than the line,
+// which would wrap or truncate it, and a Min that would floor the answer.
+func TestLineWidthIsTheTextsOwnWidth(t *testing.T) {
+	sh := pinned()
+	style := styleAt(20)
+	long := strings.Repeat(specimen+" ", 4)
+
+	for _, txt := range []string{specimen, long} {
+		var recipe op.Ops
+		g := gtx(&recipe, 1<<20)
+		want := typeset.Layout(g, sh, typeset.Label(style, 1), typeset.Font(style, font.Normal),
+			unit.Sp(style.Size), txt, op.CallOp{}).Size.X
+
+		for _, maxX := range []int{1 << 20, 60} {
+			var own op.Ops
+			h := gtx(&own, maxX)
+			h.Constraints.Min = image.Pt(maxX, 400)
+			if got := typeset.LineWidth(h, sh, txt, style, font.Normal); got != want {
+				t.Errorf("LineWidth at Max.X %d = %d px, want the explicit measurement's %d", maxX, got, want)
+			}
+		}
+	}
+}
+
+// TestLineWidthSpendsTheFallbackWeight pins the weight through the measuring
+// call: a style carrying none of its own measures in the fallback's face, and a
+// style stating a weight keeps it, which is [typeset.Font]'s rule.
+func TestLineWidthSpendsTheFallbackWeight(t *testing.T) {
+	sh := pinned()
+	var ops op.Ops
+	g := gtx(&ops, 1<<20)
+
+	weightless := styleAt(20)
+	weightless.Weight = 0
+	normal := typeset.LineWidth(g, sh, specimen, weightless, font.Normal)
+	if semi := typeset.LineWidth(g, sh, specimen, weightless, font.SemiBold); semi <= normal {
+		t.Errorf("LineWidth at a SemiBold fallback = %d px, want wider than Normal's %d", semi, normal)
+	}
+
+	stated := styleAt(20) // LabelLarge states Medium
+	if got, want := typeset.LineWidth(g, sh, specimen, stated, font.Bold), typeset.LineWidth(g, sh, specimen, stated, font.Normal); got != want {
+		t.Errorf("LineWidth at a Bold fallback = %d px, want the role's own weight %d", got, want)
+	}
+}
