@@ -137,9 +137,9 @@ func TestPagesDarkToggle(t *testing.T) {
 // wantRow renders a contrast table row the way the colour page must,
 // written out independently so the page and the test cannot drift together:
 // APCA Lc, signed, one decimal, light then dark.
-func wantRow(label string, lt, lg, dt, dg stdcolor.NRGBA) string {
+func wantRow(name string, lt, lg, dt, dg stdcolor.NRGBA) string {
 	return fmt.Sprintf(`<tr><th scope="row">%s</th><td>%.1f</td><td>%.1f</td></tr>`,
-		label, color.APCA(lt, lg), color.APCA(dt, dg))
+		name, color.APCA(lt, lg), color.APCA(dt, dg))
 }
 
 // TestColorPageAnnotatesContrast asserts the colour page carries the
@@ -152,11 +152,11 @@ func TestColorPageAnnotatesContrast(t *testing.T) {
 
 	for _, pair := range platformPairs {
 		lightFill, darkFill := pair.fill(snap.PlatformLight), pair.fill(snap.PlatformDark)
-		row := wantRow(pair.label,
+		row := wantRow(pair.name,
 			color.Flatten(pair.text(snap.PlatformLight), lightFill), lightFill,
 			color.Flatten(pair.text(snap.PlatformDark), darkFill), darkFill)
 		if !strings.Contains(src, row) {
-			t.Errorf("color.html lacks the measured row for %q:\n%s", pair.label, row)
+			t.Errorf("color.html lacks the measured row for %q:\n%s", pair.name, row)
 		}
 	}
 }

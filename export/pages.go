@@ -145,9 +145,9 @@ func modeHex(light, dark stdcolor.NRGBA) string {
 
 // contrastRow renders one measured text pair as a table row: the pair's APCA
 // Lc in both modes, which is the whole of what the palette is gated on.
-func contrastRow(b *strings.Builder, label string, lightText, lightSurface, darkText, darkSurface stdcolor.NRGBA) {
+func contrastRow(b *strings.Builder, name string, lightText, lightSurface, darkText, darkSurface stdcolor.NRGBA) {
 	fmt.Fprintf(b, "<tr><th scope=\"row\">%s</th><td>%s</td><td>%s</td></tr>\n",
-		html.EscapeString(label),
+		html.EscapeString(name),
 		lcStr(lightText, lightSurface), lcStr(darkText, darkSurface))
 }
 
@@ -247,7 +247,7 @@ func colorHTML(s Snapshot) string {
 	b.WriteString("</thead>\n<tbody>\n")
 	for _, pair := range platformPairs {
 		lightFill, darkFill := pair.fill(s.PlatformLight), pair.fill(s.PlatformDark)
-		contrastRow(&b, pair.label,
+		contrastRow(&b, pair.name,
 			color.Flatten(pair.text(s.PlatformLight), lightFill), lightFill,
 			color.Flatten(pair.text(s.PlatformDark), darkFill), darkFill)
 	}
@@ -264,7 +264,7 @@ func colorHTML(s Snapshot) string {
 // a label on the plane it is set on, a control's text on the control's own
 // fill, the text the platform names for a fill its accent paints.
 var platformPairs = []struct {
-	label      string
+	name       string
 	text, fill func(tokens.PlatformColors) stdcolor.NRGBA
 }{
 	{"label on the window", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Label }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.WindowBackground }},
