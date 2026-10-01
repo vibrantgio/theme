@@ -2,11 +2,14 @@ package typeset_test
 
 import (
 	"image"
+	"image/color"
+	"strings"
 	"testing"
 
 	"gioui.org/font"
 	"gioui.org/layout"
 	"gioui.org/op"
+	"gioui.org/op/paint"
 	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget"
@@ -401,5 +404,65 @@ func TestNegativeLineHeightNeverReachesTheShaper(t *testing.T) {
 	hand := widget.Label{LineHeight: -20, LineHeightScale: 1}
 	if got := typeset.Layout(g, sh, hand, f, unit.Sp(style.Size), specimen, op.CallOp{}).Size.Y; got <= one {
 		t.Errorf("a hand-built negative line height laid %d px out where one line alone is %d: the wrapped lines collapsed onto each other", got, one)
+	}
+}
+
+// TestTextIsTheRecipeInOneCall pins typeset.Text as the three-call recipe it
+// replaces and nothing more. The windows that adopted it had each written that
+// recipe out, so Text has to measure what their own copies measured — under a
+// floor, under a narrow Max and at more than one line alike.
+func TestTextIsTheRecipeInOneCall(t *testing.T) {
+	sh := pinned()
+	style := styleAt(20)
+	fg := color.NRGBA{R: 0x20, G: 0x40, B: 0x60, A: 0xff}
+
+	cases := []struct {
+		name     string
+		txt      string
+		maxLines int
+		maxX     int
+		minY     int
+	}{
+		{"one line", specimen, 1, 1 << 20, 0},
+		{"one line truncated", strings.Repeat(specimen+" ", 4), 1, 60, 0},
+		{"three lines wrapped", strings.Repeat(specimen+" ", 4), 3, 60, 0},
+		{"one line in an exact cell", specimen, 1, 1 << 20, 41},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var recipe op.Ops
+			g := gtx(&recipe, c.maxX)
+			g.Constraints.Min.Y = c.minY
+			rec := op.Record(g.Ops)
+			paint.ColorOp{Color: fg}.Add(g.Ops)
+			material := rec.Stop()
+			want := typeset.Layout(g, sh, typeset.Label(style, c.maxLines),
+				typeset.Font(style, font.Normal), unit.Sp(style.Size), c.txt, material)
+
+			var own op.Ops
+			h := gtx(&own, c.maxX)
+			h.Constraints.Min.Y = c.minY
+			if got := typeset.Text(h, sh, c.txt, style, fg, c.maxLines); got != want {
+				t.Errorf("Text = %+v, want the recipe's %+v", got, want)
+			}
+		})
+	}
+}
+
+// TestTextCapsTheLineCount pins the maximum line count Text carries: text too
+// long for it occupies exactly that many of the role's line boxes, the rest
+// truncated away.
+func TestTextCapsTheLineCount(t *testing.T) {
+	sh := pinned()
+	const lh = 20
+	style := styleAt(lh)
+	long := strings.Repeat(specimen+" ", 8)
+
+	var ops op.Ops
+	for _, n := range []int{1, 2, 3} {
+		g := gtx(&ops, 60) // narrow enough that the specimen alone wraps
+		if got := typeset.Text(g, sh, long, style, color.NRGBA{A: 0xff}, n); got.Size.Y != n*lh {
+			t.Errorf("Text at maxLines %d: %d px, want %d — %d line boxes of %d", n, got.Size.Y, n*lh, n, lh)
+		}
 	}
 }

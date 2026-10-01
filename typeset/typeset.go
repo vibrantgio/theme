@@ -27,6 +27,9 @@
 //	lbl := typeset.Label(style, 1)
 //	dims := typeset.Layout(gtx, shaper, lbl, f, unit.Sp(style.Size), text, material)
 //
+// [Text] is that recipe in one call for the case every window has — a role, a
+// colour, a line count — and is what a window draws its own text with.
+//
 // The correction is a deficit, not a floor, so it is right for wrapped text
 // too: Gio already spends the line height on each gap, so adding the one
 // missing line height gives n lines a box of exactly n × line height.
@@ -44,10 +47,12 @@ package typeset
 
 import (
 	"image"
+	"image/color"
 
 	"gioui.org/font"
 	"gioui.org/layout"
 	"gioui.org/op"
+	"gioui.org/op/paint"
 	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget"
@@ -203,6 +208,21 @@ func Layout(gtx layout.Context, sh *text.Shaper, lbl widget.Label, f font.Font, 
 		call.Add(gtx.Ops)
 	}
 	return dims
+}
+
+// Text draws txt in one typography role — typeface, weight, size and line
+// height all read off style — in col, on at most maxLines lines, with whatever
+// does not fit truncated by [widget.Label]'s ellipsis. It is [Layout] over
+// [Label] and [Font] with col recorded as the paint source, and it keeps their
+// invariant: the text stands in the line box the role names, and the result
+// fits the constraints the caller handed down. Those constraints reach it
+// untouched, so a Min floor still centres the line box within the floor and a
+// caller wanting the text's own size relaxes the floor itself.
+func Text(gtx layout.Context, sh *text.Shaper, txt string, style tokens.TextStyle, col color.NRGBA, maxLines int) layout.Dimensions {
+	rec := op.Record(gtx.Ops)
+	paint.ColorOp{Color: col}.Add(gtx.Ops)
+	material := rec.Stop()
+	return Layout(gtx, sh, Label(style, maxLines), Font(style, font.Normal), unit.Sp(style.Size), txt, material)
 }
 
 // naturalLine measures the ascent-plus-descent box Gio gives txt's own lines
