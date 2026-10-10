@@ -341,13 +341,7 @@ func LoadFrom(path string) (Brand, bool, error) {
 	if err := json.Unmarshal(data, &f); err != nil {
 		return Brand{}, false, fmt.Errorf("brand: load %s: %w", path, err)
 	}
-	// "base" is the key this pair carried before the style took its own name;
-	// it is read for one release and never written.
-	style := f.Style
-	if style == nil {
-		style = f.Base
-	}
-	b := Brand{Style: style.pair(), Mono: strings.TrimSpace(f.Mono), Source: f.Source, FollowSystem: f.FollowSystem}
+	b := Brand{Style: f.Style.pair(), Mono: strings.TrimSpace(f.Mono), Source: f.Source, FollowSystem: f.FollowSystem}
 	if !f.FollowSystem {
 		// A file that follows the system carries no colour, so there is
 		// none to hold against it; a file that does not is the colour and
@@ -428,12 +422,8 @@ type file struct {
 	ThemeColor string `json:"themeColour,omitempty"`
 	// Seed is the retired key the colour was written under before it took its own
 	// name. Read for one release, never written.
-	Seed  string      `json:"seed,omitempty"`
-	Style *styleField `json:"style,omitempty"`
-	// Base is the retired key the highlighter style was written under before
-	// it took chroma's own word for the thing. Read for one release and never
-	// written, exactly as "seed" is.
-	Base   *styleField `json:"base,omitempty"`
+	Seed   string      `json:"seed,omitempty"`
+	Style  *styleField `json:"style,omitempty"`
 	Mono   string      `json:"mono,omitempty"`
 	Source string      `json:"source,omitempty"`
 	// FollowSystem is absent from every file that pins a colour, so a file

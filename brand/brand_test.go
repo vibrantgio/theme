@@ -363,24 +363,20 @@ func TestTheChosenStyleSurvivesTheRoundTrip(t *testing.T) {
 	if !ok {
 		t.Fatalf("the file spells the style as %#v, want an object with a member per appearance", raw["style"])
 	}
-	if _, retired := raw["base"]; retired {
-		t.Error(`the file still writes the retired "base" key`)
-	}
 	if style["light"] != "catppuccin-latte" || style["dark"] != "catppuccin-mocha" {
 		t.Errorf("the file reads light=%v dark=%v, want catppuccin-latte and catppuccin-mocha", style["light"], style["dark"])
 	}
 }
 
-// TestOneKeptStyleReachesBothAppearances is the migration: every theme.json
-// written while a style was one name carries it under the retired "base" key
-// with no appearance attached to it, and it has to arrive somewhere. It arrives in both members — the only
-// honest answer a package that cannot measure a style has — and the reader,
-// which can measure one, keeps it for the appearance it was fitted to and
-// takes its own default for the other.
+// TestOneKeptStyleReachesBothAppearances: a file may name one style with no
+// appearance attached to it, and it has to arrive somewhere. It arrives in
+// both members — the only honest answer a package that cannot measure a style
+// has — and the reader, which can measure one, keeps it for the appearance it
+// was fitted to and takes its own default for the other.
 func TestOneKeptStyleReachesBothAppearances(t *testing.T) {
 	path := file(t)
-	const older = `{"themeColour":"#e8112d","base":"dracula","source":"harbour.jpg"}`
-	if err := os.WriteFile(path, []byte(older), 0o644); err != nil {
+	const one = `{"themeColour":"#e8112d","style":"dracula","source":"harbour.jpg"}`
+	if err := os.WriteFile(path, []byte(one), 0o644); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 	got, ok, err := brand.LoadFrom(path)
@@ -454,23 +450,6 @@ func TestNoStyleIsNotWritten(t *testing.T) {
 	}
 	if _, ok := raw["style"]; ok {
 		t.Errorf("a brand with no style wrote %q into the file", "style")
-	}
-}
-
-// TestTheRetiredBaseKeyIsStillRead: the pair was spelled under "base" before
-// the style took chroma's own word for the thing. That key is read for one
-// release — a theme kept by the previous build opens on the styles it kept —
-// and never written, exactly as "seed" is read and never written.
-func TestTheRetiredBaseKeyIsStillRead(t *testing.T) {
-	path := file(t)
-	const older = `{"themeColour":"#e8112d","base":{"light":"catppuccin-latte","dark":"catppuccin-mocha"}}`
-	if err := os.WriteFile(path, []byte(older), 0o644); err != nil {
-		t.Fatalf("write: %v", err)
-	}
-	got := brand.KeptFrom(path)
-	want := brand.StylePair{Light: "catppuccin-latte", Dark: "catppuccin-mocha"}
-	if got.Style != want {
-		t.Errorf("a file under the retired key loaded %+v, want %+v", got.Style, want)
 	}
 }
 

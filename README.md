@@ -61,14 +61,12 @@ and deliberately not in `DefaultTypography.Faces`.
 ## Where it sits
 
 Tier 1 of the stack — `mvu → theme → components → effects → patterns → markdown` —
-and since the G-B3 inversion it really is the foundation: the module that owns
-the design values everything above is styled from. theme imports
+and the foundation of it: the module that owns the design values everything
+above is styled from. theme imports
 [mvu](https://github.com/vibrantgio/mvu) and
 [font](https://github.com/vibrantgio/font) — Roboto and Roboto Mono are the
-default `Typography`'s faces — and nothing above it. The deprecated
-`spectrum/transition` alias shim was the last upward edge in the whole stack;
-F3.3 of the [org plan](https://github.com/vibrantgio/.github) deleted it in
-v0.2.0, and the layer check now records no transitional edge at all.
+default `Typography`'s faces — and nothing above it, which the layer check
+records as no upward edge at all.
 Everything above imports theme — components, effects, patterns and markdown all
 read `theme` and `tokens` from here, and an application bootstraps `system`
 and `window`. The [organization page](https://github.com/vibrantgio)
@@ -198,9 +196,8 @@ Honest about what does not work yet:
   written, nor claimed by any phase of the current plan.
 - **The theme snaps; nothing cross-fades it.** `effects/transition`
   interpolates token sets correctly, but nothing drives it: `LiveTheme` emits
-  the new palette in one step, and since v0.2.0 deleted this repository's
-  deprecated alias, no module or application imports `effects/transition` at
-  all. A cross-fade today is the caller's to build out of
+  the new palette in one step, and no module or application imports
+  `effects/transition` at all. A cross-fade today is the caller's to build out of
   `LerpPlatformColors`.
 - **`preferences` persists a choice nothing reads.** No module or application
   imports it, and there is no mapping from the stored theme name to a
@@ -214,24 +211,6 @@ Honest about what does not work yet:
   loops stop when the last subscriber unsubscribes. Sharing is per
   observable value — build the stream once and hand the same value around;
   each separate `LiveTheme` call still costs its own loops.
-- **v0.3.0 is a breaking release.** `tokens.TypeScale` and
-  `tokens.DefaultTypeScale` are gone, and with them `theme.Theme.Type`, the
-  observable that carried them. `TypeScale` was fifteen bare `float32`
-  sizes; `Typography` — which has carried the same sizes plus typeface,
-  weight, line height and tracking since C1.1, and the sixteenth `Code` role
-  since G-F0 — replaces it wholesale. Read `Theme.Typography` and take the
-  role you want: `typo.LabelLarge` where you read `ts.LabelLarge`, and
-  `tokens.DefaultTypography` where you passed `tokens.DefaultTypeScale`.
-  `Theme.Type` is deleted rather than retyped because nothing read it — the
-  in-org consumers moved to `Typography` in C1.1, E1.2 and F3.3, and
-  `spectrum/export` never consumed it at all.
-- **The derived colour set is gone.** `ColorTokens` and everything that fed
-  it — the generated colour scales, the tinted fills, the walks that read a
-  fill off a level — were deleted in the platform round, along with
-  `spectrum/transition`'s alias. There is no migration table for them,
-  because nothing derived replaces a derived value: read the platform name
-  for what the thing IS. `PlatformColors` is the whole colour surface, and
-  `theme/export` emits it under the platform's own names.
 
 ## License
 
