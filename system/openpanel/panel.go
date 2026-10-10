@@ -1,7 +1,7 @@
 // Package openpanel presents the platform's own chooser for a folder.
 //
 // Choosing a folder is the platform's open panel where the platform offers
-// one, and the library's modal where it does not, so this package answers
+// one, and the library's dialog where it does not, so this package answers
 // two questions: whether a panel exists at all ([Available]), and what the
 // reader chose in it ([ChooseDirectory]). An application asks the first
 // before it decides which chooser to raise, and the second only where the

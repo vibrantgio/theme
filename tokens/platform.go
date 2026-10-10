@@ -422,7 +422,7 @@ type PlatformColors struct {
 	// the array's answer alone, and it is a coverage rather than a pixel.
 	AlternatingContentBackground color.NRGBA `appkit:"-"`
 
-	// Scrim is the dim a modal lays over everything it interrupts: black
+	// Scrim is the dim a dialog lays over everything it interrupts: black
 	// at 0.20 light and at 0.26 dark, measured off the window standing
 	// behind the sheet in save-dialog-light.png and save-dialog-dark.png.
 	// The light window's plane reads #cccccc against the #ffffff the sheet
