@@ -480,11 +480,10 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"inset: 0 10px;  /* SelectionInset */",
 		"border-radius: 8px;  /* SelectionRadius */",
 		"background: var(--platform-sidebar-selection);",
-		// Breadcrumb: the ancestors are links, the current segment the label.
+		// Breadcrumb: every place in the label, parted by the set's chevron.
 		"font-size: var(--font-title-small-size);",
-		"color: var(--platform-link);",
-		".crumbs .crumb:last-child, .crumb.current { color: var(--platform-label); }",
-		"border-left: 6px solid var(--platform-secondary-label);",
+		"border-right: 1.4px solid var(--platform-secondary-label);",
+		"transform: translateX(-2.42px) rotate(-45deg);",
 		// Overlays: the platform's scrim, the window background under the
 		// measured shadow, and the separator where a still surface needs a
 		// line.
