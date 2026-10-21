@@ -103,6 +103,40 @@ import (
 // platform's own reduced coverage and reads at it in the same capture.
 const DisabledCoverage uint8 = 170
 
+// BackdropMaterialCoverage is how much of the window background colour a
+// material keeps where it is painted over a painted backdrop: the fraction
+// of 255 that colour is drawn at so what is behind shows through it,
+// lighter in light and darker in dark. It is the one case in this set where
+// a material is painted translucent — the chrome material and its kin are
+// painted flat at the values measured for them — because there is something
+// worth seeing behind it, and the alpha is the platform's own rather than a
+// taste.
+//
+// MEASURED, control-center-bands-light.png and
+// control-center-bands-dark.png: Control Center stands over four flat
+// bands of known value, and each of its modules reads a straight line
+// against the band behind it — light, module fill 46 over 26, 76 over
+// 77, 121 over 153 and 168 over 230; dark, 31 over 0, 61 over 51, 136
+// over 179 and 183 over 255. The eight pairs fit fill = 0.5956*behind
+// + 30.5 within one 255th, so the platform keeps 103 of 255 of its own
+// fill and lets 152 through. Light and dark fit 102.6 and 103.4, which
+// is under the one-255th the fit itself carries, so one value serves
+// both. The colour the platform keeps there is a fixed mid grey rather
+// than its window background, so what is measured here is the coverage
+// alone; the colour is the window's own plane, so a material over a
+// painted backdrop already carrying that plane is that plane byte for byte.
+// control-center-light.png and control-center-dark.png are the same
+// pane over the desktop, where the wallpaper's detail is visible
+// through it and softened.
+//
+// Gio blends a translucent fill in linear light, so a caller handing this
+// coverage to the rasterizer passes it through
+// [github.com/vibrantgio/theme/color.LinearCoverage] first; a caller
+// measuring what it lands flattens it with
+// [github.com/vibrantgio/theme/color.Flatten], which is the platform's own
+// blend.
+const BackdropMaterialCoverage uint8 = 103
+
 // PlatformColors is the platform's colour set: one field per AppKit
 // semantic colour name, in Go casing, with the value that name reports for
 // one appearance. [PlatformLight] and [PlatformDark] are the two recorded
