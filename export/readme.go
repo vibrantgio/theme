@@ -182,9 +182,11 @@ func readmeMD(s Snapshot) string {
 		"fill of the surface it is in and declaring none. `.table` prints on\n" +
 		"`--platform-control-background` with rows a `--density-row-height`\n" +
 		"tall, `--platform-grid` closing each and `--platform-separator` closing\n" +
-		"the header band. The navigation family — `.navbar`, `.tabs`, `.sidebar`\n" +
-		"and `.crumbs` — stands on `--platform-sidebar-material`, the chrome, and\n" +
-		"draws the separator where two flush regions meet; selection is\n" +
+		"the header band. Of the navigation family, `.navbar` and `.sidebar`\n" +
+		"stand on `--platform-sidebar-material`, the chrome, while `.tabs` and\n" +
+		"`.crumbs` declare no fill and stand on the fill of the region they are\n" +
+		"in; the separator is drawn where two flush regions meet, as along the\n" +
+		"foot of the bar and of the tab strip; selection is\n" +
 		"`--platform-selected-content-background`, as an underline on a link or a\n" +
 		"tab and as the row's own fill on a rail. `.pane` is the platform's\n" +
 		"sidebar as it actually stands: an inset rounded pane 8 px off the\n" +

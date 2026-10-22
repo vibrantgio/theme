@@ -536,6 +536,39 @@ func TestRoundTripButtonClasses(t *testing.T) {
 
 }
 
+// TestTabsRuleStandsOnRegionFill reads the sheet's `.tabs` rule as a string
+// — the declarations between its opening line and the closing brace — and
+// asserts the strip has no fill of its own: no background declaration of
+// any kind, so neither the sidebar material nor any other fill, and the
+// separator along its foot is the strip's only trim.
+func TestTabsRuleStandsOnRegionFill(t *testing.T) {
+	snap, _, _ := writeDefault(t)
+	src := stylesCSS(snap)
+	const opener = "\n.tabs {\n"
+	start := strings.Index(src, opener)
+	if start < 0 {
+		t.Fatal("styles.css has no .tabs rule")
+	}
+	if strings.Count(src, opener) != 1 {
+		t.Fatal("styles.css has more than one .tabs rule")
+	}
+	body := src[start+len(opener):]
+	end := strings.Index(body, "\n}")
+	if end < 0 {
+		t.Fatal(".tabs rule is not closed")
+	}
+	body = body[:end]
+	if strings.Contains(body, "sidebar-material") {
+		t.Errorf(".tabs rule paints the sidebar material:\n%s", body)
+	}
+	if strings.Contains(body, "background") {
+		t.Errorf(".tabs rule declares a background; the strip stands on the fill of the region it is in:\n%s", body)
+	}
+	if !strings.Contains(body, "box-shadow: inset 0 -1px 0 var(--platform-separator);") {
+		t.Errorf(".tabs rule lacks the separator along its foot:\n%s", body)
+	}
+}
+
 // TestThemeJSONReproduces asserts theme.json's reproducibility claim: every
 // recorded parameter matches the tokens and the sheet, value for value, so
 // the file alone rebuilds what was exported.
