@@ -10,7 +10,7 @@ package tokens
 // the published table is a document about it.
 //
 // Provenance, per number — the reference and its remaining gap are
-// `.github/reference/macos/controls.md`, indexed by ADR-019:
+// `organisation/reference/macos/controls.md`, indexed by ADR-019:
 //
 //	number                      value   provenance
 //	------                      -----   ----------
@@ -117,7 +117,7 @@ const (
 	// ComfortableControlHeight is the default desktop control-height floor in
 	// dp: a Comfortable control is at least this tall, and taller when its
 	// content box needs it. It is the platform's regular control, measured
-	// off the Save panel in .github/reference/macos/save-dialog-light.png and
+	// off the Save panel in organisation/reference/macos/save-dialog-light.png and
 	// save-dialog-dark.png — a 24 px push button and pop-up button, both
 	// appearances agreeing to the pixel. The HIG publishes 22 pt; the capture
 	// supersedes it.
@@ -143,7 +143,7 @@ const (
 	// row, a table row, a header cell — and a pin rather
 	// than a floor: the row is drawn exactly this tall. It is the
 	// platform's own list row, measured off Finder's list view in
-	// .github/reference/macos/finder-window-light.png, whose stripes
+	// organisation/reference/macos/finder-window-light.png, whose stripes
 	// alternate on a 20 px pitch with no seam between them. A row is
 	// shorter than a button on this platform, which is why it is a number
 	// of its own.
@@ -155,7 +155,7 @@ const (
 	// ComfortableCheckboxRowHeight is the height of a checkbox's row in dp:
 	// the footprint the 16 dp symbol is centred in, and the pointer target.
 	// It is a pin, not a floor — a checkbox draws no content box of its own.
-	// MEASURED off the Save panel in .github/reference/macos/save-dialog-light.png
+	// MEASURED off the Save panel in organisation/reference/macos/save-dialog-light.png
 	// and save-dialog-dark.png as the pitch between the two "Options:"
 	// checkboxes, whose squares run y 372–387 and y 394–409: 22 px, both
 	// appearances agreeing to the pixel. It is neither the control height nor
@@ -172,7 +172,7 @@ const (
 	// sense as [ComfortableControlHeight].
 	//
 	// MEASURED off the Finder toolbar captures in
-	// .github/reference/macos, each read as a luminance run down a column
+	// organisation/reference/macos, each read as a luminance run down a column
 	// through the control's own middle:
 	//
 	//   - finder-window-untinted-dark.png, a frontmost window: all five

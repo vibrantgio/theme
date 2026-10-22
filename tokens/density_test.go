@@ -7,7 +7,7 @@ import (
 
 // TestDensityPicksMatchThePlatformScale pins the two control heights to the
 // platform's scale as the reference now reads it, with the provenance
-// recorded in density.go and in .github/reference/macos/controls.md:
+// recorded in density.go and in organisation/reference/macos/controls.md:
 // Comfortable is the regular control measured off the stored Save panel at
 // 24 dp, superseding the HIG's published 22 pt, and Compact is still the
 // published small control at 19 dp because no capture holds one. Each is also

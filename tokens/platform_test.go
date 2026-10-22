@@ -28,9 +28,9 @@ const cataloguePath = "testdata/nscolors.tsv"
 // which is what the test has to go on when it is not. Both change together:
 // after editing either copy, re-record with
 //
-//	shasum -a 256 ../../.github/reference/macos/nscolors.tsv
+//	shasum -a 256 ../../organisation/reference/macos/nscolors.tsv
 const (
-	referencePath   = "../../.github/reference/macos/nscolors.tsv"
+	referencePath   = "../../organisation/reference/macos/nscolors.tsv"
 	referenceDigest = "a22454733fd0f5c5073a7ccf6db0eab3e717decdd9fde424877e1fcdbe7d7b3f"
 )
 
