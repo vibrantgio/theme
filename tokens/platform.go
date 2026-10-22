@@ -67,6 +67,7 @@
 //	ToolbarCheckedOverlay #000000 a0.102  #ffffff a0.161  measured: the chosen segment of a segmented toolbar control, over the control's own fill
 //	PaneRim          #ffffff        #3a3a3a        measured: the 1 px rim the inset sidebar pane wears on every side
 //	PaneShadow       #000000 a0.051 #000000 a0.051 measured: the shadow that pane casts, 24 px of reach with its rectangle sunk 9
+//	Seam             #e6e6e6        #000000        measured: the hairline between two flush regions, Mail's list seam
 //
 // The chrome material and the sidebar's pill were read with "Tint window
 // background with wallpaper colour" off, so they carry the platform's own
@@ -174,10 +175,25 @@ type PlatformColors struct {
 	// text the highlight covers keeps its colour.
 	FindHighlight color.NRGBA
 
-	// Separator is every seam, laid over whatever is beneath it. Grid is
-	// the line a table rules its cells with.
+	// Separator is the platform's separatorColor, a coverage laid over
+	// whatever is beneath it: the name a border, a rule or an edge
+	// flattens. Grid is the line a table rules its cells with.
 	Separator color.NRGBA
 	Grid      color.NRGBA
+
+	// Seam is the hairline where two flush regions meet — a list column
+	// against the content, a footer's top — as a VALUE per scheme and not
+	// a coverage over what the line crosses. MEASURED off the one pixel at
+	// x=779 in mail-three-column-light.png and mail-three-column-dark.png,
+	// the seam between Mail's list column and its content, read at y 300,
+	// 600 and 874; the reading is in reference/macos/controls.md.
+	//
+	// Light it is Separator over the column's own #ffffff to the byte.
+	// Dark it is black outright, and no coverage of Separator over that
+	// column's #232a2e reaches it — the name gives #3b3b3b there, 59 of
+	// 255 off the pixel — which is why the pair is carried rather than
+	// flattened, as ToolbarControlSeam and PaneRim are.
+	Seam color.NRGBA `appkit:"-"`
 
 	// Text, at four strengths, over whatever it stands on.
 	Label           color.NRGBA
@@ -790,6 +806,7 @@ var (
 
 		Separator: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x19},
 		Grid:      color.NRGBA{R: 0xe6, G: 0xe6, B: 0xe6, A: 0xff},
+		Seam:      color.NRGBA{R: 0xe6, G: 0xe6, B: 0xe6, A: 0xff},
 
 		Label:           color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xd8},
 		SecondaryLabel:  color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x7f},
@@ -875,6 +892,7 @@ var (
 
 		Separator: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x19},
 		Grid:      color.NRGBA{R: 0x1a, G: 0x1a, B: 0x1a, A: 0xff},
+		Seam:      color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
 
 		Label:           color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xd8},
 		SecondaryLabel:  color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x8c},

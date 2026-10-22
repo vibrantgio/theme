@@ -31,7 +31,7 @@ const cataloguePath = "testdata/nscolors.tsv"
 //	shasum -a 256 ../../.github/reference/macos/nscolors.tsv
 const (
 	referencePath   = "../../.github/reference/macos/nscolors.tsv"
-	referenceDigest = "8bdb1d4ff052827c3254c5da434d202f2afa4d88e6479dd527eb7bb4d6802f6a"
+	referenceDigest = "a22454733fd0f5c5073a7ccf6db0eab3e717decdd9fde424877e1fcdbe7d7b3f"
 )
 
 // mailFindHighlight is the find highlight as Mail paints it, measured off

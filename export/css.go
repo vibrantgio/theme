@@ -73,6 +73,7 @@ var platformNames = []struct {
 	{"find-highlight", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.FindHighlight }},
 	{"separator", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Separator }},
 	{"grid", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Grid }},
+	{"seam", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Seam }},
 	{"label", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Label }},
 	{"secondary-label", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SecondaryLabel }},
 	{"tertiary-label", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.TertiaryLabel }},
