@@ -52,7 +52,7 @@
 //	HoverOverlay     #000000 a0.051 #ffffff a0.094 measured: a toolbar button under the pointer
 //	PressOverlay     #000000 a0.098 #ffffff a0.098 measured: a push button held down
 //	FloatingShadow   #000000 a0.075 #000000 a0.075 measured: the sidebar shadow, 24 px of reach centred on the surface
-//	FieldEdge        #f3f3f3        #2c3338        measured: the unfocused text field's hairline in the Save panel
+//	FieldEdge        #f3f3f3        #282828        measured: the search field's hairline on content, tinting off
 //	ScrollbarThumb   #000000 a0.572 #ffffff a0.572 measured: the overlay scrollbar's knob over its track
 //	AlternatingContentBackground  #f4f5f5  #ffffff a0.05  measured: the second of alternatingContentBackgroundColors, and Finder's list stripes
 //	Scrim            #000000 a0.20  #000000 a0.26  measured: the dim under a Save sheet in save-dialog-{light,dark}.png
@@ -435,14 +435,17 @@ type PlatformColors struct {
 	FloatingShadow DropShadow `appkit:"-"`
 
 	// FieldEdge is the hairline a text field draws around itself,
-	// unfocused: #f3f3f3 light and #2c3338 dark, the single border row of
-	// the "Tags:" field in save-dialog-light.png and save-dialog-dark.png
-	// (y 243 and y 269), read over that sheet's own fill — #ffffff light
-	// and #232a2f dark, since the field's interior is the sheet's there.
-	// The light value is Separator laid over that white exactly, to the
-	// byte; the dark one is not, and nothing near it — Separator over the
-	// dark sheet reads #606264, six times the step the platform draws — so
-	// the edge is recorded as the pixel rather than as a coverage.
+	// unfocused: #f3f3f3 light and #282828 dark. The value is read off
+	// systemsettings-add-input-source-search-light.png and
+	// systemsettings-add-input-source-search-dark.png, which hold the
+	// search field on the sheet's own fill with wallpaper tinting off. The
+	// edge is the field's top and bottom row (y 347 and y 372), read over
+	// the sheet's #ffffff light and #1e1e1e dark. The field's interior is
+	// the sheet's fill, so the edge is the only pixel the field adds. The
+	// light value is Separator laid over that white, to the byte. The dark
+	// value is not: Separator laid over the dark sheet reads #343434, twice
+	// the step the platform draws, so the token records the pixel.
+	// The Save panel's "Tags:" field reads #f3f3f3 light too.
 	FieldEdge color.NRGBA `appkit:"-"`
 
 	// ScrollbarThumb is the overlay scrollbar's thumb: Label's own black
@@ -944,7 +947,7 @@ var (
 		HoverOverlay:                      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x18},
 		PressOverlay:                      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x19},
 		FloatingShadow:                    DropShadow{Peak: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13}, Reach: 24},
-		FieldEdge:                         color.NRGBA{R: 0x2c, G: 0x33, B: 0x38, A: 0xff},
+		FieldEdge:                         color.NRGBA{R: 0x28, G: 0x28, B: 0x28, A: 0xff},
 		ScrollbarThumb:                    color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x92},
 
 		AlternatingContentBackground: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x0d},

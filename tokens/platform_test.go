@@ -31,7 +31,7 @@ const cataloguePath = "testdata/nscolors.tsv"
 //	shasum -a 256 ../../organisation/reference/macos/nscolors.tsv
 const (
 	referencePath   = "../../organisation/reference/macos/nscolors.tsv"
-	referenceDigest = "a22454733fd0f5c5073a7ccf6db0eab3e717decdd9fde424877e1fcdbe7d7b3f"
+	referenceDigest = "abfd5a02575a14dd516a7bdbb6bd9bf3426add700b3bef247f6eba37403d46d5"
 )
 
 // mailFindHighlight is the find highlight as Mail paints it, measured off
@@ -512,6 +512,29 @@ func TestPushButtonFillIsTheMeasuredPushButton(t *testing.T) {
 		}
 		if c.in.PushButtonFill.A != 0xff {
 			t.Errorf("%s PushButtonFill = %v; the fill was read as a pixel, so it is opaque", c.name, c.in.PushButtonFill)
+		}
+	}
+}
+
+// TestFieldEdgeIsTheUntintedSearchFieldEdge pins the field's hairline to
+// the pixels of the search field on content, read with wallpaper tinting
+// off. The dark sheet there reads #1e1e1e and the edge reads #282828. A
+// reading taken with tinting on is not a platform value.
+func TestFieldEdgeIsTheUntintedSearchFieldEdge(t *testing.T) {
+	for _, c := range []struct {
+		name  string
+		in    tokens.PlatformColors
+		sheet color.NRGBA
+		want  color.NRGBA
+	}{
+		{"light", tokens.PlatformLight, color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff}, color.NRGBA{R: 0xf3, G: 0xf3, B: 0xf3, A: 0xff}},
+		{"dark", tokens.PlatformDark, color.NRGBA{R: 0x1e, G: 0x1e, B: 0x1e, A: 0xff}, color.NRGBA{R: 0x28, G: 0x28, B: 0x28, A: 0xff}},
+	} {
+		if c.in.FieldEdge != c.want {
+			t.Errorf("%s FieldEdge = %v, want the untinted search field's edge %v", c.name, c.in.FieldEdge, c.want)
+		}
+		if c.in.WindowBackground != c.sheet {
+			t.Errorf("%s WindowBackground = %v, want the untinted sheet %v the edge was read over", c.name, c.in.WindowBackground, c.sheet)
 		}
 	}
 }
