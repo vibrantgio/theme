@@ -20,12 +20,12 @@
 // for every one of these names itself; these recorded sets are what the
 // other platforms — and every test — read.
 //
-// Twenty-two fields are not AppKit's. The platform paints a sidebar, a
+// Twenty-eight fields are not AppKit's. The platform paints a sidebar, a
 // grouped box, a selected sidebar row, the count at a sidebar row's trailing
 // end, a search field's recess on a sidebar, a push
 // button, a hovered and a pressed
 // control, the shadow under a
-// floating pane, a text field's hairline, an overlay scrollbar's knob, a
+// floating pane, a text field's hairline, an overlay scrollbar's thumb, a
 // list's alternating row, the rim and the shadow of an inset sidebar pane,
 // the several fills a toolbar band's controls take
 // and the dim a sheet lays over the window it
@@ -53,7 +53,7 @@
 //	PressOverlay     #000000 a0.098 #ffffff a0.098 measured: a push button held down
 //	FloatingShadow   #000000 a0.075 #000000 a0.075 measured: the sidebar shadow, 24 px of reach centred on the surface
 //	FieldEdge        #f3f3f3        #282828        measured: the search field's hairline on content, tinting off
-//	ScrollbarThumb   #000000 a0.572 #ffffff a0.572 measured: the overlay scrollbar's knob over its track
+//	ScrollbarThumb   #000000 a0.572 #ffffff a0.572 measured: the overlay scrollbar's thumb over its track
 //	AlternatingContentBackground  #f4f5f5  #ffffff a0.05  measured: the second of alternatingContentBackgroundColors, and Finder's list stripes
 //	Scrim            #000000 a0.20  #000000 a0.26  measured: the dim under a Save sheet in save-dialog-{light,dark}.png
 //	SidebarSearchFill  #e8e8e8      #2f3234        measured: the recess a search field is on a sidebar
@@ -328,7 +328,7 @@ type PlatformColors struct {
 	// whole pixels, so the gap is the drawn colour and not a stem's
 	// shortfall. No field of this set flattens within a level of either
 	// reading — the nearest is ScrollbarThumb at 3 and 6, which is a
-	// scrollbar's knob — so the count is recorded as a measured value of the
+	// scrollbar's thumb — so the count is recorded as a measured value of the
 	// sidebar, as the pill is. See reference/macos/controls.md, "What a
 	// sidebar row measures".
 	SidebarCount color.NRGBA `appkit:"-"`
@@ -449,9 +449,9 @@ type PlatformColors struct {
 	FieldEdge color.NRGBA `appkit:"-"`
 
 	// ScrollbarThumb is the overlay scrollbar's thumb: Label's own black
-	// or white at the coverage the platform's knob measures, laid over the
+	// or white at the coverage the platform's thumb measures, laid over the
 	// track. The coverage is 0.572 — 146/255 — read off
-	// textedit-scrollbar.png: the knob reads #9d9fa1 over a #1a2124 track,
+	// textedit-scrollbar.png: the thumb reads #9d9fa1 over a #1a2124 track,
 	// which white at that coverage reproduces within one 255th on every
 	// channel when flattened in encoded sRGB, the space the platform
 	// composites in. The 0.337 this row carried before was fitted through a

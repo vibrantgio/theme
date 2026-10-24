@@ -69,9 +69,9 @@
 // subscription). A LiveTheme handed to n layers therefore polls each of its
 // two sources — appearance and a11y — once per interval, not n times.
 // Distinct calls still get distinct loops: sharing is per observable value,
-// so build the stream once and hand the same value around. Keep the
-// interval at the intended one second; the OS caches these values and will
-// not report a change much sooner.
+// so build the stream once and hand the same value around. Recommended
+// interval: 100–250 ms. One second between an external `defaults write` and
+// the corresponding emission is the outer budget.
 //
 // Errors are invisible by design: a failing Read is folded into the zero
 // Appearance rather than an error emission, so a broken source is

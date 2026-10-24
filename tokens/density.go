@@ -92,9 +92,10 @@ package tokens
 //
 // A control's pointer target is the control: the box it draws at the heights
 // above, with nothing added around it. The platform draws a 24 dp push
-// button and 24 dp is what a pointer has to land on; a Compact control draws
-// 19 and offers 19. Density therefore moves the target with the pixels, and
-// two controls standing side by side never claim the same pixels.
+// button and 24 dp is what a pointer has to land on; a Compact control has a
+// 19 dp floor, draws 20 for a button and offers 20. Density therefore moves
+// the target with the pixels, and two controls standing side by side never
+// claim the same pixels.
 //
 // A stacked row is its own target at its own height, and an option row at
 // the height its content box gives it:

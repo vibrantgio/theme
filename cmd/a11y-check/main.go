@@ -1,4 +1,4 @@
-// a11y-check prints OS accessibility preferences once per second.
+// a11y-check prints OS accessibility preferences at start and on each change.
 // Run with: go run github.com/vibrantgio/theme/cmd/a11y-check
 // Manual test: toggle "Reduce Motion" in System Settings > Accessibility > Display
 // and confirm the change appears within ~1 second.
