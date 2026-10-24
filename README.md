@@ -14,39 +14,35 @@ application threading a parameter through its whole view tree. theme does
 that in one line at startup. `system.LiveTheme` publishes the OS appearance as
 an `rx.Observable[theme.Theme]`; `window.New` binds that observable to an
 [mvu](https://github.com/vibrantgio/mvu) window and hands it to the builder
-that constructs the layers. Every [components](https://github.com/vibrantgio/components)
-component already takes a theme observable as its first argument, so the
-appearance change arrives at the buttons with no application code at all — which
-is why an application's bootstrap is the same two lines, and none of them
-asks the OS about appearance a second time. The same stream carries the OS
-accent colour — an accent change re-emits the theme just like a dark-mode
-flip — and while the OS reports increased contrast, there is no branch at
-all: the platform paints its own semantic colours differently under
-"Increase Contrast", and a live read carries what it paints. The only
-light/dark branches left anywhere are the two that pick a chroma syntax
-theme for a markdown code block, and they branch on the luminance of the
-background token rather than on the OS, because chroma's themes are the one
-visual thing the token set does not cover.
+that constructs the layers. A component that takes the theme observable as
+its first argument receives the appearance change with no application code
+at all, which is why an application's bootstrap is the same two lines, and
+none of them asks the OS about appearance a second time. The same stream
+carries the OS accent colour — an accent change re-emits the theme just like
+a dark-mode flip — and while the OS reports increased contrast, there is no
+branch at all: the platform paints its own semantic colours differently
+under "Increase Contrast", and a live read carries what it paints.
 
-The module is deliberately small and, below the `window` package, nearly
-Gio-free: `system`, `preferences`, `a11y`, `export` and `color` talk to the OS,
-the filesystem and the mathematics and import no UI toolkit, so the runtime is
-testable without a display. The one exception is `tokens`, whose `Typography`
-owns the system's shapers and therefore imports Gio's text machinery.
+The module is small and testable without a display. Below `window`, two
+packages import Gio themselves: `tokens`, whose `Typography` owns the
+system's shapers and therefore imports Gio's text machinery, and `typeset`,
+which lays text out with Gio's label. `system`, `a11y`, `preferences`,
+`export`, `color`, `brand`, `imagecolor`, `system/naming` and
+`system/openpanel` talk to the OS, the filesystem and the mathematics and
+import no Gio package directly; those that use `tokens` reach Gio's text
+packages through it.
 
-`Typography` builds two, and which one you take is a decision, not a detail.
-`Shaper()` is what applications draw with: the embedded faces first, then the
-platform's own fonts for anything they cannot serve, so text resolves — all of
-it, including the arrows, box-drawing characters and symbols Roboto and Roboto
-Mono simply do not carry. `DeterministicShaper()` is what golden tests draw
-with: those faces and nothing else, system fonts off, identical on every
-machine. They are cached apart, so neither can hand back the other's.
+`Typography` builds two shapers, and which one you take is a decision, not a
+detail. `Shaper()` is what applications draw with: the embedded faces first,
+then the platform's own fonts for anything they cannot serve, so text
+resolves — all of it, including the arrows, box-drawing characters and
+symbols Roboto and Roboto Mono do not carry. `DeterministicShaper()` is what
+golden tests draw with: those faces and nothing else, system fonts off,
+identical on every machine. They are cached apart, so neither can hand back
+the other's.
 
-Determinism belongs to the test that wants it. Before G-F4 the default was the
-pinned one — golden images could not depend on a machine's fonts, and the price
-was that every application drew a missing-glyph box for `U+2193 ↓`. A test that
-needs a symbol adds the face that carries it rather than reaching for the
-platform's:
+Determinism belongs to the test that wants it. A test that needs a symbol
+adds the face that carries it rather than reaching for the platform's:
 
 ```go
 typ := tokens.DefaultTypography.WithFaces(notosansmono.FontFace())
@@ -56,41 +52,40 @@ shaper := typ.DeterministicShaper()
 The same one-liner is how an application that cannot rely on system fonts — a
 container, a kiosk — gets symbol coverage; see
 [font](https://github.com/vibrantgio/font)'s `notosansmono`, which is optional
-and deliberately not in `DefaultTypography.Faces`.
+and not in `DefaultTypography.Faces`.
 
 ## Where it sits
 
-Tier 1 of the stack — `mvu → theme → components → effects → patterns → markdown` —
-and the foundation of it: the module that owns the design values everything
-above is styled from. theme imports
+The foundation tier of the stack: the module that owns the design values
+everything above it is styled from. theme imports
 [mvu](https://github.com/vibrantgio/mvu) and
 [font](https://github.com/vibrantgio/font) — Roboto and Roboto Mono are the
 default `Typography`'s faces — and nothing above it, which the layer check
-records as no upward edge at all.
-Everything above imports theme — components, effects, patterns and markdown all
-read `theme` and `tokens` from here, and an application bootstraps `system`
-and `window`. The [organization page](https://github.com/vibrantgio)
-has the full tier table.
+records as no upward edge at all. The
+[organization page](https://github.com/vibrantgio) has the full tier table.
 
 ```sh
 go get github.com/vibrantgio/theme
 ```
 
-Every module in the organization is on gioui.org v0.10.2,
-github.com/reactivego/rx v0.3.0 and Go 1.25.1.
-
 ## Packages
 
 | Package | |
 | --- | --- |
-| `tokens` | The typed design values, all of them: `PlatformColors`, the platform's own colour set — one field per AppKit semantic colour name, with `PlatformLight` and `PlatformDark` carrying the recorded values and `WithAccent` rebuilding the rows the platform derives from the accent; `Typography` — fifteen text roles plus `Code` and `DocumentHeadings`, the six-step heading scale prose surfaces set their headings in, carrying the face collection, `WithFaces` to widen it, and two shapers cached apart: `Shaper()` with the system fallback for applications and `DeterministicShaper()` with the collection pinned for golden tests; `Density` (Comfortable 36 dp / Compact 28 dp control heights); `MotionScale` (duration stops, easings, spring presets, and `Reduced()` for the OS reduce-motion preference); `ElevationScale`, the shadow depth each of the six levels casts (a level's FILL is a platform name, not a derivation); and the 4-pt spacing and named radius scales. |
-| `color` | The generative colour engine the palettes are derived with — sRGB ↔ CIELAB and OKLCh conversions and the APCA contrast metric that gates every generated pair. Mathematics only; no colour values live here. |
-| `theme` | `Theme`: one `rx.Observable` per token category, so a consumer subscribes to just the categories it reads. `Default()` and `AutoLightDark()` construct one — note `AutoLightDark()` reads the clock (hours 7–17 light), not the OS; `system.LiveTheme` is the real tracker. |
-| `system` | The OS appearance — dark mode and accent colour — polled behind a `Source` interface and published as an observable that emits only on change. `Live` gives the raw `Appearance`; `LiveTheme` gives the `theme.Theme` a window wants, with a `WithThemeColor` option for the accent an application chooses. Dark mode is read on macOS; the accent is read on all three platforms — macOS's accent choice, the Windows DWM registry value, GNOME's named accent and KDE's `kdeglobals` RGB. |
-| `a11y` | OS accessibility preferences — reduce motion, increased contrast, larger text — polled and published as an `rx.Observable[A11yPrefs]` that emits only on change. The composed theme already reflects the first two; macOS and Windows report real preferences, Linux returns all-false. |
+| `tokens` | The typed design values, all of them: `PlatformColors`, the platform's own colour set — one field per AppKit semantic colour name, with `PlatformLight` and `PlatformDark` carrying the values measured from the platform, `WithAccent` rebuilding the rows the platform derives from the accent, and `FloatingShadow` and `PaneShadow` as `DropShadow` readings; `Typography` — fifteen text roles plus `Code` and `DocumentHeadings`, the six-step heading scale prose surfaces set their headings in, carrying the face collection, `WithFaces` to widen it, `WithCodeFace` to name the code face, and two shapers cached apart: `Shaper()` with the system fallback for applications and `DeterministicShaper()` with the collection pinned for golden tests; `EmojiTypography()` is `DefaultTypography.WithEmoji()`, the typography a live theme stream emits; `Density` — `Comfortable` and `Compact`, whose minimum control heights are 24 dp and 19 dp: a control draws taller when its type role's line box and padding need it, so a Compact button draws 20 dp, and the text field, the list row, the checkbox row and the toolbar control each have a height of their own; `MotionScale` (duration stops, easings, spring presets, and `Reduced()` for the OS reduce-motion preference); `ElevationScale`, the shadow depths in dp from the backdrop up (a level's fill is a platform name, not a derivation); and the 4-pt spacing and named radius scales. |
+| `color` | The colour mathematics the theme measures and composites with: OKLab and OKLCh conversions and their inverses, gamut mapping that reduces chroma rather than clamping channels, the APCA contrast measure (`APCA`, `Magnitude`, `BestOn`), relative luminance, and the compositing helpers `Flatten`, `Fade` and `LinearCoverage`. No colour values live here. |
+| `theme` | `Theme`: one `rx.Observable` per token category, so a reader subscribes to just the categories it reads. `Default()` and `AutoLightDark()` construct one — note `AutoLightDark()` reads the clock (hours 7–17 light), not the OS; `system.LiveTheme` is the real tracker. |
+| `system` | The OS appearance — dark mode and accent colour — polled behind a `Source` interface and published as an observable that emits only on change. `Live` gives the raw `Appearance`; `LiveTheme` gives the `theme.Theme` a window wants, with the options `WithThemeColor` for the accent an application chooses, `WithA11ySource` for the accessibility preferences it reads and `WithTypography` for the type roles it emits (`tokens.EmojiTypography()` by default). `PlatformColor` is the colour a stream with no theme colour chosen rebuilds the accent rows for, for a given `Appearance`. Dark mode is read on macOS; the accent is read on all three platforms — macOS's accent choice, the Windows DWM registry value, GNOME's named accent and KDE's `kdeglobals` RGB. |
+| `system/naming` | Orders names the way the platform's file browser orders them: case-insensitively, with a run of digits read as the number it spells. `Compare` and `Less`; on macOS the answer is the platform's own comparison. |
+| `system/openpanel` | The platform's own chooser for a folder: `Available` says whether the platform has one, `ChooseDirectory` presents it and returns what was chosen. macOS with cgo has an open panel; elsewhere `Available` is false. |
+| `a11y` | OS accessibility preferences — reduce motion, increased contrast, larger text — polled and published as an `rx.Observable[A11yPrefs]` that emits only on change. macOS and Windows report real preferences, Linux returns all-false. |
 | `window` | Pairs an `mvu.Window` with the theme observable that scopes it, and hands that observable to the layer builder. Two windows built with two theme streams render in two different themes in the same process. |
+| `typeset` | Lays a type role's text out in the line box that role names, rather than in the box its glyphs occupy: `Layout` wraps Gio's label and pads the result up to the line box, `Text`, `TextWeight` and `TextAligned` set a role's text in one call, `Label` and `Font` build the label and font from a `TextStyle`, and `LineWidth` measures a line. |
+| `brand` | Keeps the brand colour a person chose — the theme colour, or that it follows the system, with a pair of code styles for light and dark, a code face and where the colour came from — as one JSON file, and hands it back as `LiveTheme` options (`Brand.Options`). `Load`, `Save`, `Kept` and their `From`/`To` forms read and write it. |
+| `imagecolor` | Extracts theme-colour candidates from an image: colours the picture is made of, clustered in OKLab and ranked so a vivid minority leads a dull majority. `Extract`, `ExtractWith`, `ExtractPalette` and `ExtractPaletteWith` return `Candidate`s, never a palette. |
 | `preferences` | Persists the user's explicit appearance choice — a theme name plus accessibility overrides — as JSON under the OS config directory, and reads it back at launch. |
-| `export` | Serialises a `theme.Theme` emission into the project layout claude.ai/design consumes — `theme.json`, `styles.css`, `readme.md` and the foundation pages. `cmd/vg-tokens` is the command-line front door. |
+| `export` | Serialises a `theme.Theme` emission into the project layout claude.ai/design reads — `theme.json`, `styles.css`, `readme.md` and the foundation pages. `cmd/vg-tokens` is the command-line front door. |
+| `cmd/a11y-check` | Polls the OS accessibility preferences once a second and prints them at start and on each change, to check by hand that a toggle in System Settings arrives. |
 
 ## Usage
 
@@ -115,17 +110,17 @@ if err := w.Render(buildLayers(models)).Wait(); err != nil {
 
 `mvu.Loop` returns the model observable already multicast, carrying the model
 in force to every subscriber the moment it attaches, so the layer builder
-subscribes it as often as its topology needs and nothing counts consumers.
+subscribes it as often as its topology needs and nothing counts subscribers.
 
-One second is the intended poll interval — the OS caches these values and will
-not report a toggle much sooner.
+The argument is the poll interval. `Live`'s recommended interval is 100–250
+ms; one second between an OS change and its emission is the outer budget.
 
 Options on `LiveTheme` (and `FromSourceTheme`) brand the window without giving
 up live OS tracking:
 
 ```go
 // one theme colour; the rest of the set stays the platform's, dark mode
-// still live
+// stays live
 specsystem.LiveTheme(time.Second, specsystem.WithThemeColor(brand))
 ```
 
@@ -153,8 +148,8 @@ func buildLayers(modelObs rx.Observable[Model]) func(th rx.Observable[theme.Them
 }
 ```
 
-From there `th` goes straight into components and patterns components, which take it
-as their first argument. A layer that needs the resolved values rather than the
+From there `th` goes straight into the components, which take it as their
+first argument. A layer that needs the resolved values rather than the
 `Theme` subscribes to the category it reads — each `LiveTheme` emission is a
 static snapshot, every field an `rx.Of`, so the inner observable resolves
 synchronously:
@@ -178,10 +173,8 @@ This README's own sections are the guide: [Where it sits](#where-it-sits) and
 the whole bootstrap, and each package's own `doc.go` comment covers what the
 table above only summarises.
 
-[`AGENTS.md`](./AGENTS.md) in this repository has the build, test and
-golden-image commands. The golden line there is exact and both halves of it
-matter — `-golden.update` must follow the package list, and the list cannot be
-replaced by `./...`.
+The build, test and golden-image commands are reached from
+[`organisation/AGENTS.md`](https://github.com/vibrantgio/organisation/blob/master/AGENTS.md).
 
 ## Status
 
@@ -190,27 +183,25 @@ Honest about what does not work yet:
 - **Dark mode is only detected on macOS.** The Linux and Windows sources read
   the *accent* — GNOME's `gsettings` enum and KDE's `kdeglobals` RGB on Linux,
   the DWM registry value on Windows — but not dark mode: `Appearance.Dark`
-  stays false there forever. Both files name the API a real implementation
-  would use — an `org.freedesktop.appearance` portal read on Linux,
+  stays false there. Both files name the API a real implementation would
+  use — an `org.freedesktop.appearance` portal read on Linux,
   `AppsUseLightTheme` plus a registry watch on Windows — and neither is
-  written, nor claimed by any phase of the current plan.
-- **The theme snaps; nothing cross-fades it.** `effects/transition`
-  interpolates token sets correctly, but nothing drives it: `LiveTheme` emits
-  the new palette in one step, and no module or application imports
-  `effects/transition` at all. A cross-fade today is the caller's to build out of
-  `LerpPlatformColors`.
-- **`preferences` persists a choice nothing reads.** No module or application
-  imports it, and there is no mapping from the stored theme name to a
-  `theme.Theme` — the string round-trips to disk and stops there, as do the
-  stored a11y overrides. Since FX.5 `Observe` is at least a live stream —
-  it emits the persisted value and then re-emits on every in-process `Save`
-  to the same path — but writes from other processes are still unobserved.
-- **The theme streams are shared (FX.5).** One `LiveTheme` (or
-  `Live`/`FromSource`) value runs one poll loop per OS source no matter how
-  many layers subscribe: late subscribers replay the latest value, and the
-  loops stop when the last subscriber unsubscribes. Sharing is per
-  observable value — build the stream once and hand the same value around;
-  each separate `LiveTheme` call still costs its own loops.
+  written.
+- **The theme snaps; nothing in this module cross-fades it.** `LiveTheme`
+  emits the new colour set in one step. A cross-fade is the caller's to build
+  by interpolating two `PlatformColors` values.
+- **`preferences` persists a choice this module does not apply.** There is no
+  mapping from the stored theme name to a `theme.Theme` — the string
+  round-trips to disk and stops there, as do the stored a11y overrides.
+  `Observe` is a live stream — it emits the persisted value and then
+  re-emits on every in-process `Save` to the same path — but writes from
+  other processes are unobserved.
+- **The theme streams are shared.** One `LiveTheme` (or `Live`/`FromSource`)
+  value runs one poll loop per OS source no matter how many layers
+  subscribe: late subscribers replay the latest value, and the loops stop
+  when the last subscriber unsubscribes. Sharing is per observable value —
+  build the stream once and hand the same value around; each separate
+  `LiveTheme` call costs its own loops.
 
 ## License
 
