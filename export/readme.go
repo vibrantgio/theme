@@ -50,7 +50,11 @@ func readmeMD(s Snapshot) string {
 		"- `components/*.html` — hand-authored component pages (not generated):\n" +
 		"  every class-layer component in every variant and state, at both\n" +
 		"  densities, as copyable markup. `buttons.html` covers `.btn` and `.badge`,\n" +
-		"  `forms.html` the native-element form controls.\n\n" +
+		"  `forms.html` the native-element form controls and the menu,\n" +
+		"  `cards.html` `.card`, `.group` and the levels, `dialog.html` the\n" +
+		"  overlays (`.scrim`/`.dialog`, `.popover`, `.tooltip`, `.toast`),\n" +
+		"  `navigation.html` `.navbar`, `.tabs`, `.sidebar`, `.pane` and `.crumbs`,\n" +
+		"  and `table.html` `.table`.\n\n" +
 		"Each page reads only from `styles.css` — every styled value is a `var(--…)`\n" +
 		"reference — and carries a light/dark toggle. Annotation numbers are printed for\n" +
 		"both modes, labelled `L` and `D`.\n\n")
@@ -72,15 +76,16 @@ func readmeMD(s Snapshot) string {
 	fmt.Fprintf(&b, "| `--density-<metric>` | %s | control metrics, px; `:root` is comfortable, `.compact` overrides every one of them |\n", joinTokens("--density-", densityNames()))
 	fmt.Fprintf(&b, "| `--space-<key>` | %s | the 4-pt spacing grid, px |\n", joinTokens("--space-", spaceNames()))
 	fmt.Fprintf(&b, "| `--radius-<key>` | %s | corner radii, Tailwind naming, px |\n", joinTokens("--radius-", radiusNames()))
-	fmt.Fprintf(&b, "| `--shadow-<level>` | %s | dp box-shadows — the cue a floating transient carries (menus, dialogs, tooltips) over the platform fill it stands in; resting surfaces cast none |\n", joinTokens("--shadow-", shadowNames()))
+	fmt.Fprintf(&b, "| `--shadow-<level>` | %s | one dp box-shadow per level, `none` for the backdrop, the chrome and the content; no rule in the class layer casts them, because a floating surface casts the measured floating shadow drawn in `--floating-shadow-step` |\n", joinTokens("--shadow-", shadowNames()))
 	fmt.Fprintf(&b, "| `--ease-<name>` | %s | easing presets as `cubic-bezier()`; emphasized is the documented single-bezier stand-in for the published two-segment path |\n", joinTokens("--ease-", easeNames()))
 	fmt.Fprintf(&b, "| `--duration-<stop>` | %s | duration stops, ms; the reduce-motion variant zeroes them |\n", joinTokens("--duration-", durationNames()))
 	b.WriteString("| interaction states | `--focus-ring-width`, `--disabled-coverage` | the focus ring's 4 px band and the platform's measured disabled coverage as a percentage, both mode-invariant, unlike the ring's colour, which is `--platform-keyboard-focus-indicator` and flips with the appearance |\n")
 	b.WriteString("| `--navbar-band` | the toolbar band a navbar stands in, px | the platform's: nineteen px of inset either side of a fourteen px window control circle, so it takes no density and no setting of how tightly a window sets its rows moves it |\n")
 	b.WriteString("| `--dialog-corner` | the dialog surface's corner radius, px | measured off the platform's own sheet and identical in both appearances, which is why it is not a stop on the radius scale |\n")
-	b.WriteString("| `--dialog-button-width` | the width a dialog's footer lays each action out in, px | measured off the platform's own sheet, where both answers are 74 wide; it is a floor, so a title that does not fit widens its own button |\n")
+	b.WriteString("| `--dialog-button-width` | the width a dialog's footer lays each action out in, px | measured off the platform's own sheet, where both answers are 74 wide; it is the least width, so a title that does not fit widens its own button |\n")
 	b.WriteString("| `--dialog-footer-air` | the air between a decision's footer hairline and the actions under it, px | measured off the platform's own sheet, whose 65 px footer band holds its 24 px buttons with 21 rows clear above and the sheet's own 20 px inset below |\n")
-	b.WriteString("| `--toolbar-control-shadow-*` | `--toolbar-control-shadow-reach`, `--toolbar-control-shadow-offset` | the bordered toolbar control's drop shadow is the one material whose GEOMETRY the platform draws differently under the two appearances, so its reach and the depth its rectangle is sunk are stated per appearance beside the colour set; its peak is `--platform-toolbar-control-shadow` |\n\n")
+	b.WriteString("| `--toolbar-control-shadow-*` | `--toolbar-control-shadow-reach`, `--toolbar-control-shadow-offset` | the bordered toolbar control's drop shadow is the one material whose GEOMETRY the platform draws differently under the two appearances, so how far it is drawn around the control and the depth its rectangle is sunk are stated per appearance beside the colour set; its peak is `--platform-toolbar-control-shadow` |\n")
+	b.WriteString("| shadow steps | `--floating-shadow-step`, `--pane-shadow-step`, `--toolbar-shadow-step` | one eighth of the floating, pane and toolbar control shadow's peak coverage, declared on the rules that cast those shadows: CSS has no linear falloff, so each measured shadow is drawn as eight stacked spreads of its step |\n\n")
 
 	b.WriteString("## Component classes\n\n" +
 		"`styles.css` ends with the component class layer, defined over the tokens\n" +
@@ -157,7 +162,7 @@ func readmeMD(s Snapshot) string {
 		"the box the control already draws and moving nothing, and\n" +
 		"`--platform-disabled-control-text` where the control cannot be used —\n" +
 		"the fill staying exactly where it was, because the platform fades the\n" +
-		"wording and leaves the control. A text field's height floor is\n" +
+		"wording and leaves the control. A text field's least height is\n" +
 		"`--density-field-height`, not the control height: the platform draws a\n" +
 		"field shorter than the button beside it. The pop-up trigger is the\n" +
 		"exception in this family and is a BUTTON rather than a field: `.select`\n" +
@@ -201,19 +206,21 @@ func readmeMD(s Snapshot) string {
 
 	b.WriteString("## Levels and the shadow\n\n" +
 		"A level's FILL is the platform's own name for what that region is, not a\n" +
-		"derivation: the window's plane under `--platform-window-background`, the\n" +
+		"derivation: the window's own surface under `--platform-window-background`, the\n" +
 		"chrome under `--platform-sidebar-material`, the content under\n" +
 		"`--platform-control-background`, a card under `--platform-card-fill`, and\n" +
 		"every floating surface under `--platform-window-background` again, which\n" +
 		"is what this platform fills a dialog, a menu and a popover with. Six\n" +
 		"levels, counted from the backdrop up toward the reader: the bare window\n" +
-		"plane, the chrome a window wears, the content surface, a raised inset, and\n" +
+		"surface, the chrome a window wears, the content surface, a raised inset, and\n" +
 		"the two floating levels. The levels stop at 3: desktop has no six-deep\n" +
 		"stack. Chrome is window-scale only — the trim inside a component or a\n" +
 		"pattern is that thing's structure and takes no level of its own.\n\n" +
-		"What the sheet states per level is the shadow: `--shadow-<level>`, the cue\n" +
-		"a floating transient carries over its fill. Neither level under the content\n" +
-		"casts anything, and a resting surface never does.\n\n")
+		"What the sheet states per level is a shadow, `--shadow-<level>`: `none`\n" +
+		"for the backdrop, the chrome and the content. No rule in the class layer\n" +
+		"casts the others: `.dialog`, `.popover` and `.toast` cast the platform's\n" +
+		"measured floating shadow as eight stacked spreads of\n" +
+		"`--floating-shadow-step`, and a card casts none.\n\n")
 
 	b.WriteString("## Density\n\n" +
 		"Two published settings, one variable family: comfortable (24 dp controls,\n" +
