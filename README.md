@@ -126,8 +126,10 @@ specsystem.LiveTheme(time.Second, specsystem.WithThemeColor(brand))
 
 Precedence, highest first: a chosen theme colour pins the accent rows — the
 application chose its colour, the OS accent is ignored. With none, macOS
-carries what AppKit reports and the other desktops rebuild the recorded set's
-accent rows for the colour they publish. Increased contrast needs no branch
+uses what AppKit reports and rebuilds the three measured accent fills — the
+sidebar pill, the text on the grey pill and the default button — for the
+live accent. The other desktops rebuild the recorded set's accent rows for
+the colour they publish. Increased contrast needs no branch
 of its own: the platform reports the values it paints under it. While the OS
 reports reduced motion, `Motion` emits `MotionScale.Reduced()` — every
 duration zero.

@@ -13,8 +13,8 @@ import (
 // where the platform publishes an accent colour but no colour set of its
 // own — Windows and Linux: the recorded set for its side, with the
 // accent-following rows taken from the colour PlatformColor resolves. macOS
-// reads the whole set off AppKit instead, so the tests that use this skip
-// there.
+// reads the set off AppKit instead and rebuilds only the three measured
+// accent fills, so the tests that use this skip there.
 func platformFor(a system.Appearance) tokens.PlatformColors {
 	p := tokens.PlatformLight
 	if a.Dark {
@@ -76,7 +76,8 @@ func TestThemeCarriesThePlatformSetForTheAppearance(t *testing.T) {
 }
 
 // TestThePlatformSetOnMacOSIsTheLiveSet pins the macOS half: the set comes
-// from AppKit, so the appearance chooses a side and nothing else about the
+// from AppKit, and the three measured accent fills follow AppKit's live
+// accent. So the appearance chooses a side and nothing else about the
 // Appearance reaches it — a stubbed accent is the same setting read a
 // second way and does not move the platform's own answer.
 func TestThePlatformSetOnMacOSIsTheLiveSet(t *testing.T) {

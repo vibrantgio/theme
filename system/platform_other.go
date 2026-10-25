@@ -24,3 +24,7 @@ func platformColors(a Appearance) tokens.PlatformColors {
 	}
 	return p
 }
+
+// followLiveAccent returns p unchanged. Off macOS, [platformColors] already
+// rebuilds every accent row for the colour the desktop reports.
+func followLiveAccent(p tokens.PlatformColors, _ bool) tokens.PlatformColors { return p }

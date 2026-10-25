@@ -9,23 +9,46 @@ import (
 
 // platformColors answers the live set for the appearance: what AppKit
 // reports right now for every name in the set, under aqua or darkAqua.
-// The accent rows are the platform's own — the reader asks AppKit for
-// controlAccentColor and the selection colours by name, so nothing on macOS
-// derives them from the accent the shim reads out of the defaults, and
-// tokens.PlatformColors.WithAccent is not on this path.
+// The NSColor-named accent rows are the platform's own: the reader asks
+// AppKit for controlAccentColor and the selection colours by name.
+// Three accent rows have no NSColor name: SidebarSelection,
+// SidebarSelectionUnemphasizedLabel and DefaultButtonFill. The live reader
+// keeps their measured values. With no theme colour pinned, the bridge
+// rebuilds those three rows from the live ControlAccent through
+// [followLiveAccent].
 //
 // It is deliberately independent of the palette precedence in the theme
 // bridge: this set is the platform's answer, not the application's brand,
-// so [WithThemeColor] does not reach it; the bridge applies a pinned theme colour to the set this returns. It is equally
-// independent of the Appearance's accent, which is the same setting read a
-// second way; only Dark selects a side, so a stubbed Source still chooses
-// which appearance is emitted.
+// so [WithThemeColor] does not reach it; the bridge applies a pinned theme
+// colour to the set this returns. It is equally independent of the
+// Appearance's accent, which is the same setting read a second way; only
+// Dark selects a side, so a stubbed Source still chooses which appearance
+// is emitted.
 func platformColors(a Appearance) tokens.PlatformColors {
 	light, dark := livePlatform.sets()
 	if a.Dark {
 		return dark
 	}
 	return light
+}
+
+// followLiveAccent returns live with the three measured accent fills
+// rebuilt from live's ControlAccent by the rule of
+// [tokens.PlatformColors.WithAccent]. The rule runs on the measured set for
+// the same appearance. Every other row of live stays as AppKit answered it.
+// When the live accent is the recorded blue, WithAccent returns the
+// measured set unchanged, so the three rows keep their measured values.
+// The bridge calls it only when no theme colour is pinned.
+func followLiveAccent(live tokens.PlatformColors, dark bool) tokens.PlatformColors {
+	recorded := tokens.PlatformLight
+	if dark {
+		recorded = tokens.PlatformDark
+	}
+	rebuilt := recorded.WithAccent(live.ControlAccent)
+	live.SidebarSelection = rebuilt.SidebarSelection
+	live.SidebarSelectionUnemphasizedLabel = rebuilt.SidebarSelectionUnemphasizedLabel
+	live.DefaultButtonFill = rebuilt.DefaultButtonFill
+	return live
 }
 
 // livePlatform is the process's one cached reading of the two sets.

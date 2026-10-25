@@ -50,8 +50,12 @@
 // carries — is read off AppKit on macOS: every name in
 // the set under the aqua and darkAqua appearances, resolved to sRGB with
 // its alpha through a small Objective-C shim, on the same cadence as the
-// accent key. So the accent rows are the platform's own reading rather than
-// a derivation, and a settings change arrives within a poll or two. Windows
+// accent key. So the NSColor-named accent rows are the platform's own
+// reading rather than a derivation, and a settings change arrives within a
+// poll or two. AppKit has no name for the three measured accent fills:
+// SidebarSelection, SidebarSelectionUnemphasizedLabel and DefaultButtonFill.
+// The macOS reader rebuilds those three from the live accent by
+// tokens.PlatformColors.WithAccent's rule. Windows
 // and Linux publish no such set: they carry the recorded one with the
 // accent rows rebuilt from the colour their desktop reports.
 //
@@ -296,7 +300,9 @@ func FromSourceTheme(src Source, interval time.Duration, opts ...Option) rx.Obse
 // theme maps one (Appearance, A11yPrefs) combination to a theme.Theme
 // value: the platform's set for the appearance, with the accent rows
 // rebuilt for a pinned theme colour where one was chosen, and ReduceMotion
-// swapping the motion scale for its zero-duration variant.
+// swapping the motion scale for its zero-duration variant. With no theme
+// colour pinned, [followLiveAccent] rebuilds the measured accent fills for
+// the live accent on macOS.
 //
 // There is no high-contrast branch. The platform answers that preference
 // itself: on macOS the live reader asks AppKit for every name while
@@ -307,6 +313,8 @@ func (c *config) theme(v rx.Tuple2[Appearance, a11y.A11yPrefs]) theme.Theme {
 	platform := platformColors(a)
 	if c.pinned {
 		platform = platform.WithAccent(c.themeColor)
+	} else {
+		platform = followLiveAccent(platform, a.Dark)
 	}
 	motion := tokens.Motion
 	if prefs.ReduceMotion {

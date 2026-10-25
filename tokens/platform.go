@@ -966,32 +966,35 @@ var (
 	}
 )
 
-// WithAccent returns the set with the seven rows the platform derives from
-// the accent colour rebuilt for accent. Every other field is untouched: the
-// unemphasized selection pair is the inactive window's grey, Link is a fixed
-// blue, and the system colours are a fixed catalogue — none of them moves
-// when the user changes the accent.
+// WithAccent returns the set with the eight rows the platform derives from
+// the accent colour rebuilt for accent. Every other field is untouched:
+// UnemphasizedSelectedContentBackground, UnemphasizedSelectedTextBackground
+// and SidebarSelectionUnemphasized are grey, Link is a fixed blue, and the system colours are a fixed catalogue.
+// None of them moves when the user changes the accent.
 //
-// The seven rows and their rule:
+// The eight rows and their rule:
 //
 //   - ControlAccent is the accent itself, at the recorded row's alpha.
 //   - SelectedContentBackground, SelectedTextBackground, SelectedControl,
-//     KeyboardFocusIndicator, SidebarSelection and DefaultButtonFill keep
-//     the accent's hue and saturation and
-//     take the recorded row's HSL lightness and alpha. In the catalogue all
-//     four are the platform's blue at a lightness of their own — the
-//     emphasized selection darker than the accent, the text selection and
-//     the selected control much lighter, the focus ring a shade darker at
-//     half coverage — and that lightness is what carries over.
+//     KeyboardFocusIndicator, SidebarSelection,
+//     SidebarSelectionUnemphasizedLabel and DefaultButtonFill keep the
+//     accent's hue and saturation and take the recorded row's HSL lightness
+//     and alpha. In the catalogue all seven are the platform's blue, each
+//     at a lightness of its own. For example, the text selection and the
+//     selected control are much lighter than the accent, and the focus ring
+//     is a shade darker at half coverage. The rebuilt row keeps that
+//     lightness.
 //
 // The rule is an APPROXIMATION of what AppKit does, not a reproduction of
 // it: the platform derives these in its own colour space, and rebuilding
 // the catalogue's blue rows through this rule lands within a few units per
 // channel rather than on the byte. It is the rule on Windows and Linux,
-// whose desktops publish an accent colour but no colour set of their own;
-// macOS does not use it at all, because theme/system's live reader asks
-// AppKit for each of these names directly and gets the platform's own
-// answer. Where accent is the platform's own blue —
+// whose desktops publish an accent colour but no colour set of their own.
+// On macOS, theme/system's live reader asks AppKit for the five
+// NSColor-named rows directly and gets the platform's own answer. AppKit
+// has no name for SidebarSelection, SidebarSelectionUnemphasizedLabel and
+// DefaultButtonFill, so the live reader rebuilds those three by this rule
+// from the live ControlAccent. Where accent is the platform's own blue —
 // the accent already in the recorded rows — the set is returned unchanged,
 // so a machine on the default accent gets the catalogue exactly.
 func (p PlatformColors) WithAccent(accent color.NRGBA) PlatformColors {
