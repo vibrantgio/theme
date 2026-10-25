@@ -146,6 +146,28 @@ type Typography struct {
 	BodyMedium TextStyle
 	BodySmall  TextStyle
 
+	// The platform's text styles, with the platform's names, and the two
+	// system font sizes the platform sets outside its text styles. Each
+	// size, weight and line height is read on macOS 26.5.2 from
+	// NSFont.preferredFont(forTextStyle:) and NSFont.systemFontSize, with
+	// the line height from NSLayoutManager.defaultLineHeight(for:).
+	// EmptyStateLine is the system font at 28 pt, the size the platform
+	// sets the line of an empty state in. A role adds no tracking.
+	LargeTitle      TextStyle
+	Title1          TextStyle
+	Title2          TextStyle
+	Title3          TextStyle
+	Headline        TextStyle
+	Subheadline     TextStyle
+	Body            TextStyle
+	Callout         TextStyle
+	Footnote        TextStyle
+	Caption1        TextStyle
+	Caption2        TextStyle
+	SystemFont      TextStyle
+	SmallSystemFont TextStyle
+	EmptyStateLine  TextStyle
+
 	// Code is the monospace style code renders in — markdown code blocks and
 	// inline code spans. It is not one of the fifteen roles: the 5×3
 	// grid has no code role, so Code sits outside the grid as a sixteenth
@@ -499,6 +521,23 @@ var DefaultTypography = Typography{
 	BodyLarge:  TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 16, LineHeight: 24, Tracking: 0.5},
 	BodyMedium: TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 14, LineHeight: 20, Tracking: 0.25},
 	BodySmall:  TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 12, LineHeight: 16, Tracking: 0.4},
+
+	LargeTitle:  TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 26, LineHeight: 32},
+	Title1:      TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 22, LineHeight: 26},
+	Title2:      TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 17, LineHeight: 22},
+	Title3:      TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 15, LineHeight: 20},
+	Headline:    TextStyle{Typeface: "Roboto", Weight: WeightBold, Size: 13, LineHeight: 16},
+	Subheadline: TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 11, LineHeight: 14},
+	Body:        TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 13, LineHeight: 16},
+	Callout:     TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 12, LineHeight: 15},
+	Footnote:    TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 10, LineHeight: 13},
+	Caption1:    TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 10, LineHeight: 13},
+	// The platform's caption2 face is SF Pro at a wght axis value of 510.
+	// 510 is not a CSS weight step; the field holds the recorded value.
+	Caption2:        TextStyle{Typeface: "Roboto", Weight: 510, Size: 10, LineHeight: 13},
+	SystemFont:      TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 13, LineHeight: 16},
+	SmallSystemFont: TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 11, LineHeight: 13},
+	EmptyStateLine:  TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 28, LineHeight: 33},
 
 	Code: TextStyle{Typeface: "Roboto Mono", Weight: WeightRegular, Size: 14, LineHeight: 20, Tracking: 0.25},
 

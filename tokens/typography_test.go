@@ -59,6 +59,48 @@ func TestDefaultTypographyCode(t *testing.T) {
 	}
 }
 
+// TestPlatformTextStyleRolesTakeTheirRecordedRows pins each platform text
+// style role to the size, weight and line height that AppKit reports on
+// macOS 26.5.2. Each role takes the type set's typeface and adds no tracking.
+func TestPlatformTextStyleRolesTakeTheirRecordedRows(t *testing.T) {
+	typ := tokens.DefaultTypography
+	rows := []struct {
+		name       string
+		style      tokens.TextStyle
+		size       float32
+		weight     int
+		lineHeight float32
+	}{
+		{"LargeTitle", typ.LargeTitle, 26, 400, 32},
+		{"Title1", typ.Title1, 22, 400, 26},
+		{"Title2", typ.Title2, 17, 400, 22},
+		{"Title3", typ.Title3, 15, 400, 20},
+		{"Headline", typ.Headline, 13, 700, 16},
+		{"Subheadline", typ.Subheadline, 11, 400, 14},
+		{"Body", typ.Body, 13, 400, 16},
+		{"Callout", typ.Callout, 12, 400, 15},
+		{"Footnote", typ.Footnote, 10, 400, 13},
+		{"Caption1", typ.Caption1, 10, 400, 13},
+		{"Caption2", typ.Caption2, 10, 510, 13},
+		{"SystemFont", typ.SystemFont, 13, 400, 16},
+		{"SmallSystemFont", typ.SmallSystemFont, 11, 400, 13},
+		{"EmptyStateLine", typ.EmptyStateLine, 28, 400, 33},
+	}
+	for _, r := range rows {
+		s := r.style
+		if s.Size != r.size || s.Weight != r.weight || s.LineHeight != r.lineHeight {
+			t.Errorf("%s = size %v, weight %d, line height %v; want %v, %d, %v",
+				r.name, s.Size, s.Weight, s.LineHeight, r.size, r.weight, r.lineHeight)
+		}
+		if s.Tracking != 0 {
+			t.Errorf("%s.Tracking = %v, want 0", r.name, s.Tracking)
+		}
+		if s.Typeface != typ.BodyLarge.Typeface {
+			t.Errorf("%s.Typeface = %q, want the type set's %q", r.name, s.Typeface, typ.BodyLarge.Typeface)
+		}
+	}
+}
+
 // TestDocumentHeadingScaleIsComplete: the scale is a type role like any
 // other, so every stop names a face and carries a size, a weight and a line
 // height. A zero stop would silently fall back to the shaper's defaults on a
