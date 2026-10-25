@@ -45,8 +45,7 @@ func readmeMD(s Snapshot) string {
 		"  self-hosted with their licences: the same Roboto regular and medium the\n" +
 		"  Gio applications embed, and Roboto Mono from the font repository.\n" +
 		"- `foundations/layout.html` — the spacing scale, the control metrics at both\n" +
-		"  density settings, the radius scale and the shadow depth each level casts,\n" +
-		"  as rendered specimens.\n" +
+		"  density settings and the radius scale, as rendered specimens.\n" +
 		"- `components/*.html` — hand-authored component pages (not generated):\n" +
 		"  every class-layer component in every variant and state, at both\n" +
 		"  densities, as copyable markup. `buttons.html` covers `.btn` and `.badge`,\n" +
@@ -76,7 +75,6 @@ func readmeMD(s Snapshot) string {
 	fmt.Fprintf(&b, "| `--density-<metric>` | %s | control metrics, px; `:root` is comfortable, `.compact` overrides every one of them |\n", joinTokens("--density-", densityNames()))
 	fmt.Fprintf(&b, "| `--space-<key>` | %s | the 4-pt spacing grid, px |\n", joinTokens("--space-", spaceNames()))
 	fmt.Fprintf(&b, "| `--radius-<key>` | %s | corner radii, Tailwind naming, px |\n", joinTokens("--radius-", radiusNames()))
-	fmt.Fprintf(&b, "| `--shadow-<level>` | %s | one dp box-shadow per level, `none` for the backdrop, the chrome and the content; no rule in the class layer casts them, because a floating surface casts the measured floating shadow drawn in `--floating-shadow-step` |\n", joinTokens("--shadow-", shadowNames()))
 	fmt.Fprintf(&b, "| `--ease-<name>` | %s | easing presets as `cubic-bezier()`; emphasized is the documented single-bezier stand-in for the published two-segment path |\n", joinTokens("--ease-", easeNames()))
 	fmt.Fprintf(&b, "| `--duration-<stop>` | %s | duration stops, ms; the reduce-motion variant zeroes them |\n", joinTokens("--duration-", durationNames()))
 	b.WriteString("| interaction states | `--focus-ring-width`, `--disabled-coverage` | the focus ring's 4 px band and the platform's measured disabled coverage as a percentage, both mode-invariant, unlike the ring's colour, which is `--platform-keyboard-focus-indicator` and flips with the appearance |\n")
@@ -205,22 +203,22 @@ func readmeMD(s Snapshot) string {
 		"`--platform-floating-shadow`.\n\n")
 
 	b.WriteString("## Levels and the shadow\n\n" +
-		"A level's FILL is the platform's own name for what that region is, not a\n" +
-		"derivation: the window's own surface under `--platform-window-background`, the\n" +
-		"chrome under `--platform-sidebar-material`, the content under\n" +
-		"`--platform-control-background`, a card under `--platform-card-fill`, and\n" +
-		"every floating surface under `--platform-window-background` again, which\n" +
-		"is what this platform fills a dialog, a menu and a popover with. Six\n" +
-		"levels, counted from the backdrop up toward the reader: the bare window\n" +
-		"surface, the chrome a window wears, the content surface, a raised inset, and\n" +
-		"the two floating levels. The levels stop at 3: desktop has no six-deep\n" +
-		"stack. Chrome is window-scale only — the trim inside a component or a\n" +
-		"pattern is that thing's structure and takes no level of its own.\n\n" +
-		"What the sheet states per level is a shadow, `--shadow-<level>`: `none`\n" +
-		"for the backdrop, the chrome and the content. No rule in the class layer\n" +
-		"casts the others: `.dialog`, `.popover` and `.toast` cast the platform's\n" +
-		"measured floating shadow as eight stacked spreads of\n" +
-		"`--floating-shadow-step`, and a card casts none.\n\n")
+		"Elevation is spoken in levels. There are five, counted from the backdrop up\n" +
+		"toward the reader: the backdrop, the chrome, the content, raised and\n" +
+		"floating. Each level's fill is the platform's own and is never derived\n" +
+		"from another level's fill. The backdrop is the window's own surface under\n" +
+		"`--platform-window-background`. The chrome regions use\n" +
+		"`--platform-sidebar-material`. The content uses\n" +
+		"`--platform-text-background`. A card is raised and uses\n" +
+		"`--platform-card-fill`. Every floating surface uses\n" +
+		"`--platform-window-background` again, under the platform's shadow. Chrome\n" +
+		"is window-scale only: the trim inside a component or a pattern is part of\n" +
+		"that thing's structure and takes no level of its own.\n\n" +
+		"A raised thing shows its level by its small step of fill and casts no\n" +
+		"shadow. A floating thing shows its level by its shadow. The floating level\n" +
+		"has one shadow, the measured floating shadow: `.dialog`, `.popover`,\n" +
+		"`.toast` and `.menu` draw it as eight stacked spreads of\n" +
+		"`--floating-shadow-step`.\n\n")
 
 	b.WriteString("## Density\n\n" +
 		"Two published settings, one variable family: comfortable (24 dp controls,\n" +
@@ -251,7 +249,7 @@ func readmeMD(s Snapshot) string {
 	b.WriteString("## Reproducibility\n\n" +
 		"`theme.json` records the theme colour, the platform's whole set per\n" +
 		"appearance keyed by the same names the sheet carries, the faces, the base\n" +
-		"radius, both density settings' metrics, the shadow depth per level and the\n" +
+		"radius, both density settings' metrics and the\n" +
 		"motion set (durations, easings, springs). A round-trip test in\n" +
 		"`theme/export` asserts the file and the sheet agree value for value, so the\n" +
 		"file, not this text, is the contract. To change the theme colour, rerun\n" +
@@ -265,7 +263,7 @@ func readmeMD(s Snapshot) string {
 	return b.String()
 }
 
-// spaceNames, radiusNames and shadowNames list each scale's key names in
+// spaceNames and radiusNames list each scale's key names in
 // sheet order, for the readme's enumerations.
 func spaceNames() []string {
 	names := make([]string, len(spaceKeys))
@@ -278,14 +276,6 @@ func spaceNames() []string {
 func radiusNames() []string {
 	names := make([]string, len(radiusKeys))
 	for i, k := range radiusKeys {
-		names[i] = k.name
-	}
-	return names
-}
-
-func shadowNames() []string {
-	names := make([]string, len(shadowLevels))
-	for i, k := range shadowLevels {
 		names[i] = k.name
 	}
 	return names

@@ -35,9 +35,6 @@ func TestAutoLightDarkEmitsOneTheme(t *testing.T) {
 	if th.Radius == nil {
 		t.Error("emitted Theme.Radius is nil")
 	}
-	if th.Elevation == nil {
-		t.Error("emitted Theme.Elevation is nil")
-	}
 }
 
 func TestAutoLightDarkPlatformColors(t *testing.T) {

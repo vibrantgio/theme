@@ -22,7 +22,6 @@ func AutoLightDark() rx.Observable[Theme] {
 			Motion:     rx.Of(tokens.Motion),
 			Spacing:    rx.Of(tokens.Spacing),
 			Radius:     rx.Of(tokens.Radius),
-			Elevation:  rx.Of(tokens.Elevation),
 		}
 	})
 }

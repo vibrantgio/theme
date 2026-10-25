@@ -11,7 +11,7 @@ import (
 // Parameters is theme.json's shape: what reproduces the theme. The theme
 // colour rebuilds the platform's accent rows exactly — the round-trip test
 // asserts it — and the platform's whole set, the scales, fonts, radius,
-// density settings, shadow depths and motion set are recorded alongside so
+// density settings and motion set are recorded alongside so
 // a reader (or a prototype) need not run the generator to know them.
 type Parameters struct {
 	// ThemeColor is the theme colour as lowercase #rrggbb: the colour the
@@ -38,11 +38,6 @@ type Parameters struct {
 	// Density records the theme's active setting by name plus both
 	// published settings' metrics.
 	Density DensityParams `json:"density"`
-
-	// Elevation records the shadow depth each of the six levels casts, from
-	// the backdrop up — the opt-in cue for floating transients. A level's
-	// fill is the platform's own, under Platform.
-	Elevation ElevationParams `json:"elevation"`
 
 	// Motion records the captured MotionScale in full — duration stops,
 	// easing beziers and spring presets — so the file reproduces it without
@@ -81,14 +76,6 @@ type DensityMetrics struct {
 	ToolbarControlHeight float64 `json:"toolbarControlHeight"`
 	PaddingX             float64 `json:"paddingX"`
 	PaddingY             float64 `json:"paddingY"`
-}
-
-// ElevationParams records the shadow depth of each of the six levels, from
-// the backdrop up. A level's FILL is the platform's own name for what that
-// region is, under Parameters.Platform; the shadow is the separate, opt-in
-// cue a floating surface carries.
-type ElevationParams struct {
-	ShadowDp [6]float64 `json:"shadowDp"`
 }
 
 // MotionParams records the motion set.
@@ -197,10 +184,6 @@ func durMs(d time.Duration) float64 {
 // parameters assembles the Parameters for a snapshot.
 func parameters(s Snapshot) Parameters {
 	setting, _ := densitySetting(s.Density) // Capture already validated it
-	var elev ElevationParams
-	for i, level := range shadowLevels {
-		elev.ShadowDp[i] = f64(level.dp(s.Elevation))
-	}
 	return Parameters{
 		ThemeColor: hexRGB(s.PlatformLight.ControlAccent),
 		Platform:   ModePlatform{Light: platformMap(s.PlatformLight), Dark: platformMap(s.PlatformDark)},
@@ -211,7 +194,6 @@ func parameters(s Snapshot) Parameters {
 			Comfortable: densityMetricsOf(tokens.Comfortable),
 			Compact:     densityMetricsOf(tokens.Compact),
 		},
-		Elevation: elev,
 		Motion: MotionParams{
 			Durations: DurationParams{
 				XFast:  durMs(s.Motion.DurXFast),

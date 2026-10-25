@@ -215,36 +215,6 @@ func TestRoundTripScales(t *testing.T) {
 			t.Errorf("%s = %v, want %v", name, got, key.pick(snap.Radius))
 		}
 	}
-
-	for _, level := range shadowLevels {
-		name, dp := "--shadow-"+level.name, level.dp(snap.Elevation)
-		v := root[name]
-		if dp == 0 {
-			if v != "none" {
-				t.Errorf("%s = %q, want \"none\" at depth 0", name, v)
-			}
-			continue
-		}
-		mid, ok := strings.CutPrefix(v, "0 ")
-		if !ok {
-			t.Errorf("%s = %q: want a y-offset shadow with no x-offset", name, v)
-			continue
-		}
-		mid, ok = strings.CutSuffix(mid, " 0 rgba(0, 0, 0, 0.2)")
-		if !ok {
-			t.Errorf("%s = %q: want no spread and black at 20%%", name, v)
-			continue
-		}
-		lengths := strings.Fields(mid)
-		if len(lengths) != 2 {
-			t.Errorf("%s = %q: want a y-offset and a blur", name, v)
-			continue
-		}
-		y, blur := wantPx(t, name, lengths[0]), wantPx(t, name, lengths[1])
-		if y != dp || blur != 2*dp {
-			t.Errorf("%s = %q: y %v blur %v, want dp %v and 2dp", name, v, y, blur, dp)
-		}
-	}
 }
 
 // TestRoundTripDensity asserts the density variables parse back to the Go
@@ -345,11 +315,9 @@ func TestRoundTripButtonClasses(t *testing.T) {
 	if strings.Contains(classes, "#") {
 		t.Error("the class layer contains a literal colour; every value must be a token reference")
 	}
-	// Not one name from the derived set survives in the layer: those
-	// variables are still emitted above it for the pages that have not
-	// converted, and a class reaching back up to them is the drift this
-	// assertion exists to catch.
-	for _, gone := range []string{"var(--color-", "var(--elevation-", "var(--shadow-", "var(--surface-"} {
+	// No class in the layer names a variable family the sheet does not
+	// emit. A class that names one draws with an undefined value.
+	for _, gone := range []string{"var(--color-", "var(--shadow-", "var(--surface-"} {
 		if strings.Contains(classes, gone) {
 			t.Errorf("the class layer still names %s; every colour in it is the platform's", gone)
 		}
@@ -630,13 +598,6 @@ func TestThemeJSONReproduces(t *testing.T) {
 	}
 	wantMetrics("comfortable", p.Density.Comfortable, tokens.Comfortable)
 	wantMetrics("compact", p.Density.Compact, tokens.Compact)
-
-	// The shadow depth each level casts, off the captured scale.
-	for i, level := range shadowLevels {
-		if got, want := p.Elevation.ShadowDp[i], float64(level.dp(snap.Elevation)); got != want {
-			t.Errorf("elevation.shadowDp[%d] = %v, want %v", i, got, want)
-		}
-	}
 
 	// Motion: durations in ms, easing control points and springs must all
 	// reproduce the captured scale exactly (float64(float32) round-trips

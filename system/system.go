@@ -319,7 +319,6 @@ func (c *config) theme(v rx.Tuple2[Appearance, a11y.A11yPrefs]) theme.Theme {
 		Motion:     rx.Of(motion),
 		Spacing:    rx.Of(tokens.Spacing),
 		Radius:     rx.Of(tokens.Radius),
-		Elevation:  rx.Of(tokens.Elevation),
 	}
 }
 

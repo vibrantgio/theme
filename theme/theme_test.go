@@ -42,9 +42,6 @@ func TestDefaultThemeFieldsNonNil(t *testing.T) {
 	if th.Radius == nil {
 		t.Error("Radius is nil")
 	}
-	if th.Elevation == nil {
-		t.Error("Elevation is nil")
-	}
 }
 
 func TestDefaultPlatformEmission(t *testing.T) {
@@ -114,19 +111,5 @@ func TestDefaultRadiusEmission(t *testing.T) {
 	}
 	if got[0] != tokens.Radius {
 		t.Error("emitted RadiusScale does not match tokens.Radius")
-	}
-}
-
-func TestDefaultElevationEmission(t *testing.T) {
-	th := theme.Default()
-	got, err := collect(th.Elevation)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(got) != 1 {
-		t.Fatalf("expected 1 emission, got %d", len(got))
-	}
-	if got[0] != tokens.Elevation {
-		t.Error("emitted ElevationScale does not match tokens.Elevation")
 	}
 }

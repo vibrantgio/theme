@@ -1,14 +1,14 @@
 // Package tokens holds the typed design values the whole system is styled
 // from: the platform's own colour set — AppKit's semantic colours, one field
 // per name, with the values that name reports under each appearance — the
-// type roles, and the 4-pt spacing, radius, shadow-depth and motion scales.
+// type roles, and the 4-pt spacing, radius and motion scales.
 //
 // Reach for it when you draw something yourself and want a value that matches
 // the components around it — a pane's fill, a gap, a corner radius, an
 // animation duration — instead of inventing a number. Components do not import
 // this package for their values: they read the observables on a theme.Theme,
 // and PlatformLight, PlatformDark, DefaultTypography, Comfortable, Spacing,
-// Radius, Elevation and Motion are what those observables carry by default.
+// Radius and Motion are what those observables carry by default.
 //
 // Every scale is a plain comparable struct of float32 device-independent
 // pixels, except MotionScale, whose duration stops are time.Duration, and

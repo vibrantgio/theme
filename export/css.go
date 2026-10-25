@@ -231,29 +231,6 @@ var radiusKeys = []struct {
 	{"full", func(r tokens.RadiusScale) float32 { return r.Full }},
 }
 
-// shadowLevels orders the six levels from the backdrop up toward the
-// reader, with the shadow depth each casts. A level's FILL is the
-// platform's own name for what that region is; the shadow is the separate,
-// opt-in cue a floating surface carries, and this is the only thing the
-// sheet states per level.
-//
-// The backdrop and the chrome level are spelled out rather than numbered
-// because the numbering is anchored on the content and they are below it:
-// naming them "-2" and "-1" in a CSS variable would read as an arithmetic
-// accident, and renumbering the four above them would rename every token to
-// say the same thing.
-var shadowLevels = []struct {
-	name string
-	dp   func(tokens.ElevationScale) float32
-}{
-	{"backdrop", func(e tokens.ElevationScale) float32 { return e.Backdrop }},
-	{"chrome", func(e tokens.ElevationScale) float32 { return e.Chrome }},
-	{"0", func(e tokens.ElevationScale) float32 { return e.Level0 }},
-	{"1", func(e tokens.ElevationScale) float32 { return e.Level1 }},
-	{"2", func(e tokens.ElevationScale) float32 { return e.Level2 }},
-	{"3", func(e tokens.ElevationScale) float32 { return e.Level3 }},
-}
-
 // densityMetrics orders the per-setting density metrics under their CSS
 // names.
 var densityMetrics = []struct {
@@ -311,16 +288,6 @@ var durationStops = []struct {
 	{"x-slow", func(m tokens.MotionScale) time.Duration { return m.DurXSlow }},
 }
 
-// boxShadow approximates an elevation depth as a CSS box-shadow: y-offset
-// the level's dp, blur twice it, no spread, black at 20%. Depth 0 casts no
-// shadow at all, so it is "none" rather than an invisible shadow.
-func boxShadow(dp float32) string {
-	if dp == 0 {
-		return "none"
-	}
-	return fmt.Sprintf("0 %s %s 0 rgba(0, 0, 0, 0.2)", px(dp), px(2*dp))
-}
-
 // cubicBezier renders a Bezier as the CSS cubic-bezier() function.
 func cubicBezier(bz tokens.Bezier) string {
 	return fmt.Sprintf("cubic-bezier(%s, %s, %s, %s)",
@@ -355,9 +322,6 @@ func scaleVars(s Snapshot) []cssVar {
 	}
 	for _, key := range radiusKeys {
 		vars = append(vars, cssVar{"--radius-" + key.name, px(key.pick(s.Radius))})
-	}
-	for _, level := range shadowLevels {
-		vars = append(vars, cssVar{"--shadow-" + level.name, boxShadow(level.dp(s.Elevation))})
 	}
 	for _, role := range easeRoles {
 		vars = append(vars, cssVar{"--ease-" + role.name, cubicBezier(role.pick(s.Motion))})

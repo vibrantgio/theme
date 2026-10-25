@@ -19,7 +19,6 @@ type Theme struct {
 	Motion     rx.Observable[tokens.MotionScale]
 	Spacing    rx.Observable[tokens.SpacingScale]
 	Radius     rx.Observable[tokens.RadiusScale]
-	Elevation  rx.Observable[tokens.ElevationScale]
 }
 
 // Default returns a Theme whose every field emits the package-level default
@@ -33,6 +32,5 @@ func Default() Theme {
 		Motion:     rx.Of(tokens.Motion),
 		Spacing:    rx.Of(tokens.Spacing),
 		Radius:     rx.Of(tokens.Radius),
-		Elevation:  rx.Of(tokens.Elevation),
 	}
 }

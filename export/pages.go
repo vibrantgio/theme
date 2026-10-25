@@ -460,31 +460,12 @@ const layoutPageCSS = `.space-row {
   border-radius: var(--radius-md);
   margin: var(--space-2) 0;
 }
-.elevation-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-8);
-  padding: var(--space-6);
-  background: var(--platform-window-background);
-  border-radius: var(--radius-md);
-  margin: var(--space-4) 0;
-}
-.surface-card {
-  width: var(--space-24);
-  height: var(--space-20);
-  border-radius: var(--radius-md);
-  border: thin solid var(--platform-separator);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 `
 
 // layoutHTML renders foundations/layout.html: the spacing scale as sized
-// bars, the control metrics at both density settings side by side, the
-// radius scale on sample boxes, and the shadow depth per level — the cue a
-// floating transient carries over the platform fill its level is given —
-// each specimen sized, padded, rounded, filled or shadowed by its var.
+// bars, the control metrics at both density settings side by side and the
+// radius scale on sample boxes, each specimen sized, padded or rounded by
+// its var.
 func layoutHTML(s Snapshot) string {
 	var b strings.Builder
 
@@ -540,24 +521,8 @@ func layoutHTML(s Snapshot) string {
 	}
 	b.WriteString("</div>\n</section>\n")
 
-	b.WriteString("<section>\n<h2>Shadow depth</h2>\n")
-	b.WriteString("<p class=\"intro\">A level\u2019s FILL is the platform\u2019s own name for what that region is &mdash; " +
-		"the window\u2019s plane, the chrome material, the content, the card. What the levels state here is the " +
-		"shadow each casts, the opt-in cue a floating transient carries on top of its fill: " +
-		"<code>--shadow-N</code>, for menus, dialogs and tooltips. Neither level under the content casts anything &mdash; " +
-		"the backdrop is what everything stands on, and chrome lies flat on it. " +
-		"The levels stop at 3 &mdash; desktop has no six-deep stack.</p>\n")
-	b.WriteString("<div class=\"elevation-row\">\n")
-	for i, level := range shadowLevels {
-		wears := []string{"nothing: it shows where nothing stands", "navbars, toolbars, sidebars, panes",
-			"the content", "cards, fences, fields", "dialogs, toasts", "menus, popovers"}[i]
-		fmt.Fprintf(&b, "<div>\n<div class=\"surface-card\" style=\"background: var(--platform-card-fill); box-shadow: var(--shadow-%s)\">%s</div>\n", level.name, level.name)
-		fmt.Fprintf(&b, "<p class=\"annot\"><code>--shadow-%s</code> &middot; depth %sdp &middot; %s</p>\n</div>\n", level.name, fnum(level.dp(s.Elevation)), wears)
-	}
-	b.WriteString("</div>\n</section>\n")
-
-	intro := "The spacing scale as sized bars, the control metrics at both density settings, the radius scale on sample boxes " +
-		"and the shadow depth each level casts &mdash; every bar width, control height, padding, corner radius and " +
-		"shadow resolves through its token, so the sheet is the single source of these shapes."
+	intro := "The spacing scale as sized bars, the control metrics at both density settings and the radius scale on sample " +
+		"boxes &mdash; every bar width, control height, padding and corner radius resolves through its token, so the " +
+		"sheet is the single source of these shapes."
 	return page("Layout — Vibrant Gio foundations", "Layout", intro, layoutPageCSS, b.String())
 }

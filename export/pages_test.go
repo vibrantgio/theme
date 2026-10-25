@@ -196,9 +196,6 @@ func TestReadmeNamesFamilies(t *testing.T) {
 	for _, key := range radiusKeys {
 		want = append(want, "--radius-"+key.name)
 	}
-	for _, level := range shadowLevels {
-		want = append(want, "--shadow-"+level.name)
-	}
 	for _, m := range densityMetrics {
 		want = append(want, "--density-"+m.name)
 	}
@@ -223,7 +220,7 @@ func TestReadmeNamesFamilies(t *testing.T) {
 	// emits must be documented, so a new family cannot ship unnamed. Each
 	// variable maps to the string the readme must contain for it.
 	for name := range sheet[":root"] {
-		mention := name // --platform-*, --space-*, --radius-*, --shadow-*: listed in full
+		mention := name // --platform-*, --space-*, --radius-*: listed in full
 		if role, metric, ok := fontMetric(name); ok {
 			if !strings.Contains(readme, metric) {
 				t.Errorf("readme.md does not mention the %q metric suffix for %s", metric, name)
@@ -236,11 +233,10 @@ func TestReadmeNamesFamilies(t *testing.T) {
 	}
 }
 
-// TestLayoutPageDensityAndShadow asserts the layout page's contract:
-// the control metrics render at BOTH density settings — the compact column
-// is the same markup inside a .compact wrapper, exercising the sheet's
-// override block — and the shadow section shows each level's depth.
-func TestLayoutPageDensityAndShadow(t *testing.T) {
+// TestLayoutPageDensity asserts the layout page's contract: the control
+// metrics render at BOTH density settings — the compact column is the same
+// markup inside a .compact wrapper, exercising the sheet's override block.
+func TestLayoutPageDensity(t *testing.T) {
 	_, _, pages := writeProject(t)
 	src := pages[filepath.Join("foundations", "layout.html")]
 
@@ -250,11 +246,6 @@ func TestLayoutPageDensityAndShadow(t *testing.T) {
 	for _, m := range densityMetrics {
 		if !strings.Contains(src, "var(--density-"+m.name+")") {
 			t.Errorf("layout.html does not style through var(--density-%s)", m.name)
-		}
-	}
-	for _, level := range shadowLevels {
-		if !strings.Contains(src, fmt.Sprintf("box-shadow: var(--shadow-%s)", level.name)) {
-			t.Errorf("layout.html does not show the shadow var(--shadow-%s)", level.name)
 		}
 	}
 }

@@ -26,12 +26,11 @@ type Snapshot struct {
 	Motion     tokens.MotionScale
 	Spacing    tokens.SpacingScale
 	Radius     tokens.RadiusScale
-	Elevation  tokens.ElevationScale
 }
 
 // Capture collects the first emission of each observable a serialisation
-// needs — Platform, Typography, Density, Motion, Spacing, Radius and
-// Elevation — into a Snapshot. (Type is not consumed: it duplicates
+// needs — Platform, Typography, Density, Motion, Spacing and Radius — into
+// a Snapshot. (Type is not consumed: it duplicates
 // Typography's sizes.)
 //
 // The colour emission is the platform's set for the light appearance; its
@@ -42,7 +41,7 @@ type Snapshot struct {
 // as a named setting plus both settings' metrics, not as free-form numbers.
 func Capture(th theme.Theme) (Snapshot, error) {
 	var s Snapshot
-	if th.Platform == nil || th.Typography == nil || th.Density == nil || th.Motion == nil || th.Spacing == nil || th.Radius == nil || th.Elevation == nil {
+	if th.Platform == nil || th.Typography == nil || th.Density == nil || th.Motion == nil || th.Spacing == nil || th.Radius == nil {
 		return s, fmt.Errorf("export: Capture: theme has nil observables; every consumed field of theme.Theme must be set")
 	}
 	var err error
@@ -64,9 +63,6 @@ func Capture(th theme.Theme) (Snapshot, error) {
 	}
 	if s.Radius, err = th.Radius.First(); err != nil {
 		return s, fmt.Errorf("export: Capture: Radius: %w", err)
-	}
-	if s.Elevation, err = th.Elevation.First(); err != nil {
-		return s, fmt.Errorf("export: Capture: Elevation: %w", err)
 	}
 
 	if _, ok := densitySetting(s.Density); !ok {

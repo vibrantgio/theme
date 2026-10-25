@@ -1,6 +1,6 @@
 // Package theme carries the design tokens a component reads while it lays
 // out. A Theme is one rx.Observable per token category — the platform's
-// colours, type, motion, spacing, radius, shadow depth — so a consumer
+// colours, type, density, motion, spacing, radius — so a consumer
 // subscribes to only the categories it actually reads and rebuilds only
 // when those change.
 //

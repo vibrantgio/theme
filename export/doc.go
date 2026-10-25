@@ -46,14 +46,6 @@
 //   - --radius-<key> from tokens.RadiusScale in Tailwind naming (none, sm,
 //     base, md, lg, xl, 2xl, 3xl, full), in px; Base is also theme.json's
 //     base radius parameter.
-//   - --shadow-<level> (backdrop, chrome, 0, 1, 2, 3): CSS box-shadow
-//     approximations of the dp depths, the cue a floating transient (a
-//     menu, a dialog, a tooltip) carries over its platform fill. What each
-//     level is filled with is a --platform-* name, so there is no fill
-//     variable of its own. The backdrop, the chrome level and level 0 cast
-//     nothing. Each level's dp depth d becomes
-//     "0 <d>px <2d>px 0 rgba(0, 0, 0, 0.2)" — y-offset the depth, blur
-//     twice it, no spread, black at 20% — and a zero depth is "none".
 //   - --ease-<name> from tokens.MotionScale: the six easing presets as
 //     cubic-bezier() strings (standard and emphasized families, each plain
 //     / -accelerate / -decelerate).
@@ -82,11 +74,11 @@
 // theme.json records what reproduces the theme: the theme colour as
 // lowercase #rrggbb, the platform's whole set per appearance keyed by the
 // sheet's names, the heading, body and mono faces, the base radius, the
-// density model (the active setting by name and both settings' metrics),
-// the shadow depth per level and the motion
-// set (durations in ms, easing control points, spring presets). The
-// platform's own reading of the theme colour is what the accent rows carry,
-// so the file rebuilds the set exactly — the round-trip test asserts it.
+// density model (the active setting by name and both settings' metrics)
+// and the motion set (durations in ms, easing control points, spring
+// presets). The platform's own reading of the theme colour is what the
+// accent rows carry, so the file rebuilds the set exactly — the
+// round-trip test asserts it.
 // The per-role --font-*-size tokens come from Typography, the theme's only
 // type source.
 package export
