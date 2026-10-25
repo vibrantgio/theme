@@ -175,8 +175,11 @@ This README's own sections are the guide: [Where it sits](#where-it-sits) and
 the whole bootstrap, and each package's own `doc.go` comment covers what the
 table above only summarises.
 
-The build, test and golden-image commands are reached from
-[`organisation/AGENTS.md`](https://github.com/vibrantgio/organisation/blob/master/AGENTS.md).
+Read this repository's [AGENTS.md](./AGENTS.md) before you write code against this module.
+
+Build and test the root module with `go build ./...` and `go test ./...`.
+
+This module stores no golden images.
 
 ## Status
 
