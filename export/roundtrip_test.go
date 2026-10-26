@@ -239,26 +239,17 @@ func TestRoundTripDensity(t *testing.T) {
 			t.Errorf(".compact %s = %v, want compact %v", name, got, m.pick(tokens.Compact))
 		}
 	}
-	// The navbar's vertical inset is the one per-setting value that is not a
-	// density metric: patterns/navbar selects it per density.
-	if got := wantPx(t, "--navbar-inset", root["--navbar-inset"]); got != navbarInsetComfortableDp {
-		t.Errorf(":root --navbar-inset = %v, want %v", got, navbarInsetComfortableDp)
-	}
-	if got := wantPx(t, "--navbar-inset", compact["--navbar-inset"]); got != navbarInsetCompactDp {
-		t.Errorf(".compact --navbar-inset = %v, want %v", got, navbarInsetCompactDp)
-	}
 	// The compact block carries exactly the per-setting overrides: every
-	// variable it declares exists in :root and is a --density-* metric or the
-	// navbar's inset.
+	// variable it declares exists in :root and is a --density-* metric.
 	for n := range compact {
 		if _, ok := root[n]; !ok {
 			t.Errorf(".compact declares %s which :root does not", n)
 		}
-		if !strings.HasPrefix(n, "--density-") && n != "--navbar-inset" {
+		if !strings.HasPrefix(n, "--density-") {
 			t.Errorf(".compact declares non-density variable %s", n)
 		}
 	}
-	if want := len(densityMetrics) + 1; len(compact) != want {
+	if want := len(densityMetrics); len(compact) != want {
 		t.Errorf(".compact declares %d variables, want %d", len(compact), want)
 	}
 }
@@ -448,7 +439,9 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		// The rail itself draws no line down its trailing edge: the
 		// platform's sidebar is an inset pane and the pane's rim and shadow
 		// are the boundary.
-		"min-height: var(--navbar-band);",
+		"height: var(--navbar-band);",
+		"padding: 0 var(--space-4);",
+		"min-height: var(--density-toolbar-control-height);",
 		"background: var(--platform-sidebar-material);",
 		"box-shadow: inset 0 -1px 0 var(--platform-separator);",
 		"color: var(--platform-sidebar-symbol);",

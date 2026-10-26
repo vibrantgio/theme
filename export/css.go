@@ -348,19 +348,9 @@ func scaleVars(s Snapshot) []cssVar {
 		cssVar{"--dialog-button-width", px(dialogButtonWidthDp)},
 		cssVar{"--dialog-footer-air", px(dialogFooterAirDp)},
 		cssVar{"--navbar-band", px(navbarBandDp)},
-		cssVar{"--navbar-inset", px(navbarInsetComfortableDp)},
 	)
 	return vars
 }
-
-// navbarInsetComfortableDp and navbarInsetCompactDp are the navbar's
-// vertical inset: the bar's inset around its slots and a link cell's
-// vertical padding. They are the same values patterns/navbar draws. No
-// measurement stands behind them.
-const (
-	navbarInsetComfortableDp = 2
-	navbarInsetCompactDp     = 0
-)
 
 // navbarBandDp is the depth of the toolbar band a navbar stands in — the
 // same reading patterns/pane carries (pane.BandDp) and patterns/shell hands
@@ -489,7 +479,7 @@ func stylesCSS(s Snapshot) string {
 	b.WriteString("\n")
 	block(&b, ".dark", append(platformVars(s.PlatformDark), toolbarShadowVars(s.PlatformDark)...))
 	b.WriteString("\n")
-	block(&b, ".compact", append(densityVars(tokens.Compact), cssVar{"--navbar-inset", px(navbarInsetCompactDp)}))
+	block(&b, ".compact", densityVars(tokens.Compact))
 	b.WriteString("\n")
 	b.WriteString(componentClasses)
 	return b.String()
@@ -1196,10 +1186,11 @@ const componentClasses = `/* ---- Component classes ----
    selected row's own fill on a rail — in the platform's selection colour,
    which follows the user's accent. */
 
-/* Navbar (patterns/navbar navbar.go): a horizontal chrome bar — drawNavbar
-   fills the material, insets --navbar-inset vertically and S4 horizontally, and
-   patterns/shell hands the bar the toolbar band, --navbar-band (pane.BandDp,
-   52 px), which takes no density. Slots run brand, centred links, actions; the
+/* Navbar (patterns/navbar navbar.go): a horizontal chrome bar. drawNavbar
+   fills it with the platform's sidebar material and draws it at the toolbar
+   band's depth, the variable --navbar-band (pane.BandDp, 52 px), which takes
+   no density. The bar has no vertical inset: each slot is centred in the
+   band. Its horizontal inset is S4. Slots run brand, centred links, actions; the
    links row centres in the space brand and actions leave over (that space
    halved), which margin-inline auto reproduces exactly. The foot hairline is
    an inset shadow rather than a border, because the Gio side paints it over
@@ -1208,8 +1199,8 @@ const componentClasses = `/* ---- Component classes ----
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  min-height: var(--navbar-band);
-  padding: var(--navbar-inset) var(--space-4);
+  height: var(--navbar-band);
+  padding: 0 var(--space-4);
   background: var(--platform-sidebar-material);
   box-shadow: inset 0 -1px 0 var(--platform-separator);
   color: var(--platform-label);
@@ -1221,9 +1212,10 @@ const componentClasses = `/* ---- Component classes ----
   margin-inline: auto;  /* the leftover space, halved on either side */
 }
 
-/* A link cell (navbar.go linkWidget): the system font in the platform's label
-   inside (S3, --navbar-inset) padding, with a 2 dp underline slot along the bottom
-   edge that the Active link fills with the platform's selection colour — the
+/* A link cell (navbar.go linkWidget): the system font in the platform's label,
+   in a cell of the toolbar control height. The title is centred above a 2 dp
+   underline slot along the bottom edge, with S3 padding either side. The
+   Active link fills the slot with the platform's selection colour — the
    underline runs the full cell width, padding included, exactly the
    image.Rect the Gio side fills. */
 .navbar-link, .tab {
@@ -1247,7 +1239,8 @@ const componentClasses = `/* ---- Component classes ----
   border-bottom: 2px solid transparent;  /* underlineDp: the underline slot */
 }
 .navbar-link {
-  padding: var(--navbar-inset) var(--space-3);
+  min-height: var(--density-toolbar-control-height);
+  padding: 0 var(--space-3);
 }
 .navbar-link.selected, .tab.selected {
   border-bottom-color: var(--platform-selected-content-background);
