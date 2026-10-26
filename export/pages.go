@@ -444,12 +444,24 @@ const layoutPageCSS = `.space-row {
   font-weight: var(--font-system-font-weight);
 }
 .pad-box {
-  display: inline-block;
-  padding: var(--density-padding-y) var(--density-padding-x);
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  min-height: var(--density-control-height);
+  padding: 0 var(--density-padding-x);
   background: var(--platform-card-fill);
   border: thin solid var(--platform-field-edge);
   border-radius: var(--radius-md);
   margin: var(--space-2) 0;
+}
+.symbol-box {
+  display: inline-block;
+  vertical-align: middle;
+  width: var(--density-symbol-size);
+  height: var(--density-symbol-size);
+  background: var(--platform-secondary-label);
+  margin-left: var(--space-2);
 }
 `
 
@@ -498,9 +510,9 @@ func layoutHTML(s Snapshot) string {
 		b.WriteString("<div><span class=\"toolbar-bar\">Toolbar control</span></div>\n")
 		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-toolbar-control-height</code> &middot; %s &mdash; a control standing in a toolbar band is its own control, taller than the one in a dialog</p>\n",
 			px(setting.d.ToolbarControlHeight))
-		b.WriteString("<div class=\"pad-box\">padding</div>\n")
-		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-padding-x</code> %s &middot; <code>--density-padding-y</code> %s</p>\n",
-			px(setting.d.PaddingX), px(setting.d.PaddingY))
+		b.WriteString("<div><span class=\"pad-box\">padding</span><span class=\"symbol-box\"></span></div>\n")
+		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-padding-x</code> %s &middot; <code>--density-symbol-size</code> %s &mdash; a control's vertical padding is what its height leaves around the line</p>\n",
+			px(setting.d.PaddingX), px(setting.d.SymbolSize))
 		b.WriteString("</div>\n")
 	}
 	b.WriteString("</div>\n</section>\n")

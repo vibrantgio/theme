@@ -119,11 +119,9 @@ func (s DocumentHeadingScale) Level(n int) TextStyle {
 type Typography struct {
 	// LabelLarge sets a group's title and LabelSmall a sidebar's section
 	// title, at the medium weight: no role sets text that opens a section
-	// in semibold. BodyLarge holds the line box the density derives the
-	// text field's height from.
+	// in semibold.
 	LabelLarge TextStyle
 	LabelSmall TextStyle
-	BodyLarge  TextStyle
 
 	// The platform's text styles, with the platform's names, and the two
 	// system font sizes the platform sets outside its text styles. Each
@@ -477,7 +475,6 @@ func jetbrainsEmojiTypography() Typography {
 var DefaultTypography = Typography{
 	LabelLarge: TextStyle{Typeface: "Roboto", Weight: WeightMedium, Size: 14, LineHeight: 20},
 	LabelSmall: TextStyle{Typeface: "Roboto", Weight: WeightMedium, Size: 11, LineHeight: 16},
-	BodyLarge:  TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 16, LineHeight: 24},
 
 	LargeTitle:  TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 26, LineHeight: 32},
 	Title1:      TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 22, LineHeight: 26},

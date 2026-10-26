@@ -38,9 +38,9 @@
 //     label-large, the sidebar section title's label-small, and code, the
 //     mono style at body's metrics): sizes and line heights in px, weights
 //     as CSS numeric weights. A role adds no tracking.
-//   - --density-control-height, --density-padding-x and --density-padding-y
-//     from tokens.Density: :root carries tokens.Comfortable, the .compact
-//     block overrides with tokens.Compact. A control's pointer target is the
+//   - --density-control-height, --density-padding-x, --density-symbol-size
+//     and the other per-setting heights from tokens.Density: :root carries
+//     tokens.Comfortable, the .compact block overrides with tokens.Compact. A control's pointer target is the
 //     box it draws, so --density-control-height is that number too.
 //   - --space-<key> from tokens.SpacingScale, keys as the Go scale names
 //     them (0, 1, 2, … 24), in px.

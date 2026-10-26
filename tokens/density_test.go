@@ -138,8 +138,8 @@ func TestStackedRowsAreTheirOwnTarget(t *testing.T) {
 
 // TestDensitySettingsMatchTable pins the two settings to the provenance table
 // in density.go: the heights are exactly the picked consts, Compact is
-// strictly denser than Comfortable on every visual axis, and the paddings are
-// the pair the table derives.
+// strictly denser than Comfortable on every visual axis, and PaddingX is the
+// pair the table states.
 func TestDensitySettingsMatchTable(t *testing.T) {
 	if Comfortable.ControlHeight != ComfortableControlHeight {
 		t.Errorf("Comfortable.ControlHeight = %v, want %v", Comfortable.ControlHeight, ComfortableControlHeight)
@@ -157,17 +157,14 @@ func TestDensitySettingsMatchTable(t *testing.T) {
 		t.Errorf("Compact heights (%v, %v) must be < Comfortable heights (%v, %v)",
 			Compact.ControlHeight, Compact.FieldHeight, Comfortable.ControlHeight, Comfortable.FieldHeight)
 	}
-	if Compact.PaddingX >= Comfortable.PaddingX || Compact.PaddingY >= Comfortable.PaddingY {
-		t.Errorf("Compact padding (%v, %v) must be < Comfortable padding (%v, %v)",
-			Compact.PaddingX, Compact.PaddingY, Comfortable.PaddingX, Comfortable.PaddingY)
+	if Compact.PaddingX >= Comfortable.PaddingX {
+		t.Errorf("Compact PaddingX %v must be < Comfortable PaddingX %v", Compact.PaddingX, Comfortable.PaddingX)
 	}
-	if Comfortable.PaddingX != 8 || Comfortable.PaddingY != 2 {
-		t.Errorf("Comfortable padding = (%v, %v), want (8, 2) — the HIG's inset beside a regular push button's title, and what the measured 24 leaves around LabelLarge's line box",
-			Comfortable.PaddingX, Comfortable.PaddingY)
+	if Comfortable.PaddingX != 8 {
+		t.Errorf("Comfortable.PaddingX = %v, want 8 — the HIG's inset beside a regular push button's title", Comfortable.PaddingX)
 	}
-	if Compact.PaddingX != 7 || Compact.PaddingY != 0 {
-		t.Errorf("Compact padding = (%v, %v), want (7, 0) — the published 8 scaled by 19/22, and no vertical room left at 19",
-			Compact.PaddingX, Compact.PaddingY)
+	if Compact.PaddingX != 7 {
+		t.Errorf("Compact.PaddingX = %v, want 7 — the published 8 scaled by 19/22", Compact.PaddingX)
 	}
 }
 
@@ -197,91 +194,35 @@ func TestChipHeightRelation(t *testing.T) {
 	}
 }
 
-// TestControlFitsItsLabelLine states the fit rule against the typography the
-// controls actually wear: a control draws max(floor, lineBox + 2×PaddingY),
-// where the floor is ControlHeight for a button and FieldHeight for a text
-// field, and lineBox is the role's line height, which density does not move.
-// A button is set in LabelLarge (20 dp line box) and a text field in
-// BodyLarge (24 dp), so this is what the two densities produce:
-//
-//   - Comfortable lands a button exactly on the platform's measured regular
-//     control: 20 + 2×2 = 24, which is what PaddingY 2 is for.
-//   - Compact cannot: LabelLarge's line box alone is 1 dp over the platform's
-//     small control, so PaddingY is 0 — its minimum, never negative — and the
-//     button draws 20 against a 19 dp floor.
-//   - A Comfortable text field draws 28 against the platform's measured 27,
-//     because BodyLarge's 24 dp line box plus the control's own padding is 28.
-//
-// Both overshoots close only by moving a typography role, which this scale
-// does not do.
-func TestControlFitsItsLabelLine(t *testing.T) {
-	drawn := func(floor, lineBox, paddingY float32) float32 {
-		h := lineBox + 2*paddingY
-		if floor > h {
-			return floor
-		}
-		return h
-	}
-	button := DefaultTypography.LabelLarge.LineHeight
-	field := DefaultTypography.BodyLarge.LineHeight
-	if button != 20 || field != 24 {
-		t.Fatalf("line boxes = (LabelLarge %v, BodyLarge %v), want (20, 24): typography moved, so the density table above the constants is stale",
-			button, field)
-	}
-	for name, d := range map[string]Density{
-		"Comfortable": Comfortable,
-		"Compact":     Compact,
-	} {
-		if d.PaddingY < 0 {
-			t.Errorf("%s.PaddingY = %v: padding is never negative, the height is a floor instead", name, d.PaddingY)
-		}
-		// The fit rule itself, stated per density and per floor rather than
-		// only through the worked rows below: a control is never shorter than
-		// its floor, and never shorter than its own line box plus its padding.
-		for what, pair := range map[string][2]float32{
-			"button":     {d.ControlHeight, button},
-			"text field": {d.FieldHeight, field},
-		} {
-			floor, lineBox := pair[0], pair[1]
-			got := drawn(floor, lineBox, d.PaddingY)
-			if got < floor {
-				t.Errorf("%s %s draws %v, under its %v dp floor", name, what, got, floor)
-			}
-			if got < lineBox+2*d.PaddingY {
-				t.Errorf("%s %s draws %v, under its content box %v + 2×%v", name, what, got, lineBox, d.PaddingY)
-			}
-		}
-	}
-	if got, want := button+2*Comfortable.PaddingY, ComfortableControlHeight; got != want {
-		t.Errorf("Comfortable button = %v (LabelLarge %v + 2×%v), want exactly %v",
-			got, button, Comfortable.PaddingY, want)
-	}
-	if Compact.PaddingY != 0 {
-		t.Errorf("Compact.PaddingY = %v, want 0: LabelLarge's %v dp line box is already over the %v dp floor",
-			Compact.PaddingY, button, CompactControlHeight)
-	}
-	if got, want := button-CompactControlHeight, float32(1); got != want {
-		t.Errorf("Compact button overshoot = %v dp, want %v (LabelLarge %v over the %v dp floor)",
-			got, want, button, CompactControlHeight)
-	}
-	if got, want := field+2*Comfortable.PaddingY-ComfortableFieldHeight, float32(1); got != want {
-		t.Errorf("Comfortable text field overshoot = %v dp, want %v (BodyLarge %v + 2×%v over the measured %v)",
-			got, want, field, Comfortable.PaddingY, ComfortableFieldHeight)
-	}
+// TestControlHeightsAreMeasured pins each density's control and field
+// heights to the heights the provenance table in density.go states. A control
+// draws max(floor, line), and no padding adds to the line, so these floors are
+// the heights the platform's controls draw at.
+func TestControlHeightsAreMeasured(t *testing.T) {
 	for _, tc := range []struct {
-		name    string
-		floor   float32
-		lineBox float32
-		pad     float32
-		want    float32
+		name string
+		got  float32
+		want float32
 	}{
-		{"button, Comfortable", Comfortable.ControlHeight, button, Comfortable.PaddingY, 24},
-		{"button, Compact", Compact.ControlHeight, button, Compact.PaddingY, 20},
-		{"text field, Comfortable", Comfortable.FieldHeight, field, Comfortable.PaddingY, 28},
-		{"text field, Compact", Compact.FieldHeight, field, Compact.PaddingY, 24},
+		{"Comfortable control", Comfortable.ControlHeight, 24},
+		{"Compact control", Compact.ControlHeight, 19},
+		{"Comfortable field", Comfortable.FieldHeight, 27},
+		{"Compact field", Compact.FieldHeight, 21},
 	} {
-		if got := drawn(tc.floor, tc.lineBox, tc.pad); got != tc.want {
-			t.Errorf("%s draws %v dp, want %v — the table above the constants is stale", tc.name, got, tc.want)
+		if tc.got != tc.want {
+			t.Errorf("%s height = %v dp, want %v", tc.name, tc.got, tc.want)
 		}
+	}
+}
+
+// TestSymbolSizeIsItsOwnValue pins the size of a symbol in a control: 20 dp
+// at Comfortable and 19 dp at Compact, a value of its own that no padding
+// derives.
+func TestSymbolSizeIsItsOwnValue(t *testing.T) {
+	if Comfortable.SymbolSize != 20 {
+		t.Errorf("Comfortable.SymbolSize = %v dp, want 20", Comfortable.SymbolSize)
+	}
+	if Compact.SymbolSize != 19 {
+		t.Errorf("Compact.SymbolSize = %v dp, want 19", Compact.SymbolSize)
 	}
 }

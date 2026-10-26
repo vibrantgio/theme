@@ -261,7 +261,10 @@ var densityMetrics = []struct {
 	// reach for the control height there.
 	{"toolbar-control-height", func(d tokens.Density) float32 { return d.ToolbarControlHeight }},
 	{"padding-x", func(d tokens.Density) float32 { return d.PaddingX }},
-	{"padding-y", func(d tokens.Density) float32 { return d.PaddingY }},
+	// The side of a symbol drawn in a control: a value of its own, which no
+	// padding derives. A control has no vertical padding metric: its padding
+	// is what its height leaves around the line.
+	{"symbol-size", func(d tokens.Density) float32 { return d.SymbolSize }},
 }
 
 // easeRoles orders the easing presets under their CSS names.
@@ -345,9 +348,19 @@ func scaleVars(s Snapshot) []cssVar {
 		cssVar{"--dialog-button-width", px(dialogButtonWidthDp)},
 		cssVar{"--dialog-footer-air", px(dialogFooterAirDp)},
 		cssVar{"--navbar-band", px(navbarBandDp)},
+		cssVar{"--navbar-inset", px(navbarInsetComfortableDp)},
 	)
 	return vars
 }
+
+// navbarInsetComfortableDp and navbarInsetCompactDp are the navbar's
+// vertical inset: the bar's inset around its slots and a link cell's
+// vertical padding. They are the same values patterns/navbar draws. No
+// measurement stands behind them.
+const (
+	navbarInsetComfortableDp = 2
+	navbarInsetCompactDp     = 0
+)
 
 // navbarBandDp is the depth of the toolbar band a navbar stands in — the
 // same reading patterns/pane carries (pane.BandDp) and patterns/shell hands
@@ -476,7 +489,7 @@ func stylesCSS(s Snapshot) string {
 	b.WriteString("\n")
 	block(&b, ".dark", append(platformVars(s.PlatformDark), toolbarShadowVars(s.PlatformDark)...))
 	b.WriteString("\n")
-	block(&b, ".compact", densityVars(tokens.Compact))
+	block(&b, ".compact", append(densityVars(tokens.Compact), cssVar{"--navbar-inset", px(navbarInsetCompactDp)}))
 	b.WriteString("\n")
 	b.WriteString(componentClasses)
 	return b.String()
@@ -578,7 +591,7 @@ const componentClasses = `/* ---- Component classes ----
   white-space: nowrap;
   cursor: pointer;
   min-height: var(--density-control-height);
-  padding: var(--density-padding-y) var(--density-padding-x);
+  padding: 0 var(--density-padding-x);
   border-radius: var(--radius-md);
   font-family: var(--font-family);
   font-size: var(--font-system-font-size);
@@ -610,15 +623,15 @@ const componentClasses = `/* ---- Component classes ----
 }
 
 /* Icon-only form (components/button drawIconButton): a square the density's
-   control height on a side, the symbol inset by the density's vertical
-   padding - content box ControlHeight - 2*PaddingY, icon.Size's rule. The
+   control height on a side, the symbol --density-symbol-size on a side and
+   centred in it, icon.Size's rule. The
    variant reaches the colours and stops there: the square never shrinks. The
    symbol inherits the variant's text colour via currentColor. */
 .btn.icon {
   width: var(--density-control-height);
   height: var(--density-control-height);
   min-height: var(--density-control-height);
-  padding: var(--density-padding-y);
+  padding: calc((var(--density-control-height) - var(--density-symbol-size)) / 2);
 }
 .btn.icon svg {
   width: 100%;
@@ -780,8 +793,8 @@ const componentClasses = `/* ---- Component classes ----
 
 /* Text field (components/input textfield.go). The height floor is
    Density.FieldHeight, not ControlHeight — the platform draws a field shorter
-   than the button beside it — and the drawn height is max(that, line box +
-   2*PaddingY). The horizontal inset is S3 (12 dp, static: it does not follow
+   than the button beside it — and the drawn height is max(that, line box),
+   the line centred. The horizontal inset is S3 (12 dp, static: it does not follow
    density) measured from the OUTER edge, so the padding gives back whatever
    the border occupies and the text lands where the Gio side puts it.
 
@@ -799,7 +812,7 @@ const componentClasses = `/* ---- Component classes ----
   margin: 0;
   appearance: none;
   min-height: var(--density-field-height);
-  padding: calc(var(--density-padding-y) - 1px) calc(var(--space-3) - 1px);
+  padding: 0 calc(var(--space-3) - 1px);
   border: 1px solid var(--platform-field-edge);
   border-radius: var(--radius-md);
   background: var(--platform-text-background);
@@ -1184,7 +1197,7 @@ const componentClasses = `/* ---- Component classes ----
    which follows the user's accent. */
 
 /* Navbar (patterns/navbar navbar.go): a horizontal chrome bar — drawNavbar
-   fills the material, insets PaddingY vertically and S4 horizontally, and
+   fills the material, insets --navbar-inset vertically and S4 horizontally, and
    patterns/shell hands the bar the toolbar band, --navbar-band (pane.BandDp,
    52 px), which takes no density. Slots run brand, centred links, actions; the
    links row centres in the space brand and actions leave over (that space
@@ -1196,7 +1209,7 @@ const componentClasses = `/* ---- Component classes ----
   display: flex;
   align-items: center;
   min-height: var(--navbar-band);
-  padding: var(--density-padding-y) var(--space-4);
+  padding: var(--navbar-inset) var(--space-4);
   background: var(--platform-sidebar-material);
   box-shadow: inset 0 -1px 0 var(--platform-separator);
   color: var(--platform-label);
@@ -1209,7 +1222,7 @@ const componentClasses = `/* ---- Component classes ----
 }
 
 /* A link cell (navbar.go linkWidget): the system font in the platform's label
-   inside (S3, PaddingY) padding, with a 2 dp underline slot along the bottom
+   inside (S3, --navbar-inset) padding, with a 2 dp underline slot along the bottom
    edge that the Active link fills with the platform's selection colour — the
    underline runs the full cell width, padding included, exactly the
    image.Rect the Gio side fills. */
@@ -1234,7 +1247,7 @@ const componentClasses = `/* ---- Component classes ----
   border-bottom: 2px solid transparent;  /* underlineDp: the underline slot */
 }
 .navbar-link {
-  padding: var(--density-padding-y) var(--space-3);
+  padding: var(--navbar-inset) var(--space-3);
 }
 .navbar-link.selected, .tab.selected {
   border-bottom-color: var(--platform-selected-content-background);
@@ -1290,8 +1303,8 @@ const componentClasses = `/* ---- Component classes ----
 .sidebar.collapsed { width: 48px; }  /* collapsedDp */
 
 /* The collapse affordance (drawToggle): a full-width ControlHeight row with
-   the icon set's sidebar mark centred in it at icon.Size — the control's
-   inner content box, ControlHeight - 2*PaddingY — in the platform's
+   the icon set's sidebar mark centred in it at icon.Size — the density's
+   symbol size — in the platform's
    secondary label. Pointer-only, never a Tab stop. */
 .sidebar-toggle {
   flex: none;
@@ -1303,8 +1316,8 @@ const componentClasses = `/* ---- Component classes ----
 }
 .sidebar-toggle::after {
   content: "";
-  width: calc(var(--density-control-height) - 2 * var(--density-padding-y));
-  height: calc(var(--density-control-height) - 2 * var(--density-padding-y));
+  width: var(--density-symbol-size);
+  height: var(--density-symbol-size);
   background: var(--platform-secondary-label);
 }
 
@@ -1687,7 +1700,7 @@ const componentClasses = `/* ---- Component classes ----
    its rail and cornered at 8 - and the capture that would settle a menu's own
    is on the reference's list.
 
-   A row is the control height tall with the density's vertical padding, its
+   A row is max(the control height, its line) tall with the line centred, its
    mark box standing 10 in from the leading edge at the 16 dp size a mark
    beside a line of body text is drawn at, its title starting a text lead
    after that box, and 16 clear at the trailing end. The current row wears the
@@ -1730,7 +1743,7 @@ const componentClasses = `/* ---- Component classes ----
   display: flex;
   align-items: center;
   min-height: var(--density-control-height);
-  padding: var(--density-padding-y) 16px var(--density-padding-y) 32px;  /* selectionInset + TextTrail; selectionInset + markBox + TextLead */
+  padding: 0 16px 0 32px;  /* selectionInset + TextTrail; selectionInset + markBox + TextLead */
   white-space: nowrap;
   cursor: pointer;
   user-select: none;

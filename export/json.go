@@ -75,7 +75,9 @@ type DensityMetrics struct {
 	// above — 36 against 24, measured.
 	ToolbarControlHeight float64 `json:"toolbarControlHeight"`
 	PaddingX             float64 `json:"paddingX"`
-	PaddingY             float64 `json:"paddingY"`
+	// SymbolSize is the side of a symbol drawn in a control. It is a value
+	// of its own, and no padding derives it.
+	SymbolSize float64 `json:"symbolSize"`
 }
 
 // MotionParams records the motion set.
@@ -162,7 +164,7 @@ func densityMetricsOf(d tokens.Density) DensityMetrics {
 		CheckboxRowHeight:    f64(d.CheckboxRowHeight),
 		ToolbarControlHeight: f64(d.ToolbarControlHeight),
 		PaddingX:             f64(d.PaddingX),
-		PaddingY:             f64(d.PaddingY),
+		SymbolSize:           f64(d.SymbolSize),
 	}
 }
 

@@ -239,17 +239,26 @@ func TestRoundTripDensity(t *testing.T) {
 			t.Errorf(".compact %s = %v, want compact %v", name, got, m.pick(tokens.Compact))
 		}
 	}
+	// The navbar's vertical inset is the one per-setting value that is not a
+	// density metric: patterns/navbar selects it per density.
+	if got := wantPx(t, "--navbar-inset", root["--navbar-inset"]); got != navbarInsetComfortableDp {
+		t.Errorf(":root --navbar-inset = %v, want %v", got, navbarInsetComfortableDp)
+	}
+	if got := wantPx(t, "--navbar-inset", compact["--navbar-inset"]); got != navbarInsetCompactDp {
+		t.Errorf(".compact --navbar-inset = %v, want %v", got, navbarInsetCompactDp)
+	}
 	// The compact block carries exactly the per-setting overrides: every
-	// variable it declares exists in :root and is a --density-* metric.
+	// variable it declares exists in :root and is a --density-* metric or the
+	// navbar's inset.
 	for n := range compact {
 		if _, ok := root[n]; !ok {
 			t.Errorf(".compact declares %s which :root does not", n)
 		}
-		if !strings.HasPrefix(n, "--density-") {
+		if !strings.HasPrefix(n, "--density-") && n != "--navbar-inset" {
 			t.Errorf(".compact declares non-density variable %s", n)
 		}
 	}
-	if want := len(densityMetrics); len(compact) != want {
+	if want := len(densityMetrics) + 1; len(compact) != want {
 		t.Errorf(".compact declares %d variables, want %d", len(compact), want)
 	}
 }
@@ -328,7 +337,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 	for _, frag := range []string{
 		// Structure from the density, radius and system font tokens.
 		"min-height: var(--density-control-height);",
-		"padding: var(--density-padding-y) var(--density-padding-x);",
+		"padding: 0 var(--density-padding-x);",
 		"border-radius: var(--radius-md);",
 		"font-size: var(--font-system-font-size);",
 		// Filled is the platform's default action.
@@ -370,9 +379,9 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"background: var(--platform-toolbar-control-fill);",
 		"inset 0 0 0 1px var(--platform-toolbar-control-rim);",
 		"0 var(--toolbar-control-shadow-offset) 0 var(--toolbar-control-shadow-reach) var(--toolbar-shadow-step),",
-		// Icon-only: a control-height square, symbol inset by PaddingY.
+		// Icon-only: a control-height square, the symbol centred in it.
 		"width: var(--density-control-height);",
-		"padding: var(--density-padding-y);",
+		"padding: calc((var(--density-control-height) - var(--density-symbol-size)) / 2);",
 		// Badge: the platform's system colour for the status under white.
 		".badge {",
 		"font-size: var(--font-small-system-font-size);",
@@ -477,7 +486,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		// wears.
 		".menu {",
 		".menu-item {",
-		"padding: var(--density-padding-y) 16px var(--density-padding-y) 32px;",
+		"padding: 0 16px 0 32px;",
 		"inset: 0 10px;  /* selectionInsetDp */",
 		"background: var(--platform-sidebar-selection);",
 		// The pane: the platform's sidebar as an inset rounded pane with
@@ -593,7 +602,7 @@ func TestThemeJSONReproduces(t *testing.T) {
 			CheckboxRowHeight:    float64(d.CheckboxRowHeight),
 			ToolbarControlHeight: float64(d.ToolbarControlHeight),
 			PaddingX:             float64(d.PaddingX),
-			PaddingY:             float64(d.PaddingY),
+			SymbolSize:           float64(d.SymbolSize),
 		}
 		if got != want {
 			t.Errorf("density.%s = %+v, want %+v", label, got, want)
@@ -672,7 +681,7 @@ func TestCaptureRejectsIrreproducible(t *testing.T) {
 	}
 
 	th := theme.Default()
-	th.Density = rx.Of(tokens.Density{ControlHeight: 30, PaddingX: 10, PaddingY: 5})
+	th.Density = rx.Of(tokens.Density{ControlHeight: 30, PaddingX: 10, SymbolSize: 5})
 	if _, err := Capture(th); err == nil {
 		t.Error("Capture of a non-preset density must error: theme.json records density as a named setting")
 	}

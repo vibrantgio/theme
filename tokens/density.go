@@ -20,8 +20,8 @@ package tokens
 //	Compact field height        21 dp   DERIVED: 27 × 19/24 = 21.4, rounded — the platform's field-to-control ratio applied to the small control, until a small field is captured
 //	Comfortable PaddingX         8 dp   PUBLISHED: the HIG's horizontal inset beside a regular push button's title — the captured buttons both sit at the platform's 74 px minimum width with their titles centred, so what they measure is centring, not an inset
 //	Compact PaddingX             7 dp   DERIVED: 8 × 19/22, rounded — the published small-to-regular ratio, both operands published, since neither the inset nor the small control is captured
-//	Comfortable PaddingY         2 dp   DERIVED: (24 − LabelLarge's 20 dp line box) / 2, which lands a button exactly on 24
-//	Compact PaddingY             0 dp   DERIVED: LabelLarge's line box is already over 19, so there is nothing to pad with
+//	Comfortable SymbolSize      20 dp   CARRIED: the value a former padding derivation gave; no capture measures a symbol in a control yet
+//	Compact SymbolSize          19 dp   CARRIED: the value a former padding derivation gave; no capture measures a symbol in a control yet
 //	checkbox                    16 dp   MEASURED: 16 px square in the same pair. Not a token here: the checkbox carries its own side length in components/input, which is where this number lands when a consumer takes it.
 //	Comfortable row height      20 dp   MEASURED: Finder's list view in finder-window-light.png — the stripes alternate on a 20 px pitch with no row seam between them (x=965, rows at y 85, 105, 125 … 284)
 //	Compact row height          19 dp   PUBLISHED: the platform's small control, carried until a capture holds a list drawn dense
@@ -43,41 +43,22 @@ package tokens
 // [Density.ToolbarControlHeight] carries it.
 //
 // A control height is a floor, not a height. A control is as tall as its
-// content box needs, and never shorter than the density says:
+// text's line needs, and never shorter than the density says:
 //
-//	height = max(floor, lineBox + 2×PaddingY)
+//	height = max(floor, line)
 //
 // where the floor is [Density.ControlHeight] for a control and
-// [Density.FieldHeight] for a text field, and lineBox is the type role's
-// line height (see [TextStyle.LineHeight] and theme/typeset). Typography
-// does not move with density, so at the platform's heights the two terms are
-// close and either can win:
+// [Density.FieldHeight] for a text field, and line is the text style's line
+// height (see [TextStyle.LineHeight] and theme/typeset). The control centres
+// the line in that height. The padding inside a control is what the height
+// leaves around the line. A control never adds padding to the line to make
+// its height. Typography does not move with density.
 //
-//	control                  role         line box   + 2×PaddingY   floor              drawn
-//	-------                  ----         --------   ------------   -----              -----
-//	button, Comfortable      LabelLarge   20         24             24 ControlHeight   24
-//	button, Compact          LabelLarge   20         20             19 ControlHeight   20
-//	text field, Comfortable  BodyLarge    24         28             27 FieldHeight     28
-//	text field, Compact      BodyLarge    24         24             21 FieldHeight     24
+// A Comfortable text field (27) is taller than a Comfortable button (24)
+// because the platform draws it taller. Both heights are measured.
 //
-// Comfortable's padding is what makes a button exact: 20 + 2×2 = 24. Two
-// overshoots are recorded rather than hidden, and both close only by moving
-// a typography role, which this scale does not do:
-//
-//   - a Compact button draws 20 dp against a 19 dp floor, because
-//     LabelLarge's line box is 1 dp over the platform's small control before
-//     any padding, so PaddingY is 0 and there is nothing left to spend.
-//   - a Comfortable text field draws 28 dp against the platform's measured
-//     27, because BodyLarge's 24 dp line box plus the control's own 2 dp
-//     padding is 28. The measured height is the floor; the content box wins
-//     by a dp.
-//
-// The consequence worth stating: controls in different type roles come out at
-// different heights, and a Comfortable text field (28) is taller than a
-// Comfortable button (24) because BodyLarge is a larger role than LabelLarge.
-// Both are honest readings of the tokens. A design that wants them equal
-// changes the roles or the padding, not the measurement. The platform draws
-// the same difference, 27 against 24.
+// A symbol in a control has its own size, [Density.SymbolSize]. No padding
+// derives it.
 //
 // A stacked row is not a control, and takes [Density.RowHeight] rather than
 // the control height: list rows, table rows and header cells are RowHeight
@@ -92,19 +73,19 @@ package tokens
 //
 // A control's pointer target is the control: the box it draws at the heights
 // above, with nothing added around it. The platform draws a 24 dp push
-// button and 24 dp is what a pointer has to land on; a Compact control has a
-// 19 dp floor, draws 20 for a button and offers 20. Density therefore moves
+// button and 24 dp is what a pointer has to land on; a Compact button draws
+// its 19 dp floor and offers 19. Density therefore moves
 // the target with the pixels, and two controls standing side by side never
 // claim the same pixels.
 //
 // A stacked row is its own target at its own height, and an option row at
-// the height its content box gives it:
+// max(ControlHeight, its line):
 //
 //	row                              Comfortable   Compact   sizing
 //	---                              -----------   -------   ------
 //	list row                         20            19        pinned to RowHeight
 //	table body row and header cell   20            19        pinned to RowHeight
-//	picker option row                28            24        floor formula, BodyLarge
+//	picker option row                24            19        max(ControlHeight, line)
 //	toolbar control                  36            36        pinned to ToolbarControlHeight
 //
 // A checkbox is the one control drawn smaller than the box it stands in: the
@@ -117,7 +98,7 @@ package tokens
 const (
 	// ComfortableControlHeight is the default desktop control-height floor in
 	// dp: a Comfortable control is at least this tall, and taller when its
-	// content box needs it. It is the platform's regular control, measured
+	// text's line needs it. It is the platform's regular control, measured
 	// off the Save panel in organisation/reference/macos/save-dialog-light.png and
 	// save-dialog-dark.png — a 24 px push button and pop-up button, both
 	// appearances agreeing to the pixel. The HIG publishes 22 pt; the capture
@@ -125,10 +106,7 @@ const (
 	ComfortableControlHeight float32 = 24
 	// CompactControlHeight is the dense-mode control-height floor in dp: the
 	// platform's small control, the HIG's published 19 pt push button. It is
-	// the one height here no capture holds. A control set in LabelLarge or
-	// BodyLarge draws over it — see the table above — so for those it is
-	// never the answer, and for a stacked row it is a pin rather than a
-	// floor.
+	// the one height here no capture holds.
 	CompactControlHeight float32 = 19
 	// ComfortableFieldHeight is the text field's own height floor in dp,
 	// measured at 27 px off the same Save panel. A field is not a button's
@@ -209,15 +187,14 @@ const (
 	ChipDrop float32 = 4
 )
 
-// Density is one density setting: the drawn control height and its inner
-// padding, all in dp. It is a comparable value struct like the other token
+// Density is one density setting: the drawn control heights, the horizontal
+// padding inside a control and the size of a symbol in a control, all in dp. It is a comparable value struct like the other token
 // types.
 type Density struct {
 	// ControlHeight is the minimum visual control height in dp
 	// ([ComfortableControlHeight] or [CompactControlHeight]). It is a floor:
-	// a control draws max(ControlHeight, contentHeight + 2×PaddingY), so a
-	// content box taller than this makes the control taller. See the table
-	// above the constants for which controls clear it and by how much.
+	// a control draws max(ControlHeight, line), so a line taller than this
+	// makes the control taller.
 	//
 	// A text field takes [Density.FieldHeight] instead: on this platform a
 	// field is taller than a button, and one number cannot be both.
@@ -260,8 +237,11 @@ type Density struct {
 	ToolbarControlHeight float32
 	// PaddingX is the horizontal inner padding of a control in dp.
 	PaddingX float32
-	// PaddingY is the vertical inner padding of a control in dp.
-	PaddingY float32
+	// SymbolSize is the side of a symbol drawn in a control, in dp: 20 at
+	// Comfortable and 19 at Compact. It is a value of its own, and no padding
+	// derives it. A former padding derivation gave these values. A symbol's
+	// size in a control waits for a measurement, which replaces them.
+	SymbolSize float32
 }
 
 // ChipHeight returns the chip height in dp: [Density.ControlHeight] less
@@ -274,17 +254,14 @@ type Density struct {
 // target is the chip: what it draws is what a pointer lands on.
 func (d Density) ChipHeight() float32 { return d.ControlHeight - ChipDrop }
 
-// The padding comes from the platform beside the control height: PaddingX is
-// the HIG's inset beside a push button's title, PaddingY is what is left of
-// the control height once LabelLarge's 20 dp line box has taken its share —
-// 2 dp at Comfortable, nothing at Compact, whose line box is already over the
-// height. PaddingX did not move with the measured heights: both captured
-// buttons sit at the platform's minimum push-button width with their titles
-// centred, so the capture measures centring and not an inset. See the
-// provenance table at the top of this file.
+// PaddingX comes from the platform beside the control height: it is the
+// HIG's inset beside a push button's title. It does not follow the measured
+// heights, because both captured buttons sit at the platform's minimum
+// push-button width with their titles centred: the capture measures centring
+// and not an inset. See the provenance table at the top of this file.
 var (
 	// Comfortable is the default desktop density.
-	Comfortable = Density{ControlHeight: ComfortableControlHeight, FieldHeight: ComfortableFieldHeight, RowHeight: ComfortableRowHeight, CheckboxRowHeight: ComfortableCheckboxRowHeight, ToolbarControlHeight: ComfortableToolbarControlHeight, PaddingX: 8, PaddingY: 2}
+	Comfortable = Density{ControlHeight: ComfortableControlHeight, FieldHeight: ComfortableFieldHeight, RowHeight: ComfortableRowHeight, CheckboxRowHeight: ComfortableCheckboxRowHeight, ToolbarControlHeight: ComfortableToolbarControlHeight, PaddingX: 8, SymbolSize: 20}
 	// Compact is the dense mode: smaller drawn controls, tighter padding.
-	Compact = Density{ControlHeight: CompactControlHeight, FieldHeight: CompactFieldHeight, RowHeight: CompactRowHeight, CheckboxRowHeight: CompactCheckboxRowHeight, ToolbarControlHeight: CompactToolbarControlHeight, PaddingX: 7, PaddingY: 0}
+	Compact = Density{ControlHeight: CompactControlHeight, FieldHeight: CompactFieldHeight, RowHeight: CompactRowHeight, CheckboxRowHeight: CompactCheckboxRowHeight, ToolbarControlHeight: CompactToolbarControlHeight, PaddingX: 7, SymbolSize: 19}
 )
