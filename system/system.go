@@ -249,7 +249,7 @@ func WithA11ySource(src a11y.Source) Option {
 // WithTypography supplies the type roles the stream emits. The default is
 // tokens.EmojiTypography() — DefaultTypography with Noto Color Emoji
 // appended as fallback. A brand that names a code face uses this so
-// every emission wears it (and still applies WithEmoji). Goldens and
+// every emission applies it (and still applies WithEmoji). Goldens and
 // DeterministicShaper stay on DefaultTypography.
 func WithTypography(t tokens.Typography) Option {
 	return func(c *config) {

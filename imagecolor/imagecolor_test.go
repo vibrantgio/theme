@@ -376,7 +376,7 @@ func TestStrideHonoursTheBudgetAtEveryShape(t *testing.T) {
 
 // One hue at four depths, from a photograph of a lake sampled before this
 // gathering existed: the row it produced then was four blues and offered one
-// choice dressed as four.
+// choice four times.
 var (
 	skyDeep = rgb(0x1f, 0x65, 0xa1) // hue 249, chroma 0.118 — the most chromatic
 	skyMid  = rgb(0x39, 0x84, 0xbe) // hue 245, chroma 0.116

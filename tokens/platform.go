@@ -59,14 +59,14 @@
 //	Scrim            #000000 a0.20  #000000 a0.26  measured: the dim under a Save sheet in save-dialog-{light,dark}.png
 //	SidebarSearchFill  #e8e8e8      #2f3234        measured: the recess a search field is on a sidebar
 //	ToolbarControlFill #ffffff      #262626        measured: a bordered control in a frontmost window's toolbar
-//	ToolbarControlRim  #000000 a0.00 #404040       measured: the rim that control wears in a dark toolbar; none in light
+//	ToolbarControlRim  #000000 a0.00 #404040       measured: the rim that control has in a dark toolbar; none in light
 //	ToolbarSearchFill  #e8e8e8      #363636        measured: the recess a search field is in a toolbar
-//	ToolbarSearchRim   #000000 a0.00 #4d4d4d       measured: the rim that recess wears in a dark toolbar; none in light
+//	ToolbarSearchRim   #000000 a0.00 #4d4d4d       measured: the rim that recess has in a dark toolbar; none in light
 //	ToolbarLabel     #4d4d4d        #e9e9e9        measured: what a toolbar's own title and symbols are drawn in
 //	ToolbarControlSeam #f2f2f2      #3a3a3a        measured: the line dividing one bordered toolbar control into segments
 //	ToolbarControlShadow  #000000 a0.035  #000000 a0.024  measured: the drop shadow a bordered toolbar control casts, 23 px of reach sunk 9 light and 2 sunk 6 dark
 //	ToolbarCheckedOverlay #000000 a0.102  #ffffff a0.161  measured: the chosen segment of a segmented toolbar control, over the control's own fill
-//	PaneRim          #ffffff        #3a3a3a        measured: the 1 px rim the inset sidebar pane wears on every side
+//	PaneRim          #ffffff        #3a3a3a        measured: the 1 px rim the inset sidebar pane has on every side
 //	PaneShadow       #000000 a0.051 #000000 a0.051 measured: the shadow that pane casts, 24 px of reach with its rectangle sunk 9
 //	Seam             #e6e6e6        #000000        measured: the hairline between two flush regions, Mail's list seam
 //	StatusFooterSeam #d9d9d9        #000000        measured: the hairline at the top of a footer of status text, Finder's status bar seam
@@ -236,7 +236,7 @@ type PlatformColors struct {
 	SelectedControlText          color.NRGBA
 	AlternateSelectedControlText color.NRGBA
 
-	// The accent itself, and the ring a focused control wears.
+	// The accent itself, and the ring a focused control has.
 	ControlAccent          color.NRGBA
 	KeyboardFocusIndicator color.NRGBA
 
@@ -283,7 +283,7 @@ type PlatformColors struct {
 	// SelectedContentBackground. The pill follows the user's accent, so
 	// [PlatformColors.WithAccent] moves it; but the platform lifts it above
 	// the accent's own #007aff over the chrome material, and a content
-	// list's selected row wears a different colour again. So the lift is
+	// list's selected row is drawn in a different colour again. So the lift is
 	// recorded as the pixel in both appearances.
 	SidebarSelection color.NRGBA `appkit:"-"`
 
@@ -362,7 +362,7 @@ type PlatformColors struct {
 	// dark. A vector mark takes no stem darkening, so both readings are the
 	// drawn colour. No field of this set answers for black or white outright,
 	// so the symbol is recorded as a measured value of the sidebar, as the
-	// pill and the count are. On the pill it wears the pill's own foreground
+	// pill and the count are. On the pill it is drawn in the pill's own foreground
 	// instead. See reference/macos/controls.md, "What a sidebar row
 	// measures".
 	SidebarSymbol color.NRGBA `appkit:"-"`
@@ -557,13 +557,13 @@ type PlatformColors struct {
 	// not a control's own fill.
 	ToolbarControlFill color.NRGBA `appkit:"-"`
 
-	// ToolbarControlRim is the hairline a BORDERED TOOLBAR CONTROL wears
+	// ToolbarControlRim is the hairline a BORDERED TOOLBAR CONTROL has
 	// round its own edge: #404040 in the dark appearance and no colour at
 	// all in the light one, where the platform draws none. It is a value of
 	// its own beside [PlatformColors.ToolbarControlFill] because no alpha
 	// name lands it — the platform's separator over that fill falls five of
 	// 255 short — and apart from [PlatformColors.ToolbarSearchRim], which is
-	// what the toolbar's search recess wears: a different pixel over a
+	// what the toolbar's search recess has: a different pixel over a
 	// different fill.
 	//
 	// MEASURED, finder-window-untinted-dark.png, a frontmost window: the
@@ -571,7 +571,7 @@ type PlatformColors struct {
 	// read 64 at every column of its flat middle, and the columns at either
 	// end read 61-62 through the corner's antialiasing. It is lighter than
 	// both the fill and the #1e1e1e band — the highlight every bordered
-	// control in a dark toolbar band wears. separatorColor over that fill
+	// control in a dark toolbar band has. separatorColor over that fill
 	// gives #3b3b3b and over the band #323232, so neither name lands it.
 	//
 	// MEASURED, finder-window-light.png and finder-window-untinted-light.png:
@@ -611,12 +611,12 @@ type PlatformColors struct {
 	// Voice Memos, which is the one the Language names.
 	ToolbarSearchFill color.NRGBA `appkit:"-"`
 
-	// ToolbarSearchRim is the hairline the toolbar search recess wears round
+	// ToolbarSearchRim is the hairline the toolbar search recess has round
 	// its own edge: #4d4d4d in the dark appearance and no colour at all in
 	// the light one, where the platform draws none. It is a value of its own
 	// beside [PlatformColors.ToolbarSearchFill] because no alpha name lands
 	// it — the platform's separator over that fill falls three of 255 short
-	// — and apart from the rim a BORDERED toolbar control wears, which is a
+	// — and apart from the rim a BORDERED toolbar control has, which is a
 	// different pixel over a different fill.
 	//
 	// MEASURED, voicememos-window.png, the search field at the trailing end
@@ -626,7 +626,7 @@ type PlatformColors struct {
 	// and #4a4a4a at the control's own middle row. It runs the whole way
 	// round, so it is the control's own edge and not the band's seam, and it
 	// is lighter than both its #363636 fill and the #1e1e1e band — the
-	// highlight every bordered control in a dark toolbar band wears.
+	// highlight every bordered control in a dark toolbar band has.
 	// Separator over that fill gives #4a4a4a, three of 255 short of the
 	// pixel, which is why the name is carried here rather than flattened.
 	//

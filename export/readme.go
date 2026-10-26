@@ -148,9 +148,9 @@ func readmeMD(s Snapshot) string {
 		"Never invert the pair and never tint the system colour toward the\n" +
 		"surface. No boundary and no vertical padding, so its height is the\n" +
 		"role's line box; the side padding is `--space-2` and the corner is\n" +
-		"`--radius-base`, deliberately not the pill a chip wears. A badge is\n" +
+		"`--radius-base`, deliberately not the pill a chip has. A badge is\n" +
 		"read, not used: no interaction states.\n\n" +
-		"The form controls dress native elements — no script anywhere:\n" +
+		"The form control styles apply to native elements — no script anywhere:\n" +
 		"`.input` (text `<input>`, and `<select class=\"input select\">` inside a\n" +
 		"`.select-wrap` for the chevron), `.checkbox` and `.radio` on their\n" +
 		"native input types with `appearance: none`. They resolve exactly as\n" +
@@ -166,7 +166,7 @@ func readmeMD(s Snapshot) string {
 		"exception in this family and is a BUTTON rather than a field: `.select`\n" +
 		"takes the push button's fill at the control height, draws NO edge at\n" +
 		"all — its fill meets the surface directly, measured — sets its title\n" +
-		"11 px in from that fill's edge, and wears the platform's pop-up mark,\n" +
+		"11 px in from that fill's edge, and has the platform's pop-up mark,\n" +
 		"the 8 by 11 chevron pair masked out of `--platform-control-text` with\n" +
 		"its last column 9 px clear of the trailing edge. `.menu` is the surface\n" +
 		"it opens. The checkbox and the radio draw their 16 px symbol centred in\n" +
@@ -193,7 +193,7 @@ func readmeMD(s Snapshot) string {
 		"`--platform-selected-content-background`, as an underline on a link or a\n" +
 		"tab and as the row's own fill on a rail. `.pane` is the platform's\n" +
 		"sidebar as it actually stands: an inset rounded pane 8 px off the\n" +
-		"window's edges, cornered at 18, wearing `--platform-pane-rim` just\n" +
+		"window's edges, cornered at 18, drawn with `--platform-pane-rim` just\n" +
 		"inside its edge and casting `--platform-pane-shadow` onto what stands\n" +
 		"beside it — the rim and the shadow are the boundary, and no seam is\n" +
 		"drawn. The overlay family —\n" +

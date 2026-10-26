@@ -14,8 +14,8 @@ import (
 // nothing about that.
 
 // repeat is a palette entry listed n times — the shape a curated palette
-// arrives in, where one colour is worn by eight kinds of token and another
-// by one.
+// arrives in, where eight kinds of token are drawn in one colour and one
+// kind in another.
 func repeat(c stdcolor.NRGBA, n int) []stdcolor.NRGBA {
 	out := make([]stdcolor.NRGBA, n)
 	for i := range out {
@@ -62,7 +62,7 @@ func TestExtractPaletteRanksLikeTheImagePath(t *testing.T) {
 
 // TestExtractPaletteWeighsRepeats pins how a caller weights an entry: by
 // listing it more than once. One blue against one slightly less vivid orange
-// is the blue's answer; the same two with the orange worn twice is the
+// is the blue's answer; the same two with the orange listed twice is the
 // orange's, because share is the other half of what prominence measures.
 func TestExtractPaletteWeighsRepeats(t *testing.T) {
 	once := ExtractPalette([]stdcolor.NRGBA{orange, blue})

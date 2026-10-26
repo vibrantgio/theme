@@ -332,7 +332,7 @@ const (
 	CodeFaceJetBrains = "JetBrains Mono"
 )
 
-// IsCodeFace reports whether name is one of the two faces Code can wear.
+// IsCodeFace reports whether name is one of the two faces Code can be drawn in.
 // Empty is not a name: it is the file saying nothing, and the default stands.
 func IsCodeFace(name string) bool {
 	switch strings.TrimSpace(name) {
@@ -359,7 +359,7 @@ func CodeFace(name string) Typography {
 // WithCodeFace returns a copy of t whose Code role names the face. "JetBrains
 // Mono" appends that family's four faces; Roboto and Roboto Mono stay in the
 // collection. Empty, "Roboto Mono", and any unknown name leave Code on
-// Roboto Mono and add no faces. Applying a name that t already wears
+// Roboto Mono and add no faces. Applying the code face t already has
 // returns t, so DefaultTypography.WithCodeFace("") keeps the process-wide
 // shaper cache.
 func (t Typography) WithCodeFace(name string) Typography {
@@ -470,7 +470,7 @@ func jetbrainsEmojiTypography() Typography {
 // Add it with WithFaces where there is no system to fall back on.
 //
 // No color-emoji face either: Noto Color Emoji is 9.9 MB and no golden
-// contains emoji. The live stream wears it through [EmojiTypography];
+// contains emoji. The live stream applies it through [EmojiTypography];
 // goldens stay on this value.
 var DefaultTypography = Typography{
 	LabelLarge: TextStyle{Typeface: "Roboto", Weight: WeightMedium, Size: 14, LineHeight: 20},

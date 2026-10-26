@@ -53,7 +53,7 @@
 // That is [os.UserConfigDir], the same root theme/preferences resolves
 // against, because a chosen brand is config rather than data. The path is
 // per user and NOT per application: the point of keeping a brand is that
-// everything the person opens wears it, so the directory is the design
+// it is applied to everything the person opens, so the directory is the design
 // system's, and one file serves every application that asks.
 //
 // The colour is spelled the way theme/export's theme.json spells it —
@@ -72,7 +72,7 @@
 // styles exist, so an empty or unrecognised name is the reader's to fall
 // back on, and the fallback is whatever that reader's default style is.
 //
-// "mono" is the third: the typeface name fenced code wears. It sits beside
+// "mono" is the third: the name of the typeface fenced code is drawn in. It sits beside
 // "themeColour" and "style", not under a "fonts" object — that nesting is the
 // export tree's, and an exported theme.json dropped in as this file still
 // loads because unknown object keys are ignored. Empty, absent, or a name
@@ -174,7 +174,7 @@ type Brand struct {
 	// did.
 	Style StylePair
 
-	// Mono names the typeface fenced code wears. It is a sibling of ThemeColor
+	// Mono names the typeface fenced code is drawn in. It is a sibling of ThemeColor
 	// and Style, spelled under the file key "mono". Empty is Roboto Mono —
 	// nothing chosen, the default Code face. The one other name this
 	// package applies is "JetBrains Mono"; any other string is stored as
@@ -237,7 +237,7 @@ func (p StylePair) Chosen() bool { return p.Light != "" || p.Dark != "" }
 // parses.
 func (b Brand) Chosen() bool { return b.ThemeColor.A != 0 }
 
-// Typography returns the type roles the brand wears: CodeFace of Mono,
+// Typography returns the type roles the brand applies: CodeFace of Mono,
 // then WithEmoji, including when Mono is empty or unknown. A caller that
 // snapshots DefaultTypography
 // while the stream is about to emit EmojiTypography flashes tofu on the
@@ -259,7 +259,7 @@ func (b Brand) Typography() tokens.Typography {
 // no theme-colour option at all, so the stream carries the colour the
 // platform reports and keeps following it as it changes — the same stream
 // an application with no brand builds. A [system.WithTypography] option always
-// rides along so the stream wears the same value [Brand.Typography]
+// rides along so the stream applies the same value [Brand.Typography]
 // snapshots — CodeFace of Mono, then WithEmoji, including when Mono is
 // empty.
 func (b Brand) Options() []system.Option {

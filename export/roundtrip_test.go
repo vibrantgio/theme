@@ -476,7 +476,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		// The menu the pop-up trigger opens: the window background under the
 		// same floating shadow inside the platform's separator, its rows at
 		// the control height with the pill and the check the current one
-		// wears.
+		// has.
 		".menu {",
 		".menu-item {",
 		"padding: 0 16px 0 32px;",

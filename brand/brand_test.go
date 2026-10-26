@@ -322,8 +322,8 @@ func TestKeepingAgainReplacesTheBrand(t *testing.T) {
 }
 
 // TestThePathIsOneSharedFileUnderTheConfigDir: the path is per user and not
-// per application, because everything the person opens is meant to wear the
-// same brand.
+// per application, because the same brand is meant to be applied to
+// everything the person opens.
 func TestThePathIsOneSharedFileUnderTheConfigDir(t *testing.T) {
 	path, err := brand.Path()
 	if err != nil {
@@ -569,10 +569,10 @@ func TestAJunkMonoIsStoredAndIgnored(t *testing.T) {
 	}
 }
 
-// TestTheKeptMonoDressesTheStream is the adoption seam for the face:
+// TestTheKeptMonoIsAppliedToTheStream is the adoption seam for the face:
 // Options includes WithTypography so the stream emits Code in that face
 // with the emoji fallback on top.
-func TestTheKeptMonoDressesTheStream(t *testing.T) {
+func TestTheKeptMonoIsAppliedToTheStream(t *testing.T) {
 	path := file(t)
 	if err := brand.SaveTo(path, brand.Brand{ThemeColor: harbourRed, Mono: "JetBrains Mono"}); err != nil {
 		t.Fatalf("save: %v", err)
@@ -598,10 +598,10 @@ func TestTheKeptMonoDressesTheStream(t *testing.T) {
 	}
 }
 
-// TestTheFirstFrameWearsTheSameFaceTheStreamDoes: apps snapshot
+// TestTheFirstFrameIsDrawnInTheSameFaceAsTheStream: apps snapshot
 // Brand.Typography before the stream emits; that value and the emission
 // must be the same typography, or the first code block flashes Roboto Mono.
-func TestTheFirstFrameWearsTheSameFaceTheStreamDoes(t *testing.T) {
+func TestTheFirstFrameIsDrawnInTheSameFaceAsTheStream(t *testing.T) {
 	for _, name := range []string{"", "JetBrains Mono", "Roboto Mono", "Comic Sans"} {
 		t.Run(name, func(t *testing.T) {
 			path := file(t)
@@ -618,7 +618,7 @@ func TestTheFirstFrameWearsTheSameFaceTheStreamDoes(t *testing.T) {
 				t.Error("first frame and stream built two shapers for the same face")
 			}
 			if !hasEmojiFace(opening.Faces) || !hasEmojiFace(streamed.Faces) {
-				t.Error("first frame and stream must both wear Noto Color Emoji")
+				t.Error("first frame and stream must both be drawn in Noto Color Emoji")
 			}
 		})
 	}
@@ -741,7 +741,7 @@ func TestABrandCanFollowTheSystem(t *testing.T) {
 	} else if faces, err := typ.Typography.First(); err != nil {
 		t.Fatalf("typography: %v", err)
 	} else if faces.Code.Typeface != "JetBrains Mono" {
-		t.Errorf("the stream wears %q, want the kept face", faces.Code.Typeface)
+		t.Errorf("the stream's code face is %q, want the kept face", faces.Code.Typeface)
 	}
 }
 
