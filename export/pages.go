@@ -281,6 +281,12 @@ var platformPairs = []struct {
 	{"the unemphasized sidebar label on the unemphasized pill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarSelectionUnemphasizedLabel }, func(p tokens.PlatformColors) stdcolor.NRGBA {
 		return color.Flatten(p.SidebarSelectionUnemphasized, p.SidebarMaterial)
 	}},
+	// The content list selection is a coverage over the content, so the
+	// fill a row's label stands on is that coverage flattened onto the
+	// window.
+	{"label on the content list selection", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Label }, func(p tokens.PlatformColors) stdcolor.NRGBA {
+		return color.Flatten(p.ContentListSelection, p.WindowBackground)
+	}},
 	{"the sidebar count on the chrome material", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarCount }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarMaterial }},
 	{"the sidebar symbol on the chrome material", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarSymbol }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarMaterial }},
 	{"link on the window", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Link }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.WindowBackground }},

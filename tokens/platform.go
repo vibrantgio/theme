@@ -20,13 +20,13 @@
 // for every one of these names itself; these recorded sets are what the
 // other platforms — and every test — read.
 //
-// Twenty-eight fields are not AppKit's. The platform paints a sidebar, a
+// Twenty-nine fields are not AppKit's. The platform paints a sidebar, a
 // grouped box, a selected sidebar row, the count at a sidebar row's trailing
 // end, a search field's recess on a sidebar, a push
 // button, a hovered and a pressed
 // control, the shadow under a
 // floating pane, a text field's hairline, an overlay scrollbar's thumb, a
-// list's alternating row, the rim and the shadow of an inset sidebar pane,
+// list's alternating row, a content list's selected row, the rim and the shadow of an inset sidebar pane,
 // the several fills a toolbar band's controls take
 // and the dim a sheet lays over the window it
 // interrupts without giving any of them an NSColor name, so those fills
@@ -55,6 +55,7 @@
 //	FieldEdge        #f3f3f3        #282828        measured: the search field's hairline on content, tinting off
 //	ScrollbarThumb   #000000 a0.522 #ffffff a0.572 measured: the scrollbar's thumb over its track
 //	AlternatingContentBackground  #f4f5f5  #ffffff a0.05  measured: the second of alternatingContentBackgroundColors, and Finder's list stripes
+//	ContentListSelection  #000000 a0.078  #ffffff a0.153  measured: a content list's selected row, a coverage over the content's fill
 //	Scrim            #000000 a0.20  #000000 a0.26  measured: the dim under a Save sheet in save-dialog-{light,dark}.png
 //	SidebarSearchFill  #e8e8e8      #2f3234        measured: the recess a search field is on a sidebar
 //	ToolbarControlFill #ffffff      #262626        measured: a bordered control in a frontmost window's toolbar
@@ -472,6 +473,20 @@ type PlatformColors struct {
 	// the array's answer alone, and it is a coverage rather than a pixel.
 	AlternatingContentBackground color.NRGBA `appkit:"-"`
 
+	// ContentListSelection is the fill a content list lays under its
+	// selected row: black at 20/255 light and white at 39/255 dark, laid
+	// over the content's fill. Flattened onto WindowBackground it lands
+	// #ebebeb light and #404040 dark, the selected row in
+	// reminders-row-selected-{light,dark}.png. The fill is 32 px tall,
+	// spans the content column's full width and has square ends. The list
+	// held the keyboard when the capture was taken. See
+	// reference/macos/controls.md, "What a control inside a row measures".
+	//
+	// It is not UnemphasizedSelectedContentBackground, which reports
+	// #dcdcdc light and #464646 dark. It is black and white rather than a
+	// colour, so WithAccent leaves it where it stands.
+	ContentListSelection color.NRGBA `appkit:"-"`
+
 	// Scrim is the dim a dialog lays over everything it interrupts: black
 	// at 0.20 light and at 0.26 dark, measured off the window standing
 	// behind the sheet in save-dialog-light.png and save-dialog-dark.png.
@@ -862,6 +877,7 @@ var (
 		ScrollbarThumb:                    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x85},
 
 		AlternatingContentBackground: color.NRGBA{R: 0xf4, G: 0xf5, B: 0xf5, A: 0xff},
+		ContentListSelection:         color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x14},
 		Scrim:                        color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x33},
 		SidebarSearchFill:            color.NRGBA{R: 0xe8, G: 0xe8, B: 0xe8, A: 0xff},
 		ToolbarControlFill:           color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
@@ -948,6 +964,7 @@ var (
 		ScrollbarThumb:                    color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x92},
 
 		AlternatingContentBackground: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x0d},
+		ContentListSelection:         color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x27},
 		Scrim:                        color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x42},
 		SidebarSearchFill:            color.NRGBA{R: 0x2f, G: 0x32, B: 0x34, A: 0xff},
 		ToolbarControlFill:           color.NRGBA{R: 0x26, G: 0x26, B: 0x26, A: 0xff},

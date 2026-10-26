@@ -121,6 +121,7 @@ var platformNames = []struct {
 	{"field-edge", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.FieldEdge }},
 	{"scrollbar-thumb", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ScrollbarThumb }},
 	{"alternating-content-background", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.AlternatingContentBackground }},
+	{"content-list-selection", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ContentListSelection }},
 	{"scrim", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Scrim }},
 	{"sidebar-search-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarSearchFill }},
 	{"toolbar-control-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ToolbarControlFill }},
