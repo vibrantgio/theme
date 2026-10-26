@@ -53,7 +53,7 @@
 //	PressOverlay     #000000 a0.098 #ffffff a0.098 measured: a push button held down
 //	FloatingShadow   #000000 a0.075 #000000 a0.075 measured: the sidebar shadow, 24 px of reach centred on the surface
 //	FieldEdge        #f3f3f3        #282828        measured: the search field's hairline on content, tinting off
-//	ScrollbarThumb   #000000 a0.572 #ffffff a0.572 measured: the overlay scrollbar's thumb over its track
+//	ScrollbarThumb   #000000 a0.522 #ffffff a0.572 measured: the scrollbar's thumb over its track
 //	AlternatingContentBackground  #f4f5f5  #ffffff a0.05  measured: the second of alternatingContentBackgroundColors, and Finder's list stripes
 //	Scrim            #000000 a0.20  #000000 a0.26  measured: the dim under a Save sheet in save-dialog-{light,dark}.png
 //	SidebarSearchFill  #e8e8e8      #2f3234        measured: the recess a search field is on a sidebar
@@ -448,18 +448,15 @@ type PlatformColors struct {
 	// The Save panel's "Tags:" field reads #f3f3f3 light too.
 	FieldEdge color.NRGBA `appkit:"-"`
 
-	// ScrollbarThumb is the overlay scrollbar's thumb: Label's own black
-	// or white at the coverage the platform's thumb measures, laid over the
-	// track. The coverage is 0.572 — 146/255 — read off
-	// textedit-scrollbar.png: the thumb reads #9d9fa1 over a #1a2124 track,
-	// which white at that coverage reproduces within one 255th on every
-	// channel when flattened in encoded sRGB, the space the platform
-	// composites in. The 0.337 this row carried before was fitted through a
-	// blend in linear light. No stored capture
-	// holds a light-appearance overlay scrollbar (the platform hides the
-	// overlay bar unless it is being operated, and the light window
-	// captures caught none), so the light row carries the dark row's
-	// coverage under Label's black until one does.
+	// ScrollbarThumb is the scrollbar's thumb: Label's own black or white
+	// at the coverage the platform's thumb measures, laid over the track.
+	// The light coverage is 0.522, 133/255, read off
+	// finder-list-scrollbar-always-light.png: the standing thumb reads
+	// #7a7a7a over #ffffff. The dark coverage is 0.572, 146/255, read off
+	// textedit-scrollbar.png: the overlay thumb reads #9d9fa1 over a #1a2124
+	// track, and the standing thumb #9f9f9f over #1e1e1e. Each reading is
+	// reproduced within one 255th on every channel when flattened in encoded
+	// sRGB, the space the platform composites in.
 	ScrollbarThumb color.NRGBA `appkit:"-"`
 
 	// AlternatingContentBackground is the fill a list lays under every
@@ -862,7 +859,7 @@ var (
 		PressOverlay:                      color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x19},
 		FloatingShadow:                    DropShadow{Peak: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13}, Reach: 24},
 		FieldEdge:                         color.NRGBA{R: 0xf3, G: 0xf3, B: 0xf3, A: 0xff},
-		ScrollbarThumb:                    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x92},
+		ScrollbarThumb:                    color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x85},
 
 		AlternatingContentBackground: color.NRGBA{R: 0xf4, G: 0xf5, B: 0xf5, A: 0xff},
 		Scrim:                        color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x33},
