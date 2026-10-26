@@ -640,3 +640,43 @@ func TestLineWidthSpendsTheFallbackWeight(t *testing.T) {
 		t.Errorf("LineWidth at a Bold fallback = %d px, want the role's own weight %d", got, want)
 	}
 }
+
+// TestSectionHeadingRolesAreDrawnAtTheirRows draws each section heading role
+// and checks what reaches the page. The line box is the role's line height,
+// or the face's drawn height where Roboto draws the line taller. The face is
+// the role's weight, and the size is the role's size. Each width check
+// compares the drawn text against the same text with one field changed.
+func TestSectionHeadingRolesAreDrawnAtTheirRows(t *testing.T) {
+	typ := tokens.DefaultTypography
+	sh := pinned()
+	for _, r := range []struct {
+		name  string
+		style tokens.TextStyle
+	}{
+		{"SectionHeading", typ.SectionHeading},
+		{"SmallSectionHeading", typ.SmallSectionHeading},
+	} {
+		var ops op.Ops
+		g := gtx(&ops, 1<<20)
+		floor := r.style
+		floor.LineHeight = 1
+		want := max(int(r.style.LineHeight), measure(t, g, sh, floor, specimen))
+		if got := measure(t, g, sh, r.style, specimen); got != want {
+			t.Errorf("%s: drawn line box %d px, want %d: the role's line height %v or the face's drawn height", r.name, got, want, r.style.LineHeight)
+		}
+		if got := typeset.Font(r.style, font.Normal).Weight; got != tokens.FontWeight(r.style.Weight) {
+			t.Errorf("%s: drawn at font weight %v, want the role's %v", r.name, got, tokens.FontWeight(r.style.Weight))
+		}
+		drawn := typeset.LineWidth(g, sh, specimen, r.style, font.Normal)
+		regular := r.style
+		regular.Weight = tokens.WeightRegular
+		if w := typeset.LineWidth(g, sh, specimen, regular, font.Normal); drawn <= w {
+			t.Errorf("%s: drawn %d px wide, want wider than the regular face's %d", r.name, drawn, w)
+		}
+		larger := r.style
+		larger.Size++
+		if w := typeset.LineWidth(g, sh, specimen, larger, font.Normal); drawn >= w {
+			t.Errorf("%s: drawn %d px wide at %v dp, want narrower than %d px at %v dp", r.name, drawn, r.style.Size, w, larger.Size)
+		}
+	}
+}

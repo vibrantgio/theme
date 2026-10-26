@@ -172,8 +172,7 @@ func toolbarShadowVars(p tokens.PlatformColors) []cssVar {
 }
 
 // typeRoles orders the platform's type roles under their CSS names, then
-// the group title's and the sidebar section title's styles, then code: the
-// mono face at Body's metrics.
+// the two section headings, then code: the mono face at Body's metrics.
 var typeRoles = []struct {
 	name string
 	pick func(tokens.Typography) tokens.TextStyle
@@ -192,8 +191,8 @@ var typeRoles = []struct {
 	{"system-font", func(t tokens.Typography) tokens.TextStyle { return t.SystemFont }},
 	{"small-system-font", func(t tokens.Typography) tokens.TextStyle { return t.SmallSystemFont }},
 	{"empty-state-line", func(t tokens.Typography) tokens.TextStyle { return t.EmptyStateLine }},
-	{"label-large", func(t tokens.Typography) tokens.TextStyle { return t.LabelLarge }},
-	{"label-small", func(t tokens.Typography) tokens.TextStyle { return t.LabelSmall }},
+	{"section-heading", func(t tokens.Typography) tokens.TextStyle { return t.SectionHeading }},
+	{"small-section-heading", func(t tokens.Typography) tokens.TextStyle { return t.SmallSectionHeading }},
 	{"code", func(t tokens.Typography) tokens.TextStyle { return t.Code }},
 }
 
@@ -1097,12 +1096,12 @@ const componentClasses = `/* ---- Component classes ----
    of the group's stack — the platform's idiom for a section header over a
    bordered container, and not the fieldset legend cut into the top line,
    which has no native counterpart and does not survive a Lg corner. The
-   group title's style in the platform's secondary label: a group's own name is
-   set under the content it names. */
+   section heading role in the platform's secondary label: a group's own name
+   is set under the content it names. */
 .group-title {
-  font-size: var(--font-label-large-size);
-  line-height: var(--font-label-large-line-height);
-  font-weight: var(--font-label-large-weight);
+  font-size: var(--font-section-heading-size);
+  line-height: var(--font-section-heading-line-height);
+  font-weight: var(--font-section-heading-weight);
   letter-spacing: 0;
   color: var(--platform-secondary-label);
 }
@@ -1442,18 +1441,19 @@ const componentClasses = `/* ---- Component classes ----
 
    A sheet cannot place a baseline, so what is written is where the library's
    own placement puts the line box: 30 less the role's ascent inside its line
-   box, which for the shipped face at 11 dp on a 16 dp line is 18. */
+   box. Roboto at 11 dp draws its line 14 px tall, taller than the role's
+   13 dp, and its ascent in that line is 11, so the line box starts at 19. */
 .sidebar-section {
   box-sizing: border-box;
   flex: none;
   display: flex;
   align-items: flex-start;
   height: 42px;  /* SectionHeight */
-  padding: 18px 17px 0;  /* SectionBaseline less the role's ascent; SectionInset */
+  padding: 19px 17px 0;  /* SectionBaseline less the role's ascent; SectionInset */
   font-family: var(--font-family);
-  font-size: var(--font-label-small-size);
-  line-height: var(--font-label-small-line-height);
-  font-weight: var(--font-label-small-weight);
+  font-size: var(--font-small-section-heading-size);
+  line-height: var(--font-small-section-heading-line-height);
+  font-weight: var(--font-small-section-heading-weight);
   letter-spacing: 0;
   color: var(--platform-secondary-label);
   user-select: none;

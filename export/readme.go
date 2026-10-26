@@ -71,7 +71,7 @@ func readmeMD(s Snapshot) string {
 	for i, role := range typeRoles {
 		typeNames[i] = role.name
 	}
-	fmt.Fprintf(&b, "| `--font-<role>-*` | roles %s; each with `-size`, `-line-height`, `-weight` | px sizes, CSS numeric weights; the platform's roles, then the group title's and the sidebar section title's styles, then code, the mono style at body's metrics; a role adds no tracking |\n", strings.Join(typeNames, ", "))
+	fmt.Fprintf(&b, "| `--font-<role>-*` | roles %s; each with `-size`, `-line-height`, `-weight` | px sizes, CSS numeric weights; the platform's roles, then the two section headings, then code, the mono style at body's metrics; a role adds no tracking |\n", strings.Join(typeNames, ", "))
 	fmt.Fprintf(&b, "| `--density-<metric>` | %s | control metrics, px; `:root` is comfortable, `.compact` overrides every one of them |\n", joinTokens("--density-", densityNames()))
 	fmt.Fprintf(&b, "| `--space-<key>` | %s | the 4-pt spacing grid, px |\n", joinTokens("--space-", spaceNames()))
 	fmt.Fprintf(&b, "| `--radius-<key>` | %s | corner radii, Tailwind naming, px |\n", joinTokens("--radius-", radiusNames()))

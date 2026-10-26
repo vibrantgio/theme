@@ -34,8 +34,8 @@
 //
 //   - --font-family and --font-family-code (the code style's mono family),
 //     plus --font-<role>-size, -line-height and -weight per type role (the
-//     platform's roles large-title … empty-state-line, the group title's
-//     label-large, the sidebar section title's label-small, and code, the
+//     platform's roles large-title … empty-state-line, the two section
+//     headings section-heading and small-section-heading, and code, the
 //     mono style at body's metrics): sizes and line heights in px, weights
 //     as CSS numeric weights. A role adds no tracking.
 //   - --density-control-height, --density-padding-x, --density-symbol-size

@@ -17,9 +17,10 @@ import (
 // follow the OpenType/CSS convention where regular is 400, so a zero weight
 // always means "unset".
 const (
-	WeightRegular = 400
-	WeightMedium  = 500
-	WeightBold    = 700
+	WeightRegular  = 400
+	WeightMedium   = 500
+	WeightSemibold = 600
+	WeightBold     = 700
 )
 
 // FontWeight converts a CSS-style numeric weight, where regular is 400, to
@@ -117,11 +118,15 @@ func (s DocumentHeadingScale) Level(n int) TextStyle {
 
 // Typography holds one TextStyle per type role.
 type Typography struct {
-	// LabelLarge sets a group's title and LabelSmall a sidebar's section
-	// title, at the medium weight: no role sets text that opens a section
-	// in semibold.
-	LabelLarge TextStyle
-	LabelSmall TextStyle
+	// SectionHeading sets a group's title and SmallSectionHeading a
+	// sidebar's section heading. In the reference's table "The role each
+	// style sets", the grouped box's title row gives 13 pt semibold and the
+	// sidebar's section heading row gives 11 pt semibold. Their line heights
+	// are the System font row's and the Small system font row's, at the same
+	// sizes. Roboto has no semibold face: the shaper draws weight 600 in
+	// Roboto's bold face.
+	SectionHeading      TextStyle
+	SmallSectionHeading TextStyle
 
 	// The platform's text styles, with the platform's names, and the two
 	// system font sizes the platform sets outside its text styles. Each
@@ -473,8 +478,8 @@ func jetbrainsEmojiTypography() Typography {
 // contains emoji. The live stream applies it through [EmojiTypography];
 // goldens stay on this value.
 var DefaultTypography = Typography{
-	LabelLarge: TextStyle{Typeface: "Roboto", Weight: WeightMedium, Size: 14, LineHeight: 20},
-	LabelSmall: TextStyle{Typeface: "Roboto", Weight: WeightMedium, Size: 11, LineHeight: 16},
+	SectionHeading:      TextStyle{Typeface: "Roboto", Weight: WeightSemibold, Size: 13, LineHeight: 16},
+	SmallSectionHeading: TextStyle{Typeface: "Roboto", Weight: WeightSemibold, Size: 11, LineHeight: 13},
 
 	LargeTitle:  TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 26, LineHeight: 32},
 	Title1:      TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 22, LineHeight: 26},

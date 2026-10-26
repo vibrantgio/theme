@@ -98,6 +98,35 @@ func TestCodeAndDocumentHeadingsTakeTheirReferenceRows(t *testing.T) {
 	}
 }
 
+// TestSectionHeadingRolesTakeTheirReferenceRows pins the two section
+// heading roles to their rows in the reference's table "The role each style
+// sets" (reference/macos/controls.md): the grouped box's title at 13 pt and
+// the sidebar's section heading at 11 pt, both semibold, at the System font
+// row's and the Small system font row's line heights.
+func TestSectionHeadingRolesTakeTheirReferenceRows(t *testing.T) {
+	typ := tokens.DefaultTypography
+	rows := []struct {
+		name       string
+		style      tokens.TextStyle
+		size       float32
+		weight     int
+		lineHeight float32
+	}{
+		{"SectionHeading", typ.SectionHeading, 13, 600, typ.SystemFont.LineHeight},
+		{"SmallSectionHeading", typ.SmallSectionHeading, 11, 600, typ.SmallSystemFont.LineHeight},
+	}
+	for _, r := range rows {
+		s := r.style
+		if s.Size != r.size || s.Weight != r.weight || s.LineHeight != r.lineHeight {
+			t.Errorf("%s = size %v, weight %d, line height %v; want %v, %d, %v",
+				r.name, s.Size, s.Weight, s.LineHeight, r.size, r.weight, r.lineHeight)
+		}
+		if s.Typeface != typ.Body.Typeface {
+			t.Errorf("%s.Typeface = %q, want the type set's %q", r.name, s.Typeface, typ.Body.Typeface)
+		}
+	}
+}
+
 // TestPlatformTextStyleRolesTakeTheirRecordedRows pins each platform text
 // style role to the size, weight and line height that AppKit reports on
 // macOS 26.5.2. Each role takes the type set's typeface.
@@ -246,24 +275,28 @@ func TestDocumentHeadingScaleLevelAddressesTheIndex(t *testing.T) {
 // only the Roboto collection can answer, so glyphs coming back at all proves
 // Roboto resolved rather than proving this machine owns some other face.
 // Different total advances between regular, medium and bold then prove the
-// weights resolve to distinct faces rather than collapsing onto one.
+// weights resolve to distinct faces rather than collapsing onto one. Medium
+// is shaped for Caption2's recorded 510, which resolves to the medium face.
+// Roboto has no semibold face, so the section headings' 600 shapes to the
+// bold face's advance.
 func TestDefaultShaperResolvesRobotoEveryWeight(t *testing.T) {
 	typ := tokens.DefaultTypography
-	weights := map[int]bool{}
+	weights := map[int]bool{tokens.WeightMedium: true}
 	// Only the CSS weight steps: Caption2's recorded 510 shapes to the
 	// medium face and would make two weights share one advance.
 	for _, style := range textStyles(typ) {
 		switch style.Weight {
-		case tokens.WeightRegular, tokens.WeightMedium, tokens.WeightBold:
+		case tokens.WeightRegular, tokens.WeightMedium, tokens.WeightSemibold, tokens.WeightBold:
 			weights[style.Weight] = true
 		}
 	}
 	for _, style := range typ.DocumentHeadings {
 		weights[style.Weight] = true
 	}
-	if !weights[tokens.WeightRegular] || !weights[tokens.WeightMedium] || !weights[tokens.WeightBold] {
-		t.Fatalf("default typography names weights %v, want all of %d, %d and %d",
-			weights, tokens.WeightRegular, tokens.WeightMedium, tokens.WeightBold)
+	for _, w := range []int{tokens.WeightRegular, tokens.WeightSemibold, tokens.WeightBold} {
+		if !weights[w] {
+			t.Fatalf("default typography names weights %v, want %d among them", weights, w)
+		}
 	}
 
 	shaper := typ.DeterministicShaper()
@@ -296,6 +329,10 @@ func TestDefaultShaperResolvesRobotoEveryWeight(t *testing.T) {
 			t.Errorf("weights %d and %d shaped to identical advances (%v); "+
 				"one likely fell back to the other's face", p.a, p.b, advances[p.a])
 		}
+	}
+	if advances[tokens.WeightSemibold] != advances[tokens.WeightBold] {
+		t.Errorf("weight %d shaped to %v and bold to %v; Roboto has no semibold face, so 600 shapes to the bold face",
+			tokens.WeightSemibold, advances[tokens.WeightSemibold], advances[tokens.WeightBold])
 	}
 }
 
