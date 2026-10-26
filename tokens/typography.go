@@ -169,13 +169,12 @@ type Typography struct {
 	EmptyStateLine  TextStyle
 
 	// Code is the monospace style code renders in — markdown code blocks and
-	// inline code spans. It is not one of the fifteen roles: the 5×3
-	// grid has no code role, so Code sits outside the grid as a sixteenth
-	// style, carrying a body role's metrics on the mono face.
+	// inline code spans. The platform has no monospaced text style, so Code
+	// is a role of the library's own: Body's metrics on the mono face.
 	Code TextStyle
 
 	// DocumentHeadings is the heading scale for prose surfaces, derived from
-	// BodyLarge rather than borrowed from the Headline and Title roles; see
+	// Body rather than borrowed from the Headline and Title roles; see
 	// [DocumentHeadingScale] for what it is for and how its steps are
 	// proportioned. It sits outside that grid the way Code does, and it
 	// replaces none of the display roles: a screen's own headline keeps
@@ -487,12 +486,12 @@ func jetbrainsEmojiTypography() Typography {
 // the published sizes, line heights and tracking of the scale it was mapped
 // from.
 // Display, Headline, Title Large and Body roles are regular weight;
-// Title Medium/Small and the Label roles are medium. Code is BodyMedium's
+// Title Medium/Small and the Label roles are medium. Code is Body's
 // metrics on Roboto Mono, Roboto's companion mono face; Faces carries
 // the twelve Roboto faces first — the default family for text that names no
 // typeface — then the four Roboto Mono faces Code resolves against.
-// DocumentHeadings is the seventeenth style, six bold stops stepped off
-// BodyLarge for prose surfaces; see [DocumentHeadingScale].
+// DocumentHeadings is six bold stops stepped off Body for prose surfaces;
+// see [DocumentHeadingScale].
 //
 // Sixteen faces, and no symbol face: font/notosansmono is deliberately absent,
 // because Shaper's system fallback already covers what it carries and more.
@@ -539,20 +538,20 @@ var DefaultTypography = Typography{
 	SmallSystemFont: TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 11, LineHeight: 13},
 	EmptyStateLine:  TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 28, LineHeight: 33},
 
-	Code: TextStyle{Typeface: "Roboto Mono", Weight: WeightRegular, Size: 14, LineHeight: 20, Tracking: 0.25},
+	// Code and the document headings take their rows in the reference's
+	// table "The role each style sets". Code is Body's 13 pt on the mono
+	// face. The document scale is Body's 13 pt times 1.6, 1.4, 1.25, 1.125,
+	// 1.0 and 0.875, an even step of about 1.13. The line heights are the
+	// recorded ones.
+	Code: TextStyle{Typeface: "Roboto Mono", Weight: WeightRegular, Size: 13, LineHeight: 16},
 
-	// The document scale, in BodyLarge's 16 dp: 25.5, 22.5, 20, 18, 16, 14 —
-	// 1.6, 1.4, 1.25, 1.125, 1.0 and 0.875 times the body, an even step of
-	// about 1.13 all the way down. Line height loosens as the size falls,
-	// from a quarter over the largest stop to nearly half over the smallest,
-	// because large type needs proportionally less leading than small type.
 	DocumentHeadings: DocumentHeadingScale{
-		{Typeface: "Roboto", Weight: WeightBold, Size: 25.5, LineHeight: 32, Tracking: 0},
-		{Typeface: "Roboto", Weight: WeightBold, Size: 22.5, LineHeight: 28, Tracking: 0},
-		{Typeface: "Roboto", Weight: WeightBold, Size: 20, LineHeight: 26, Tracking: 0},
-		{Typeface: "Roboto", Weight: WeightBold, Size: 18, LineHeight: 24, Tracking: 0},
-		{Typeface: "Roboto", Weight: WeightBold, Size: 16, LineHeight: 22, Tracking: 0},
-		{Typeface: "Roboto", Weight: WeightBold, Size: 14, LineHeight: 20, Tracking: 0},
+		{Typeface: "Roboto", Weight: WeightBold, Size: 20.8, LineHeight: 24},
+		{Typeface: "Roboto", Weight: WeightBold, Size: 18.2, LineHeight: 22},
+		{Typeface: "Roboto", Weight: WeightBold, Size: 16.25, LineHeight: 19},
+		{Typeface: "Roboto", Weight: WeightBold, Size: 14.625, LineHeight: 17},
+		{Typeface: "Roboto", Weight: WeightBold, Size: 13, LineHeight: 16},
+		{Typeface: "Roboto", Weight: WeightBold, Size: 11.375, LineHeight: 13},
 	},
 
 	Faces: append(roboto.FontFaces(), robotomono.FontFaces()...),

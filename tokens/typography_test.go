@@ -45,17 +45,47 @@ func TestDefaultTypographyRolesComplete(t *testing.T) {
 	}
 }
 
-// TestDefaultTypographyCode pins the code style, which is not one of the fifteen roles —
-// the 5×3 grid has no code slot — but a sixteenth style outside the grid:
-// BodyMedium's metrics on the mono face (G-F0).
+// TestDefaultTypographyCode pins the code style: Body's metrics on the mono
+// face.
 func TestDefaultTypographyCode(t *testing.T) {
-	code, body := tokens.DefaultTypography.Code, tokens.DefaultTypography.BodyMedium
+	code, body := tokens.DefaultTypography.Code, tokens.DefaultTypography.Body
 	if code.Typeface != "Roboto Mono" {
 		t.Errorf("Code.Typeface = %q, want %q", code.Typeface, "Roboto Mono")
 	}
 	if code.Size != body.Size || code.LineHeight != body.LineHeight ||
 		code.Tracking != body.Tracking || code.Weight != body.Weight {
-		t.Errorf("Code metrics = %+v, want BodyMedium's %+v on the mono face", code, body)
+		t.Errorf("Code metrics = %+v, want Body's %+v on the mono face", code, body)
+	}
+}
+
+// TestCodeAndDocumentHeadingsTakeTheirReferenceRows pins Code and each
+// document heading to its row in the reference's table "The role each
+// style sets" (reference/macos/controls.md). A role adds no tracking.
+func TestCodeAndDocumentHeadingsTakeTheirReferenceRows(t *testing.T) {
+	typ := tokens.DefaultTypography
+	rows := []struct {
+		name       string
+		got        tokens.TextStyle
+		typeface   string
+		size       float32
+		weight     int
+		lineHeight float32
+	}{
+		{"Code", typ.Code, "Roboto Mono", 13, 400, 16},
+		{"Document heading 1", typ.DocumentHeadings.Level(1), "Roboto", 20.8, 700, 24},
+		{"Document heading 2", typ.DocumentHeadings.Level(2), "Roboto", 18.2, 700, 22},
+		{"Document heading 3", typ.DocumentHeadings.Level(3), "Roboto", 16.25, 700, 19},
+		{"Document heading 4", typ.DocumentHeadings.Level(4), "Roboto", 14.625, 700, 17},
+		{"Document heading 5", typ.DocumentHeadings.Level(5), "Roboto", 13, 700, 16},
+		{"Document heading 6", typ.DocumentHeadings.Level(6), "Roboto", 11.375, 700, 13},
+	}
+	for _, r := range rows {
+		g := r.got
+		if g.Typeface != r.typeface || g.Size != r.size || g.Weight != r.weight ||
+			g.LineHeight != r.lineHeight || g.Tracking != 0 {
+			t.Errorf("%s = %+v, want %s %g/%d/%g with no tracking",
+				r.name, g, r.typeface, r.size, r.weight, r.lineHeight)
+		}
 	}
 }
 
@@ -124,10 +154,10 @@ func TestDocumentHeadingScaleIsComplete(t *testing.T) {
 }
 
 // TestDocumentHeadingScaleProportions pins the scale to the body role it is
-// stepped off: level 1 at 1.6 times BodyLarge, level 2 at 1.4, level 5 at the
+// stepped off: level 1 at 1.6 times Body, level 2 at 1.4, level 5 at the
 // reading size itself and level 6 just under it.
 func TestDocumentHeadingScaleProportions(t *testing.T) {
-	body := tokens.DefaultTypography.BodyLarge.Size
+	body := tokens.DefaultTypography.Body.Size
 	want := []struct {
 		level int
 		ratio float32
@@ -668,10 +698,10 @@ func TestCodeFaceAppliesJetBrainsMono(t *testing.T) {
 	if got.Code.Typeface != "JetBrains Mono" {
 		t.Errorf("Code.Typeface = %q, want %q", got.Code.Typeface, "JetBrains Mono")
 	}
-	code, body := got.Code, def.BodyMedium
+	code, body := got.Code, def.Body
 	if code.Size != body.Size || code.LineHeight != body.LineHeight ||
 		code.Tracking != body.Tracking || code.Weight != body.Weight {
-		t.Errorf("Code metrics = %+v, want BodyMedium's %+v on the new face", code, body)
+		t.Errorf("Code metrics = %+v, want Body's %+v on the new face", code, body)
 	}
 	if len(got.Faces) != len(def.Faces)+4 {
 		t.Fatalf("Faces grew to %d, want %d (default plus four JetBrains)", len(got.Faces), len(def.Faces)+4)
