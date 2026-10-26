@@ -16,8 +16,12 @@ package tokens
 //	------                      -----   ----------
 //	Comfortable control height  24 dp   MEASURED: the regular push button and pop-up button in save-dialog-light.png and save-dialog-dark.png, both appearances agreeing to the pixel; the HIG publishes 22 pt, superseded
 //	Compact control height      19 dp   PUBLISHED: the HIG's small push button — no small control is captured yet
-//	Comfortable field height    27 dp   MEASURED: the text field in the same pair; the HIG publishes 22 pt, superseded
-//	Compact field height        21 dp   DERIVED: 27 × 19/24 = 21.4, rounded — the platform's field-to-control ratio applied to the small control, until a small field is captured
+//	Comfortable text field      27 dp   MEASURED: the text field in the same pair, y 243–269; the HIG publishes 22 pt, superseded
+//	Comfortable search field    26 dp   MEASURED: the search field on content in systemsettings-add-input-source-search-{light,dark}.png, y 347–372
+//	Comfortable sidebar search  28 dp   MEASURED: the recess at the top of the sidebar in system-settings-grouped-box-{light,dark}.png, y 61–88
+//	Compact text field          21 dp   DERIVED: 27 × 19/24 = 21.4, rounded — the platform's field-to-control ratio applied to the small control, until a small field is captured
+//	Compact search field        21 dp   DERIVED: 26 × 19/24 = 20.6, rounded, the same ratio
+//	Compact sidebar search      22 dp   DERIVED: 28 × 19/24 = 22.2, rounded, the same ratio
 //	Comfortable PaddingX         8 dp   PUBLISHED: the HIG's horizontal inset beside a regular push button's title — the captured buttons both sit at the platform's 74 px minimum width with their titles centred, so what they measure is centring, not an inset
 //	Compact PaddingX             7 dp   DERIVED: 8 × 19/22, rounded — the published small-to-regular ratio, both operands published, since neither the inset nor the small control is captured
 //	Comfortable SymbolSize      20 dp   CARRIED: the value a former padding derivation gave; no capture measures a symbol in a control yet
@@ -34,8 +38,8 @@ package tokens
 // appearances, holds the regular push button, pop-up button, text field and
 // checkbox this scale is named after, and every Comfortable number above is
 // read off its pixels. No capture holds a control at the platform's small
-// size, so Compact's height is still the published 19 and its field height
-// is derived from the measured ratio; ADR-019 carries that gap row. The
+// size, so Compact's height is still the published 19 and its field heights
+// are derived from the measured ratio; ADR-019 carries that gap row. The
 // stored windows measure Finder's info-pane text field at 33 px — a different
 // control in a different place, recorded beside these and correcting nothing
 // here. Their unified toolbars measure their controls at 36 px, and that one
@@ -47,15 +51,18 @@ package tokens
 //
 //	height = max(floor, line)
 //
-// where the floor is [Density.ControlHeight] for a control and
-// [Density.FieldHeight] for a text field, and line is the text style's line
+// where the floor is [Density.ControlHeight] for a control and a field
+// height for a field ([Density.TextFieldHeight], [Density.SearchFieldHeight],
+// [Density.SidebarSearchFieldHeight]), and line is the text style's line
 // height (see [TextStyle.LineHeight] and theme/typeset). The control centres
 // the line in that height. The padding inside a control is what the height
 // leaves around the line. A control never adds padding to the line to make
 // its height. Typography does not move with density.
 //
-// A Comfortable text field (27) is taller than a Comfortable button (24)
-// because the platform draws it taller. Both heights are measured.
+// A field's height is measured per control and per variant: a text field in
+// a form (27), a search field on the content (26) and a search field in a
+// sidebar (28) are three readings, each taller than a Comfortable button (24).
+// A field in a toolbar is [Density.ToolbarControlHeight].
 //
 // A symbol in a control has its own size, [Density.SymbolSize]. No padding
 // derives it.
@@ -108,16 +115,33 @@ const (
 	// platform's small control, the HIG's published 19 pt push button. It is
 	// the one height here no capture holds.
 	CompactControlHeight float32 = 19
-	// ComfortableFieldHeight is the text field's own height floor in dp,
-	// measured at 27 px off the same Save panel. A field is not a button's
-	// height on this platform and does not take one: the HIG publishes 22 pt
-	// for both, and the capture draws 27 against 24.
-	ComfortableFieldHeight float32 = 27
-	// CompactFieldHeight is the dense-mode text field's height floor in dp,
-	// derived at 27 × 19/24 = 21.4, rounded: the platform's measured
-	// field-to-control ratio applied to the small control, since no capture
-	// holds a small field. It is the number a capture of one replaces.
-	CompactFieldHeight float32 = 21
+	// ComfortableTextFieldHeight is a text field's height floor in a form, in
+	// dp. MEASURED: the Save panel's "Tags:" field, 27 px, y 243–269, edge
+	// rows included, in save-dialog-{light,dark}.png. The HIG publishes
+	// 22 pt for a field and a button alike; the capture draws 27 against 24.
+	ComfortableTextFieldHeight float32 = 27
+	// ComfortableSearchFieldHeight is a search field's height floor on the
+	// content, in dp. MEASURED: the search field on System Settings' "add an
+	// input source" sheet, 26 px, y 347–372, edge rows included, in
+	// systemsettings-add-input-source-search-{light,dark}.png.
+	ComfortableSearchFieldHeight float32 = 26
+	// ComfortableSidebarSearchFieldHeight is a search field's height floor
+	// in a sidebar, in dp. MEASURED: the recess at the top of System
+	// Settings' sidebar, 28 px, y 61–88, which draws no edge, in
+	// system-settings-grouped-box-{light,dark}.png.
+	ComfortableSidebarSearchFieldHeight float32 = 28
+	// CompactTextFieldHeight is the dense-mode text field's height floor in
+	// dp. DERIVED: 27 × 19/24 = 21.4, rounded, the measured field-to-control
+	// ratio applied to the small control. No capture holds a small field.
+	CompactTextFieldHeight float32 = 21
+	// CompactSearchFieldHeight is the dense-mode search field's height floor
+	// on the content in dp. DERIVED: 26 × 19/24 = 20.6, rounded, as
+	// [CompactTextFieldHeight] is derived.
+	CompactSearchFieldHeight float32 = 21
+	// CompactSidebarSearchFieldHeight is the dense-mode search field's
+	// height floor in a sidebar in dp. DERIVED: 28 × 19/24 = 22.2, rounded,
+	// as [CompactTextFieldHeight] is derived.
+	CompactSidebarSearchFieldHeight float32 = 22
 	// ComfortableRowHeight is the height of a stacked row in dp — a list
 	// row, a table row, a header cell — and a pin rather
 	// than a floor: the row is drawn exactly this tall. It is the
@@ -143,7 +167,7 @@ const (
 	// CompactCheckboxRowHeight is the dense-mode checkbox row in dp, derived
 	// at 22 × 19/24 = 17.4, rounded: the platform's regular-to-small control
 	// ratio applied to the measured row, the same derivation
-	// [CompactFieldHeight] takes, since no capture holds a small checkbox.
+	// [CompactTextFieldHeight] takes, since no capture holds a small checkbox.
 	CompactCheckboxRowHeight float32 = 17
 	// ComfortableToolbarControlHeight is the height of a bordered control
 	// standing in a toolbar band, in dp: a search field, a capsule button, a
@@ -196,16 +220,22 @@ type Density struct {
 	// a control draws max(ControlHeight, line), so a line taller than this
 	// makes the control taller.
 	//
-	// A text field takes [Density.FieldHeight] instead: on this platform a
-	// field is taller than a button, and one number cannot be both.
+	// A field takes its own field height instead: on this platform a field
+	// is taller than a button, and one number cannot be both.
 	ControlHeight float32
-	// FieldHeight is the minimum visual height of a text field in dp
-	// ([ComfortableFieldHeight] or [CompactFieldHeight]), a floor in the same
-	// sense as ControlHeight. It is separate because the platform draws it
-	// separately — 27 px against the push button's 24 in the stored capture —
-	// so a field that took the control height would be 3 dp short of the
-	// platform at Comfortable.
-	FieldHeight float32
+	// TextFieldHeight is the minimum visual height of a text field in dp
+	// ([ComfortableTextFieldHeight] or [CompactTextFieldHeight]), a floor in
+	// the same sense as ControlHeight. A text field takes it wherever it
+	// stands outside a toolbar.
+	TextFieldHeight float32
+	// SearchFieldHeight is the minimum visual height of a search field on
+	// the content in dp ([ComfortableSearchFieldHeight] or
+	// [CompactSearchFieldHeight]): the form variant.
+	SearchFieldHeight float32
+	// SidebarSearchFieldHeight is the minimum visual height of a search
+	// field in a sidebar in dp ([ComfortableSidebarSearchFieldHeight] or
+	// [CompactSidebarSearchFieldHeight]): the chrome variant's recess.
+	SidebarSearchFieldHeight float32
 	// RowHeight is the height of a stacked row in dp
 	// ([ComfortableRowHeight] or [CompactRowHeight]) — a list row, a table
 	// row, a header cell. A chrome rail's row is patterns/sidebar's own
@@ -232,8 +262,9 @@ type Density struct {
 	// control that took the control height there would read as a dialog's
 	// control standing in a toolbar.
 	//
-	// A recess is not one of these. The search field's chrome variant is the
-	// platform's flat recess and takes FieldHeight, not this.
+	// A field in a toolbar takes this height too: the search field's chrome
+	// variant in a toolbar band measures 36 px, as every bordered control
+	// there does. In a sidebar the same variant takes SidebarSearchFieldHeight.
 	ToolbarControlHeight float32
 	// PaddingX is the horizontal inner padding of a control in dp.
 	PaddingX float32
@@ -261,7 +292,7 @@ func (d Density) ChipHeight() float32 { return d.ControlHeight - ChipDrop }
 // and not an inset. See the provenance table at the top of this file.
 var (
 	// Comfortable is the default desktop density.
-	Comfortable = Density{ControlHeight: ComfortableControlHeight, FieldHeight: ComfortableFieldHeight, RowHeight: ComfortableRowHeight, CheckboxRowHeight: ComfortableCheckboxRowHeight, ToolbarControlHeight: ComfortableToolbarControlHeight, PaddingX: 8, SymbolSize: 20}
+	Comfortable = Density{ControlHeight: ComfortableControlHeight, TextFieldHeight: ComfortableTextFieldHeight, SearchFieldHeight: ComfortableSearchFieldHeight, SidebarSearchFieldHeight: ComfortableSidebarSearchFieldHeight, RowHeight: ComfortableRowHeight, CheckboxRowHeight: ComfortableCheckboxRowHeight, ToolbarControlHeight: ComfortableToolbarControlHeight, PaddingX: 8, SymbolSize: 20}
 	// Compact is the dense mode: smaller drawn controls, tighter padding.
-	Compact = Density{ControlHeight: CompactControlHeight, FieldHeight: CompactFieldHeight, RowHeight: CompactRowHeight, CheckboxRowHeight: CompactCheckboxRowHeight, ToolbarControlHeight: CompactToolbarControlHeight, PaddingX: 7, SymbolSize: 19}
+	Compact = Density{ControlHeight: CompactControlHeight, TextFieldHeight: CompactTextFieldHeight, SearchFieldHeight: CompactSearchFieldHeight, SidebarSearchFieldHeight: CompactSidebarSearchFieldHeight, RowHeight: CompactRowHeight, CheckboxRowHeight: CompactCheckboxRowHeight, ToolbarControlHeight: CompactToolbarControlHeight, PaddingX: 7, SymbolSize: 19}
 )

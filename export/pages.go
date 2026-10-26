@@ -404,7 +404,7 @@ const layoutPageCSS = `.space-row {
   font-weight: var(--font-system-font-weight);
 }
 .field-bar {
-  height: var(--density-field-height);
+  height: var(--density-text-field-height);
   padding: 0 var(--density-padding-x);
   display: inline-flex;
   align-items: center;
@@ -413,6 +413,25 @@ const layoutPageCSS = `.space-row {
   border: thin solid var(--platform-field-edge);
   border-radius: var(--radius-md);
   font-size: var(--font-system-font-size);
+}
+.search-bar, .sidebar-search-bar {
+  padding: 0 var(--density-padding-x);
+  margin-left: var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  color: var(--platform-placeholder-text);
+  font-size: var(--font-system-font-size);
+}
+.search-bar {
+  height: var(--density-search-field-height);
+  background: var(--platform-text-background);
+  border: thin solid var(--platform-field-edge);
+  border-radius: calc(var(--density-search-field-height) / 2);
+}
+.sidebar-search-bar {
+  height: var(--density-sidebar-search-field-height);
+  background: var(--platform-sidebar-search-fill);
+  border-radius: calc(var(--density-sidebar-search-field-height) / 2);
 }
 .row-bar {
   height: var(--density-row-height);
@@ -498,9 +517,9 @@ func layoutHTML(s Snapshot) string {
 		b.WriteString("<div class=\"control-row\">\n<span class=\"control-bar\">Control</span>\n<span class=\"chip-bar\">Chip</span>\n</div>\n")
 		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-control-height</code> &middot; %s &middot; <code>--density-chip-height</code> &middot; %s &mdash; each control's own pointer target</p>\n",
 			px(setting.d.ControlHeight), px(setting.d.ChipHeight()))
-		b.WriteString("<div><span class=\"field-bar\">Text field</span></div>\n")
-		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-field-height</code> &middot; %s &mdash; the platform draws a field taller than a button</p>\n",
-			px(setting.d.FieldHeight))
+		b.WriteString("<div><span class=\"field-bar\">Text field</span><span class=\"search-bar\">Search field</span><span class=\"sidebar-search-bar\">Sidebar search field</span></div>\n")
+		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-text-field-height</code> &middot; %s &middot; <code>--density-search-field-height</code> &middot; %s &middot; <code>--density-sidebar-search-field-height</code> &middot; %s &mdash; each field's own measured height, taller than a button</p>\n",
+			px(setting.d.TextFieldHeight), px(setting.d.SearchFieldHeight), px(setting.d.SidebarSearchFieldHeight))
 		b.WriteString("<div class=\"row-bar\">Stacked row</div>\n")
 		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-row-height</code> &middot; %s &mdash; a pin, not a floor: rows tile</p>\n",
 			px(setting.d.RowHeight))

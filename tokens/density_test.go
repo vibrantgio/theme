@@ -46,35 +46,51 @@ func TestDensityPicksMatchThePlatformScale(t *testing.T) {
 	}
 }
 
-// TestFieldHeightIsItsOwnMeasurement pins the text field's height to the
-// platform's own reading of it. The Save panel measures the field at 27 px
-// against the push button's 24, so a field that took the control height
-// would be 3 dp short of the platform; Compact's 21 is that measured ratio
-// applied to the uncaptured small control, and is what a capture of one
-// replaces.
-func TestFieldHeightIsItsOwnMeasurement(t *testing.T) {
-	const (
-		measuredField float32 = 27 // MEASURED: save-dialog-{light,dark}.png, the "Tags:" field
-		derivedSmall  float32 = 21 // DERIVED: 27 × 19/24 = 21.4, rounded
-	)
-	if ComfortableFieldHeight != measuredField {
-		t.Errorf("ComfortableFieldHeight = %v, want %v (the platform's measured text field)",
-			ComfortableFieldHeight, measuredField)
-	}
-	if CompactFieldHeight != derivedSmall {
-		t.Errorf("CompactFieldHeight = %v, want %v (27 × 19/24, rounded)",
-			CompactFieldHeight, derivedSmall)
-	}
-	if got, want := float32(math.Round(float64(ComfortableFieldHeight*CompactControlHeight/ComfortableControlHeight))), CompactFieldHeight; got != want {
-		t.Errorf("the Compact field height is %v, but the platform's ratio gives %v: the derivation in density.go is stale", want, got)
-	}
-	for name, d := range map[string]Density{
-		"Comfortable": Comfortable,
-		"Compact":     Compact,
+// TestFieldHeightsAreTheirMeasuredRows pins each field's Comfortable height
+// to its row in organisation/reference/macos/controls.md. A field's height is
+// measured per control and per variant, so each one is its own reading.
+func TestFieldHeightsAreTheirMeasuredRows(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		got  float32
+		row  float32
+		from string
+	}{
+		{"text field in a form", Comfortable.TextFieldHeight, 27, `save-dialog-{light,dark}.png, the "Tags:" field, y 243–269`},
+		{"search field on the content", Comfortable.SearchFieldHeight, 26, "systemsettings-add-input-source-search-{light,dark}.png, y 347–372"},
+		{"search field in a sidebar", Comfortable.SidebarSearchFieldHeight, 28, "system-settings-grouped-box-{light,dark}.png, y 61–88"},
 	} {
-		if d.FieldHeight <= d.ControlHeight {
-			t.Errorf("%s.FieldHeight = %v, not above ControlHeight %v: the platform draws a field taller than a button, which is why this is a second number",
-				name, d.FieldHeight, d.ControlHeight)
+		if tc.got != tc.row {
+			t.Errorf("Comfortable %s = %v dp, want its measured row %v (%s)", tc.name, tc.got, tc.row, tc.from)
+		}
+	}
+}
+
+// TestCompactFieldHeightsAreDerived pins each Compact field height to the
+// derivation the reference states: the Comfortable reading times the small
+// control's 19 over the regular control's 24, rounded. No capture holds a
+// small field.
+func TestCompactFieldHeightsAreDerived(t *testing.T) {
+	derive := func(comfortable float32) float32 {
+		return float32(math.Round(float64(comfortable * CompactControlHeight / ComfortableControlHeight)))
+	}
+	for _, tc := range []struct {
+		name             string
+		got, comfortable float32
+	}{
+		{"text field", Compact.TextFieldHeight, Comfortable.TextFieldHeight},
+		{"search field", Compact.SearchFieldHeight, Comfortable.SearchFieldHeight},
+		{"sidebar search field", Compact.SidebarSearchFieldHeight, Comfortable.SidebarSearchFieldHeight},
+	} {
+		if want := derive(tc.comfortable); tc.got != want {
+			t.Errorf("Compact %s = %v dp, want %v (%v × 19/24, rounded)", tc.name, tc.got, want, tc.comfortable)
+		}
+	}
+	for name, d := range map[string]Density{"Comfortable": Comfortable, "Compact": Compact} {
+		for field, h := range map[string]float32{"TextFieldHeight": d.TextFieldHeight, "SearchFieldHeight": d.SearchFieldHeight, "SidebarSearchFieldHeight": d.SidebarSearchFieldHeight} {
+			if h <= d.ControlHeight {
+				t.Errorf("%s.%s = %v, not above ControlHeight %v: the platform draws a field taller than a button", name, field, h, d.ControlHeight)
+			}
 		}
 	}
 }
@@ -107,8 +123,10 @@ func TestToolbarControlIsItsOwnMeasurement(t *testing.T) {
 			t.Errorf("%s.ToolbarControlHeight = %v, not above ControlHeight %v: the platform draws a toolbar control taller than a dialog's, which is why this is a second number",
 				name, d.ToolbarControlHeight, d.ControlHeight)
 		}
-		if d.ToolbarControlHeight <= d.FieldHeight {
-			t.Errorf("%s.ToolbarControlHeight = %v, not above FieldHeight %v", name, d.ToolbarControlHeight, d.FieldHeight)
+		for field, h := range map[string]float32{"TextFieldHeight": d.TextFieldHeight, "SearchFieldHeight": d.SearchFieldHeight, "SidebarSearchFieldHeight": d.SidebarSearchFieldHeight} {
+			if d.ToolbarControlHeight <= h {
+				t.Errorf("%s.ToolbarControlHeight = %v, not above %s %v", name, d.ToolbarControlHeight, field, h)
+			}
 		}
 	}
 }
@@ -147,15 +165,14 @@ func TestDensitySettingsMatchTable(t *testing.T) {
 	if Compact.ControlHeight != CompactControlHeight {
 		t.Errorf("Compact.ControlHeight = %v, want %v", Compact.ControlHeight, CompactControlHeight)
 	}
-	if Comfortable.FieldHeight != ComfortableFieldHeight {
-		t.Errorf("Comfortable.FieldHeight = %v, want %v", Comfortable.FieldHeight, ComfortableFieldHeight)
+	if Comfortable.TextFieldHeight != ComfortableTextFieldHeight || Comfortable.SearchFieldHeight != ComfortableSearchFieldHeight || Comfortable.SidebarSearchFieldHeight != ComfortableSidebarSearchFieldHeight {
+		t.Errorf("Comfortable field heights = (%v, %v, %v), want the Comfortable consts", Comfortable.TextFieldHeight, Comfortable.SearchFieldHeight, Comfortable.SidebarSearchFieldHeight)
 	}
-	if Compact.FieldHeight != CompactFieldHeight {
-		t.Errorf("Compact.FieldHeight = %v, want %v", Compact.FieldHeight, CompactFieldHeight)
+	if Compact.TextFieldHeight != CompactTextFieldHeight || Compact.SearchFieldHeight != CompactSearchFieldHeight || Compact.SidebarSearchFieldHeight != CompactSidebarSearchFieldHeight {
+		t.Errorf("Compact field heights = (%v, %v, %v), want the Compact consts", Compact.TextFieldHeight, Compact.SearchFieldHeight, Compact.SidebarSearchFieldHeight)
 	}
-	if Compact.ControlHeight >= Comfortable.ControlHeight || Compact.FieldHeight >= Comfortable.FieldHeight {
-		t.Errorf("Compact heights (%v, %v) must be < Comfortable heights (%v, %v)",
-			Compact.ControlHeight, Compact.FieldHeight, Comfortable.ControlHeight, Comfortable.FieldHeight)
+	if Compact.ControlHeight >= Comfortable.ControlHeight || Compact.TextFieldHeight >= Comfortable.TextFieldHeight || Compact.SearchFieldHeight >= Comfortable.SearchFieldHeight || Compact.SidebarSearchFieldHeight >= Comfortable.SidebarSearchFieldHeight {
+		t.Errorf("Compact heights must be < Comfortable heights: %+v against %+v", Compact, Comfortable)
 	}
 	if Compact.PaddingX >= Comfortable.PaddingX {
 		t.Errorf("Compact PaddingX %v must be < Comfortable PaddingX %v", Compact.PaddingX, Comfortable.PaddingX)
@@ -206,8 +223,12 @@ func TestControlHeightsAreMeasured(t *testing.T) {
 	}{
 		{"Comfortable control", Comfortable.ControlHeight, 24},
 		{"Compact control", Compact.ControlHeight, 19},
-		{"Comfortable field", Comfortable.FieldHeight, 27},
-		{"Compact field", Compact.FieldHeight, 21},
+		{"Comfortable text field", Comfortable.TextFieldHeight, 27},
+		{"Compact text field", Compact.TextFieldHeight, 21},
+		{"Comfortable search field", Comfortable.SearchFieldHeight, 26},
+		{"Compact search field", Compact.SearchFieldHeight, 21},
+		{"Comfortable sidebar search field", Comfortable.SidebarSearchFieldHeight, 28},
+		{"Compact sidebar search field", Compact.SidebarSearchFieldHeight, 22},
 	} {
 		if tc.got != tc.want {
 			t.Errorf("%s height = %v dp, want %v", tc.name, tc.got, tc.want)

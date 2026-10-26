@@ -388,7 +388,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"border: 1px solid var(--platform-field-edge);",
 		"background: var(--platform-text-background);",
 		"background-clip: padding-box;",
-		"min-height: var(--density-field-height);",
+		"min-height: var(--density-text-field-height);",
 		"font-size: var(--font-system-font-size);",
 		".input::placeholder { color: var(--platform-placeholder-text); opacity: 1; }",
 		// The pop-up trigger is a button and not a field: the control
@@ -588,14 +588,16 @@ func TestThemeJSONReproduces(t *testing.T) {
 	}
 	wantMetrics := func(label string, got DensityMetrics, d tokens.Density) {
 		want := DensityMetrics{
-			ControlHeight:        float64(d.ControlHeight),
-			ChipHeight:           float64(d.ChipHeight()),
-			FieldHeight:          float64(d.FieldHeight),
-			RowHeight:            float64(d.RowHeight),
-			CheckboxRowHeight:    float64(d.CheckboxRowHeight),
-			ToolbarControlHeight: float64(d.ToolbarControlHeight),
-			PaddingX:             float64(d.PaddingX),
-			SymbolSize:           float64(d.SymbolSize),
+			ControlHeight:            float64(d.ControlHeight),
+			ChipHeight:               float64(d.ChipHeight()),
+			TextFieldHeight:          float64(d.TextFieldHeight),
+			SearchFieldHeight:        float64(d.SearchFieldHeight),
+			SidebarSearchFieldHeight: float64(d.SidebarSearchFieldHeight),
+			RowHeight:                float64(d.RowHeight),
+			CheckboxRowHeight:        float64(d.CheckboxRowHeight),
+			ToolbarControlHeight:     float64(d.ToolbarControlHeight),
+			PaddingX:                 float64(d.PaddingX),
+			SymbolSize:               float64(d.SymbolSize),
 		}
 		if got != want {
 			t.Errorf("density.%s = %+v, want %+v", label, got, want)

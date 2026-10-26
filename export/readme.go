@@ -161,8 +161,8 @@ func readmeMD(s Snapshot) string {
 		"`--platform-disabled-control-text` where the control cannot be used —\n" +
 		"the fill staying exactly where it was, because the platform fades the\n" +
 		"wording and leaves the control. A text field's least height is\n" +
-		"`--density-field-height`, not the control height: the platform draws a\n" +
-		"field shorter than the button beside it. The pop-up trigger is the\n" +
+		"`--density-text-field-height`, not the control height: the platform\n" +
+		"draws a field taller than the button beside it. The pop-up trigger is the\n" +
 		"exception in this family and is a BUTTON rather than a field: `.select`\n" +
 		"takes the push button's fill at the control height, draws NO edge at\n" +
 		"all — its fill meets the surface directly, measured — sets its title\n" +
@@ -226,9 +226,13 @@ func readmeMD(s Snapshot) string {
 		"controls, 15 dp chips, 7/0 dp padding) is the `.compact` class override,\n" +
 		"scoping to any subtree the way `.dark` scopes colours. The chip height is\n" +
 		"the control height less 4 dp in both settings — one relation, not a second\n" +
-		"scale. A text field, a stacked row, a checkbox's row and a toolbar\n" +
-		"control are not that control and carry their own measured heights:\n" +
-		"`--density-field-height` (27 dp comfortable, 21 compact),\n" +
+		"scale. A text field, a search field, a stacked row, a checkbox's row and a\n" +
+		"toolbar control are not that control and carry their own measured heights:\n" +
+		"`--density-text-field-height` (27 dp comfortable, 21 compact),\n" +
+		"`--density-search-field-height` (26 dp, 21 compact) for a search\n" +
+		"field on the content,\n" +
+		"`--density-sidebar-search-field-height` (28 dp, 22 compact) for a\n" +
+		"search field in a sidebar,\n" +
 		"`--density-row-height` (20 dp, 19 compact),\n" +
 		"`--density-checkbox-row-height` (22 dp, 17 compact) and\n" +
 		"`--density-toolbar-control-height` (36 dp in both, no capture holding a\n" +

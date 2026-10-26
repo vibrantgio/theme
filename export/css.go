@@ -244,11 +244,14 @@ var densityMetrics = []struct {
 	// var() subtraction would put the system's one statement of the relation
 	// in a stylesheet instead of in the token layer.
 	{"chip-height", func(d tokens.Density) float32 { return d.ChipHeight() }},
-	// The field's own height and the stacked row's pitch. The platform draws
-	// a text field taller than a push button and a list row shorter than
-	// both, all three measured, so each is stated rather than derived from
-	// the control height.
-	{"field-height", func(d tokens.Density) float32 { return d.FieldHeight }},
+	// Each field's own height and the stacked row's pitch. A field's height
+	// is measured per control and per variant: a text field, a search field
+	// on the content and a search field in a sidebar. The platform draws each
+	// taller than a push button and a list row shorter than all of them, so
+	// each is stated rather than derived from the control height.
+	{"text-field-height", func(d tokens.Density) float32 { return d.TextFieldHeight }},
+	{"search-field-height", func(d tokens.Density) float32 { return d.SearchFieldHeight }},
+	{"sidebar-search-field-height", func(d tokens.Density) float32 { return d.SidebarSearchFieldHeight }},
 	{"row-height", func(d tokens.Density) float32 { return d.RowHeight }},
 	// The checkbox's row: the square footprint the 16 dp symbol is centred in
 	// and the pointer target both the checkbox and the radio offer. Measured
@@ -782,8 +785,8 @@ const componentClasses = `/* ---- Component classes ----
    the same pixel. */
 
 /* Text field (components/input textfield.go). The height floor is
-   Density.FieldHeight, not ControlHeight — the platform draws a field shorter
-   than the button beside it — and the drawn height is max(that, line box),
+   Density.TextFieldHeight, not ControlHeight — the platform draws a field
+   taller than the button beside it — and the drawn height is max(that, line box),
    the line centred. The horizontal inset is S3 (12 dp, static: it does not follow
    density) measured from the OUTER edge, so the padding gives back whatever
    the border occupies and the text lands where the Gio side puts it.
@@ -801,7 +804,7 @@ const componentClasses = `/* ---- Component classes ----
   width: 100%;
   margin: 0;
   appearance: none;
-  min-height: var(--density-field-height);
+  min-height: var(--density-text-field-height);
   padding: 0 calc(var(--space-3) - 1px);
   border: 1px solid var(--platform-field-edge);
   border-radius: var(--radius-md);
