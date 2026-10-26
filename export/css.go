@@ -253,6 +253,9 @@ var densityMetrics = []struct {
 	{"search-field-height", func(d tokens.Density) float32 { return d.SearchFieldHeight }},
 	{"sidebar-search-field-height", func(d tokens.Density) float32 { return d.SidebarSearchFieldHeight }},
 	{"row-height", func(d tokens.Density) float32 { return d.RowHeight }},
+	// The content list row: one entry of a content list of one-line rows,
+	// measured at 32 against the table row's 20, at both settings.
+	{"content-list-row-height", func(d tokens.Density) float32 { return d.ContentListRowHeight }},
 	// The checkbox's row: the square footprint the 16 dp symbol is centred in
 	// and the pointer target both the checkbox and the radio offer. Measured
 	// at 22 against the push button's 24 and the list row's 20, so it is a

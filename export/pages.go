@@ -442,6 +442,14 @@ const layoutPageCSS = `.space-row {
   color: var(--platform-label);
   font-size: var(--font-system-font-size);
 }
+.content-list-row-bar {
+  height: var(--density-content-list-row-height);
+  padding: 0 var(--space-2);
+  display: flex;
+  align-items: center;
+  color: var(--platform-label);
+  font-size: var(--font-system-font-size);
+}
 /* The checkbox's footprint, shown with the sheet's own .checkbox standing in
    it: the symbol's margin is the slack that centres it, so the wrapper comes
    out exactly the density's checkbox row square. The min-height states the
@@ -523,6 +531,9 @@ func layoutHTML(s Snapshot) string {
 		b.WriteString("<div class=\"row-bar\">Stacked row</div>\n")
 		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-row-height</code> &middot; %s &mdash; a pin, not a floor: rows tile</p>\n",
 			px(setting.d.RowHeight))
+		b.WriteString("<div class=\"content-list-row-bar\">Content list row</div>\n")
+		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-content-list-row-height</code> &middot; %s &mdash; one entry of a content list of one-line rows, a pin</p>\n",
+			px(setting.d.ContentListRowHeight))
 		b.WriteString("<div><span class=\"checkbox-row-bar\"><input class=\"checkbox\" type=\"checkbox\" aria-label=\"checkbox row specimen\"></span></div>\n")
 		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-checkbox-row-height</code> &middot; %s &mdash; the square footprint the 16 px symbol is centred in, and the pointer target a checkbox and a radio offer</p>\n",
 			px(setting.d.CheckboxRowHeight))

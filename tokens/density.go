@@ -67,14 +67,16 @@ package tokens
 // A symbol in a control has its own size, [Density.SymbolSize]. No padding
 // derives it.
 //
-// A stacked row is not a control, and takes [Density.RowHeight] rather than
-// the control height: list rows, table rows and header cells are RowHeight
-// tall exactly (see the row table below), so a change there re-pitches every
+// A stacked row is not a control, and takes a row height rather than the
+// control height. Table rows and header cells are [Density.RowHeight] tall
+// exactly (see the row table below), so a change there re-pitches every
 // dense list and table in the system. A chrome rail's row is not one of
 // them — the platform draws a sidebar row 12 px taller than a list row, and
 // patterns/sidebar carries that number. The platform draws a
 // list row shorter than it draws a button — 20 px against 24 — which is why
-// the row height is a number of its own and not the control's.
+// the row height is a number of its own and not the control's. A content
+// list of one-line rows takes [Density.ContentListRowHeight] instead: the
+// platform draws that kind of row 32 px tall.
 //
 // # Pointer targets
 //
@@ -90,7 +92,7 @@ package tokens
 //
 //	row                              Comfortable   Compact   sizing
 //	---                              -----------   -------   ------
-//	list row                         20            19        pinned to RowHeight
+//	content list row                 32            32        pinned to ContentListRowHeight
 //	table body row and header cell   20            19        pinned to RowHeight
 //	picker option row                24            19        max(ControlHeight, line)
 //	toolbar control                  36            36        pinned to ToolbarControlHeight
@@ -155,6 +157,14 @@ const (
 	// capture holds a list drawn dense, so it carries the platform's small
 	// control height until one does; ADR-019 has the gap row.
 	CompactRowHeight float32 = 19
+	// ContentListRowHeight is the height of a content list row in dp: one
+	// entry of a content list of one-line rows, at both densities. It is a
+	// pin, not a floor. MEASURED off Reminders' row, 32 px, y 169–200, in
+	// reminders-row-selected-{light,dark}.png, read in "What a control
+	// inside a row measures" in organisation/reference/macos/controls.md.
+	// No capture holds this kind of row at the platform's small setting, so
+	// the one measured row stands at Compact too.
+	ContentListRowHeight float32 = 32
 	// ComfortableCheckboxRowHeight is the height of a checkbox's row in dp:
 	// the footprint the 16 dp symbol is centred in, and the pointer target.
 	// It is a pin, not a floor — a checkbox draws no content box of its own.
@@ -244,6 +254,12 @@ type Density struct {
 	// cost the virtualised list the constant-time look-ahead that lets it
 	// lay out only what is on screen.
 	RowHeight float32
+	// ContentListRowHeight is the height of a content list row in dp
+	// ([ContentListRowHeight] at both settings): one entry of a content list
+	// of one-line rows. It is a pin, as RowHeight is. It is separate because
+	// the platform draws the content list row 32 px tall against the table
+	// row's 20.
+	ContentListRowHeight float32
 	// CheckboxRowHeight is the height of a checkbox's row in dp
 	// ([ComfortableCheckboxRowHeight] or [CompactCheckboxRowHeight]) — the
 	// square footprint the checkbox's and the radio's 16 dp symbol is centred
@@ -292,7 +308,7 @@ func (d Density) ChipHeight() float32 { return d.ControlHeight - ChipDrop }
 // and not an inset. See the provenance table at the top of this file.
 var (
 	// Comfortable is the default desktop density.
-	Comfortable = Density{ControlHeight: ComfortableControlHeight, TextFieldHeight: ComfortableTextFieldHeight, SearchFieldHeight: ComfortableSearchFieldHeight, SidebarSearchFieldHeight: ComfortableSidebarSearchFieldHeight, RowHeight: ComfortableRowHeight, CheckboxRowHeight: ComfortableCheckboxRowHeight, ToolbarControlHeight: ComfortableToolbarControlHeight, PaddingX: 8, SymbolSize: 20}
+	Comfortable = Density{ControlHeight: ComfortableControlHeight, TextFieldHeight: ComfortableTextFieldHeight, SearchFieldHeight: ComfortableSearchFieldHeight, SidebarSearchFieldHeight: ComfortableSidebarSearchFieldHeight, RowHeight: ComfortableRowHeight, ContentListRowHeight: ContentListRowHeight, CheckboxRowHeight: ComfortableCheckboxRowHeight, ToolbarControlHeight: ComfortableToolbarControlHeight, PaddingX: 8, SymbolSize: 20}
 	// Compact is the dense mode: smaller drawn controls, tighter padding.
-	Compact = Density{ControlHeight: CompactControlHeight, TextFieldHeight: CompactTextFieldHeight, SearchFieldHeight: CompactSearchFieldHeight, SidebarSearchFieldHeight: CompactSidebarSearchFieldHeight, RowHeight: CompactRowHeight, CheckboxRowHeight: CompactCheckboxRowHeight, ToolbarControlHeight: CompactToolbarControlHeight, PaddingX: 7, SymbolSize: 19}
+	Compact = Density{ControlHeight: CompactControlHeight, TextFieldHeight: CompactTextFieldHeight, SearchFieldHeight: CompactSearchFieldHeight, SidebarSearchFieldHeight: CompactSidebarSearchFieldHeight, RowHeight: CompactRowHeight, ContentListRowHeight: ContentListRowHeight, CheckboxRowHeight: CompactCheckboxRowHeight, ToolbarControlHeight: CompactToolbarControlHeight, PaddingX: 7, SymbolSize: 19}
 )

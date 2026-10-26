@@ -70,6 +70,9 @@ type DensityMetrics struct {
 	SearchFieldHeight        float64 `json:"searchFieldHeight"`
 	SidebarSearchFieldHeight float64 `json:"sidebarSearchFieldHeight"`
 	RowHeight                float64 `json:"rowHeight"`
+	// ContentListRowHeight is the content list row's pitch: one entry of a
+	// content list of one-line rows, 32 at both settings, measured.
+	ContentListRowHeight float64 `json:"contentListRowHeight"`
 	// CheckboxRowHeight is the square footprint the checkbox's and the
 	// radio's 16 dp symbol is centred in, and the pointer target both offer —
 	// 22 against the push button's 24 and the list row's 20, measured.
@@ -167,6 +170,7 @@ func densityMetricsOf(d tokens.Density) DensityMetrics {
 		SearchFieldHeight:        f64(d.SearchFieldHeight),
 		SidebarSearchFieldHeight: f64(d.SidebarSearchFieldHeight),
 		RowHeight:                f64(d.RowHeight),
+		ContentListRowHeight:     f64(d.ContentListRowHeight),
 		CheckboxRowHeight:        f64(d.CheckboxRowHeight),
 		ToolbarControlHeight:     f64(d.ToolbarControlHeight),
 		PaddingX:                 f64(d.PaddingX),

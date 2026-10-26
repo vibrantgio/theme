@@ -594,6 +594,7 @@ func TestThemeJSONReproduces(t *testing.T) {
 			SearchFieldHeight:        float64(d.SearchFieldHeight),
 			SidebarSearchFieldHeight: float64(d.SidebarSearchFieldHeight),
 			RowHeight:                float64(d.RowHeight),
+			ContentListRowHeight:     float64(d.ContentListRowHeight),
 			CheckboxRowHeight:        float64(d.CheckboxRowHeight),
 			ToolbarControlHeight:     float64(d.ToolbarControlHeight),
 			PaddingX:                 float64(d.PaddingX),

@@ -233,7 +233,9 @@ func readmeMD(s Snapshot) string {
 		"field on the content,\n" +
 		"`--density-sidebar-search-field-height` (28 dp, 22 compact) for a\n" +
 		"search field in a sidebar,\n" +
-		"`--density-row-height` (20 dp, 19 compact),\n" +
+		"`--density-row-height` (20 dp, 19 compact) for a table row,\n" +
+		"`--density-content-list-row-height` (32 dp in both, no capture holding\n" +
+		"that row drawn small) for a content list row,\n" +
 		"`--density-checkbox-row-height` (22 dp, 17 compact) and\n" +
 		"`--density-toolbar-control-height` (36 dp in both, no capture holding a\n" +
 		"toolbar drawn small).\n" +
