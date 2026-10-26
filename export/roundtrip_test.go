@@ -180,8 +180,8 @@ func TestRoundTripScales(t *testing.T) {
 	snap, sheet, _ := writeDefault(t)
 	root := sheet[":root"]
 
-	if got, err := strconv.Unquote(root["--font-family"]); err != nil || got != snap.Typography.BodyLarge.Typeface {
-		t.Errorf("--font-family = %q (%v), want quoted %q", root["--font-family"], err, snap.Typography.BodyLarge.Typeface)
+	if got, err := strconv.Unquote(root["--font-family"]); err != nil || got != snap.Typography.Body.Typeface {
+		t.Errorf("--font-family = %q (%v), want quoted %q", root["--font-family"], err, snap.Typography.Body.Typeface)
 	}
 	if got, err := strconv.Unquote(root["--font-family-code"]); err != nil || got != snap.Typography.Code.Typeface {
 		t.Errorf("--font-family-code = %q (%v), want quoted %q", root["--font-family-code"], err, snap.Typography.Code.Typeface)
@@ -198,8 +198,11 @@ func TestRoundTripScales(t *testing.T) {
 		if got, err := strconv.Atoi(root[base+"-weight"]); err != nil || got != style.Weight {
 			t.Errorf("%s-weight = %q, want %d", base, root[base+"-weight"], style.Weight)
 		}
-		if got := wantPx(t, base+"-tracking", root[base+"-tracking"]); got != style.Tracking {
-			t.Errorf("%s-tracking = %v, want %v", base, got, style.Tracking)
+	}
+	// A role adds no tracking, so the sheet states none.
+	for name := range root {
+		if strings.HasSuffix(name, "-tracking") {
+			t.Errorf("%s: the sheet states a tracking; a role adds none", name)
 		}
 	}
 
@@ -323,11 +326,11 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		}
 	}
 	for _, frag := range []string{
-		// Structure from the density, radius and label-large tokens.
+		// Structure from the density, radius and system font tokens.
 		"min-height: var(--density-control-height);",
 		"padding: var(--density-padding-y) var(--density-padding-x);",
 		"border-radius: var(--radius-md);",
-		"font-size: var(--font-label-large-size);",
+		"font-size: var(--font-system-font-size);",
 		// Filled is the platform's default action.
 		"background: var(--platform-default-button-fill);",
 		"color: var(--platform-alternate-selected-control-text);",
@@ -372,7 +375,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"padding: var(--density-padding-y);",
 		// Badge: the platform's system colour for the status under white.
 		".badge {",
-		"font-size: var(--font-label-medium-size);",
+		"font-size: var(--font-small-system-font-size);",
 		"background: var(--platform-system-gray);",
 		".badge.success { background: var(--platform-system-green); }",
 		".badge.warning { background: var(--platform-system-orange); }",
@@ -386,7 +389,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"background: var(--platform-text-background);",
 		"background-clip: padding-box;",
 		"min-height: var(--density-field-height);",
-		"font-size: var(--font-body-large-size);",
+		"font-size: var(--font-system-font-size);",
 		".input::placeholder { color: var(--platform-placeholder-text); opacity: 1; }",
 		// The pop-up trigger is a button and not a field: the control
 		// height, no edge at all, the measured 11 dp lead and the 9 dp the
@@ -449,7 +452,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"border-radius: 8px;  /* SelectionRadius */",
 		"background: var(--platform-sidebar-selection);",
 		// Breadcrumb: every place in the label, parted by the set's chevron.
-		"font-size: var(--font-title-small-size);",
+		"font-size: var(--font-system-font-size);",
 		"border-right: 1.4px solid var(--platform-secondary-label);",
 		"transform: translateX(-2.42px) rotate(-45deg);",
 		// Overlays: the platform's scrim, the window background under the
@@ -460,7 +463,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"max-width: 560px;",
 		"min-height: 120px;",
 		"padding: var(--space-5);",
-		"font-size: var(--font-title-medium-size);",
+		"font-size: var(--font-title-2-size);",
 		".dialog-footer {",
 		"justify-content: flex-end;",
 		"background: var(--platform-window-background);",

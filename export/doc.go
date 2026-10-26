@@ -33,10 +33,11 @@
 // change with the scheme:
 //
 //   - --font-family and --font-family-code (the code style's mono family),
-//     plus --font-<role>-size, -line-height, -weight and -tracking per type
-//     role (display-large … body-small, and code — the mono style outside
-//     the type scale, at body-medium's metrics): sizes, line heights and
-//     tracking in px, weights as CSS numeric weights.
+//     plus --font-<role>-size, -line-height and -weight per type role (the
+//     platform's roles large-title … empty-state-line, the group title's
+//     label-large, the sidebar section title's label-small, and code, the
+//     mono style at body's metrics): sizes and line heights in px, weights
+//     as CSS numeric weights. A role adds no tracking.
 //   - --density-control-height, --density-padding-x and --density-padding-y
 //     from tokens.Density: :root carries tokens.Comfortable, the .compact
 //     block overrides with tokens.Compact. A control's pointer target is the

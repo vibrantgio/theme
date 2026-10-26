@@ -7,8 +7,8 @@
 // the first line at that line's own ascent and spends the line height only on
 // the gap to the next one. The consequence is exact and easy to miss: a label
 // with MaxLines 1 — which nearly every control in this system is — reports the
-// same size at any line height at all. Measured on components/button's LabelLarge
-// specimen at 14 dp: 17 px tall at line height 0, 20, 32 and 64 alike, and the
+// same size at any line height at all. Measured on components/button's
+// specimen in Roboto Medium at 14 dp: 17 px tall at line height 0, 20, 32 and 64 alike, and the
 // rendered button byte-identical in all four.
 //
 // A design system means the CSS thing. `line-height: 20px` on a one-line
@@ -127,7 +127,7 @@ func Label(style tokens.TextStyle, maxLines int) widget.Label {
 // a box-drawing character, anything the primary face has no glyph for — is
 // taller than the primary face alone. Measuring a probe string instead made
 // the deficit too large for exactly those lines: under the fallback shaper
-// applications draw with, "arrows →←" came back 25 px tall where LabelLarge
+// applications draw with, "arrows →←" came back 25 px tall where the role
 // declares 20 and theme/export writes `line-height: 20`.
 //
 // # Constraints are applied once, to the corrected height

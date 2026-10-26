@@ -169,28 +169,29 @@ func toolbarShadowVars(p tokens.PlatformColors) []cssVar {
 	}
 }
 
-// typeRoles orders the fifteen type roles under their CSS names, plus
-// code — the sixteenth style outside the type scale, the mono face at
-// body-medium's metrics (G-F0) — emitted last.
+// typeRoles orders the platform's type roles under their CSS names, then
+// the group title's and the sidebar section title's styles, then code: the
+// mono face at Body's metrics.
 var typeRoles = []struct {
 	name string
 	pick func(tokens.Typography) tokens.TextStyle
 }{
-	{"display-large", func(t tokens.Typography) tokens.TextStyle { return t.DisplayLarge }},
-	{"display-medium", func(t tokens.Typography) tokens.TextStyle { return t.DisplayMedium }},
-	{"display-small", func(t tokens.Typography) tokens.TextStyle { return t.DisplaySmall }},
-	{"headline-large", func(t tokens.Typography) tokens.TextStyle { return t.HeadlineLarge }},
-	{"headline-medium", func(t tokens.Typography) tokens.TextStyle { return t.HeadlineMedium }},
-	{"headline-small", func(t tokens.Typography) tokens.TextStyle { return t.HeadlineSmall }},
-	{"title-large", func(t tokens.Typography) tokens.TextStyle { return t.TitleLarge }},
-	{"title-medium", func(t tokens.Typography) tokens.TextStyle { return t.TitleMedium }},
-	{"title-small", func(t tokens.Typography) tokens.TextStyle { return t.TitleSmall }},
+	{"large-title", func(t tokens.Typography) tokens.TextStyle { return t.LargeTitle }},
+	{"title-1", func(t tokens.Typography) tokens.TextStyle { return t.Title1 }},
+	{"title-2", func(t tokens.Typography) tokens.TextStyle { return t.Title2 }},
+	{"title-3", func(t tokens.Typography) tokens.TextStyle { return t.Title3 }},
+	{"headline", func(t tokens.Typography) tokens.TextStyle { return t.Headline }},
+	{"subheadline", func(t tokens.Typography) tokens.TextStyle { return t.Subheadline }},
+	{"body", func(t tokens.Typography) tokens.TextStyle { return t.Body }},
+	{"callout", func(t tokens.Typography) tokens.TextStyle { return t.Callout }},
+	{"footnote", func(t tokens.Typography) tokens.TextStyle { return t.Footnote }},
+	{"caption-1", func(t tokens.Typography) tokens.TextStyle { return t.Caption1 }},
+	{"caption-2", func(t tokens.Typography) tokens.TextStyle { return t.Caption2 }},
+	{"system-font", func(t tokens.Typography) tokens.TextStyle { return t.SystemFont }},
+	{"small-system-font", func(t tokens.Typography) tokens.TextStyle { return t.SmallSystemFont }},
+	{"empty-state-line", func(t tokens.Typography) tokens.TextStyle { return t.EmptyStateLine }},
 	{"label-large", func(t tokens.Typography) tokens.TextStyle { return t.LabelLarge }},
-	{"label-medium", func(t tokens.Typography) tokens.TextStyle { return t.LabelMedium }},
 	{"label-small", func(t tokens.Typography) tokens.TextStyle { return t.LabelSmall }},
-	{"body-large", func(t tokens.Typography) tokens.TextStyle { return t.BodyLarge }},
-	{"body-medium", func(t tokens.Typography) tokens.TextStyle { return t.BodyMedium }},
-	{"body-small", func(t tokens.Typography) tokens.TextStyle { return t.BodySmall }},
 	{"code", func(t tokens.Typography) tokens.TextStyle { return t.Code }},
 }
 
@@ -304,7 +305,7 @@ func ms(d time.Duration) string {
 // opt-in cue for floating transients), and the motion set.
 func scaleVars(s Snapshot) []cssVar {
 	vars := []cssVar{
-		{"--font-family", strconv.Quote(s.Typography.BodyLarge.Typeface)},
+		{"--font-family", strconv.Quote(s.Typography.Body.Typeface)},
 		{"--font-family-code", strconv.Quote(s.Typography.Code.Typeface)},
 	}
 	for _, role := range typeRoles {
@@ -313,7 +314,6 @@ func scaleVars(s Snapshot) []cssVar {
 			cssVar{"--font-" + role.name + "-size", px(style.Size)},
 			cssVar{"--font-" + role.name + "-line-height", px(style.LineHeight)},
 			cssVar{"--font-" + role.name + "-weight", strconv.Itoa(style.Weight)},
-			cssVar{"--font-" + role.name + "-tracking", px(style.Tracking)},
 		)
 	}
 	vars = append(vars, densityVars(tokens.Comfortable)...)
@@ -529,13 +529,9 @@ func stylesCSS(s Snapshot) string {
 // and what theme/color.Fade computes, so the two sides land on the same
 // pixel.
 //
-// No rule in this layer spends a type role's tracking. The library's typeset
-// lays a label out at the role's size, weight and line height and spends no
-// letter spacing at all, so a sheet that spent the role's tracking token
-// would set every label a fraction wider than the component beside it.
-// Whether the token should ever be spent is a typography question and is not
-// answered here; what is answered is that the sheet draws what the library
-// draws.
+// No rule in this layer adds letter spacing. A type role adds no tracking,
+// and the library's typeset lays a label out at the role's size, weight and
+// line height alone.
 //
 // Every pointer/keyboard state rule also carries a forcing twin class
 // (.is-hover, .is-active, .is-focus, .is-checked) grouped into the same
@@ -585,9 +581,9 @@ const componentClasses = `/* ---- Component classes ----
   padding: var(--density-padding-y) var(--density-padding-x);
   border-radius: var(--radius-md);
   font-family: var(--font-family);
-  font-size: var(--font-label-large-size);
-  line-height: var(--font-label-large-line-height);
-  font-weight: var(--font-label-large-weight);
+  font-size: var(--font-system-font-size);
+  line-height: var(--font-system-font-line-height);
+  font-weight: var(--font-system-font-weight);
   letter-spacing: 0;
   background: var(--platform-default-button-fill);
   color: var(--platform-alternate-selected-control-text);
@@ -737,11 +733,11 @@ const componentClasses = `/* ---- Component classes ----
    giving no status colour for "no status".
 
    It is off the control metrics — no boundary, no minimum height, no vertical
-   padding — so its whole height is the label role's line box. The side
+   padding — so its whole height is the small system font's line box. The side
    padding is the S2 stop and the corner the radius scale's Base stop,
    deliberately not the pill, which is a chip's shape.
 
-   The label role is the comfortable density's. The sheet re-maps no type role
+   The role is the comfortable density's. The sheet re-maps no type role
    under .compact, so the class states the comfortable role and a compact page
    sets its badges in the same one.
 
@@ -755,9 +751,9 @@ const componentClasses = `/* ---- Component classes ----
   padding: 0 var(--space-2);
   border-radius: var(--radius-base);
   font-family: var(--font-family);
-  font-size: var(--font-label-medium-size);
-  line-height: var(--font-label-medium-line-height);
-  font-weight: var(--font-label-medium-weight);
+  font-size: var(--font-small-system-font-size);
+  line-height: var(--font-small-system-font-line-height);
+  font-weight: var(--font-small-system-font-weight);
   letter-spacing: 0;
   background: var(--platform-system-gray);
   color: var(--platform-alternate-selected-control-text);
@@ -810,9 +806,9 @@ const componentClasses = `/* ---- Component classes ----
   background-clip: padding-box;
   color: var(--platform-label);
   font-family: var(--font-family);
-  font-size: var(--font-body-large-size);
-  line-height: var(--font-body-large-line-height);
-  font-weight: var(--font-body-large-weight);
+  font-size: var(--font-system-font-size);
+  line-height: var(--font-system-font-line-height);
+  font-weight: var(--font-system-font-weight);
   letter-spacing: 0;
 }
 .input::placeholder { color: var(--platform-placeholder-text); opacity: 1; }
@@ -1090,7 +1086,7 @@ const componentClasses = `/* ---- Component classes ----
    of the group's stack — the platform's idiom for a section header over a
    bordered container, and not the fieldset legend cut into the top line,
    which has no native counterpart and does not survive a Lg corner. The
-   label-large role in the platform's secondary label: a group's own name is
+   group title's style in the platform's secondary label: a group's own name is
    set under the content it names. */
 .group-title {
   font-size: var(--font-label-large-size);
@@ -1111,7 +1107,7 @@ const componentClasses = `/* ---- Component classes ----
    platform's grid colour drawn inside its own height; the header's foot is
    the separator over the content fill. Cells inset horizontally by S3
    (cellPadDp, 12 dp — static, the same inset rule the input uses); body text
-   is body-medium in the platform's label (RenderTextCell), header text the
+   is the system font in the platform's label (RenderTextCell), header text the
    platform's header text. Every second body row is laid on the platform's
    alternating content background, which is what Finder's list view draws.
    Sort is a 10 dp chevron in the header's own foreground at
@@ -1126,9 +1122,9 @@ const componentClasses = `/* ---- Component classes ----
   background: var(--platform-control-background);
   color: var(--platform-label);
   font-family: var(--font-family);
-  font-size: var(--font-body-medium-size);
-  line-height: var(--font-body-medium-line-height);
-  font-weight: var(--font-body-medium-weight);
+  font-size: var(--font-system-font-size);
+  line-height: var(--font-system-font-line-height);
+  font-weight: var(--font-system-font-weight);
   letter-spacing: 0;
 }
 .table th, .table td {
@@ -1153,9 +1149,9 @@ const componentClasses = `/* ---- Component classes ----
   background: var(--platform-control-background);
   box-shadow: inset 0 -1px 0 var(--platform-separator);
   color: var(--platform-header-text);
-  font-size: var(--font-label-large-size);
-  line-height: var(--font-label-large-line-height);
-  font-weight: var(--font-label-large-weight);
+  font-size: var(--font-system-font-size);
+  line-height: var(--font-system-font-line-height);
+  font-weight: var(--font-system-font-weight);
   letter-spacing: 0;
 }
 .table th.sortable { cursor: pointer; }
@@ -1212,7 +1208,7 @@ const componentClasses = `/* ---- Component classes ----
   margin-inline: auto;  /* the leftover space, halved on either side */
 }
 
-/* A link cell (navbar.go linkWidget): label-large in the platform's label
+/* A link cell (navbar.go linkWidget): the system font in the platform's label
    inside (S3, PaddingY) padding, with a 2 dp underline slot along the bottom
    edge that the Active link fills with the platform's selection colour — the
    underline runs the full cell width, padding included, exactly the
@@ -1230,9 +1226,9 @@ const componentClasses = `/* ---- Component classes ----
   white-space: nowrap;
   cursor: pointer;
   font-family: var(--font-family);
-  font-size: var(--font-label-large-size);
-  line-height: var(--font-label-large-line-height);
-  font-weight: var(--font-label-large-weight);
+  font-size: var(--font-system-font-size);
+  line-height: var(--font-system-font-line-height);
+  font-weight: var(--font-system-font-weight);
   letter-spacing: 0;
   color: var(--platform-label);
   border-bottom: 2px solid transparent;  /* underlineDp: the underline slot */
@@ -1314,7 +1310,7 @@ const componentClasses = `/* ---- Component classes ----
 
 /* An item row (drawItem): a symbol, a title and, at the trailing end, a count
    when the entry has one. The symbol stands in a 24 dp square set 17 in from
-   the rail's leading edge, the label-large title starts at 48 in, and the
+   the rail's leading edge, the title starts at 48 in, and the
    count's trailing edge is 17 in from the rail's trailing edge; each part is
    vertically centred, one line, clipped rather than wrapped — which is also
    what hides the title and the count at the collapsed width. The symbol wears
@@ -1344,9 +1340,9 @@ const componentClasses = `/* ---- Component classes ----
   white-space: nowrap;
   cursor: pointer;
   font-family: var(--font-family);
-  font-size: var(--font-label-large-size);
-  line-height: var(--font-label-large-line-height);
-  font-weight: var(--font-label-large-weight);
+  font-size: var(--font-system-font-size);
+  line-height: var(--font-system-font-line-height);
+  font-weight: var(--font-system-font-weight);
   letter-spacing: 0;
   color: var(--platform-label);
   text-decoration: none;
@@ -1449,7 +1445,7 @@ const componentClasses = `/* ---- Component classes ----
   user-select: none;
 }
 
-/* Breadcrumb (components/breadcrumb breadcrumb.go): a row of title-small
+/* Breadcrumb (components/breadcrumb breadcrumb.go): a row of system-font
    places parted by the icon set's chevron, drawn as the platform's path bar.
    Every place is set in the platform's label, the one before the last as
    much as the last, and which place you are at is told by standing last and
@@ -1464,9 +1460,9 @@ const componentClasses = `/* ---- Component classes ----
   align-items: center;
   gap: 1.33px;   /* the stated 8 less the 6.67 the mark box leaves clear */
   font-family: var(--font-family);
-  font-size: var(--font-title-small-size);
-  line-height: var(--font-title-small-line-height);
-  font-weight: var(--font-title-small-weight);
+  font-size: var(--font-system-font-size);
+  line-height: var(--font-system-font-line-height);
+  font-weight: var(--font-system-font-weight);
   letter-spacing: 0;
 }
 .crumb {
@@ -1588,7 +1584,7 @@ const componentClasses = `/* ---- Component classes ----
   color: var(--platform-label);
 }
 
-/* The header row (dialog.go headerWidget): the title-medium title on the
+/* The header row (dialog.go headerWidget): the title-2 title on the
    left, the close affordance — when the purpose shows one — on the right,
    middle-aligned so the ghost button's square drives the row height. */
 .dialog-header {
@@ -1598,9 +1594,9 @@ const componentClasses = `/* ---- Component classes ----
 .dialog-title {
   flex: 1;
   font-family: var(--font-family);
-  font-size: var(--font-title-medium-size);
-  line-height: var(--font-title-medium-line-height);
-  font-weight: var(--font-title-medium-weight);
+  font-size: var(--font-title-2-size);
+  line-height: var(--font-title-2-line-height);
+  font-weight: var(--font-title-2-weight);
   letter-spacing: 0;
 }
 
@@ -1711,9 +1707,9 @@ const componentClasses = `/* ---- Component classes ----
   background: var(--platform-window-background);
   color: var(--platform-label);
   font-family: var(--font-family);
-  font-size: var(--font-body-large-size);
-  line-height: var(--font-body-large-line-height);
-  font-weight: var(--font-body-large-weight);
+  font-size: var(--font-system-font-size);
+  line-height: var(--font-system-font-line-height);
+  font-weight: var(--font-system-font-weight);
   letter-spacing: 0;
   --floating-shadow-step: color-mix(in srgb, var(--platform-floating-shadow) 12.5%, transparent);
   box-shadow:
@@ -1801,7 +1797,7 @@ const componentClasses = `/* ---- Component classes ----
 
 /* Tooltip (components/tooltip tooltip.go drawSurface): the window background
    inside the platform's separator under its text in the platform's label
-   colour, label-small, radius Sm, S2/S1 padding measured from the outer edge,
+   colour, the small system font, radius Sm, S2/S1 padding measured from the outer edge,
    clamped to the 24x16 dp minimum. It casts no shadow: the hairline is the
    whole of a still tooltip's edge, and what places it draws whatever shadow
    the placement owes. The same in both appearances. */
@@ -1818,15 +1814,15 @@ const componentClasses = `/* ---- Component classes ----
   color: var(--platform-label);
   white-space: nowrap;
   font-family: var(--font-family);
-  font-size: var(--font-label-small-size);
-  line-height: var(--font-label-small-line-height);
-  font-weight: var(--font-label-small-weight);
+  font-size: var(--font-small-system-font-size);
+  line-height: var(--font-small-system-font-line-height);
+  font-weight: var(--font-small-system-font-weight);
   letter-spacing: 0;
 }
 
 /* Toast: one queued notification — 240 dp wide, a 36 dp legibility floor that
    deliberately does not follow density (a toast is not a control), radius Md,
-   label-medium in the platform's label over the window background, and
+   the small system font in the platform's label over the window background, and
    floating on the platform's measured shadow. The status is carried on the
    leading edge alone, one S2 wide, in the platform's system colour for it —
    painted as a two-stop gradient so the chip's own radius rounds it. A toast
@@ -1845,9 +1841,9 @@ const componentClasses = `/* ---- Component classes ----
   background: linear-gradient(to right, var(--platform-system-blue) 0 var(--space-2), var(--platform-window-background) var(--space-2));
   color: var(--platform-label);
   font-family: var(--font-family);
-  font-size: var(--font-label-medium-size);
-  line-height: var(--font-label-medium-line-height);
-  font-weight: var(--font-label-medium-weight);
+  font-size: var(--font-small-system-font-size);
+  line-height: var(--font-small-system-font-line-height);
+  font-weight: var(--font-small-system-font-weight);
   letter-spacing: 0;
 }
 .toast.success {

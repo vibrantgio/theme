@@ -71,7 +71,7 @@ func readmeMD(s Snapshot) string {
 	for i, role := range typeRoles {
 		typeNames[i] = role.name
 	}
-	fmt.Fprintf(&b, "| `--font-<role>-*` | roles %s; each with `-size`, `-line-height`, `-weight`, `-tracking` | px sizes, CSS numeric weights; code is the mono style outside the type grid, at body-medium's metrics |\n", strings.Join(typeNames, ", "))
+	fmt.Fprintf(&b, "| `--font-<role>-*` | roles %s; each with `-size`, `-line-height`, `-weight` | px sizes, CSS numeric weights; the platform's roles, then the group title's and the sidebar section title's styles, then code, the mono style at body's metrics; a role adds no tracking |\n", strings.Join(typeNames, ", "))
 	fmt.Fprintf(&b, "| `--density-<metric>` | %s | control metrics, px; `:root` is comfortable, `.compact` overrides every one of them |\n", joinTokens("--density-", densityNames()))
 	fmt.Fprintf(&b, "| `--space-<key>` | %s | the 4-pt spacing grid, px |\n", joinTokens("--space-", spaceNames()))
 	fmt.Fprintf(&b, "| `--radius-<key>` | %s | corner radii, Tailwind naming, px |\n", joinTokens("--radius-", radiusNames()))
@@ -138,7 +138,7 @@ func readmeMD(s Snapshot) string {
 		"(which answers no colour in the light appearance, where the platform\n" +
 		"draws none) and casting the measured drop shadow that tells a light\n" +
 		"control from a light band.\n\n" +
-		"`.badge` is the inline annotation: `label-medium` text on the platform's\n" +
+		"`.badge` is the inline annotation: `small-system-font` text on the platform's\n" +
 		"system colour for the status it carries, under\n" +
 		"`--platform-alternate-selected-control-text` — white in both\n" +
 		"appearances, which is how the platform draws a count badge. The default\n" +
@@ -255,7 +255,7 @@ func readmeMD(s Snapshot) string {
 		"file, not this text, is the contract. To change the theme colour, rerun\n" +
 		"`vg-tokens -color #rrggbb`; every page here reflows because nothing in them\n" +
 		"is hard-coded.\n\n" +
-		"Fonts: the tokens name " + s.Typography.BodyLarge.Typeface + " (and " + s.Typography.Code.Typeface + " for code); the pages fall\n" +
+		"Fonts: the tokens name " + s.Typography.Body.Typeface + " (and " + s.Typography.Code.Typeface + " for code); the pages fall\n" +
 		"back to system faces when they are not installed. The OS increased-contrast\n" +
 		"preference needs no variant of its own: on macOS the platform reports the\n" +
 		"values it paints under it, and the set follows.\n")

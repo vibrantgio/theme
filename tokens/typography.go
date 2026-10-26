@@ -30,9 +30,9 @@ func FontWeight(weight int) font.Weight {
 }
 
 // TextStyle describes one type role: the typeface to shape
-// with and its metrics. Size, LineHeight and Tracking (letter spacing) are in
-// device-independent pixels (dp); Weight is a CSS-style numeric weight where
-// regular is 400 and medium is 500.
+// with and its metrics. Size and LineHeight are in device-independent pixels
+// (dp); Weight is a CSS-style numeric weight where regular is 400 and medium
+// is 500. A role adds no tracking: the typeface's own spacing sets the text.
 type TextStyle struct {
 	Typeface string
 	Weight   int
@@ -60,8 +60,6 @@ type TextStyle struct {
 	// gioui.org/text would then baseline each line above the one before it,
 	// which is worse than any default, so theme/typeset drops it.
 	LineHeight float32
-
-	Tracking float32
 }
 
 // DocumentHeadingScale is the six-step heading scale a prose surface sets
@@ -71,17 +69,10 @@ type TextStyle struct {
 // i+1; use Level to address the scale by heading level.
 //
 // The scale is that surface's own role — the reading surface, the content,
-// as against the chrome a screen is assembled from. A document ranks its
-// sections with this the way a view sizes its one headline with a display
-// role, and keeping the two apart is what lets a reading scale be tuned for
-// reading without a screen's chrome following it.
-//
-// It exists because the Display, Headline and Title roles belong to the
-// chrome. Those roles size the one big line at the top of a view, and at a
-// 16 dp reading size the largest of them is twice the body — which reads as a
-// poster inside a paragraph stream, wraps a title that should fit one line,
-// and leaves too little room below it for six levels to be told apart. A
-// document wants a shallower scale that still has six steps.
+// as against the chrome a screen is assembled from. The title roles size the
+// one line at the top of a view; a document ranks its sections with this
+// scale, and keeping the two apart lets a reading scale be tuned for reading
+// without a screen's chrome following it.
 //
 // # The proportions
 //
@@ -126,25 +117,13 @@ func (s DocumentHeadingScale) Level(n int) TextStyle {
 
 // Typography holds one TextStyle per type role.
 type Typography struct {
-	DisplayLarge  TextStyle
-	DisplayMedium TextStyle
-	DisplaySmall  TextStyle
-
-	HeadlineLarge  TextStyle
-	HeadlineMedium TextStyle
-	HeadlineSmall  TextStyle
-
-	TitleLarge  TextStyle
-	TitleMedium TextStyle
-	TitleSmall  TextStyle
-
-	LabelLarge  TextStyle
-	LabelMedium TextStyle
-	LabelSmall  TextStyle
-
+	// LabelLarge sets a group's title and LabelSmall a sidebar's section
+	// title, at the medium weight: no role sets text that opens a section
+	// in semibold. BodyLarge holds the line box the density derives the
+	// text field's height from.
+	LabelLarge TextStyle
+	LabelSmall TextStyle
 	BodyLarge  TextStyle
-	BodyMedium TextStyle
-	BodySmall  TextStyle
 
 	// The platform's text styles, with the platform's names, and the two
 	// system font sizes the platform sets outside its text styles. Each
@@ -176,9 +155,7 @@ type Typography struct {
 	// DocumentHeadings is the heading scale for prose surfaces, derived from
 	// Body rather than borrowed from the Headline and Title roles; see
 	// [DocumentHeadingScale] for what it is for and how its steps are
-	// proportioned. It sits outside that grid the way Code does, and it
-	// replaces none of the display roles: a screen's own headline keeps
-	// taking them.
+	// proportioned. A screen's own title keeps the title roles.
 	DocumentHeadings DocumentHeadingScale
 
 	// Faces is the font collection both shapers build from. Every Typeface a
@@ -482,11 +459,8 @@ func jetbrainsEmojiTypography() Typography {
 	return jetbrainsEmojiTyp
 }
 
-// DefaultTypography is the canonical typography: Roboto throughout, with
-// the published sizes, line heights and tracking of the scale it was mapped
-// from.
-// Display, Headline, Title Large and Body roles are regular weight;
-// Title Medium/Small and the Label roles are medium. Code is Body's
+// DefaultTypography is the canonical typography: Roboto throughout, at the
+// platform's sizes, weights and line heights. Code is Body's
 // metrics on Roboto Mono, Roboto's companion mono face; Faces carries
 // the twelve Roboto faces first — the default family for text that names no
 // typeface — then the four Roboto Mono faces Code resolves against.
@@ -501,25 +475,9 @@ func jetbrainsEmojiTypography() Typography {
 // contains emoji. The live stream wears it through [EmojiTypography];
 // goldens stay on this value.
 var DefaultTypography = Typography{
-	DisplayLarge:  TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 57, LineHeight: 64, Tracking: -0.25},
-	DisplayMedium: TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 45, LineHeight: 52, Tracking: 0},
-	DisplaySmall:  TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 36, LineHeight: 44, Tracking: 0},
-
-	HeadlineLarge:  TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 32, LineHeight: 40, Tracking: 0},
-	HeadlineMedium: TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 28, LineHeight: 36, Tracking: 0},
-	HeadlineSmall:  TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 24, LineHeight: 32, Tracking: 0},
-
-	TitleLarge:  TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 22, LineHeight: 28, Tracking: 0},
-	TitleMedium: TextStyle{Typeface: "Roboto", Weight: WeightMedium, Size: 16, LineHeight: 24, Tracking: 0.15},
-	TitleSmall:  TextStyle{Typeface: "Roboto", Weight: WeightMedium, Size: 14, LineHeight: 20, Tracking: 0.1},
-
-	LabelLarge:  TextStyle{Typeface: "Roboto", Weight: WeightMedium, Size: 14, LineHeight: 20, Tracking: 0.1},
-	LabelMedium: TextStyle{Typeface: "Roboto", Weight: WeightMedium, Size: 12, LineHeight: 16, Tracking: 0.5},
-	LabelSmall:  TextStyle{Typeface: "Roboto", Weight: WeightMedium, Size: 11, LineHeight: 16, Tracking: 0.5},
-
-	BodyLarge:  TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 16, LineHeight: 24, Tracking: 0.5},
-	BodyMedium: TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 14, LineHeight: 20, Tracking: 0.25},
-	BodySmall:  TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 12, LineHeight: 16, Tracking: 0.4},
+	LabelLarge: TextStyle{Typeface: "Roboto", Weight: WeightMedium, Size: 14, LineHeight: 20},
+	LabelSmall: TextStyle{Typeface: "Roboto", Weight: WeightMedium, Size: 11, LineHeight: 16},
+	BodyLarge:  TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 16, LineHeight: 24},
 
 	LargeTitle:  TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 26, LineHeight: 32},
 	Title1:      TextStyle{Typeface: "Roboto", Weight: WeightRegular, Size: 22, LineHeight: 26},

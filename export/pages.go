@@ -29,8 +29,8 @@ const chromeCSS = `body {
   background: var(--platform-window-background);
   color: var(--platform-label);
   font-family: var(--font-family), system-ui, sans-serif;
-  font-size: var(--font-body-medium-size);
-  line-height: var(--font-body-medium-line-height);
+  font-size: var(--font-body-size);
+  line-height: var(--font-body-line-height);
   letter-spacing: 0;
 }
 main {
@@ -45,23 +45,23 @@ main {
   gap: var(--space-4);
 }
 h1 {
-  font-size: var(--font-headline-large-size);
-  line-height: var(--font-headline-large-line-height);
-  font-weight: var(--font-headline-large-weight);
+  font-size: var(--font-large-title-size);
+  line-height: var(--font-large-title-line-height);
+  font-weight: var(--font-large-title-weight);
   letter-spacing: 0;
   margin: var(--space-6) 0 var(--space-2);
 }
 h2 {
-  font-size: var(--font-title-large-size);
-  line-height: var(--font-title-large-line-height);
-  font-weight: var(--font-title-large-weight);
+  font-size: var(--font-title-2-size);
+  line-height: var(--font-title-2-line-height);
+  font-weight: var(--font-title-2-weight);
   letter-spacing: 0;
   margin: var(--space-10) 0 var(--space-3);
 }
 h3 {
-  font-size: var(--font-title-medium-size);
-  line-height: var(--font-title-medium-line-height);
-  font-weight: var(--font-title-medium-weight);
+  font-size: var(--font-title-3-size);
+  line-height: var(--font-title-3-line-height);
+  font-weight: var(--font-title-3-weight);
   letter-spacing: 0;
   margin: var(--space-6) 0 var(--space-2);
 }
@@ -70,18 +70,18 @@ h3 {
   color: var(--platform-secondary-label);
 }
 .annot {
-  font-size: var(--font-label-small-size);
-  line-height: var(--font-label-small-line-height);
-  font-weight: var(--font-label-small-weight);
+  font-size: var(--font-caption-1-size);
+  line-height: var(--font-caption-1-line-height);
+  font-weight: var(--font-caption-1-weight);
   letter-spacing: 0;
   color: var(--platform-secondary-label);
   margin: var(--space-1) 0 0;
 }
 .mode-toggle {
   font-family: var(--font-family), system-ui, sans-serif;
-  font-size: var(--font-label-large-size);
-  line-height: var(--font-label-large-line-height);
-  font-weight: var(--font-label-large-weight);
+  font-size: var(--font-system-font-size);
+  line-height: var(--font-system-font-line-height);
+  font-weight: var(--font-system-font-weight);
   letter-spacing: 0;
   padding: var(--space-2) var(--space-4);
   color: var(--platform-label);
@@ -179,8 +179,8 @@ const colorPageCSS = `.platform-grid {
   justify-content: center;
   border-radius: var(--radius-sm);
   border: thin solid var(--platform-separator);
-  font-size: var(--font-label-medium-size);
-  font-weight: var(--font-label-medium-weight);
+  font-size: var(--font-small-system-font-size);
+  font-weight: var(--font-small-system-font-weight);
 }
 .pins {
   display: flex;
@@ -201,13 +201,13 @@ const colorPageCSS = `.platform-grid {
 .contrast th, .contrast td {
   border: thin solid var(--platform-separator);
   padding: var(--space-1) var(--space-3);
-  font-size: var(--font-body-small-size);
-  line-height: var(--font-body-small-line-height);
+  font-size: var(--font-subheadline-size);
+  line-height: var(--font-subheadline-line-height);
   text-align: right;
 }
 .contrast th[scope="row"] {
   text-align: left;
-  font-weight: var(--font-label-medium-weight);
+  font-weight: var(--font-small-system-font-weight);
 }
 .contrast thead th {
   background: var(--platform-card-fill);
@@ -298,17 +298,10 @@ const typePageCSS = `.type-role {
 }
 `
 
-// typeHTML renders foundations/type.html: the fifteen type roles plus the
-// code style at their real size, weight and line height, each styled entirely
-// through its --font-<role>-* vars and annotated with the numbers, the
-// recorded tracking among them.
-//
-// No specimen SPENDS that tracking. The library's typeset lays a label out at
-// the role's size, weight and line height and spends no letter spacing at
-// all, so a specimen set with the token would be a fraction wider than the
-// component beside it and the page would picture something nothing draws.
-// The number is printed because the token carries it; the drawing is the
-// library's.
+// typeHTML renders foundations/type.html: every exported type style at its
+// real size, weight and line height, each styled entirely through its
+// --font-<role>-* vars and annotated with the numbers. A role adds no
+// tracking, so no specimen sets letter spacing.
 // The code specimen additionally names its own family through
 // var(--font-family-code) — the one role that does not inherit the body face.
 func typeHTML(s Snapshot) string {
@@ -324,18 +317,16 @@ func typeHTML(s Snapshot) string {
 		fmt.Fprintf(&b, "<section class=\"type-role\">\n")
 		fmt.Fprintf(&b, "<p class=\"specimen\" style=\"%[2]sfont-size: var(--font-%[1]s-size); line-height: var(--font-%[1]s-line-height); font-weight: var(--font-%[1]s-weight); letter-spacing: 0\">%[3]s</p>\n",
 			role.name, family, html.EscapeString(specimen))
-		fmt.Fprintf(&b, "<p class=\"annot\">%s &middot; %s / %s &middot; weight %d &middot; tracking %s, spent nowhere</p>\n",
-			role.name, px(style.Size), px(style.LineHeight), style.Weight, px(style.Tracking))
+		fmt.Fprintf(&b, "<p class=\"annot\">%s &middot; %s / %s &middot; weight %d</p>\n",
+			role.name, px(style.Size), px(style.LineHeight), style.Weight)
 		b.WriteString("</section>\n")
 	}
 	intro := fmt.Sprintf("Every type role at its real size, weight and line height, styled through the "+
 		"<code>--font-&lt;role&gt;-*</code> tokens. The face is the family the tokens name &mdash; %s, and %s for the "+
 		"code style &mdash; via <code>var(--font-family)</code> and <code>var(--font-family-code)</code>; the browser "+
 		"must have them installed, otherwise the system fallback face renders at the same metrics. "+
-		"Each role's recorded tracking is printed beside it and spent by nothing: the library's typeset "+
-		"lays a label out at the role's size, weight and line height and spends no letter spacing at all, "+
-		"so a specimen set with the token would be a fraction wider than the component beside it.",
-		html.EscapeString(s.Typography.BodyLarge.Typeface), html.EscapeString(s.Typography.Code.Typeface))
+		"A role adds no tracking: the typeface's own spacing sets the text.",
+		html.EscapeString(s.Typography.Body.Typeface), html.EscapeString(s.Typography.Code.Typeface))
 	return page("Type — Vibrant Gio foundations", "Type", intro, typePageCSS, b.String())
 }
 
@@ -396,8 +387,8 @@ const layoutPageCSS = `.space-row {
   background: var(--platform-control-accent);
   color: var(--platform-alternate-selected-control-text);
   border-radius: var(--radius-md);
-  font-size: var(--font-label-large-size);
-  font-weight: var(--font-label-large-weight);
+  font-size: var(--font-system-font-size);
+  font-weight: var(--font-system-font-weight);
 }
 .chip-bar {
   height: var(--density-chip-height);
@@ -409,8 +400,8 @@ const layoutPageCSS = `.space-row {
   color: var(--platform-label);
   border: thin solid var(--platform-field-edge);
   border-radius: var(--radius-md);
-  font-size: var(--font-label-large-size);
-  font-weight: var(--font-label-large-weight);
+  font-size: var(--font-system-font-size);
+  font-weight: var(--font-system-font-weight);
 }
 .field-bar {
   height: var(--density-field-height);
@@ -421,7 +412,7 @@ const layoutPageCSS = `.space-row {
   color: var(--platform-placeholder-text);
   border: thin solid var(--platform-field-edge);
   border-radius: var(--radius-md);
-  font-size: var(--font-body-large-size);
+  font-size: var(--font-system-font-size);
 }
 .row-bar {
   height: var(--density-row-height);
@@ -430,7 +421,7 @@ const layoutPageCSS = `.space-row {
   align-items: center;
   background: var(--platform-alternating-content-background);
   color: var(--platform-label);
-  font-size: var(--font-body-large-size);
+  font-size: var(--font-system-font-size);
 }
 /* The checkbox's footprint, shown with the sheet's own .checkbox standing in
    it: the symbol's margin is the slack that centres it, so the wrapper comes
@@ -449,8 +440,8 @@ const layoutPageCSS = `.space-row {
   background: var(--platform-toolbar-control-fill);
   color: var(--platform-control-text);
   border-radius: calc(var(--density-toolbar-control-height) / 2);
-  font-size: var(--font-label-large-size);
-  font-weight: var(--font-label-large-weight);
+  font-size: var(--font-system-font-size);
+  font-weight: var(--font-system-font-weight);
 }
 .pad-box {
   display: inline-block;

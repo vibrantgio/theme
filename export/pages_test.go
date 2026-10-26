@@ -186,7 +186,7 @@ func TestReadmeNamesFamilies(t *testing.T) {
 	for _, n := range platformNames {
 		want = append(want, "--platform-"+n.name)
 	}
-	want = append(want, "--font-family", "-size", "-line-height", "-weight", "-tracking")
+	want = append(want, "--font-family", "-size", "-line-height", "-weight")
 	for _, role := range typeRoles {
 		want = append(want, role.name)
 	}
@@ -257,7 +257,7 @@ func fontMetric(name string) (role, metric string, ok bool) {
 	if !found || name == "--font-family" {
 		return "", "", false
 	}
-	for _, suf := range []string{"-size", "-line-height", "-weight", "-tracking"} {
+	for _, suf := range []string{"-size", "-line-height", "-weight"} {
 		if r, has := strings.CutSuffix(base, suf); has {
 			return r, suf, true
 		}

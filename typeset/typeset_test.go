@@ -43,13 +43,17 @@ func pinned() *text.Shaper { return tokens.DefaultTypography.DeterministicShaper
 //
 // It returns the style to draw with as well, because that style must ask for a
 // weight the fallback face has. Gio matches a fallback by weight and Noto Sans
-// Mono ships Regular alone, so LabelLarge's Medium does not reach it: at
+// Mono ships Regular alone, so a stated Medium does not reach it: at
 // Medium the arrow shapes to Roboto's missing-glyph box and the line stays the
 // primary face's height, which would make these tests measure nothing.
+//
+// The style's line height is 24 dp, not SystemFont's 16: the mixed line
+// stands 18 px tall at 13 dp, so a 16 dp box has no leading to correct.
 func fallbackShaper() (*text.Shaper, tokens.TextStyle) {
 	typ := tokens.DefaultTypography.WithFaces(notosansmono.FontFace())
-	style := typ.LabelLarge
+	style := typ.SystemFont
 	style.Weight = 0
+	style.LineHeight = 24
 	return typ.DeterministicShaper(), style
 }
 
@@ -71,7 +75,7 @@ func measure(t *testing.T, g layout.Context, sh *text.Shaper, style tokens.TextS
 }
 
 func styleAt(lineHeight float32) tokens.TextStyle {
-	s := tokens.DefaultTypography.LabelLarge
+	s := tokens.DefaultTypography.SystemFont
 	s.LineHeight = lineHeight
 	return s
 }
@@ -109,7 +113,7 @@ func TestLineHeightChangesSingleLineHeight(t *testing.T) {
 // TestLineHeightBelowNaturalLineIsFloored pins the one case where two line
 // heights legitimately agree, with the reason beside it: a line height smaller
 // than the face's own ascent-plus-descent has no leading to distribute, and
-// typeset does not shrink a line box below its glyphs. LabelLarge at 14 dp
+// typeset does not shrink a line box below its glyphs. SystemFont at 13 dp
 // measures 17 px, so 8 and 12 both come back as 17 — not because the property
 // was dropped, but because there is nothing to add.
 func TestLineHeightBelowNaturalLineIsFloored(t *testing.T) {
@@ -124,7 +128,7 @@ func TestLineHeightBelowNaturalLineIsFloored(t *testing.T) {
 		}
 	}
 	if natural >= 20 {
-		t.Fatalf("natural LabelLarge line is %d px; this test assumed it below 20", natural)
+		t.Fatalf("natural SystemFont line is %d px; this test assumed it below 20", natural)
 	}
 }
 
@@ -198,9 +202,13 @@ func TestLabelKeepsCallerFields(t *testing.T) {
 // TestFontFallbackWeight pins Font's two-way weight rule: the style wins when
 // it names a weight, the draw site's fallback wins when it does not.
 func TestFontFallbackWeight(t *testing.T) {
-	styled := typeset.Font(tokens.DefaultTypography.LabelLarge, font.Normal)
-	if want := tokens.FontWeight(tokens.WeightMedium); styled.Weight != want {
-		t.Errorf("LabelLarge weight = %v, want %v", styled.Weight, want)
+	styled := typeset.Font(tokens.DefaultTypography.Headline, font.Normal)
+	if want := tokens.FontWeight(tokens.WeightBold); styled.Weight != want {
+		t.Errorf("Headline weight = %v, want %v", styled.Weight, want)
+	}
+	regular := typeset.Font(tokens.DefaultTypography.SystemFont, font.Bold)
+	if want := tokens.FontWeight(tokens.WeightRegular); regular.Weight != want {
+		t.Errorf("SystemFont weight at a Bold fallback = %v, want %v", regular.Weight, want)
 	}
 	bare := typeset.Font(tokens.TextStyle{Typeface: "Roboto"}, font.Bold)
 	if bare.Weight != font.Bold {
@@ -506,7 +514,7 @@ func TestTextWeightSpendsTheFallbackOnAWeightlessRole(t *testing.T) {
 func TestTextWeightLeavesAStatedWeightAlone(t *testing.T) {
 	sh := pinned()
 	fg := color.NRGBA{A: 0xff}
-	style := styleAt(20) // LabelLarge states Medium
+	style := styleAt(20) // SystemFont states Regular
 
 	var ops op.Ops
 	g := gtx(&ops, 1<<20)
@@ -627,7 +635,7 @@ func TestLineWidthSpendsTheFallbackWeight(t *testing.T) {
 		t.Errorf("LineWidth at a SemiBold fallback = %d px, want wider than Normal's %d", semi, normal)
 	}
 
-	stated := styleAt(20) // LabelLarge states Medium
+	stated := styleAt(20) // SystemFont states Regular
 	if got, want := typeset.LineWidth(g, sh, specimen, stated, font.Bold), typeset.LineWidth(g, sh, specimen, stated, font.Normal); got != want {
 		t.Errorf("LineWidth at a Bold fallback = %d px, want the role's own weight %d", got, want)
 	}

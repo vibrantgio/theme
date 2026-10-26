@@ -187,7 +187,7 @@ func parameters(s Snapshot) Parameters {
 	return Parameters{
 		ThemeColor: hexRGB(s.PlatformLight.ControlAccent),
 		Platform:   ModePlatform{Light: platformMap(s.PlatformLight), Dark: platformMap(s.PlatformDark)},
-		Fonts:      Fonts{Heading: s.Typography.HeadlineLarge.Typeface, Body: s.Typography.BodyLarge.Typeface, Mono: s.Typography.Code.Typeface},
+		Fonts:      Fonts{Heading: s.Typography.LargeTitle.Typeface, Body: s.Typography.Body.Typeface, Mono: s.Typography.Code.Typeface},
 		Radius:     float64(s.Radius.Base),
 		Density: DensityParams{
 			Setting:     setting,

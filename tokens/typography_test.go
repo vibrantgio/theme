@@ -1,6 +1,7 @@
 package tokens_test
 
 import (
+	"reflect"
 	"testing"
 
 	"gioui.org/font"
@@ -11,36 +12,35 @@ import (
 	"github.com/vibrantgio/theme/tokens"
 )
 
-func TestDefaultTypographyRolesComplete(t *testing.T) {
-	roles := []struct {
-		name  string
-		style tokens.TextStyle
-	}{
-		{"DisplayLarge", tokens.DefaultTypography.DisplayLarge},
-		{"DisplayMedium", tokens.DefaultTypography.DisplayMedium},
-		{"DisplaySmall", tokens.DefaultTypography.DisplaySmall},
-		{"HeadlineLarge", tokens.DefaultTypography.HeadlineLarge},
-		{"HeadlineMedium", tokens.DefaultTypography.HeadlineMedium},
-		{"HeadlineSmall", tokens.DefaultTypography.HeadlineSmall},
-		{"TitleLarge", tokens.DefaultTypography.TitleLarge},
-		{"TitleMedium", tokens.DefaultTypography.TitleMedium},
-		{"TitleSmall", tokens.DefaultTypography.TitleSmall},
-		{"LabelLarge", tokens.DefaultTypography.LabelLarge},
-		{"LabelMedium", tokens.DefaultTypography.LabelMedium},
-		{"LabelSmall", tokens.DefaultTypography.LabelSmall},
-		{"BodyLarge", tokens.DefaultTypography.BodyLarge},
-		{"BodyMedium", tokens.DefaultTypography.BodyMedium},
-		{"BodySmall", tokens.DefaultTypography.BodySmall},
+// textStyles returns every TextStyle field of typ by its field name.
+func textStyles(typ tokens.Typography) map[string]tokens.TextStyle {
+	out := map[string]tokens.TextStyle{}
+	v := reflect.ValueOf(typ)
+	for i := 0; i < v.NumField(); i++ {
+		if !v.Type().Field(i).IsExported() {
+			continue
+		}
+		if s, ok := v.Field(i).Interface().(tokens.TextStyle); ok {
+			out[v.Type().Field(i).Name] = s
+		}
 	}
-	for _, role := range roles {
-		if role.style.Size <= 0 {
-			t.Errorf("%s: zero size", role.name)
+	return out
+}
+
+func TestDefaultTypographyRolesComplete(t *testing.T) {
+	roles := textStyles(tokens.DefaultTypography)
+	if len(roles) == 0 {
+		t.Fatal("Typography has no TextStyle field")
+	}
+	for name, style := range roles {
+		if style.Size <= 0 {
+			t.Errorf("%s: zero size", name)
 		}
-		if role.style.Weight <= 0 {
-			t.Errorf("%s: zero weight", role.name)
+		if style.Weight <= 0 {
+			t.Errorf("%s: zero weight", name)
 		}
-		if role.style.LineHeight <= 0 {
-			t.Errorf("%s: zero line height", role.name)
+		if style.LineHeight <= 0 {
+			t.Errorf("%s: zero line height", name)
 		}
 	}
 }
@@ -52,9 +52,18 @@ func TestDefaultTypographyCode(t *testing.T) {
 	if code.Typeface != "Roboto Mono" {
 		t.Errorf("Code.Typeface = %q, want %q", code.Typeface, "Roboto Mono")
 	}
-	if code.Size != body.Size || code.LineHeight != body.LineHeight ||
-		code.Tracking != body.Tracking || code.Weight != body.Weight {
+	if code.Size != body.Size || code.LineHeight != body.LineHeight || code.Weight != body.Weight {
 		t.Errorf("Code metrics = %+v, want Body's %+v on the mono face", code, body)
+	}
+}
+
+// TestNoRoleHasTracking pins that a role adds no tracking: TextStyle has
+// no field to state one in.
+func TestNoRoleHasTracking(t *testing.T) {
+	for _, name := range []string{"Tracking", "LetterSpacing"} {
+		if _, ok := reflect.TypeOf(tokens.TextStyle{}).FieldByName(name); ok {
+			t.Errorf("TextStyle has a %s field; a role adds no tracking", name)
+		}
 	}
 }
 
@@ -82,8 +91,8 @@ func TestCodeAndDocumentHeadingsTakeTheirReferenceRows(t *testing.T) {
 	for _, r := range rows {
 		g := r.got
 		if g.Typeface != r.typeface || g.Size != r.size || g.Weight != r.weight ||
-			g.LineHeight != r.lineHeight || g.Tracking != 0 {
-			t.Errorf("%s = %+v, want %s %g/%d/%g with no tracking",
+			g.LineHeight != r.lineHeight {
+			t.Errorf("%s = %+v, want %s %g/%d/%g",
 				r.name, g, r.typeface, r.size, r.weight, r.lineHeight)
 		}
 	}
@@ -91,7 +100,7 @@ func TestCodeAndDocumentHeadingsTakeTheirReferenceRows(t *testing.T) {
 
 // TestPlatformTextStyleRolesTakeTheirRecordedRows pins each platform text
 // style role to the size, weight and line height that AppKit reports on
-// macOS 26.5.2. Each role takes the type set's typeface and adds no tracking.
+// macOS 26.5.2. Each role takes the type set's typeface.
 func TestPlatformTextStyleRolesTakeTheirRecordedRows(t *testing.T) {
 	typ := tokens.DefaultTypography
 	rows := []struct {
@@ -122,11 +131,8 @@ func TestPlatformTextStyleRolesTakeTheirRecordedRows(t *testing.T) {
 			t.Errorf("%s = size %v, weight %d, line height %v; want %v, %d, %v",
 				r.name, s.Size, s.Weight, s.LineHeight, r.size, r.weight, r.lineHeight)
 		}
-		if s.Tracking != 0 {
-			t.Errorf("%s.Tracking = %v, want 0", r.name, s.Tracking)
-		}
-		if s.Typeface != typ.BodyLarge.Typeface {
-			t.Errorf("%s.Typeface = %q, want the type set's %q", r.name, s.Typeface, typ.BodyLarge.Typeface)
+		if s.Typeface != typ.Body.Typeface {
+			t.Errorf("%s.Typeface = %q, want the type set's %q", r.name, s.Typeface, typ.Body.Typeface)
 		}
 	}
 }
@@ -244,15 +250,15 @@ func TestDocumentHeadingScaleLevelAddressesTheIndex(t *testing.T) {
 func TestDefaultShaperResolvesRobotoEveryWeight(t *testing.T) {
 	typ := tokens.DefaultTypography
 	weights := map[int]bool{}
-	styles := []tokens.TextStyle{
-		typ.DisplayLarge, typ.DisplayMedium, typ.DisplaySmall,
-		typ.HeadlineLarge, typ.HeadlineMedium, typ.HeadlineSmall,
-		typ.TitleLarge, typ.TitleMedium, typ.TitleSmall,
-		typ.LabelLarge, typ.LabelMedium, typ.LabelSmall,
-		typ.BodyLarge, typ.BodyMedium, typ.BodySmall,
+	// Only the CSS weight steps: Caption2's recorded 510 shapes to the
+	// medium face and would make two weights share one advance.
+	for _, style := range textStyles(typ) {
+		switch style.Weight {
+		case tokens.WeightRegular, tokens.WeightMedium, tokens.WeightBold:
+			weights[style.Weight] = true
+		}
 	}
-	styles = append(styles, typ.DocumentHeadings[:]...)
-	for _, style := range styles {
+	for _, style := range typ.DocumentHeadings {
 		weights[style.Weight] = true
 	}
 	if !weights[tokens.WeightRegular] || !weights[tokens.WeightMedium] || !weights[tokens.WeightBold] {
@@ -699,8 +705,7 @@ func TestCodeFaceAppliesJetBrainsMono(t *testing.T) {
 		t.Errorf("Code.Typeface = %q, want %q", got.Code.Typeface, "JetBrains Mono")
 	}
 	code, body := got.Code, def.Body
-	if code.Size != body.Size || code.LineHeight != body.LineHeight ||
-		code.Tracking != body.Tracking || code.Weight != body.Weight {
+	if code.Size != body.Size || code.LineHeight != body.LineHeight || code.Weight != body.Weight {
 		t.Errorf("Code metrics = %+v, want Body's %+v on the new face", code, body)
 	}
 	if len(got.Faces) != len(def.Faces)+4 {

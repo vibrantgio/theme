@@ -27,15 +27,15 @@ func TestFaceMetricsReadsTheShippedFace(t *testing.T) {
 		wantSte float64
 	}{
 		{
-			"LabelLarge is Medium",
-			tokens.DefaultTypography.LabelLarge,
+			"Medium at 14 dp",
+			tokens.TextStyle{Typeface: "Roboto", Weight: tokens.WeightMedium, Size: 14},
 			14 * robotoCapEm, 14 * robotoMediumStem,
 		},
 		{
-			"BodyLarge is Regular",
-			tokens.DefaultTypography.BodyLarge,
-			float64(tokens.DefaultTypography.BodyLarge.Size) * robotoCapEm,
-			float64(tokens.DefaultTypography.BodyLarge.Size) * robotoRegularStem,
+			"SystemFont is Regular",
+			tokens.DefaultTypography.SystemFont,
+			float64(tokens.DefaultTypography.SystemFont.Size) * robotoCapEm,
+			float64(tokens.DefaultTypography.SystemFont.Size) * robotoRegularStem,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -65,9 +65,9 @@ func TestFaceMetricsFallsBackForAnUnknownFamily(t *testing.T) {
 // The cap band scales with the role, which is the whole point of asking the
 // face rather than pinning a number: a larger role gets a taller band.
 func TestFaceMetricsScalesWithTheRole(t *testing.T) {
-	small := tokens.DefaultTypography.LabelSmall.FaceMetrics()
-	large := tokens.DefaultTypography.HeadlineLarge.FaceMetrics()
+	small := tokens.DefaultTypography.Caption1.FaceMetrics()
+	large := tokens.DefaultTypography.LargeTitle.FaceMetrics()
 	if !(small.CapHeight < large.CapHeight) {
-		t.Errorf("LabelSmall cap %v is not under HeadlineLarge cap %v", small.CapHeight, large.CapHeight)
+		t.Errorf("Caption1 cap %v is not under LargeTitle cap %v", small.CapHeight, large.CapHeight)
 	}
 }
