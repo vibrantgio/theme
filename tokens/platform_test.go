@@ -31,7 +31,7 @@ const cataloguePath = "testdata/nscolors.tsv"
 //	shasum -a 256 ../../organisation/reference/macos/nscolors.tsv
 const (
 	referencePath   = "../../organisation/reference/macos/nscolors.tsv"
-	referenceDigest = "17674b9df628b1f6b5d38c8104a696185c958dc24826b4e235e6166a14293510"
+	referenceDigest = "65f3c446452a18f4e6e69877c92799f0f46414df7df9945a1672cb45beae0b27"
 )
 
 // mailFindHighlight is the find highlight as Mail paints it, measured off
@@ -485,6 +485,28 @@ func TestCardFillIsTheMeasuredGroupedBox(t *testing.T) {
 		// and landed together; the dark pair does not.
 		if c.name == "dark" && c.in.CardFill == c.in.SidebarMaterial {
 			t.Errorf("%s CardFill = %v, the chrome material; the box was measured apart from it", c.name, c.in.CardFill)
+		}
+	}
+}
+
+// TestStatusFooterSeamIsTheStatusBarsMeasuredSeam pins the seam at the top
+// of a footer of status text to the pixels of Finder's status bar, read in
+// "What the status bar measures" in the reference. Light it is a value apart
+// from the column seam; dark the two are the same byte.
+func TestStatusFooterSeamIsTheStatusBarsMeasuredSeam(t *testing.T) {
+	for _, c := range []struct {
+		name string
+		in   tokens.PlatformColors
+		want color.NRGBA
+	}{
+		{"light", tokens.PlatformLight, color.NRGBA{R: 0xd9, G: 0xd9, B: 0xd9, A: 0xff}},
+		{"dark", tokens.PlatformDark, color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff}},
+	} {
+		if c.in.StatusFooterSeam != c.want {
+			t.Errorf("%s StatusFooterSeam = %v, want the status bar's measured seam %v", c.name, c.in.StatusFooterSeam, c.want)
+		}
+		if c.name == "light" && c.in.StatusFooterSeam == c.in.Seam {
+			t.Errorf("light StatusFooterSeam = %v, the column seam; the status bar's seam was measured apart from it", c.in.StatusFooterSeam)
 		}
 	}
 }

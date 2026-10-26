@@ -69,6 +69,7 @@
 //	PaneRim          #ffffff        #3a3a3a        measured: the 1 px rim the inset sidebar pane wears on every side
 //	PaneShadow       #000000 a0.051 #000000 a0.051 measured: the shadow that pane casts, 24 px of reach with its rectangle sunk 9
 //	Seam             #e6e6e6        #000000        measured: the hairline between two flush regions, Mail's list seam
+//	StatusFooterSeam #d9d9d9        #000000        measured: the hairline at the top of a footer of status text, Finder's status bar seam
 //
 // The chrome material and the sidebar's pill were read with "Tint window
 // background with wallpaper colour" off, so they carry the platform's own
@@ -195,6 +196,21 @@ type PlatformColors struct {
 	// 255 off the pixel — which is why the pair is carried rather than
 	// flattened, as ToolbarControlSeam and PaneRim are.
 	Seam color.NRGBA `appkit:"-"`
+
+	// StatusFooterSeam is the hairline at the top of a footer of status
+	// text: the platform's status bar's seam, as a VALUE per scheme. A
+	// seam's colour is measured per place, and in light this place has a
+	// value apart from the column seam's.
+	//
+	// MEASURED off Finder's status bar in finder-status-bar-fits-light.png
+	// and finder-status-bar-fits-dark.png: one pixel row at y 472 across
+	// the window's width, #d9d9d9 light and #000000 dark over x 2–797. The
+	// reading is "What the status bar measures" in
+	// reference/macos/controls.md.
+	//
+	// Light it is 13 of 255 darker than Separator over #ffffff. Dark it is
+	// Mail's list seam to the byte.
+	StatusFooterSeam color.NRGBA `appkit:"-"`
 
 	// Text, at four strengths, over whatever it stands on.
 	Label           color.NRGBA
@@ -823,6 +839,8 @@ var (
 		Grid:      color.NRGBA{R: 0xe6, G: 0xe6, B: 0xe6, A: 0xff},
 		Seam:      color.NRGBA{R: 0xe6, G: 0xe6, B: 0xe6, A: 0xff},
 
+		StatusFooterSeam: color.NRGBA{R: 0xd9, G: 0xd9, B: 0xd9, A: 0xff},
+
 		Label:           color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xd8},
 		SecondaryLabel:  color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x7f},
 		TertiaryLabel:   color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x42},
@@ -909,6 +927,8 @@ var (
 		Separator: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x19},
 		Grid:      color.NRGBA{R: 0x1a, G: 0x1a, B: 0x1a, A: 0xff},
 		Seam:      color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
+
+		StatusFooterSeam: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
 
 		Label:           color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xd8},
 		SecondaryLabel:  color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x8c},

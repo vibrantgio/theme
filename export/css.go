@@ -74,6 +74,7 @@ var platformNames = []struct {
 	{"separator", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Separator }},
 	{"grid", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Grid }},
 	{"seam", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Seam }},
+	{"status-footer-seam", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.StatusFooterSeam }},
 	{"label", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Label }},
 	{"secondary-label", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SecondaryLabel }},
 	{"tertiary-label", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.TertiaryLabel }},
