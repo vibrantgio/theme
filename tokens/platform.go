@@ -20,7 +20,7 @@
 // for every one of these names itself; these recorded sets are what the
 // other platforms — and every test — read.
 //
-// Thirty fields are not AppKit's. The platform paints a sidebar, a
+// Thirty-one fields are not AppKit's. The platform paints a sidebar, a
 // grouped box, a selected sidebar row, the count at a sidebar row's trailing
 // end, a search field's recess on a sidebar, a push
 // button, a hovered and a pressed
