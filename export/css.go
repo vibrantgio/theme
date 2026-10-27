@@ -115,6 +115,7 @@ var platformNames = []struct {
 	{"sidebar-symbol", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarSymbol }},
 	{"card-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.CardFill }},
 	{"push-button-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.PushButtonFill }},
+	{"find-bar-button-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.FindBarButtonFill }},
 	{"default-button-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.DefaultButtonFill }},
 	{"hover-overlay", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.HoverOverlay }},
 	{"press-overlay", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.PressOverlay }},

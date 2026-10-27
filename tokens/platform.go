@@ -20,10 +20,10 @@
 // for every one of these names itself; these recorded sets are what the
 // other platforms — and every test — read.
 //
-// Thirty-one fields are not AppKit's. The platform paints a sidebar, a
+// Thirty-two fields are not AppKit's. The platform paints a sidebar, a
 // grouped box, a selected sidebar row, the count at a sidebar row's trailing
 // end, a search field's recess on a sidebar, a push
-// button, a hovered and a pressed
+// button, the find bar's button, a hovered and a pressed
 // control, the shadow under a
 // floating pane, a text field's hairline, an overlay scrollbar's thumb, a
 // list's alternating row, a content list's selected row, the rim and the shadow of an inset sidebar pane,
@@ -48,6 +48,7 @@
 //	SidebarSymbol    #000000        #ffffff        measured: the symbol at the leading end of a sidebar row
 //	CardFill         #f7f7f7        #252525        measured: the System Settings grouped box, dark untinted
 //	PushButtonFill   #ececec        #333a3f        measured: the Save panel's push button at rest
+//	FindBarButtonFill #ececec       #33393e        measured: TextEdit's find bar button at rest, dark tinted
 //	DefaultButtonFill #157efb       #157efb        measured: the Save panel's default push button at rest
 //	HoverOverlay     #000000 a0.051 #ffffff a0.094 measured: a toolbar button under the pointer
 //	PressOverlay     #000000 a0.098 #ffffff a0.098 measured: a push button held down
@@ -392,6 +393,14 @@ type PlatformColors struct {
 	// coverage. So the fill is recorded as the pixel and Control is left
 	// answering for what AppKit says it answers for.
 	PushButtonFill color.NRGBA `appkit:"-"`
+
+	// FindBarButtonFill is what the find bar's button and its previous and
+	// next control are filled with: #ececec light and #33393e dark,
+	// flat-region samples of Done and of the segments in
+	// textedit-find-empty-light.png and textedit-find-empty-dark.png (a run
+	// down x=428 over y 38-57). Wallpaper tinting was on for the dark
+	// capture, so the dark value is a tinted reading.
+	FindBarButtonFill color.NRGBA `appkit:"-"`
 
 	// DefaultButtonFill is what the DEFAULT push button — the one a sheet
 	// binds Return to — is actually filled with: #157efb in BOTH
@@ -888,6 +897,7 @@ var (
 		SidebarSymbol:                     color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
 		CardFill:                          color.NRGBA{R: 0xf7, G: 0xf7, B: 0xf7, A: 0xff},
 		PushButtonFill:                    color.NRGBA{R: 0xec, G: 0xec, B: 0xec, A: 0xff},
+		FindBarButtonFill:                 color.NRGBA{R: 0xec, G: 0xec, B: 0xec, A: 0xff},
 		DefaultButtonFill:                 color.NRGBA{R: 0x15, G: 0x7e, B: 0xfb, A: 0xff},
 		HoverOverlay:                      color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x0d},
 		PressOverlay:                      color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x19},
@@ -977,6 +987,7 @@ var (
 		SidebarSymbol:                     color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
 		CardFill:                          color.NRGBA{R: 0x25, G: 0x25, B: 0x25, A: 0xff},
 		PushButtonFill:                    color.NRGBA{R: 0x33, G: 0x3a, B: 0x3f, A: 0xff},
+		FindBarButtonFill:                 color.NRGBA{R: 0x33, G: 0x39, B: 0x3e, A: 0xff},
 		DefaultButtonFill:                 color.NRGBA{R: 0x15, G: 0x7e, B: 0xfb, A: 0xff},
 		HoverOverlay:                      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x18},
 		PressOverlay:                      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x19},
