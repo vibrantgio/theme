@@ -228,21 +228,21 @@ func readmeMD(s Snapshot) string {
 
 	b.WriteString("## Density\n\n" +
 		"Two published settings, one variable family: comfortable (24 dp controls,\n" +
-		"20 dp chips, 8/2 dp padding) is the `:root` default; compact (19 dp\n" +
-		"controls, 15 dp chips, 7/0 dp padding) is the `.compact` class override,\n" +
+		"20 dp chips, 8 dp horizontal padding) is the `:root` default; compact (20 dp\n" +
+		"controls, 16 dp chips, 11 dp horizontal padding) is the `.compact` class override,\n" +
 		"scoping to any subtree the way `.dark` scopes colours. The chip height is\n" +
 		"the control height less 4 dp in both settings — one relation, not a second\n" +
 		"scale. A text field, a search field, a stacked row, a checkbox's row and a\n" +
 		"toolbar control are not that control and carry their own measured heights:\n" +
 		"`--density-text-field-height` (27 dp comfortable, 21 compact),\n" +
-		"`--density-search-field-height` (26 dp, 21 compact) for a search\n" +
+		"`--density-search-field-height` (26 dp, 22 compact) for a search\n" +
 		"field on the content,\n" +
-		"`--density-sidebar-search-field-height` (28 dp, 22 compact) for a\n" +
+		"`--density-sidebar-search-field-height` (28 dp in both) for a\n" +
 		"search field in a sidebar,\n" +
-		"`--density-row-height` (20 dp, 19 compact) for a table row,\n" +
+		"`--density-row-height` (20 dp in both) for a table row,\n" +
 		"`--density-content-list-row-height` (32 dp in both, no capture holding\n" +
 		"that row drawn small) for a content list row,\n" +
-		"`--density-checkbox-row-height` (22 dp, 17 compact) and\n" +
+		"`--density-checkbox-row-height` (22 dp, 20 compact) and\n" +
 		"`--density-toolbar-control-height` (36 dp in both, no capture holding a\n" +
 		"toolbar drawn small).\n" +
 		"A control's pointer target is the control: what it draws at\n" +

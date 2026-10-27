@@ -1,48 +1,30 @@
 package tokens
 
-import (
-	"math"
-	"testing"
-)
+import "testing"
 
 // TestDensityPicksMatchThePlatformScale pins the two control heights to the
-// platform's scale as the reference now reads it, with the provenance
-// recorded in density.go and in organisation/reference/macos/controls.md:
-// Comfortable is the regular control measured off the stored Save panel at
-// 24 dp, superseding the HIG's published 22 pt, and Compact is still the
-// published small control at 19 dp because no capture holds one. Each is also
-// the pointer target a control of that density offers.
+// platform's scale as the reference reads it, with the provenance recorded
+// in density.go and in organisation/reference/macos/controls.md: Comfortable
+// is the regular control measured off the stored Save panel at 24 dp, and
+// Compact is the small control measured off Finder's View Options window and
+// search criteria rows at 20 dp. Each is also the pointer target a control
+// of that density offers.
 func TestDensityPicksMatchThePlatformScale(t *testing.T) {
 	const (
-		measuredRegular  float32 = 24 // MEASURED: save-dialog-{light,dark}.png, push button and pop-up button
-		publishedRegular float32 = 22 // PUBLISHED: the HIG's regular push button — superseded by the capture
-		publishedSmall   float32 = 19 // PUBLISHED: the HIG's small push button — uncaptured
-		publishedMini    float32 = 16 // PUBLISHED: the HIG's mini push button
+		measuredRegular float32 = 24 // MEASURED: save-dialog-{light,dark}.png, push button and pop-up button
+		measuredSmall   float32 = 20 // MEASURED: finder-view-options-{light,dark}.png and finder-search-criteria-{light,dark}.png, pop-ups and push buttons
 	)
 	if ComfortableControlHeight != measuredRegular {
 		t.Errorf("ComfortableControlHeight = %v, want %v (the platform's regular control, measured)",
 			ComfortableControlHeight, measuredRegular)
 	}
-	if ComfortableControlHeight == publishedRegular {
-		t.Errorf("ComfortableControlHeight = %v, the published number: measured beats published here (owner ruling 2026-09-11)",
-			ComfortableControlHeight)
-	}
-	if CompactControlHeight != publishedSmall {
-		t.Errorf("CompactControlHeight = %v, want %v (the platform's small control, published)",
-			CompactControlHeight, publishedSmall)
+	if CompactControlHeight != measuredSmall {
+		t.Errorf("CompactControlHeight = %v, want %v (the platform's small control, measured)",
+			CompactControlHeight, measuredSmall)
 	}
 	if CompactControlHeight >= ComfortableControlHeight {
 		t.Errorf("CompactControlHeight (%v) must be < ComfortableControlHeight (%v)",
 			CompactControlHeight, ComfortableControlHeight)
-	}
-	for name, v := range map[string]float32{
-		"ComfortableControlHeight": ComfortableControlHeight,
-		"CompactControlHeight":     CompactControlHeight,
-	} {
-		if v < publishedMini || v > measuredRegular {
-			t.Errorf("%s = %v, want within the platform's control range [%v, %v]",
-				name, v, publishedMini, measuredRegular)
-		}
 	}
 }
 
@@ -66,24 +48,27 @@ func TestFieldHeightsAreTheirMeasuredRows(t *testing.T) {
 	}
 }
 
-// TestCompactFieldHeightsAreDerived pins each Compact field height to the
-// derivation the reference states: the Comfortable reading times the small
-// control's 19 over the regular control's 24, rounded. No capture holds a
-// small field.
-func TestCompactFieldHeightsAreDerived(t *testing.T) {
-	derive := func(comfortable float32) float32 {
-		return float32(math.Round(float64(comfortable * CompactControlHeight / ComfortableControlHeight)))
-	}
+// TestCompactValuesAreTheirMeasuredRows pins each Compact value to its
+// MEASURED row in organisation/reference/macos/controls.md, under "What the
+// density scale takes". Each one is its own reading of a small control, and
+// none is computed from a Comfortable value.
+func TestCompactValuesAreTheirMeasuredRows(t *testing.T) {
 	for _, tc := range []struct {
-		name             string
-		got, comfortable float32
+		name string
+		got  float32
+		row  float32
+		from string
 	}{
-		{"text field", Compact.TextFieldHeight, Comfortable.TextFieldHeight},
-		{"search field", Compact.SearchFieldHeight, Comfortable.SearchFieldHeight},
-		{"sidebar search field", Compact.SidebarSearchFieldHeight, Comfortable.SidebarSearchFieldHeight},
+		{"control height", Compact.ControlHeight, 20, "finder-view-options-{light,dark}.png and finder-search-criteria-{light,dark}.png, the small pop-ups and push buttons"},
+		{"text field", Compact.TextFieldHeight, 21, "finder-search-criteria-{light,dark}.png, the edge at y 38 and y 58"},
+		{"search field", Compact.SearchFieldHeight, 22, "automator-search-field-{light,dark}.png, the edge at y 69 and y 90"},
+		{"sidebar search field", Compact.SidebarSearchFieldHeight, 28, "systemsettings-sidebar-search-small-{light,dark}.png, y 6–33"},
+		{"row height", Compact.RowHeight, 20, "finder-list-small-{light,dark}.png, a 20 px stripe pitch"},
+		{"checkbox row", Compact.CheckboxRowHeight, 20, "finder-view-options-{light,dark}.png, boxes at y 338–351 and y 358–371"},
+		{"PaddingX", Compact.PaddingX, 11, "finder-view-options-{light,dark}.png and finder-search-criteria-{light,dark}.png, the small pop-up's fill start to the first stem"},
 	} {
-		if want := derive(tc.comfortable); tc.got != want {
-			t.Errorf("Compact %s = %v dp, want %v (%v × 19/24, rounded)", tc.name, tc.got, want, tc.comfortable)
+		if tc.got != tc.row {
+			t.Errorf("Compact %s = %v dp, want its measured row %v (%s)", tc.name, tc.got, tc.row, tc.from)
 		}
 	}
 	for name, d := range map[string]Density{"Comfortable": Comfortable, "Compact": Compact} {
@@ -155,9 +140,9 @@ func TestStackedRowsAreTheirOwnTarget(t *testing.T) {
 }
 
 // TestDensitySettingsMatchTable pins the two settings to the provenance table
-// in density.go: the heights are exactly the picked consts, Compact is
-// strictly denser than Comfortable on every visual axis, and PaddingX is the
-// pair the table states.
+// in density.go: the heights are exactly the consts, no Compact height
+// exceeds its Comfortable height, and PaddingX is the pair the table states.
+// The sidebar search field is the same at both, as the platform draws it.
 func TestDensitySettingsMatchTable(t *testing.T) {
 	if Comfortable.ControlHeight != ComfortableControlHeight {
 		t.Errorf("Comfortable.ControlHeight = %v, want %v", Comfortable.ControlHeight, ComfortableControlHeight)
@@ -171,23 +156,20 @@ func TestDensitySettingsMatchTable(t *testing.T) {
 	if Compact.TextFieldHeight != CompactTextFieldHeight || Compact.SearchFieldHeight != CompactSearchFieldHeight || Compact.SidebarSearchFieldHeight != CompactSidebarSearchFieldHeight {
 		t.Errorf("Compact field heights = (%v, %v, %v), want the Compact consts", Compact.TextFieldHeight, Compact.SearchFieldHeight, Compact.SidebarSearchFieldHeight)
 	}
-	if Compact.ControlHeight >= Comfortable.ControlHeight || Compact.TextFieldHeight >= Comfortable.TextFieldHeight || Compact.SearchFieldHeight >= Comfortable.SearchFieldHeight || Compact.SidebarSearchFieldHeight >= Comfortable.SidebarSearchFieldHeight {
-		t.Errorf("Compact heights must be < Comfortable heights: %+v against %+v", Compact, Comfortable)
-	}
-	if Compact.PaddingX >= Comfortable.PaddingX {
-		t.Errorf("Compact PaddingX %v must be < Comfortable PaddingX %v", Compact.PaddingX, Comfortable.PaddingX)
+	if Compact.ControlHeight >= Comfortable.ControlHeight || Compact.TextFieldHeight >= Comfortable.TextFieldHeight || Compact.SearchFieldHeight >= Comfortable.SearchFieldHeight || Compact.SidebarSearchFieldHeight > Comfortable.SidebarSearchFieldHeight {
+		t.Errorf("Compact heights must not exceed Comfortable heights: %+v against %+v", Compact, Comfortable)
 	}
 	if Comfortable.PaddingX != 8 {
-		t.Errorf("Comfortable.PaddingX = %v, want 8 — the HIG's inset beside a regular push button's title", Comfortable.PaddingX)
+		t.Errorf("Comfortable.PaddingX = %v, want 8 — the platform's documented inset beside a regular push button's title", Comfortable.PaddingX)
 	}
-	if Compact.PaddingX != 7 {
-		t.Errorf("Compact.PaddingX = %v, want 7 — the published 8 scaled by 19/22", Compact.PaddingX)
+	if Compact.PaddingX != 11 {
+		t.Errorf("Compact.PaddingX = %v, want 11 — the small pop-up's measured title inset", Compact.PaddingX)
 	}
 }
 
 // TestChipHeightRelation pins the chip height to the relation and not to two
 // picked numbers: it is exactly ChipDrop under whatever control height the
-// setting carries, which lands Comfortable on 20 and Compact on 15. Changing
+// setting carries, which lands Comfortable on 20 and Compact on 16. Changing
 // a control height moves the chip with it, and this test is what says so.
 //
 // The drawn chip is the shortest thing the system draws, and what it draws is
@@ -205,8 +187,8 @@ func TestChipHeightRelation(t *testing.T) {
 				name, d.ChipHeight(), d.ControlHeight)
 		}
 	}
-	if Comfortable.ChipHeight() != 20 || Compact.ChipHeight() != 15 {
-		t.Errorf("chip heights = (%v, %v), want (20, 15)",
+	if Comfortable.ChipHeight() != 20 || Compact.ChipHeight() != 16 {
+		t.Errorf("chip heights = (%v, %v), want (20, 16)",
 			Comfortable.ChipHeight(), Compact.ChipHeight())
 	}
 }
@@ -222,13 +204,13 @@ func TestControlHeightsAreMeasured(t *testing.T) {
 		want float32
 	}{
 		{"Comfortable control", Comfortable.ControlHeight, 24},
-		{"Compact control", Compact.ControlHeight, 19},
+		{"Compact control", Compact.ControlHeight, 20},
 		{"Comfortable text field", Comfortable.TextFieldHeight, 27},
 		{"Compact text field", Compact.TextFieldHeight, 21},
 		{"Comfortable search field", Comfortable.SearchFieldHeight, 26},
-		{"Compact search field", Compact.SearchFieldHeight, 21},
+		{"Compact search field", Compact.SearchFieldHeight, 22},
 		{"Comfortable sidebar search field", Comfortable.SidebarSearchFieldHeight, 28},
-		{"Compact sidebar search field", Compact.SidebarSearchFieldHeight, 22},
+		{"Compact sidebar search field", Compact.SidebarSearchFieldHeight, 28},
 	} {
 		if tc.got != tc.want {
 			t.Errorf("%s height = %v dp, want %v", tc.name, tc.got, tc.want)
