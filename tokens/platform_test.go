@@ -31,7 +31,7 @@ const cataloguePath = "testdata/nscolors.tsv"
 //	shasum -a 256 ../../organisation/reference/macos/nscolors.tsv
 const (
 	referencePath   = "../../organisation/reference/macos/nscolors.tsv"
-	referenceDigest = "0486b3acdaa15f3f2654755b934ae4fb1d5e58654d11e03afd58513b20bc1f16"
+	referenceDigest = "c230e01e53430f5773f6c74e099103af6f2fbe4d9bf0ffe5b4c2a779ac1a6b14"
 )
 
 // appKitRowsWithoutField are the AppKit rows the token set has no field
@@ -440,8 +440,31 @@ func checkMeasuredRow(t *testing.T, field, name, appearance string, got any, wan
 			t.Errorf("%s %s = reach %v offset %v, catalogue %s = reach %v offset %v",
 				field, appearance, v.Reach, v.Offset, name, geom.reach, geom.offset)
 		}
+	case tokens.Edge:
+		// The row spells the edge along its sides; the corner pixel and
+		// the rim are pinned by TestHelpTagEdgeAndShadowAreTheMeasuredRows.
+		if geom.spelt {
+			t.Errorf("%s: the catalogue's %s row spells a shadow geometry an edge does not carry", field, name)
+		}
+		if v.Side != want {
+			t.Errorf("%s %s side = %v, catalogue %s = %v", field, appearance, v.Side, name, want)
+		}
+	case tokens.ShadowCurve:
+		// The row spells the curve's first alpha, its reach in pixels and
+		// its offset; the whole curve is pinned by
+		// TestHelpTagEdgeAndShadowAreTheMeasuredRows.
+		if !geom.spelt {
+			t.Errorf("%s: the catalogue's %s row spells no reach or offset for a shadow", field, name)
+		}
+		if v.Alpha[0] != want {
+			t.Errorf("%s %s first alpha = %v, catalogue %s = %v", field, appearance, v.Alpha[0], name, want)
+		}
+		if float64(v.Reach()) != geom.reach || float64(v.Offset) != geom.offset {
+			t.Errorf("%s %s = reach %v offset %v, catalogue %s = reach %v offset %v",
+				field, appearance, v.Reach(), v.Offset, name, geom.reach, geom.offset)
+		}
 	default:
-		t.Errorf("%s: a measured material is a colour or a shadow, got %T", field, got)
+		t.Errorf("%s: a measured material is a colour, an edge or a shadow, got %T", field, got)
 	}
 }
 

@@ -20,13 +20,14 @@
 // for every one of these names itself; these recorded sets are what the
 // other platforms — and every test — read.
 //
-// Thirty-two fields are not AppKit's. The platform paints a sidebar, a
+// Thirty-four fields are not AppKit's. The platform paints a sidebar, a
 // grouped box, a selected sidebar row, the count at a sidebar row's trailing
 // end, a search field's recess on a sidebar, a push
 // button, the find bar's button, a hovered and a pressed
 // control, the shadow under a
 // floating pane, a text field's hairline, an overlay scrollbar's thumb, a
 // list's alternating row, a content list's selected row, the rim and the shadow of an inset sidebar pane,
+// the edge and the shadow of a help tag,
 // the several fills a toolbar band's controls take
 // and the dim a sheet lays over the window it
 // interrupts without giving any of them an NSColor name, so those fills
@@ -71,6 +72,8 @@
 //	Seam             #e6e6e6        #000000        measured: the hairline between two flush regions, Mail's list seam
 //	StatusFooterSeam #d9d9d9        #000000        measured: the hairline at the top of a footer of status text, Finder's status bar seam
 //	HighlightFill    #faefbd        #6e6e4d        measured: the match fill in Mail's find bar, the text on it unchanged
+//	HelpTagEdge      #000000 a0.176 #000000 a0.451 measured: the help tag's edge on every side, with its corner pixel and the white rim inside it
+//	HelpTagShadow    #000000 a0.110 #000000 a0.137 measured: the help tag's shadow, a curve of alphas per pixel cast from the tag moved 2 px down
 //
 // The chrome material and the sidebar's pill were read with "Tint window
 // background with wallpaper colour" off, so they carry the platform's own
@@ -820,6 +823,32 @@ type PlatformColors struct {
 	// rim 29 against its own #1e1e1e — which is what this coverage lands on
 	// a surface that dark, so one value serves both appearances.
 	PaneShadow DropShadow `appkit:"-"`
+
+	// HelpTagEdge is the edge the platform draws around a help tag: black
+	// at 45 of 255 light and 115 dark on every side, 30 and 90 at the
+	// corner pixel, and a white rim inside it, one pixel at 23 of 255
+	// light and two at 39 and 8 dark. The edge is one pixel OUTSIDE the
+	// tag's bounds; the rim is on the bounds' first pixels.
+	//
+	// MEASURED, finder-help-tag-group-window-{light,dark}.png, the tag at
+	// x 12-273, y 10-41: the edge reads 56/124 at the top, 64/131 on the
+	// sides and 72/137 at the bottom with the shadow under it. The shadow
+	// taken out, o = (T - s)/(255 - s)·255, gives 45 light and 115 dark on
+	// every side. The rim is white coverage over the capture's own fill,
+	// (rim - fill)/(255 - fill). The reference's help tag rows hold the
+	// arithmetic.
+	HelpTagEdge Edge `appkit:"-"`
+
+	// HelpTagShadow is the shadow the platform casts under a help tag: a
+	// curve and not a linear ramp, from black at 28 of 255 light and 35
+	// dark, cast from the tag's rectangle moved 2 dp down.
+	//
+	// MEASURED, finder-help-tag-group-window-{light,dark}.png: the alphas
+	// below the tag at x 60, 140 and 200 are the curve; the sides match it
+	// from index 2 and the top from index 4. The diagonal from the
+	// rectangle's corner lands the product rule of [ShadowCurve.CornerAlpha]
+	// within 1 of 255 in both schemes.
+	HelpTagShadow ShadowCurve `appkit:"-"`
 }
 
 // PlatformLight and PlatformDark are the recorded sets, aqua and darkAqua,
@@ -914,6 +943,12 @@ var (
 		ToolbarCheckedOverlay:        color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x1a},
 		PaneRim:                      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
 		PaneShadow:                   DropShadow{Peak: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x0d}, Reach: 24, Offset: 9},
+		HelpTagEdge: Edge{
+			Side:   color.NRGBA{A: 45},
+			Corner: color.NRGBA{A: 30},
+			Rim:    [2]color.NRGBA{{R: 0xff, G: 0xff, B: 0xff, A: 23}},
+		},
+		HelpTagShadow: ShadowCurve{Alpha: [ShadowCurveLen]color.NRGBA{{A: 28}, {A: 23}, {A: 18}, {A: 14}, {A: 10}, {A: 7}, {A: 5}, {A: 3}, {A: 2}, {A: 1}}, Offset: 2},
 	}
 
 	PlatformDark = PlatformColors{
@@ -1003,6 +1038,12 @@ var (
 		ToolbarCheckedOverlay:        color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x29},
 		PaneRim:                      color.NRGBA{R: 0x3a, G: 0x3a, B: 0x3a, A: 0xff},
 		PaneShadow:                   DropShadow{Peak: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x0d}, Reach: 24, Offset: 9},
+		HelpTagEdge: Edge{
+			Side:   color.NRGBA{A: 115},
+			Corner: color.NRGBA{A: 90},
+			Rim:    [2]color.NRGBA{{R: 0xff, G: 0xff, B: 0xff, A: 39}, {R: 0xff, G: 0xff, B: 0xff, A: 8}},
+		},
+		HelpTagShadow: ShadowCurve{Alpha: [ShadowCurveLen]color.NRGBA{{A: 35}, {A: 29}, {A: 23}, {A: 17}, {A: 13}, {A: 9}, {A: 6}, {A: 4}, {A: 2}, {A: 1}, {A: 1}}, Offset: 2},
 	}
 )
 

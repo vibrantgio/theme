@@ -37,3 +37,45 @@ func (s DropShadow) WithPeak(c color.NRGBA) DropShadow {
 	s.Peak = c
 	return s
 }
+
+// ShadowCurveLen is the number of pixels of distance a [ShadowCurve] holds.
+const ShadowCurveLen = 12
+
+// ShadowCurve is a shadow read pixel by pixel: the coverage at each distance
+// out from the edge of the rectangle it is cast from, where a [DropShadow]
+// holds one peak and a linear ramp. The platform draws some shadows along a
+// curve that no linear ramp lands, and one that differs per scheme.
+//
+// Alpha[d] is black at the coverage the shadow has d pixels out from that
+// rectangle's own edge pixel, which is index 0. Entries past the shadow's
+// end are zero. Offset is how far below the shape the rectangle sits, in dp.
+//
+// At a corner the shadow is the product of the two sides' curves:
+// Alpha[dx]·Alpha[dy] / (2·Alpha[0]), which [ShadowCurve.CornerAlpha] gives.
+//
+// The zero value draws nothing.
+type ShadowCurve struct {
+	Alpha  [ShadowCurveLen]color.NRGBA
+	Offset float32
+}
+
+// Reach is the number of pixels the shadow covers out from its rectangle,
+// index 0 included: the index of the last non-zero entry plus one.
+func (s ShadowCurve) Reach() int {
+	for d := len(s.Alpha) - 1; d >= 0; d-- {
+		if s.Alpha[d].A != 0 {
+			return d + 1
+		}
+	}
+	return 0
+}
+
+// CornerAlpha is the shadow's coverage, out of 255, at dx pixels out from
+// the rectangle's side edge and dy pixels out from its top or bottom edge,
+// both counted as Alpha counts. A distance past the curve has no shadow.
+func (s ShadowCurve) CornerAlpha(dx, dy int) float64 {
+	if dx < 0 || dy < 0 || dx >= len(s.Alpha) || dy >= len(s.Alpha) || s.Alpha[0].A == 0 {
+		return 0
+	}
+	return float64(s.Alpha[dx].A) * float64(s.Alpha[dy].A) / (2 * float64(s.Alpha[0].A))
+}
