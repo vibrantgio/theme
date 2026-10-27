@@ -30,16 +30,13 @@ import (
 // added to tokens.PlatformColors is read live without a list here to
 // maintain.
 //
-// Two kinds of field are not asked for, and neither is a list here either.
-// FindHighlight carries the find highlight as Mail paints it, not what
-// AppKit answers for findHighlightColor, which the platform's own
-// applications do not paint. The measured materials — the chrome material,
-// the card's fill, the two state overlays, the floating shadow — carry the
-// struct tag `appkit:"-"`, which says the platform gives that fill no
-// NSColor name at all: they were read off the stored captures, and asking
-// AppKit for a name it does not answer would leave them at the recorded
-// value anyway. Skipping them keeps the naming rule honest rather than
-// relying on that.
+// The measured materials are not asked for, and no list here names them.
+// The chrome material, the card's fill, the two state overlays, the
+// floating shadow and the highlight's fill carry the struct tag
+// `appkit:"-"`, which says the platform gives that fill no NSColor name
+// at all: they were read off the stored captures, and asking AppKit for a
+// name it does not answer would leave them at the recorded value anyway.
+// Skipping them keeps the naming rule honest rather than relying on that.
 //
 // Every value is non-premultiplied sRGB with the alpha AppKit reports, to
 // the byte: the recorded sets quantize the catalogue's two-decimal alpha,
@@ -55,11 +52,7 @@ func liveSet(dark bool) tokens.PlatformColors {
 		if typ.Field(i).Tag.Get("appkit") == "-" {
 			continue
 		}
-		field := typ.Field(i).Name
-		if field == "FindHighlight" {
-			continue
-		}
-		if c, ok := nsColor(appKitName(field), dark); ok {
+		if c, ok := nsColor(appKitName(typ.Field(i).Name), dark); ok {
 			set.Field(i).Set(reflect.ValueOf(c))
 		}
 	}

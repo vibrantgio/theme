@@ -100,22 +100,6 @@ func liveSetMatchesCatalogue(t *testing.T, dark bool) {
 			continue
 		}
 		got := set.Field(i).Interface().(color.NRGBA)
-		if field == "FindHighlight" {
-			// The one field that is not AppKit's answer: the reader does
-			// not ask for findHighlightColor, so Mail's measured pair
-			// stands.
-			want := tokens.PlatformLight.FindHighlight
-			if dark {
-				want = tokens.PlatformDark.FindHighlight
-			}
-			if got != want {
-				t.Errorf("FindHighlight = %s, want Mail's measured %s", hex(got), hex(want))
-			}
-			if got == rows[appKitName(field)].at(dark) {
-				t.Error("FindHighlight took AppKit's findHighlightColor; it carries the find highlight as Mail paints it")
-			}
-			continue
-		}
 		if accentRows[field] && !onCatalogueAccent {
 			continue
 		}

@@ -20,7 +20,7 @@
 // for every one of these names itself; these recorded sets are what the
 // other platforms — and every test — read.
 //
-// Twenty-nine fields are not AppKit's. The platform paints a sidebar, a
+// Thirty fields are not AppKit's. The platform paints a sidebar, a
 // grouped box, a selected sidebar row, the count at a sidebar row's trailing
 // end, a search field's recess on a sidebar, a push
 // button, a hovered and a pressed
@@ -70,6 +70,7 @@
 //	PaneShadow       #000000 a0.051 #000000 a0.051 measured: the shadow that pane casts, 24 px of reach with its rectangle sunk 9
 //	Seam             #e6e6e6        #000000        measured: the hairline between two flush regions, Mail's list seam
 //	StatusFooterSeam #d9d9d9        #000000        measured: the hairline at the top of a footer of status text, Finder's status bar seam
+//	HighlightFill    #faefbd        #6e6e4d        measured: the match fill in Mail's find bar, the text on it unchanged
 //
 // The chrome material and the sidebar's pill were read with "Tint window
 // background with wallpaper colour" off, so they carry the platform's own
@@ -147,9 +148,7 @@ const BackdropMaterialCoverage uint8 = 103
 // derives from the accent colour.
 //
 // Field names drop AppKit's trailing "Color" and nothing else, so
-// windowBackgroundColor is WindowBackground and systemRed is SystemRed. The
-// one field whose value is not AppKit's own is FindHighlight; see its
-// comment.
+// windowBackgroundColor is WindowBackground and systemRed is SystemRed.
 type PlatformColors struct {
 	// The planes. WindowBackground is the window's own; ControlBackground
 	// and TextBackground are the content, the lists, the tables and the
@@ -170,12 +169,12 @@ type PlatformColors struct {
 	UnemphasizedSelectedTextBackground    color.NRGBA
 	UnemphasizedSelectedText              color.NRGBA
 
-	// FindHighlight is the find highlight as Mail paints it, measured off
-	// the stored captures of Mail's find bar in both appearances. It is
-	// deliberately not AppKit's findHighlightColor, which reports a
+	// HighlightFill is the fill laid behind content the user sought. Its
+	// value is read off Mail's find bar in both schemes, from the stored
+	// captures, and is not AppKit's findHighlightColor, which reports a
 	// saturated yellow the platform's own applications do not paint. The
 	// text the highlight covers keeps its colour.
-	FindHighlight color.NRGBA
+	HighlightFill color.NRGBA `appkit:"-"`
 
 	// Separator is the platform's separatorColor, a coverage laid over
 	// whatever is beneath it: the name a border, a rule or an edge
@@ -835,7 +834,7 @@ var (
 		UnemphasizedSelectedTextBackground:    color.NRGBA{R: 0xdc, G: 0xdc, B: 0xdc, A: 0xff},
 		UnemphasizedSelectedText:              color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
 
-		FindHighlight: color.NRGBA{R: 0xfa, G: 0xef, B: 0xbd, A: 0xff},
+		HighlightFill: color.NRGBA{R: 0xfa, G: 0xef, B: 0xbd, A: 0xff},
 
 		Separator: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x19},
 		Grid:      color.NRGBA{R: 0xe6, G: 0xe6, B: 0xe6, A: 0xff},
@@ -924,7 +923,7 @@ var (
 		UnemphasizedSelectedTextBackground:    color.NRGBA{R: 0x46, G: 0x46, B: 0x46, A: 0xff},
 		UnemphasizedSelectedText:              color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
 
-		FindHighlight: color.NRGBA{R: 0x6e, G: 0x6e, B: 0x4d, A: 0xff},
+		HighlightFill: color.NRGBA{R: 0x6e, G: 0x6e, B: 0x4d, A: 0xff},
 
 		Separator: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x19},
 		Grid:      color.NRGBA{R: 0x1a, G: 0x1a, B: 0x1a, A: 0xff},

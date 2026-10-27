@@ -31,18 +31,14 @@ const cataloguePath = "testdata/nscolors.tsv"
 //	shasum -a 256 ../../organisation/reference/macos/nscolors.tsv
 const (
 	referencePath   = "../../organisation/reference/macos/nscolors.tsv"
-	referenceDigest = "a516e622244e97a023274acf264aa25b709ee6989450a0e56bb68e92447bce4d"
+	referenceDigest = "0486b3acdaa15f3f2654755b934ae4fb1d5e58654d11e03afd58513b20bc1f16"
 )
 
-// mailFindHighlight is the find highlight as Mail paints it, measured off
-// the stored captures of its find bar in both appearances. The catalogue's
-// findHighlightColor row reports what AppKit answers for that name and is
-// not what Mail puts on the page, so PlatformColors.FindHighlight carries
-// the measurement and this test holds the two apart.
-var mailFindHighlight = struct{ light, dark color.NRGBA }{
-	light: color.NRGBA{R: 0xfa, G: 0xef, B: 0xbd, A: 0xff},
-	dark:  color.NRGBA{R: 0x6e, G: 0x6e, B: 0x4d, A: 0xff},
-}
+// appKitRowsWithoutField are the AppKit rows the token set has no field
+// for. AppKit answers findHighlightColor with a saturated yellow the
+// platform's own applications do not paint, so the highlight's fill is a
+// field of its own, HighlightFill, pinned against the measured rows.
+var appKitRowsWithoutField = map[string]bool{"findHighlightColor": true}
 
 // catalogueEntry is one row: the two appearances AppKit reported. A row of
 // the measured-materials section carries its provenance as well, which the
@@ -237,8 +233,8 @@ func appKitName(field string) string {
 
 // TestPlatformColorsMatchCatalogue pins both recorded sets against the
 // catalogue read off AppKit, field by field and row by row: every field
-// carries its name's recorded value, every recorded row has a field, and
-// FindHighlight carries Mail's measurement rather than the AppKit answer.
+// carries its name's recorded value, and every recorded row has a field
+// except the rows in appKitRowsWithoutField.
 func TestPlatformColorsMatchCatalogue(t *testing.T) {
 	rows, _ := readCatalogue(t)
 	light := reflect.ValueOf(tokens.PlatformLight)
@@ -260,16 +256,6 @@ func TestPlatformColorsMatchCatalogue(t *testing.T) {
 		}
 		gotLight := light.Field(i).Interface().(color.NRGBA)
 		gotDark := dark.Field(i).Interface().(color.NRGBA)
-		if field == "FindHighlight" {
-			if gotLight != mailFindHighlight.light || gotDark != mailFindHighlight.dark {
-				t.Errorf("FindHighlight = %v / %v, want Mail's measured %v / %v",
-					gotLight, gotDark, mailFindHighlight.light, mailFindHighlight.dark)
-			}
-			if gotLight == row.light || gotDark == row.dark {
-				t.Error("FindHighlight has taken the AppKit findHighlightColor answer; it carries Mail's measurement instead")
-			}
-			continue
-		}
 		if gotLight != row.light {
 			t.Errorf("%s light = %v, catalogue %s = %v", field, gotLight, name, row.light)
 		}
@@ -278,7 +264,7 @@ func TestPlatformColorsMatchCatalogue(t *testing.T) {
 		}
 	}
 	for name := range rows {
-		if !seen[name] {
+		if !seen[name] && !appKitRowsWithoutField[name] {
 			t.Errorf("the catalogue row %q has no field on PlatformColors", name)
 		}
 	}
@@ -856,5 +842,19 @@ func TestTheCatalogueCopyIsTheReferenceCopy(t *testing.T) {
 	}
 	if !bytes.Equal(copyBytes, referenceBytes) {
 		t.Errorf("%s and %s differ; the two are one document", cataloguePath, referencePath)
+	}
+}
+
+// TestHighlightFillIsNotAppKitsAnswer holds the highlight's fill apart from
+// the AppKit row: the catalogue records findHighlightColor, the token set
+// does not carry it, and the field carries the fill read off Mail.
+func TestHighlightFillIsNotAppKitsAnswer(t *testing.T) {
+	rows, _ := readCatalogue(t)
+	row, ok := rows["findHighlightColor"]
+	if !ok {
+		t.Fatal("the catalogue holds no row named findHighlightColor")
+	}
+	if tokens.PlatformLight.HighlightFill == row.light || tokens.PlatformDark.HighlightFill == row.dark {
+		t.Error("HighlightFill has taken the AppKit findHighlightColor answer; it carries the fill read off Mail")
 	}
 }

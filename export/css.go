@@ -70,7 +70,7 @@ var platformNames = []struct {
 	{"selected-text-background", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SelectedTextBackground }},
 	{"unemphasized-selected-text-background", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.UnemphasizedSelectedTextBackground }},
 	{"unemphasized-selected-text", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.UnemphasizedSelectedText }},
-	{"find-highlight", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.FindHighlight }},
+	{"highlight-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.HighlightFill }},
 	{"separator", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Separator }},
 	{"grid", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Grid }},
 	{"seam", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.Seam }},
