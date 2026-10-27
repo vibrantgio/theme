@@ -2,7 +2,10 @@ package export
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
+
+	"github.com/vibrantgio/theme/tokens"
 )
 
 // readmeMD renders readme.md, the project's front door: what the system is,
@@ -83,6 +86,7 @@ func readmeMD(s Snapshot) string {
 	b.WriteString("| `--dialog-button-width` | the width a dialog's footer lays each action out in, px | measured off the platform's own sheet, where both answers are 74 wide; it is the least width, so a title that does not fit widens its own button |\n")
 	b.WriteString("| `--dialog-footer-air` | the air between a decision's footer hairline and the actions under it, px | measured off the platform's own sheet, whose 65 px footer band holds its 24 px buttons with 21 rows clear above and the sheet's own 20 px inset below |\n")
 	b.WriteString("| `--toolbar-control-shadow-*` | `--toolbar-control-shadow-reach`, `--toolbar-control-shadow-offset` | the bordered toolbar control's drop shadow is the one material whose GEOMETRY the platform draws differently under the two appearances, so how far it is drawn around the control and the depth its rectangle is sunk are stated per appearance beside the colour set; its peak is `--platform-toolbar-control-shadow` |\n")
+	fmt.Fprintf(&b, "| `--help-tag-*` | `--help-tag-shadow-offset`, %s, %s | the help tag's shadow and rim, measured per appearance, as the layers `.tooltip` stacks: shadow layer N is a spread of N px under the tag moved the offset down, rim layer N an inset spread of N px; the edge is `--platform-help-tag-edge` |\n", joinTokens("--help-tag-shadow-layer-", helpTagLayerNames(tokens.ShadowCurveLen, 0)), joinTokens("--help-tag-rim-layer-", helpTagLayerNames(len(tokens.Edge{}.Rim), 1)))
 	b.WriteString("| shadow steps | `--floating-shadow-step`, `--pane-shadow-step`, `--toolbar-shadow-step` | one eighth of the floating, pane and toolbar control shadow's peak coverage, declared on the rules that cast those shadows: CSS has no linear falloff, so each measured shadow is drawn as eight stacked spreads of its step |\n\n")
 
 	b.WriteString("## Component classes\n\n" +
@@ -200,7 +204,8 @@ func readmeMD(s Snapshot) string {
 		"`.scrim`/`.dialog`, `.popover`, `.tooltip`, `.toast`, `.menu` — is filled\n" +
 		"with `--platform-window-background`, which is what every floating surface\n" +
 		"on this platform is filled with, and floats on\n" +
-		"`--platform-floating-shadow`.\n\n")
+		"`--platform-floating-shadow`, except `.tooltip`, which draws the help\n" +
+		"tag's own edge, rim and shadow.\n\n")
 
 	b.WriteString("## Levels and the shadow\n\n" +
 		"Elevation is spoken in levels. There are five, counted from the backdrop up\n" +
@@ -215,10 +220,11 @@ func readmeMD(s Snapshot) string {
 		"is window-scale only: the trim inside a component or a pattern is part of\n" +
 		"that thing's structure and takes no level of its own.\n\n" +
 		"A raised thing shows its level by its small step of fill and casts no\n" +
-		"shadow. A floating thing shows its level by its shadow. The floating level\n" +
-		"has one shadow, the measured floating shadow: `.dialog`, `.popover`,\n" +
-		"`.toast` and `.menu` draw it as eight stacked spreads of\n" +
-		"`--floating-shadow-step`.\n\n")
+		"shadow. A floating thing shows its level by its measured shadow.\n" +
+		"`.dialog`, `.popover`, `.toast` and `.menu` draw the measured floating\n" +
+		"shadow as eight stacked spreads of\n" +
+		"`--floating-shadow-step`. `.tooltip` draws the help tag's measured\n" +
+		"shadow as twelve stacked spreads of `--help-tag-shadow-layer-*`.\n\n")
 
 	b.WriteString("## Density\n\n" +
 		"Two published settings, one variable family: comfortable (24 dp controls,\n" +
@@ -312,6 +318,16 @@ func durationNames() []string {
 }
 
 // joinTokens renders a comma-separated code list of prefix+name tokens.
+// helpTagLayerNames numbers n layers from first: the help tag's shadow
+// layers from 0, its rim layers from 1.
+func helpTagLayerNames(n, first int) []string {
+	out := make([]string, n)
+	for i := range out {
+		out[i] = strconv.Itoa(first + i)
+	}
+	return out
+}
+
 func joinTokens(prefix string, names []string) string {
 	out := make([]string, len(names))
 	for i, n := range names {

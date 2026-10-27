@@ -173,6 +173,57 @@ func toolbarShadowVars(p tokens.PlatformColors) []cssVar {
 	}
 }
 
+// helpTagVars states the help tag's shadow and rim per appearance as the
+// layers of stacked box-shadows, because both curves differ per scheme.
+//
+// Layer N of the shadow is a spread of N px under the tag moved Offset px
+// down, so the pixel at index d of tokens.ShadowCurve is under layers d and
+// out. Layer N of the rim is an inset spread of N px, so rim pixel j is
+// under layers j+1 and in. Each layer's alpha is 1 − (1 − t_d)/(1 − c),
+// where t_d is the measured coverage at its pixel and c is the coverage
+// the layers outside it land after rounding to 8 bits. So the stack lands
+// each measured pixel to within half of one 255th.
+//
+// The edge needs no layer of its own: --platform-help-tag-edge is its
+// coverage on every side.
+func helpTagVars(p tokens.PlatformColors) []cssVar {
+	shadow := make([]string, tokens.ShadowCurveLen)
+	c := 0.0
+	for d := tokens.ShadowCurveLen - 1; d >= 0; d-- {
+		var a uint8
+		a, c = stackLayer(p.HelpTagShadow.Alpha[d].A, c)
+		shadow[d] = hexRGBA(stdcolor.NRGBA{A: a})
+	}
+	rim := make([]string, len(p.HelpTagEdge.Rim))
+	c = 0
+	for j := len(rim) - 1; j >= 0; j-- {
+		var a uint8
+		a, c = stackLayer(p.HelpTagEdge.Rim[j].A, c)
+		rim[j] = hexRGBA(stdcolor.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: a})
+	}
+	vars := []cssVar{{"--help-tag-shadow-offset", px(p.HelpTagShadow.Offset)}}
+	for d, v := range shadow {
+		vars = append(vars, cssVar{fmt.Sprintf("--help-tag-shadow-layer-%d", d), v})
+	}
+	for j, v := range rim {
+		vars = append(vars, cssVar{fmt.Sprintf("--help-tag-rim-layer-%d", j+1), v})
+	}
+	return vars
+}
+
+// stackLayer returns the 8-bit alpha of the layer that takes a pixel from
+// coverage c, out of 1, to the measured coverage t, out of 255, and the
+// coverage the pixel lands with that layer on it.
+func stackLayer(t uint8, c float64) (uint8, float64) {
+	want := float64(t) / 255
+	a := 0.0
+	if want > c {
+		a = 1 - (1-want)/(1-c)
+	}
+	b := uint8(math.Round(a * 255))
+	return b, 1 - (1-c)*(1-float64(b)/255)
+}
+
 // typeRoles orders the platform's type roles under their CSS names, then
 // the two section headings, then code: the mono face at Body's metrics.
 var typeRoles = []struct {
@@ -484,9 +535,11 @@ func stylesCSS(s Snapshot) string {
 	fontFace("Roboto Mono", "400", "robotomono-regular.ttf")
 	b.WriteString("\n")
 	light := append(platformVars(s.PlatformLight), toolbarShadowVars(s.PlatformLight)...)
+	light = append(light, helpTagVars(s.PlatformLight)...)
 	block(&b, ":root", append(light, scaleVars(s)...))
 	b.WriteString("\n")
-	block(&b, ".dark", append(platformVars(s.PlatformDark), toolbarShadowVars(s.PlatformDark)...))
+	dark := append(platformVars(s.PlatformDark), toolbarShadowVars(s.PlatformDark)...)
+	block(&b, ".dark", append(dark, helpTagVars(s.PlatformDark)...))
 	b.WriteString("\n")
 	block(&b, ".compact", densityVars(tokens.Compact))
 	b.WriteString("\n")
@@ -1531,10 +1584,10 @@ const componentClasses = `/* ---- Component classes ----
    the floating toast (components/toast, stood in a column by
    patterns/notifications). On this platform a floating surface is filled with
    the window's own background, and what says it floats is the measured
-   shadow — not a lighter fill, and not a level. The popover and the tooltip
-   carry the separator around theirs as well, because a still surface flush
-   against the plane behind it needs the line; the dialog does not, the scrim
-   being what parts it.
+   shadow — not a lighter fill, and not a level. The popover carries the
+   separator around its fill as well, because a still surface flush against
+   the plane behind it needs the line; the dialog does not, the scrim being
+   what parts it. The tooltip draws the help tag's own edge, rim and shadow.
 
    The shadow is a measurement rather than a blur radius: it stands at the
    platform's floating shadow at the surface's edge and falls LINEARLY to
@@ -1812,20 +1865,38 @@ const componentClasses = `/* ---- Component classes ----
 }
 
 /* Tooltip (components/tooltip tooltip.go drawSurface): the window background
-   inside the platform's separator under its text in the platform's label
-   colour, the small system font, radius Sm, S2/S1 padding measured from the outer edge,
-   clamped to the 24x16 dp minimum. It casts no shadow: the hairline is the
-   whole of a still tooltip's edge, and what places it draws whatever shadow
-   the placement owes. The same in both appearances. */
+   under its text in the platform's label colour, the small system font,
+   radius Sm, S2/S1 padding, clamped to the 24x16 dp minimum. A tooltip is at
+   the floating level, so it casts a shadow: its edge, rim and shadow are the
+   platform's help tag's, measured per appearance. The edge is one pixel
+   outside the bounds, the rim is on the first pixels inside them, and the
+   shadow is cast from the bounds moved --help-tag-shadow-offset down.
+   Plain box-shadows draw the edge's corner pixel at the side's coverage and
+   the shadow's corners square, not at the measured corner values. */
 .tooltip {
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   min-width: 24px;
   min-height: 16px;
-  padding: calc(var(--space-1) - 1px) calc(var(--space-2) - 1px);
-  border: 1px solid var(--platform-separator);
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
+  box-shadow:
+    0 0 0 1px var(--platform-help-tag-edge),
+    0 var(--help-tag-shadow-offset) 0 0 var(--help-tag-shadow-layer-0),
+    0 var(--help-tag-shadow-offset) 0 1px var(--help-tag-shadow-layer-1),
+    0 var(--help-tag-shadow-offset) 0 2px var(--help-tag-shadow-layer-2),
+    0 var(--help-tag-shadow-offset) 0 3px var(--help-tag-shadow-layer-3),
+    0 var(--help-tag-shadow-offset) 0 4px var(--help-tag-shadow-layer-4),
+    0 var(--help-tag-shadow-offset) 0 5px var(--help-tag-shadow-layer-5),
+    0 var(--help-tag-shadow-offset) 0 6px var(--help-tag-shadow-layer-6),
+    0 var(--help-tag-shadow-offset) 0 7px var(--help-tag-shadow-layer-7),
+    0 var(--help-tag-shadow-offset) 0 8px var(--help-tag-shadow-layer-8),
+    0 var(--help-tag-shadow-offset) 0 9px var(--help-tag-shadow-layer-9),
+    0 var(--help-tag-shadow-offset) 0 10px var(--help-tag-shadow-layer-10),
+    0 var(--help-tag-shadow-offset) 0 11px var(--help-tag-shadow-layer-11),
+    inset 0 0 0 1px var(--help-tag-rim-layer-1),
+    inset 0 0 0 2px var(--help-tag-rim-layer-2);
   background: var(--platform-window-background);
   color: var(--platform-label);
   white-space: nowrap;

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	stdcolor "image/color"
+	"math"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -153,12 +154,52 @@ func TestRoundTripColors(t *testing.T) {
 		}
 	}
 
+	// The help tag's shadow and rim differ per appearance, so their layers
+	// are emitted per appearance as well. Stacked again from the sheet's own
+	// values, each layer set lands every measured pixel to within half of
+	// one 255th.
+	for _, scheme := range schemes {
+		for _, v := range helpTagVars(scheme.platform) {
+			if got := scheme.vars[v.name]; got != v.value {
+				t.Errorf("%s = %q, want %q", v.name, got, v.value)
+			}
+		}
+		layer := func(name string) float64 {
+			v := scheme.vars[name]
+			if len(v) != 9 {
+				t.Fatalf("%s = %q, want #rrggbbaa", name, v)
+			}
+			a, err := strconv.ParseUint(v[7:], 16, 8)
+			if err != nil {
+				t.Fatalf("%s = %q: %v", name, v, err)
+			}
+			return float64(a) / 255
+		}
+		rest := 1.0
+		for d := tokens.ShadowCurveLen - 1; d >= 0; d-- {
+			rest *= 1 - layer(fmt.Sprintf("--help-tag-shadow-layer-%d", d))
+			want := float64(scheme.platform.HelpTagShadow.Alpha[d].A)
+			if got := (1 - rest) * 255; math.Abs(got-want) > 0.5 {
+				t.Errorf("help tag shadow at index %d stacks to %.2f, want %v", d, got, want)
+			}
+		}
+		rest = 1.0
+		for j := len(scheme.platform.HelpTagEdge.Rim) - 1; j >= 0; j-- {
+			rest *= 1 - layer(fmt.Sprintf("--help-tag-rim-layer-%d", j+1))
+			want := float64(scheme.platform.HelpTagEdge.Rim[j].A)
+			if got := (1 - rest) * 255; math.Abs(got-want) > 0.5 {
+				t.Errorf("help tag rim at pixel %d stacks to %.2f, want %v", j, got, want)
+			}
+		}
+	}
+
 	// The dark block carries exactly the overrides that resolve against an
 	// appearance — every variable it declares must exist in :root, and
 	// nothing but what the appearance itself decides may differ between the
-	// two: the platform's own colour set, plus the toolbar shadow's geometry.
+	// two: the platform's own colour set, the toolbar shadow's geometry and the
+	// help tag's layers.
 	appearanceOnly := map[string]bool{}
-	for _, v := range toolbarShadowVars(snap.PlatformDark) {
+	for _, v := range append(toolbarShadowVars(snap.PlatformDark), helpTagVars(snap.PlatformDark)...) {
 		appearanceOnly[v.name] = true
 	}
 	for name := range dark {
@@ -488,10 +529,15 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"margin: 8px;  /* MarginDp */",
 		"border-radius: 18px;  /* RadiusDp: the window's 26 less one margin */",
 		"inset 0 0 0 1px var(--platform-pane-rim);  /* RimDp */",
-		// Tooltip: the window background inside the separator, S2/S1 padding
-		// measured from the outer edge.
+		// Tooltip: the window background, S2/S1 padding, and the help tag's
+		// edge outside the bounds, its rim inside them and its shadow.
 		"border-radius: var(--radius-sm);",
-		"padding: calc(var(--space-1) - 1px) calc(var(--space-2) - 1px);",
+		"padding: var(--space-1) var(--space-2);",
+		"0 0 0 1px var(--platform-help-tag-edge),",
+		"0 var(--help-tag-shadow-offset) 0 0 var(--help-tag-shadow-layer-0),",
+		"0 var(--help-tag-shadow-offset) 0 11px var(--help-tag-shadow-layer-11),",
+		"inset 0 0 0 1px var(--help-tag-rim-layer-1),",
+		"inset 0 0 0 2px var(--help-tag-rim-layer-2);",
 		// Toast: the window background under the platform's label, the
 		// status carried on a leading edge one S2 wide in the system colour
 		// for it.
