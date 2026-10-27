@@ -46,7 +46,7 @@
 //	SidebarSelectionUnemphasizedLabel  #0072f7  #148fff  measured: the label, symbol and count on that grey pill
 //	SidebarCount     #6d6d6d        #a4a4a4        measured: the count at the trailing end of a sidebar row
 //	SidebarSymbol    #000000        #ffffff        measured: the symbol at the leading end of a sidebar row
-//	CardFill         #f7f7f7        #2a3034        measured: the System Settings grouped box
+//	CardFill         #f7f7f7        #252525        measured: the System Settings grouped box, dark untinted
 //	PushButtonFill   #ececec        #333a3f        measured: the Save panel's push button at rest
 //	DefaultButtonFill #157efb       #157efb        measured: the Save panel's default push button at rest
 //	HoverOverlay     #000000 a0.051 #ffffff a0.094 measured: a toolbar button under the pointer
@@ -368,10 +368,12 @@ type PlatformColors struct {
 	SidebarSymbol color.NRGBA `appkit:"-"`
 
 	// CardFill is the fill of the platform's box — a card, a grouped
-	// box, a filled inset: #f7f7f7 over a #ffffff plane light, #2a3034
-	// over a #232a2e plane dark, flat-region samples of the Appearance
-	// pane's boxes in system-settings-grouped-box-light.png and
-	// -dark.png. The box carries no hairline and no shadow: its edge is
+	// box, a filled inset. The light value is #f7f7f7 over a #ffffff
+	// plane, a flat-region sample of the Appearance pane's boxes in
+	// system-settings-grouped-box-light.png. The dark value is #252525
+	// over a #1e1e1e window, read with wallpaper tinting off from the
+	// Software Update row and the Preferred Languages box. The box
+	// carries no hairline and no shadow: its edge is
 	// a 2–3 px antialiased blend straight from the plane to the fill, and
 	// the step across it is about 3% of the way to black in light and to
 	// white in dark.
@@ -530,8 +532,8 @@ type PlatformColors struct {
 	// scheme — light the recess is 18 levels darker than the material,
 	// dark it is 19 levels lighter.
 	//
-	// The dark value was read with wallpaper tinting on, as CardFill's
-	// was, over a #1c2124 sidebar; no stored capture holds a sidebar
+	// The dark value was read with wallpaper tinting on, over a
+	// #1c2124 sidebar; no stored capture holds a sidebar
 	// search field in the dark appearance untinted.
 	SidebarSearchFill color.NRGBA `appkit:"-"`
 
@@ -974,7 +976,7 @@ var (
 		SidebarSelectionUnemphasizedLabel: color.NRGBA{R: 0x14, G: 0x8f, B: 0xff, A: 0xff},
 		SidebarCount:                      color.NRGBA{R: 0xa4, G: 0xa4, B: 0xa4, A: 0xff},
 		SidebarSymbol:                     color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
-		CardFill:                          color.NRGBA{R: 0x2a, G: 0x30, B: 0x34, A: 0xff},
+		CardFill:                          color.NRGBA{R: 0x25, G: 0x25, B: 0x25, A: 0xff},
 		PushButtonFill:                    color.NRGBA{R: 0x33, G: 0x3a, B: 0x3f, A: 0xff},
 		DefaultButtonFill:                 color.NRGBA{R: 0x15, G: 0x7e, B: 0xfb, A: 0xff},
 		HoverOverlay:                      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x18},

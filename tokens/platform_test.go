@@ -31,7 +31,7 @@ const cataloguePath = "testdata/nscolors.tsv"
 //	shasum -a 256 ../../organisation/reference/macos/nscolors.tsv
 const (
 	referencePath   = "../../organisation/reference/macos/nscolors.tsv"
-	referenceDigest = "c36d6ae69902ea8c6abd95d205b884b6d4c87f51079973613c9750345ed57fb5"
+	referenceDigest = "a516e622244e97a023274acf264aa25b709ee6989450a0e56bb68e92447bce4d"
 )
 
 // mailFindHighlight is the find highlight as Mail paints it, measured off
@@ -460,7 +460,7 @@ func checkMeasuredRow(t *testing.T, field, name, appearance string, got any, wan
 }
 
 // TestCardFillIsTheMeasuredGroupedBox pins the card's fill to the pixels of
-// the System Settings grouped-box captures rather than to another token: the
+// the System Settings captures rather than to another token: the
 // platform's box is a fill of its own in both schemes, one step off the
 // plane it sits on, so it is neither the content's fill nor the chrome's.
 func TestCardFillIsTheMeasuredGroupedBox(t *testing.T) {
@@ -470,7 +470,7 @@ func TestCardFillIsTheMeasuredGroupedBox(t *testing.T) {
 		want color.NRGBA
 	}{
 		{"light", tokens.PlatformLight, color.NRGBA{R: 0xf7, G: 0xf7, B: 0xf7, A: 0xff}},
-		{"dark", tokens.PlatformDark, color.NRGBA{R: 0x2a, G: 0x30, B: 0x34, A: 0xff}},
+		{"dark", tokens.PlatformDark, color.NRGBA{R: 0x25, G: 0x25, B: 0x25, A: 0xff}},
 	} {
 		if c.in.CardFill != c.want {
 			t.Errorf("%s CardFill = %v, want the measured grouped box %v", c.name, c.in.CardFill, c.want)
