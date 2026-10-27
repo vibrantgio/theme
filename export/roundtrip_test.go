@@ -445,13 +445,14 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"height: 11px; /* MarkHDp: two 5-row chevrons and the clear row between */",
 		"background: var(--platform-control-text);",
 		// Checkbox/radio: the 16 dp measured symbol centred in the density's
-		// checkbox row, inside the 1 dp measured field edge, cornered at the
-		// measured 5; checked is the accent under a mark drawn out of
+		// checkbox row, cornered at the measured 5; the unchecked box is the
+		// separator with no edge, the radio keeps the 1 dp field edge; checked is the accent under a mark drawn out of
 		// gradients rather than encoded as an image, and the radio's dot is
 		// the measured five sixteenths of its disc.
 		"margin: calc((var(--density-checkbox-row-height) - 16px) / 2);",
 		"border: 1px solid var(--platform-field-edge);",
 		"border-radius: 5px;  /* checkboxCornerRadius: measured */",
+		"background-color: var(--platform-separator);  /* uncheckedFill */",
 		".checkbox:checked, .checkbox.is-checked {",
 		"background-position: 2.529px 7.529px, 5.529px 3.529px;",
 		"background-size: 3.943px 3.943px, 7.943px 7.943px;",
