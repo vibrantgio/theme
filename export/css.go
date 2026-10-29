@@ -115,6 +115,7 @@ var platformNames = []struct {
 	{"sidebar-symbol", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarSymbol }},
 	{"card-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.CardFill }},
 	{"push-button-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.PushButtonFill }},
+	{"disabled-control-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.DisabledControlFill }},
 	{"default-button-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.DefaultButtonFill }},
 	{"accent-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.AccentFill }},
 	{"hover-overlay", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.HoverOverlay }},
@@ -591,7 +592,8 @@ func stylesCSS(s Snapshot) string {
 // lays --platform-hover-overlay over whatever fill the variant carries, a
 // press lays --platform-press-overlay there instead, and a switched-off
 // control is the push button's own fill at --disabled-coverage over the
-// surface it stands on. A coverage over a fill is what color-mix() renders
+// surface it stands on. The switched-off checkbox and radio button take
+// --platform-disabled-control-fill, the box's own measured fill. A coverage over a fill is what color-mix() renders
 // and what theme/color.Fade computes, so the two sides land on the same
 // pixel.
 //
@@ -1050,10 +1052,17 @@ const componentClasses = `/* ---- Component classes ----
   background-clip: border-box;
   cursor: pointer;
 }
-/* Focus is the same ring every other control has, on the symbol's own
-   outline, riding in the slack the footprint holds around it - so nothing
-   about the control moves when it takes the keyboard. */
-.checkbox:focus-visible, .checkbox.is-focus,
+/* Focus is the same ring every other control has, in the slack the
+   footprint holds around the symbol - so nothing about the control moves
+   when it takes the keyboard. MEASURED, checkbox-focused-{light,dark}.png:
+   the checkbox's ring is 3 px outside the box and 1 px over it. No capture
+   holds a focused radio button, so the radio button takes the field's
+   placement, 2 px outside and 2 px over: that placement is unmeasured for
+   the radio button. */
+.checkbox:focus-visible, .checkbox.is-focus {
+  outline: var(--focus-ring-width) solid var(--platform-keyboard-focus-indicator);
+  outline-offset: -1px;  /* checkboxRingOver: 1 dp, measured */
+}
 .radio:focus-visible, .radio.is-focus {
   outline: var(--focus-ring-width) solid var(--platform-keyboard-focus-indicator);
   outline-offset: calc(var(--focus-ring-width) / -2);
@@ -1074,18 +1083,17 @@ const componentClasses = `/* ---- Component classes ----
   background-size: 4.226px 4.772px, 5.934px 9.000px;
 }
 /* Switched off, the symbol is ONE FILL AND NO EDGE at all. MEASURED,
-   save-dialog-{light,dark}.png: both switched-off "Options:" checkboxes read
-   the push button's own fill faded to --disabled-coverage over the sheet, to
-   the byte light and one 255th over on dark green and blue, and neither box
-   draws an edge column in either appearance - its rim is a one-pixel antialiased ramp from this fill
-   to the sheet. The border is kept at its width in transparent so the symbol's
-   drawn box does not move. Checked, the mark takes the colour the
+   save-panel-untinted-{light,dark}.png: both switched-off "Options:"
+   checkboxes read --platform-disabled-control-fill, and neither box draws an
+   edge column in either appearance. No capture
+   holds a switched-off radio button, so it takes the box's fill. The border is
+   kept at its width in transparent so the symbol's drawn box does not move. Checked, the mark takes the colour the
    switched-off title beside it takes, the platform's tertiary label, no
    stored capture holding a switched-off checked box. */
 .checkbox:disabled, .radio:disabled {
   cursor: default;
   border-color: transparent;
-  background-color: color-mix(in srgb, var(--platform-push-button-fill) var(--disabled-coverage), transparent);
+  background-color: var(--platform-disabled-control-fill);
   background-clip: border-box;
 }
 .checkbox:checked:disabled, .checkbox.is-checked:disabled {
@@ -1118,7 +1126,7 @@ const componentClasses = `/* ---- Component classes ----
   background-clip: border-box;
 }
 .radio:checked:disabled, .radio.is-checked:disabled {
-  background: radial-gradient(circle, var(--platform-tertiary-label) 2.5px, color-mix(in srgb, var(--platform-push-button-fill) var(--disabled-coverage), transparent) 2.5px);
+  background: radial-gradient(circle, var(--platform-tertiary-label) 2.5px, var(--platform-disabled-control-fill) 2.5px);
   background-clip: border-box;
 }
 

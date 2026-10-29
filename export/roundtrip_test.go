@@ -396,7 +396,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"outline: var(--focus-ring-width) solid var(--platform-keyboard-focus-indicator);",
 		"outline-offset: calc(var(--focus-ring-width) / -2);",
 		".btn:focus-visible, .btn.is-focus {",
-		".checkbox:focus-visible, .checkbox.is-focus,",
+		".checkbox:focus-visible, .checkbox.is-focus {",
 		".radio:focus-visible, .radio.is-focus {",
 		// Disabled fades the fill to the push button's own at the platform's
 		// measured coverage and takes every foreground to its disabled text.
@@ -449,7 +449,8 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		// and the unselected disc are the separator with no edge; checked is
 		// the accent fill under a mark drawn out of gradients rather than encoded
 		// as an image, and the radio's dot is the measured five sixteenths of
-		// its disc.
+		// its disc. The checkbox's ring is 1 px over the box, as measured,
+		// and the switched-off box is the measured switched-off fill.
 		"margin: calc((var(--density-checkbox-row-height) - 16px) / 2);",
 		"border: 1px solid transparent;  /* no edge; the width keeps the symbol in place */",
 		"border-radius: 5px;  /* checkboxCornerRadius: measured */",
@@ -459,6 +460,9 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"background-position: 3.387px 8.029px, 6.363px 3.890px;",
 		"background-size: 4.226px 4.772px, 5.934px 9.000px;",
 		"radial-gradient(circle, var(--platform-alternate-selected-control-text) 2.5px, var(--platform-accent-fill) 2.5px)",
+		"outline-offset: -1px;  /* checkboxRingOver: 1 dp, measured */",
+		"background-color: var(--platform-disabled-control-fill);",
+		"radial-gradient(circle, var(--platform-tertiary-label) 2.5px, var(--platform-disabled-control-fill) 2.5px)",
 		// Card and group: the grouped box with no hairline, and the
 		// hairline with no box.
 		"background: var(--platform-card-fill);",

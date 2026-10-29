@@ -48,7 +48,8 @@
 //	SidebarCount     #6d6d6d        #a4a4a4        measured: the count at the trailing end of a sidebar row
 //	SidebarSymbol    #000000        #ffffff        measured: the symbol at the leading end of a sidebar row
 //	CardFill         #f7f7f7        #252525        measured: the System Settings grouped box, dark untinted
-//	PushButtonFill   #ececec        #333a3f        measured: the Save panel's push button at rest
+//	PushButtonFill   #ececec        #2f2f2f        measured: the Save panel's push button at rest, dark untinted
+//	DisabledControlFill #f2f2f2     #292929        measured: the Save panel's switched-off checkbox, dark untinted
 //	DefaultButtonFill #157efb       #157efb        measured: the Save panel's default push button at rest
 //	AccentFill       #157bf5        #1b81fb        measured: the checked box and the selected radio button
 //	HoverOverlay     #000000 a0.051 #ffffff a0.094 measured: a toolbar button under the pointer
@@ -76,12 +77,12 @@
 //	HelpTagEdge      #000000 a0.176 #000000 a0.451 measured: the help tag's edge on every side, with its corner pixel and the white rim inside it
 //	HelpTagShadow    #000000 a0.110 #000000 a0.137 measured: the help tag's shadow, a curve of alphas per pixel cast from the tag moved 2 px down
 //
-// The chrome material and the sidebar's pill were read with "Tint window
+// The chrome material, the sidebar's pill, the grouped box, the push button,
+// the switched-off box and the field edge were read with "Tint window
 // background with wallpaper colour" off, so they carry the platform's own
-// shade and not the desktop picture's. The grouped box, the push button,
-// the field edge, the scrim and the sidebar search field's dark recess were
-// read with it on, which is what carries them off neutral grey in the dark
-// scheme.
+// shade and not the desktop picture's. The scrim and the sidebar search
+// field's dark recess were read with it on, which is what carries them off
+// neutral grey in the dark scheme.
 package tokens
 
 import (
@@ -95,18 +96,17 @@ import (
 // surface; it is not tinted by an overlay of a fixed colour, which no single
 // coverage could reproduce in both appearances.
 //
-// MEASURED, save-dialog-light.png and save-dialog-dark.png: the "Options:"
-// checkbox is switched off in both, its 16 px box reading #f2f2f2 light and
-// #2e3439 dark, on sheets of #ffffff and #232a2f — and seventeen rows above
-// it the "File Format:" pop-up, enabled on the same sheet, reads the push
-// button's own #ececec and #333a3f. 170 of 255 puts the enabled fill on the
-// disabled reading exactly light and exactly on dark red, one 255th over on
-// dark green and blue, which is the tolerance the hover overlay's dark
-// reading carries in the same reference.
+// MEASURED, save-panel-untinted-light.png and save-panel-untinted-dark.png:
+// the "Options:" checkbox is switched off in both, its 16 px box reading
+// #f2f2f2 light and #292929 dark, on sheets of #ffffff and #1e1e1e. The push
+// button on the same sheet reads #ececec and #2f2f2f. 170 of 255 puts the
+// push button's fill on the switched-off reading exactly on every channel in
+// both schemes.
 //
-// The dialog holds no switched-off push button and no switched-off edged
-// control, so this one coverage carries both the fill and the edge; a
-// capture of either is on the capture list. Text is not faded by it: a
+// The switched-off box draws its own measured fill, DisabledControlFill. The
+// Save panel holds no switched-off push button and no switched-off edged
+// control, so this coverage carries both the fill and the edge of every
+// other control; a capture of either is on the capture list. Text is not faded by it: a
 // switched-off control's wording is DisabledControlText, which is the
 // platform's own reduced coverage and reads at it in the same capture.
 const DisabledCoverage uint8 = 170
@@ -383,10 +383,10 @@ type PlatformColors struct {
 	CardFill color.NRGBA `appkit:"-"`
 
 	// PushButtonFill is what an ordinary push button is actually filled
-	// with: #ececec light and #333a3f dark, flat-region samples of the
-	// "Cancel" button in save-dialog-light.png and save-dialog-dark.png
-	// (x 362-430, y 504-521), the button the sheet does not fill with the
-	// accent.
+	// with: #ececec light and #2f2f2f dark, the "Cancel" button in
+	// save-panel-untinted-light.png and save-panel-untinted-dark.png (a run
+	// down x=365, y 502-523), the button the sheet does not fill with the
+	// accent. The dark value is read with wallpaper tinting off.
 	//
 	// It is not Control. AppKit's controlColor reports #ffffff light and
 	// white at a quarter dark, which is the bezel's own backing rather
@@ -397,10 +397,17 @@ type PlatformColors struct {
 	// answering for what AppKit says it answers for.
 	//
 	// The find bar's button and its previous and next control are filled
-	// with it too. TextEdit's find bar reads #ececec light, this value to
-	// the byte, and #33393e dark with wallpaper tinting on, 1 off in green
-	// and blue.
+	// with it too. TextEdit's find bar reads #ececec light and, with
+	// wallpaper tinting off, #2f2f2f dark: this value to the byte.
 	PushButtonFill color.NRGBA `appkit:"-"`
+
+	// DisabledControlFill is the fill of a switched-off checkbox: #f2f2f2
+	// light and #292929 dark, with no edge. MEASURED, the two "Options:"
+	// boxes in save-panel-untinted-light.png and save-panel-untinted-dark.png,
+	// x 264-279 and y 372-387, on sheets of #ffffff and #1e1e1e. The dark
+	// value is read with wallpaper tinting off. No capture holds a
+	// switched-off radio button; it takes the box's fill.
+	DisabledControlFill color.NRGBA `appkit:"-"`
 
 	// DefaultButtonFill is what the DEFAULT push button — the one a sheet
 	// binds Return to — is actually filled with: #157efb in BOTH
@@ -449,8 +456,9 @@ type PlatformColors struct {
 	// button under the pointer (control-hover-light.png: #ffffff to
 	// #f2f2f2; -dark.png: #242d32 to #384146); press is a Save panel's
 	// push button held down (control-pressed-light.png: #ececec to
-	// #d5d5d5; -dark.png: #333a3f to #474d52). The light readings are
-	// exact on every channel; the dark hover is exact on green and
+	// #d5d5d5; save-panel-cancel-pressed-untinted-dark.png: #2f2f2f to
+	// #434343). The light readings and the dark press are exact on every
+	// channel; the dark hover is exact on green and
 	// within one 255th on red and blue, the platform's dark tint being
 	// closer to an even lightening than to a white composite.
 	//
@@ -459,7 +467,7 @@ type PlatformColors struct {
 	// of a push button or a list row under the pointer and not held, so
 	// neither is measured as exempt; both captures are on the capture
 	// list. What the pressed capture does settle is that the two states do
-	// not stack: the held push button reads #d5d5d5 light and #474d52
+	// not stack: the held push button reads #d5d5d5 light and #434343
 	// dark, which is PressOverlay straight over PushButtonFill, with no
 	// hover under it.
 	HoverOverlay color.NRGBA `appkit:"-"`
@@ -942,6 +950,7 @@ var (
 		SidebarSymbol:                     color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
 		CardFill:                          color.NRGBA{R: 0xf7, G: 0xf7, B: 0xf7, A: 0xff},
 		PushButtonFill:                    color.NRGBA{R: 0xec, G: 0xec, B: 0xec, A: 0xff},
+		DisabledControlFill:               color.NRGBA{R: 0xf2, G: 0xf2, B: 0xf2, A: 0xff},
 		DefaultButtonFill:                 color.NRGBA{R: 0x15, G: 0x7e, B: 0xfb, A: 0xff},
 		AccentFill:                        color.NRGBA{R: 0x15, G: 0x7b, B: 0xf5, A: 0xff},
 		HoverOverlay:                      color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x0d},
@@ -1037,7 +1046,8 @@ var (
 		SidebarCount:                      color.NRGBA{R: 0xa4, G: 0xa4, B: 0xa4, A: 0xff},
 		SidebarSymbol:                     color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
 		CardFill:                          color.NRGBA{R: 0x25, G: 0x25, B: 0x25, A: 0xff},
-		PushButtonFill:                    color.NRGBA{R: 0x33, G: 0x3a, B: 0x3f, A: 0xff},
+		PushButtonFill:                    color.NRGBA{R: 0x2f, G: 0x2f, B: 0x2f, A: 0xff},
+		DisabledControlFill:               color.NRGBA{R: 0x29, G: 0x29, B: 0x29, A: 0xff},
 		DefaultButtonFill:                 color.NRGBA{R: 0x15, G: 0x7e, B: 0xfb, A: 0xff},
 		AccentFill:                        color.NRGBA{R: 0x1b, G: 0x81, B: 0xfb, A: 0xff},
 		HoverOverlay:                      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x18},

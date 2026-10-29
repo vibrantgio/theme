@@ -31,7 +31,7 @@ const cataloguePath = "testdata/nscolors.tsv"
 //	shasum -a 256 ../../organisation/reference/macos/nscolors.tsv
 const (
 	referencePath   = "../../organisation/reference/macos/nscolors.tsv"
-	referenceDigest = "d751c486de4c9525f4646f3ef593840e2ba090a188f3d5db44894eb9841c94e5"
+	referenceDigest = "284b49fb109956d6bcf5eb502769c3e410f022d6f9f1d3af5a9456800fd6422d"
 )
 
 // appKitRowsWithoutField are the AppKit rows the token set has no field
@@ -522,7 +522,8 @@ func TestStatusFooterSeamIsTheStatusBarsMeasuredSeam(t *testing.T) {
 }
 
 // TestPushButtonFillIsTheMeasuredPushButton pins the push button's fill to
-// the pixels of the Save panel captures rather than to controlColor, which
+// the pixels of the untinted Save panel captures rather than to
+// controlColor, which
 // reports a different colour in both appearances: the platform draws the
 // ordinary push button at a fill of its own, and a consumer that wore
 // controlColor would paint white on the light sheet where the platform
@@ -534,7 +535,7 @@ func TestPushButtonFillIsTheMeasuredPushButton(t *testing.T) {
 		want color.NRGBA
 	}{
 		{"light", tokens.PlatformLight, color.NRGBA{R: 0xec, G: 0xec, B: 0xec, A: 0xff}},
-		{"dark", tokens.PlatformDark, color.NRGBA{R: 0x33, G: 0x3a, B: 0x3f, A: 0xff}},
+		{"dark", tokens.PlatformDark, color.NRGBA{R: 0x2f, G: 0x2f, B: 0x2f, A: 0xff}},
 	} {
 		if c.in.PushButtonFill != c.want {
 			t.Errorf("%s PushButtonFill = %v, want the measured push button %v", c.name, c.in.PushButtonFill, c.want)
@@ -544,6 +545,25 @@ func TestPushButtonFillIsTheMeasuredPushButton(t *testing.T) {
 		}
 		if c.in.PushButtonFill.A != 0xff {
 			t.Errorf("%s PushButtonFill = %v; the fill was read as a pixel, so it is opaque", c.name, c.in.PushButtonFill)
+		}
+	}
+}
+
+// TestDisabledControlFillIsTheMeasuredSwitchedOffBox pins the switched-off
+// box's fill to the pixels of the untinted Save panel captures: the two
+// "Options:" boxes read #f2f2f2 light and #292929 dark on every pixel of
+// their 16 px box, with no edge.
+func TestDisabledControlFillIsTheMeasuredSwitchedOffBox(t *testing.T) {
+	for _, c := range []struct {
+		name string
+		in   tokens.PlatformColors
+		want color.NRGBA
+	}{
+		{"light", tokens.PlatformLight, color.NRGBA{R: 0xf2, G: 0xf2, B: 0xf2, A: 0xff}},
+		{"dark", tokens.PlatformDark, color.NRGBA{R: 0x29, G: 0x29, B: 0x29, A: 0xff}},
+	} {
+		if c.in.DisabledControlFill != c.want {
+			t.Errorf("%s DisabledControlFill = %v, want the measured switched-off box %v", c.name, c.in.DisabledControlFill, c.want)
 		}
 	}
 }
@@ -671,7 +691,7 @@ func TestAlphaNamesFlattenToTheCapturedBytes(t *testing.T) {
 			color.NRGBA{0x27, 0x27, 0x27, 0xff}, color.NRGBA{0x27, 0x27, 0x27, 0xff}},
 		{"Label on the light push button", tokens.PlatformLight.Label, tokens.PlatformLight.PushButtonFill,
 			color.NRGBA{0x24, 0x24, 0x24, 0xff}, color.NRGBA{0x24, 0x24, 0x24, 0xff}},
-		{"Label on the dark push button", tokens.PlatformDark.Label, tokens.PlatformDark.PushButtonFill,
+		{"Label on the tinted dark push button", tokens.PlatformDark.Label, color.NRGBA{0x33, 0x3a, 0x3f, 0xff},
 			color.NRGBA{0xe0, 0xe1, 0xe2, 0xff}, color.NRGBA{0xe0, 0xe1, 0xe2, 0xff}},
 		{"SecondaryLabel on the dark sheet", tokens.PlatformDark.SecondaryLabel, color.NRGBA{0x23, 0x2a, 0x2f, 0xff},
 			color.NRGBA{0x9c, 0x9f, 0xa1, 0xff}, color.NRGBA{0x9c, 0x9f, 0xa1, 0xff}},
@@ -692,12 +712,10 @@ func TestAlphaNamesFlattenToTheCapturedBytes(t *testing.T) {
 
 // TestDisabledCoverageLandsOnTheCapturedSwitchedOffFill pins the disabled
 // coverage against the pixels rather than against itself. MEASURED,
-// save-dialog-{light,dark}.png: the "Options:" checkbox is switched off in
-// both appearances and its box reads #f2f2f2 light and #2e3439 dark, on
-// sheets of #ffffff and #232a2f; the "File Format:" pop-up seventeen rows
-// above it is enabled on the same sheet and reads the push button's own
-// #ececec and #333a3f. Light lands to the byte and dark within one 255th,
-// which is the tolerance the hover overlay's dark reading carries.
+// save-panel-untinted-{light,dark}.png: the "Options:" checkbox is switched
+// off in both schemes and its box reads #f2f2f2 light and #292929 dark, on
+// sheets of #ffffff and #1e1e1e. The push button on the same sheet reads
+// #ececec and #2f2f2f. Both schemes land to the byte.
 func TestDisabledCoverageLandsOnTheCapturedSwitchedOffFill(t *testing.T) {
 	for _, tc := range []struct {
 		name  string
@@ -707,7 +725,7 @@ func TestDisabledCoverageLandsOnTheCapturedSwitchedOffFill(t *testing.T) {
 		slack int
 	}{
 		{"light", tokens.PlatformLight, color.NRGBA{0xff, 0xff, 0xff, 0xff}, color.NRGBA{0xf2, 0xf2, 0xf2, 0xff}, 0},
-		{"dark", tokens.PlatformDark, color.NRGBA{0x23, 0x2a, 0x2f, 0xff}, color.NRGBA{0x2e, 0x34, 0x39, 0xff}, 1},
+		{"dark", tokens.PlatformDark, color.NRGBA{0x1e, 0x1e, 0x1e, 0xff}, color.NRGBA{0x29, 0x29, 0x29, 0xff}, 0},
 	} {
 		got := vgcolor.Flatten(vgcolor.Fade(tc.in.PushButtonFill, tokens.DisabledCoverage), tc.sheet)
 		off := func(a, b uint8) int {
