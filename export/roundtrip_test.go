@@ -455,8 +455,8 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"border-radius: 5px;  /* checkboxCornerRadius: measured */",
 		"background-color: var(--platform-separator);  /* uncheckedFill */",
 		".checkbox:checked, .checkbox.is-checked {",
-		"background-position: 2.529px 7.529px, 5.529px 3.529px;",
-		"background-size: 3.943px 3.943px, 7.943px 7.943px;",
+		"background-position: 3.387px 8.029px, 6.363px 3.890px;",
+		"background-size: 4.226px 4.772px, 5.934px 9.000px;",
 		"radial-gradient(circle, var(--platform-alternate-selected-control-text) 2.5px, var(--platform-control-accent) 2.5px)",
 		// Card and group: the grouped box with no hairline, and the
 		// hairline with no box.
