@@ -82,6 +82,9 @@ type DensityMetrics struct {
 	// above — 36 against 24, measured.
 	ToolbarControlHeight float64 `json:"toolbarControlHeight"`
 	PaddingX             float64 `json:"paddingX"`
+	// ChipPaddingX is the inset between a chip's fill and its title. It is a
+	// value of its own: the platform draws no chip.
+	ChipPaddingX float64 `json:"chipPaddingX"`
 	// SymbolSize is the side of a symbol drawn in a control. It is a value
 	// of its own, and no padding derives it.
 	SymbolSize float64 `json:"symbolSize"`
@@ -174,6 +177,7 @@ func densityMetricsOf(d tokens.Density) DensityMetrics {
 		CheckboxRowHeight:        f64(d.CheckboxRowHeight),
 		ToolbarControlHeight:     f64(d.ToolbarControlHeight),
 		PaddingX:                 f64(d.PaddingX),
+		ChipPaddingX:             f64(d.ChipPaddingX),
 		SymbolSize:               f64(d.SymbolSize),
 	}
 }

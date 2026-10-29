@@ -323,6 +323,9 @@ var densityMetrics = []struct {
 	// reach for the control height there.
 	{"toolbar-control-height", func(d tokens.Density) float32 { return d.ToolbarControlHeight }},
 	{"padding-x", func(d tokens.Density) float32 { return d.PaddingX }},
+	// The chip's own title inset: the platform draws no chip, so the
+	// control's measured inset does not apply to it.
+	{"chip-padding-x", func(d tokens.Density) float32 { return d.ChipPaddingX }},
 	// The side of a symbol drawn in a control: a value of its own, which no
 	// padding derives. A control has no vertical padding metric: its padding
 	// is what its height leaves around the line.

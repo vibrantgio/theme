@@ -141,7 +141,8 @@ func TestStackedRowsAreTheirOwnTarget(t *testing.T) {
 
 // TestDensitySettingsMatchTable pins the two settings to the provenance table
 // in density.go: the heights are exactly the consts, no Compact height
-// exceeds its Comfortable height, and PaddingX is the pair the table states.
+// exceeds its Comfortable height, and PaddingX and ChipPaddingX are the pairs the
+// table states.
 // The sidebar search field is the same at both, as the platform draws it.
 func TestDensitySettingsMatchTable(t *testing.T) {
 	if Comfortable.ControlHeight != ComfortableControlHeight {
@@ -159,11 +160,14 @@ func TestDensitySettingsMatchTable(t *testing.T) {
 	if Compact.ControlHeight >= Comfortable.ControlHeight || Compact.TextFieldHeight >= Comfortable.TextFieldHeight || Compact.SearchFieldHeight >= Comfortable.SearchFieldHeight || Compact.SidebarSearchFieldHeight > Comfortable.SidebarSearchFieldHeight {
 		t.Errorf("Compact heights must not exceed Comfortable heights: %+v against %+v", Compact, Comfortable)
 	}
-	if Comfortable.PaddingX != 8 {
-		t.Errorf("Comfortable.PaddingX = %v, want 8 — the platform's documented inset beside a regular push button's title", Comfortable.PaddingX)
+	if Comfortable.PaddingX != 13 {
+		t.Errorf("Comfortable.PaddingX = %v, want 13 — the regular push button's and pop-up's measured title inset in save-panel-untinted-{light,dark}.png and save-panel-footer-untinted-{light,dark}.png", Comfortable.PaddingX)
 	}
 	if Compact.PaddingX != 11 {
 		t.Errorf("Compact.PaddingX = %v, want 11 — the small pop-up's measured title inset", Compact.PaddingX)
+	}
+	if Comfortable.ChipPaddingX != 8 || Compact.ChipPaddingX != 11 {
+		t.Errorf("ChipPaddingX = (%v, %v), want the carried (8, 11)", Comfortable.ChipPaddingX, Compact.ChipPaddingX)
 	}
 }
 

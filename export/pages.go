@@ -399,7 +399,7 @@ const layoutPageCSS = `.space-row {
 }
 .chip-bar {
   height: var(--density-chip-height);
-  padding: 0 var(--space-3);
+  padding: 0 var(--density-chip-padding-x);
   margin-left: var(--space-2);
   display: inline-flex;
   align-items: center;
@@ -530,8 +530,8 @@ func layoutHTML(s Snapshot) string {
 	} {
 		fmt.Fprintf(&b, "<div class=\"%s\">\n<h3>%s</h3>\n", setting.class, html.EscapeString(setting.heading))
 		b.WriteString("<div class=\"control-row\">\n<span class=\"control-bar\">Control</span>\n<span class=\"chip-bar\">Chip</span>\n</div>\n")
-		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-control-height</code> &middot; %s &middot; <code>--density-chip-height</code> &middot; %s &mdash; each control's own pointer target</p>\n",
-			px(setting.d.ControlHeight), px(setting.d.ChipHeight()))
+		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-control-height</code> &middot; %s &middot; <code>--density-chip-height</code> &middot; %s &mdash; each control's own pointer target; <code>--density-chip-padding-x</code> %s beside the chip's title</p>\n",
+			px(setting.d.ControlHeight), px(setting.d.ChipHeight()), px(setting.d.ChipPaddingX))
 		b.WriteString("<div><span class=\"field-bar\">Text field</span><span class=\"search-bar\">Search field</span><span class=\"sidebar-search-bar\">Sidebar search field</span></div>\n")
 		fmt.Fprintf(&b, "<p class=\"annot\"><code>--density-text-field-height</code> &middot; %s &middot; <code>--density-search-field-height</code> &middot; %s &middot; <code>--density-sidebar-search-field-height</code> &middot; %s &mdash; each field's own measured height, taller than a button</p>\n",
 			px(setting.d.TextFieldHeight), px(setting.d.SearchFieldHeight), px(setting.d.SidebarSearchFieldHeight))

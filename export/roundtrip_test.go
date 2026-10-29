@@ -689,6 +689,7 @@ func TestThemeJSONReproduces(t *testing.T) {
 			CheckboxRowHeight:        float64(d.CheckboxRowHeight),
 			ToolbarControlHeight:     float64(d.ToolbarControlHeight),
 			PaddingX:                 float64(d.PaddingX),
+			ChipPaddingX:             float64(d.ChipPaddingX),
 			SymbolSize:               float64(d.SymbolSize),
 		}
 		if got != want {

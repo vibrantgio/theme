@@ -24,8 +24,10 @@ package tokens
 //	Compact checkbox row        20 dp   MEASURED: the pitch between the Show item info and Show icon preview checkboxes in finder-view-options-{light,dark}.png, boxes at y 338–351 and y 358–371 down x 27
 //	Comfortable toolbar control 36 dp   MEASURED: every bordered control in the Finder toolbar captures — finder-window-untinted-dark.png (five controls, rim row y=46, fill y 47-80, rim row y=81), finder-window-untinted-light.png (fill y 34-69), finder-window-light.png (the view pop-up, y 8-43) and finder-window.png (the same pop-up, y 8-43); mail-window.png's search field and notes-toolbar.png agree at y 8-43
 //	Compact toolbar control     36 dp   CARRIED: no stored capture holds a toolbar drawn at the platform's small size, and all five stored windows draw one toolbar control size
-//	Comfortable PaddingX         8 dp   UNMEASURED: the platform's documented inset beside a regular push button's title. The captured dialog buttons sit at the platform's 74 px minimum width with their titles centred, so they measure centring, not an inset
+//	Comfortable PaddingX        13 dp   MEASURED: the regular push button's and the regular pop-up's title inset, fill start to the first fully covered column — New Folder x 25 to x 38 in save-panel-footer-untinted-{light,dark}.png, File Format x 264 to x 277 across y 348 in save-panel-untinted-{light,dark}.png, Line Endings x 104 to x 117 in save-panel-footer-untinted-{light,dark}.png
 //	Compact PaddingX            11 dp   MEASURED: the small pop-up's title inset, fill start to the first stem — Sort By x 81 to x 92 across y 126 in finder-view-options-{light,dark}.png, Kind x 7 to x 18 across y 17 in finder-search-criteria-{light,dark}.png
+//	Comfortable ChipPaddingX    8 dp   CARRIED: the chip's title inset. The platform draws no chip, so no capture measures it
+//	Compact ChipPaddingX       11 dp   CARRIED: the same, at the small control's inset
 //	Comfortable SymbolSize      20 dp   CARRIED: the value a former padding derivation gave; no capture measures a symbol in a control yet
 //	Compact SymbolSize          19 dp   CARRIED: the value a former padding derivation gave; no capture measures a symbol in a control yet
 //	checkbox                    16 dp   MEASURED: 16 px square in save-dialog-{light,dark}.png. Not a token here: the checkbox keeps its own side length in components/input.
@@ -286,10 +288,15 @@ type Density struct {
 	// there does. In a sidebar the same variant takes SidebarSearchFieldHeight.
 	ToolbarControlHeight float32
 	// PaddingX is the horizontal inner padding of a control in dp: the inset
-	// between a control's fill and its title. The platform's small pop-up
-	// insets its title 11 px; the provenance table at the top of this file
-	// gives both values.
+	// between a control's fill and its title. The platform's regular push
+	// button and pop-up inset their titles 13 px, and its small pop-up 11 px;
+	// the provenance table at the top of this file gives both values.
 	PaddingX float32
+	// ChipPaddingX is the inset between a chip's fill and its title in dp: 8
+	// at Comfortable and 11 at Compact. It is a value of its own because the
+	// platform draws no chip, so the control's measured inset does not apply
+	// to it. No capture measures it.
+	ChipPaddingX float32
 	// SymbolSize is the side of a symbol drawn in a control, in dp: 20 at
 	// Comfortable and 19 at Compact. It is a value of its own, and no padding
 	// derives it. A former padding derivation gave these values. A symbol's
@@ -307,13 +314,12 @@ type Density struct {
 // target is the chip: what it draws is what a pointer lands on.
 func (d Density) ChipHeight() float32 { return d.ControlHeight - ChipDrop }
 
-// PaddingX does not follow the control height. Comfortable's is the
-// platform's documented inset beside a regular push button's title, and
-// Compact's is the small pop-up's measured title inset. See the provenance
-// table at the top of this file.
+// PaddingX does not follow the control height. Comfortable's is the regular
+// push button's and pop-up's measured title inset, and Compact's is the small
+// pop-up's. See the provenance table at the top of this file.
 var (
 	// Comfortable is the default desktop density.
-	Comfortable = Density{ControlHeight: ComfortableControlHeight, TextFieldHeight: ComfortableTextFieldHeight, SearchFieldHeight: ComfortableSearchFieldHeight, SidebarSearchFieldHeight: ComfortableSidebarSearchFieldHeight, RowHeight: ComfortableRowHeight, ContentListRowHeight: ContentListRowHeight, CheckboxRowHeight: ComfortableCheckboxRowHeight, ToolbarControlHeight: ComfortableToolbarControlHeight, PaddingX: 8, SymbolSize: 20}
+	Comfortable = Density{ControlHeight: ComfortableControlHeight, TextFieldHeight: ComfortableTextFieldHeight, SearchFieldHeight: ComfortableSearchFieldHeight, SidebarSearchFieldHeight: ComfortableSidebarSearchFieldHeight, RowHeight: ComfortableRowHeight, ContentListRowHeight: ContentListRowHeight, CheckboxRowHeight: ComfortableCheckboxRowHeight, ToolbarControlHeight: ComfortableToolbarControlHeight, PaddingX: 13, ChipPaddingX: 8, SymbolSize: 20}
 	// Compact is the dense mode: the platform's small controls.
-	Compact = Density{ControlHeight: CompactControlHeight, TextFieldHeight: CompactTextFieldHeight, SearchFieldHeight: CompactSearchFieldHeight, SidebarSearchFieldHeight: CompactSidebarSearchFieldHeight, RowHeight: CompactRowHeight, ContentListRowHeight: ContentListRowHeight, CheckboxRowHeight: CompactCheckboxRowHeight, ToolbarControlHeight: CompactToolbarControlHeight, PaddingX: 11, SymbolSize: 19}
+	Compact = Density{ControlHeight: CompactControlHeight, TextFieldHeight: CompactTextFieldHeight, SearchFieldHeight: CompactSearchFieldHeight, SidebarSearchFieldHeight: CompactSidebarSearchFieldHeight, RowHeight: CompactRowHeight, ContentListRowHeight: ContentListRowHeight, CheckboxRowHeight: CompactCheckboxRowHeight, ToolbarControlHeight: CompactToolbarControlHeight, PaddingX: 11, ChipPaddingX: 11, SymbolSize: 19}
 )
