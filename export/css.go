@@ -1005,16 +1005,14 @@ const componentClasses = `/* ---- Component classes ----
    The corner is the measured 5 dp: a circular fit to the per-row coverage of
    the switched-off boxes' corner ramp in save-dialog-{light,dark}.png answers
    5.04 and 5.34 against the same fit's habit of sitting a fifth over
-   everywhere in that reference. The radio's edge is the measured 1 dp of the
-   platform's field hairline - the Save panel's "Tags:" field is the sheet's
-   one unfocused enabled control that draws an edge at all, and it draws a
-   single pixel of it.
+   everywhere in that reference.
 
    Unchecked, the box is one fill and no edge: the platform's separator over
    the surface the box stands on, darker in light and lighter in dark. MEASURED,
    the find bar's Replace box in both schemes: its fill is the separator over
-   the bar, to the byte. The border keeps its width in transparent, so the
-   drawn box does not move.
+   the bar, to the byte. The unselected radio button is the same fill on a
+   circle, with no edge. The border keeps its width in transparent, so the
+   drawn symbol does not move.
 
    Checked, the box is the platform's accent under a check mark in
    alternateSelectedControlText, because a fill says a colour was applied and
@@ -1037,7 +1035,7 @@ const componentClasses = `/* ---- Component classes ----
    rather than rounded - the same trade the icon set's own SVG files make when
    they draw their caps as an explicit contour, and a sub-pixel one at this
    size. background-origin is the border box so the grid is the 16 px symbol
-   the Gio side scales on, not the 15 px inside the edge. */
+   the Gio side scales on, not the 14 px inside the transparent border. */
 .checkbox, .radio {
   box-sizing: border-box;
   appearance: none;
@@ -1047,9 +1045,9 @@ const componentClasses = `/* ---- Component classes ----
   /* The slack the density's footprint holds around the symbol, which is what
      centres it in the row and what a pointer is given. */
   margin: calc((var(--density-checkbox-row-height) - 16px) / 2);
-  border: 1px solid var(--platform-field-edge);  /* controlEdgeWidth: 1 dp, measured */
-  background: var(--platform-text-background);
-  background-clip: padding-box;
+  border: 1px solid transparent;  /* no edge; the width keeps the symbol in place */
+  background-color: var(--platform-separator);  /* uncheckedFill */
+  background-clip: border-box;
   cursor: pointer;
 }
 /* Focus is the same ring every other control has, on the symbol's own
@@ -1062,9 +1060,6 @@ const componentClasses = `/* ---- Component classes ----
 }
 .checkbox {
   border-radius: 5px;  /* checkboxCornerRadius: measured */
-  border-color: transparent;
-  background-color: var(--platform-separator);  /* uncheckedFill */
-  background-clip: border-box;
 }
 .checkbox:checked, .checkbox.is-checked {
   border-color: var(--platform-control-accent);
@@ -1100,6 +1095,12 @@ const componentClasses = `/* ---- Component classes ----
 }
 
 /* Radio (components/input radio.go): the same 16 dp symbol as a circle.
+   Unselected is the unchecked box's fill on the circle: the platform's
+   separator over the surface the disc stands on, with no edge. MEASURED,
+   system-settings-radios-{light,dark}.png and
+   finder-view-options-{light,dark}.png: one fill from edge to edge, the
+   separator over its surface to the byte.
+
    Selected is the platform's accent filling the whole disc with the dot in
    alternateSelectedControlText at its centre - one fill and one mark, exactly
    the Gio nested ellipses, and no gap ring.

@@ -445,12 +445,13 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"height: 11px; /* MarkHDp: two 5-row chevrons and the clear row between */",
 		"background: var(--platform-control-text);",
 		// Checkbox/radio: the 16 dp measured symbol centred in the density's
-		// checkbox row, cornered at the measured 5; the unchecked box is the
-		// separator with no edge, the radio keeps the 1 dp field edge; checked is the accent under a mark drawn out of
-		// gradients rather than encoded as an image, and the radio's dot is
-		// the measured five sixteenths of its disc.
+		// checkbox row, the box cornered at the measured 5; the unchecked box
+		// and the unselected disc are the separator with no edge; checked is
+		// the accent under a mark drawn out of gradients rather than encoded
+		// as an image, and the radio's dot is the measured five sixteenths of
+		// its disc.
 		"margin: calc((var(--density-checkbox-row-height) - 16px) / 2);",
-		"border: 1px solid var(--platform-field-edge);",
+		"border: 1px solid transparent;  /* no edge; the width keeps the symbol in place */",
 		"border-radius: 5px;  /* checkboxCornerRadius: measured */",
 		"background-color: var(--platform-separator);  /* uncheckedFill */",
 		".checkbox:checked, .checkbox.is-checked {",
@@ -554,6 +555,44 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		}
 	}
 
+}
+
+// TestUncheckedSymbolDrawsNoEdge reads the sheet's shared `.checkbox,
+// .radio` rule as a string and asserts the unchecked box and the
+// unselected disc draw one fill and no edge: the separator over the surface
+// they stand on, inside a transparent border that keeps the symbol in place.
+func TestUncheckedSymbolDrawsNoEdge(t *testing.T) {
+	snap, _, _ := writeDefault(t)
+	src := stylesCSS(snap)
+	const opener = "\n.checkbox, .radio {\n"
+	start := strings.Index(src, opener)
+	if start < 0 {
+		t.Fatal("styles.css has no shared .checkbox, .radio rule")
+	}
+	if strings.Count(src, opener) != 1 {
+		t.Fatal("styles.css has more than one shared .checkbox, .radio rule")
+	}
+	body := src[start+len(opener):]
+	end := strings.Index(body, "\n}")
+	if end < 0 {
+		t.Fatal(".checkbox, .radio rule is not closed")
+	}
+	body = body[:end]
+	if strings.Contains(body, "field-edge") {
+		t.Errorf(".checkbox, .radio rule draws the field edge; the unchecked symbol has no edge:\n%s", body)
+	}
+	for _, want := range []string{
+		"border: 1px solid transparent;",
+		"background-color: var(--platform-separator);",
+		"background-clip: border-box;",
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf(".checkbox, .radio rule lacks %q:\n%s", want, body)
+		}
+	}
+	if !strings.Contains(src, "\n.radio { border-radius: var(--radius-full); }\n") {
+		t.Error("styles.css has no .radio rule that rounds the symbol to a disc")
+	}
 }
 
 // TestTabsRuleStandsOnRegionFill reads the sheet's `.tabs` rule as a string
