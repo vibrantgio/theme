@@ -447,7 +447,7 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		// Checkbox/radio: the 16 dp measured symbol centred in the density's
 		// checkbox row, the box cornered at the measured 5; the unchecked box
 		// and the unselected disc are the separator with no edge; checked is
-		// the accent under a mark drawn out of gradients rather than encoded
+		// the accent fill under a mark drawn out of gradients rather than encoded
 		// as an image, and the radio's dot is the measured five sixteenths of
 		// its disc.
 		"margin: calc((var(--density-checkbox-row-height) - 16px) / 2);",
@@ -455,9 +455,10 @@ func TestRoundTripButtonClasses(t *testing.T) {
 		"border-radius: 5px;  /* checkboxCornerRadius: measured */",
 		"background-color: var(--platform-separator);  /* uncheckedFill */",
 		".checkbox:checked, .checkbox.is-checked {",
+		"background-color: var(--platform-accent-fill);",
 		"background-position: 3.387px 8.029px, 6.363px 3.890px;",
 		"background-size: 4.226px 4.772px, 5.934px 9.000px;",
-		"radial-gradient(circle, var(--platform-alternate-selected-control-text) 2.5px, var(--platform-control-accent) 2.5px)",
+		"radial-gradient(circle, var(--platform-alternate-selected-control-text) 2.5px, var(--platform-accent-fill) 2.5px)",
 		// Card and group: the grouped box with no hairline, and the
 		// hairline with no box.
 		"background: var(--platform-card-fill);",

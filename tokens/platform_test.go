@@ -31,7 +31,7 @@ const cataloguePath = "testdata/nscolors.tsv"
 //	shasum -a 256 ../../organisation/reference/macos/nscolors.tsv
 const (
 	referencePath   = "../../organisation/reference/macos/nscolors.tsv"
-	referenceDigest = "c230e01e53430f5773f6c74e099103af6f2fbe4d9bf0ffe5b4c2a779ac1a6b14"
+	referenceDigest = "d751c486de4c9525f4646f3ef593840e2ba090a188f3d5db44894eb9841c94e5"
 )
 
 // appKitRowsWithoutField are the AppKit rows the token set has no field
@@ -280,6 +280,7 @@ var accentRows = []string{
 	"SidebarSelection",
 	"SidebarSelectionUnemphasizedLabel",
 	"DefaultButtonFill",
+	"AccentFill",
 }
 
 // TestWithAccentKeepsThePlatformBlue pins that the recorded sets already
@@ -566,6 +567,27 @@ func TestFieldEdgeIsTheUntintedSearchFieldEdge(t *testing.T) {
 		}
 		if c.in.WindowBackground != c.sheet {
 			t.Errorf("%s WindowBackground = %v, want the untinted sheet %v the edge was read over", c.name, c.in.WindowBackground, c.sheet)
+		}
+	}
+}
+
+// TestAccentFillIsTheMeasuredCheckedFill pins the fill of the checked box
+// and the selected radio button to the pixels of the stored captures, one
+// value per appearance, rather than to controlAccentColor's #007aff.
+func TestAccentFillIsTheMeasuredCheckedFill(t *testing.T) {
+	for _, c := range []struct {
+		name string
+		in   tokens.PlatformColors
+		want color.NRGBA
+	}{
+		{"light", tokens.PlatformLight, color.NRGBA{R: 0x15, G: 0x7b, B: 0xf5, A: 0xff}},
+		{"dark", tokens.PlatformDark, color.NRGBA{R: 0x1b, G: 0x81, B: 0xfb, A: 0xff}},
+	} {
+		if c.in.AccentFill != c.want {
+			t.Errorf("%s AccentFill = %v, want the measured %v", c.name, c.in.AccentFill, c.want)
+		}
+		if c.in.AccentFill == c.in.ControlAccent {
+			t.Errorf("%s AccentFill = %v, controlAccentColor's own value; the checked box was measured apart from it", c.name, c.in.AccentFill)
 		}
 	}
 }

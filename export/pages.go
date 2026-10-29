@@ -274,6 +274,7 @@ var platformPairs = []struct {
 	{"control text on the push button", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ControlText }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.PushButtonFill }},
 	{"alternate selected control text on the accent", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.AlternateSelectedControlText }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ControlAccent }},
 	{"alternate selected control text on the default button", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.AlternateSelectedControlText }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.DefaultButtonFill }},
+	{"alternate selected control text on the accent fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.AlternateSelectedControlText }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.AccentFill }},
 	{"alternate selected control text on the selected row", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.AlternateSelectedControlText }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SelectedContentBackground }},
 	{"alternate selected control text on the sidebar pill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.AlternateSelectedControlText }, func(p tokens.PlatformColors) stdcolor.NRGBA { return p.SidebarSelection }},
 	// The grey pill is a coverage over the rail, so the fill the label

@@ -116,6 +116,7 @@ var platformNames = []struct {
 	{"card-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.CardFill }},
 	{"push-button-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.PushButtonFill }},
 	{"default-button-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.DefaultButtonFill }},
+	{"accent-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.AccentFill }},
 	{"hover-overlay", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.HoverOverlay }},
 	{"press-overlay", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.PressOverlay }},
 	{"floating-shadow", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.FloatingShadow.Peak }},
@@ -1061,8 +1062,8 @@ const componentClasses = `/* ---- Component classes ----
   border-radius: 5px;  /* checkboxCornerRadius: measured */
 }
 .checkbox:checked, .checkbox.is-checked {
-  border-color: var(--platform-control-accent);
-  background-color: var(--platform-control-accent);
+  border-color: var(--platform-accent-fill);
+  background-color: var(--platform-accent-fill);
   background-clip: border-box;
   background-image:
     linear-gradient(to top right, transparent calc(50% - 1.03px), var(--platform-alternate-selected-control-text) calc(50% - 1.03px), var(--platform-alternate-selected-control-text) calc(50% + 1.03px), transparent calc(50% + 1.03px)),
@@ -1100,7 +1101,8 @@ const componentClasses = `/* ---- Component classes ----
    finder-view-options-{light,dark}.png: one fill from edge to edge, the
    separator over its surface to the byte.
 
-   Selected is the platform's accent filling the whole disc with the dot in
+   Selected is the accent fill the platform draws, measured per appearance,
+   filling the whole disc with the dot in
    alternateSelectedControlText at its centre - one fill and one mark, exactly
    the Gio nested ellipses, and no gap ring.
 
@@ -1111,8 +1113,8 @@ const componentClasses = `/* ---- Component classes ----
    give. */
 .radio { border-radius: var(--radius-full); }
 .radio:checked, .radio.is-checked {
-  border-color: var(--platform-control-accent);
-  background: radial-gradient(circle, var(--platform-alternate-selected-control-text) 2.5px, var(--platform-control-accent) 2.5px); /* radioDotSize: 5 dp, measured */
+  border-color: var(--platform-accent-fill);
+  background: radial-gradient(circle, var(--platform-alternate-selected-control-text) 2.5px, var(--platform-accent-fill) 2.5px); /* radioDotSize: 5 dp, measured */
   background-clip: border-box;
 }
 .radio:checked:disabled, .radio.is-checked:disabled {

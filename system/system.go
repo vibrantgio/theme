@@ -52,9 +52,9 @@
 // its alpha through a small Objective-C shim, on the same cadence as the
 // accent key. So the NSColor-named accent rows are the platform's own
 // reading rather than a derivation, and a settings change arrives within a
-// poll or two. AppKit has no name for the three measured accent fills:
-// SidebarSelection, SidebarSelectionUnemphasizedLabel and DefaultButtonFill.
-// The macOS reader rebuilds those three from the live accent by
+// poll or two. AppKit has no name for the four measured accent fills:
+// SidebarSelection, SidebarSelectionUnemphasizedLabel, DefaultButtonFill
+// and AccentFill. The macOS reader rebuilds those four from the live accent by
 // tokens.PlatformColors.WithAccent's rule. Windows
 // and Linux publish no such set: they carry the recorded one with the
 // accent rows rebuilt from the colour their desktop reports.

@@ -76,7 +76,7 @@ func TestThemeCarriesThePlatformSetForTheAppearance(t *testing.T) {
 }
 
 // TestThePlatformSetOnMacOSIsTheLiveSet pins the macOS half: the set comes
-// from AppKit, and the three measured accent fills follow AppKit's live
+// from AppKit, and the four measured accent fills follow AppKit's live
 // accent. So the appearance chooses a side and nothing else about the
 // Appearance reaches it — a stubbed accent is the same setting read a
 // second way and does not move the platform's own answer.

@@ -46,7 +46,7 @@ func unpinnedPlatform(t *testing.T, a Appearance) tokens.PlatformColors {
 }
 
 // TestTheMeasuredAccentFillsFollowTheLiveAccent pins that with a live accent
-// other than the recorded blue and no theme colour, the three measured
+// other than the recorded blue and no theme colour, the four measured
 // accent fills equal WithAccent's values for that accent. The NSColor-named
 // rows keep what the reader answered.
 func TestTheMeasuredAccentFillsFollowTheLiveAccent(t *testing.T) {
@@ -68,6 +68,9 @@ func TestTheMeasuredAccentFillsFollowTheLiveAccent(t *testing.T) {
 		if got.DefaultButtonFill != want.DefaultButtonFill {
 			t.Errorf("dark %v: DefaultButtonFill = %v, want %v", a.Dark, got.DefaultButtonFill, want.DefaultButtonFill)
 		}
+		if got.AccentFill != want.AccentFill {
+			t.Errorf("dark %v: AccentFill = %v, want %v", a.Dark, got.AccentFill, want.AccentFill)
+		}
 		if got.SidebarSelection == recorded.SidebarSelection {
 			t.Errorf("dark %v: SidebarSelection kept the measured blue under a purple accent", a.Dark)
 		}
@@ -82,7 +85,7 @@ func TestTheMeasuredAccentFillsFollowTheLiveAccent(t *testing.T) {
 }
 
 // TestTheMeasuredAccentFillsKeepTheirValuesOnTheRecordedBlue pins that with
-// the recorded blue as the live accent, the three measured accent fills
+// the recorded blue as the live accent, the four measured accent fills
 // equal the measured values.
 func TestTheMeasuredAccentFillsKeepTheirValuesOnTheRecordedBlue(t *testing.T) {
 	withLiveAccent(t, tokens.PlatformLight.ControlAccent)
@@ -100,6 +103,9 @@ func TestTheMeasuredAccentFillsKeepTheirValuesOnTheRecordedBlue(t *testing.T) {
 		}
 		if got.DefaultButtonFill != recorded.DefaultButtonFill {
 			t.Errorf("dark %v: DefaultButtonFill = %v, want the measured %v", a.Dark, got.DefaultButtonFill, recorded.DefaultButtonFill)
+		}
+		if got.AccentFill != recorded.AccentFill {
+			t.Errorf("dark %v: AccentFill = %v, want the measured %v", a.Dark, got.AccentFill, recorded.AccentFill)
 		}
 		if got != recorded {
 			t.Errorf("dark %v: the set on the recorded blue differs from the recorded set", a.Dark)

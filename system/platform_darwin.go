@@ -11,10 +11,10 @@ import (
 // reports right now for every name in the set, under aqua or darkAqua.
 // The NSColor-named accent rows are the platform's own: the reader asks
 // AppKit for controlAccentColor and the selection colours by name.
-// Three accent rows have no NSColor name: SidebarSelection,
-// SidebarSelectionUnemphasizedLabel and DefaultButtonFill. The live reader
-// keeps their measured values. With no theme colour pinned, the bridge
-// rebuilds those three rows from the live ControlAccent through
+// Four accent rows have no NSColor name: SidebarSelection,
+// SidebarSelectionUnemphasizedLabel, DefaultButtonFill and AccentFill. The
+// live reader keeps their measured values. With no theme colour pinned, the
+// bridge rebuilds those four rows from the live ControlAccent through
 // [followLiveAccent].
 //
 // It is deliberately independent of the palette precedence in the theme
@@ -32,12 +32,12 @@ func platformColors(a Appearance) tokens.PlatformColors {
 	return light
 }
 
-// followLiveAccent returns live with the three measured accent fills
+// followLiveAccent returns live with the four measured accent fills
 // rebuilt from live's ControlAccent by the rule of
 // [tokens.PlatformColors.WithAccent]. The rule runs on the measured set for
 // the same appearance. Every other row of live stays as AppKit answered it.
 // When the live accent is the recorded blue, WithAccent returns the
-// measured set unchanged, so the three rows keep their measured values.
+// measured set unchanged, so the four rows keep their measured values.
 // The bridge calls it only when no theme colour is pinned.
 func followLiveAccent(live tokens.PlatformColors, dark bool) tokens.PlatformColors {
 	recorded := tokens.PlatformLight
@@ -48,6 +48,7 @@ func followLiveAccent(live tokens.PlatformColors, dark bool) tokens.PlatformColo
 	live.SidebarSelection = rebuilt.SidebarSelection
 	live.SidebarSelectionUnemphasizedLabel = rebuilt.SidebarSelectionUnemphasizedLabel
 	live.DefaultButtonFill = rebuilt.DefaultButtonFill
+	live.AccentFill = rebuilt.AccentFill
 	return live
 }
 

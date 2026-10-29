@@ -50,6 +50,7 @@
 //	CardFill         #f7f7f7        #252525        measured: the System Settings grouped box, dark untinted
 //	PushButtonFill   #ececec        #333a3f        measured: the Save panel's push button at rest
 //	DefaultButtonFill #157efb       #157efb        measured: the Save panel's default push button at rest
+//	AccentFill       #157bf5        #1b81fb        measured: the checked box and the selected radio button
 //	HoverOverlay     #000000 a0.051 #ffffff a0.094 measured: a toolbar button under the pointer
 //	PressOverlay     #000000 a0.098 #ffffff a0.098 measured: a push button held down
 //	FloatingShadow   #000000 a0.075 #000000 a0.075 measured: the sidebar shadow, 24 px of reach centred on the surface
@@ -421,6 +422,25 @@ type PlatformColors struct {
 	// It follows the user's accent, as SidebarSelection does:
 	// [PlatformColors.WithAccent] moves it.
 	DefaultButtonFill color.NRGBA `appkit:"-"`
+
+	// AccentFill is what the checked box and the selected radio button are
+	// filled with: #157bf5 light and #1b81fb dark. The checked box in
+	// keyboard-shortcuts-sheet-{light,dark}.png and the selected radio
+	// button in system-settings-radios-{light,dark}.png read these bytes
+	// over their flat interiors. The chosen segment in
+	// script-editor-segmented-rest-{light,dark}.png reads the same bytes.
+	// Wallpaper tinting does not move them: the tinted and the untinted dark
+	// captures agree.
+	//
+	// It is not ControlAccent. AppKit's controlAccentColor reports #007aff
+	// in both appearances, and the platform draws these controls apart from
+	// it, with a value of its own per appearance. It is not
+	// DefaultButtonFill either: the default push button reads #157efb in
+	// both appearances.
+	//
+	// It follows the user's accent, as DefaultButtonFill does:
+	// [PlatformColors.WithAccent] keeps each appearance's own lightness.
+	AccentFill color.NRGBA `appkit:"-"`
 
 	// HoverOverlay and PressOverlay are what a control lays over its own
 	// fill while the pointer is on it and while it is held: black in
@@ -923,6 +943,7 @@ var (
 		CardFill:                          color.NRGBA{R: 0xf7, G: 0xf7, B: 0xf7, A: 0xff},
 		PushButtonFill:                    color.NRGBA{R: 0xec, G: 0xec, B: 0xec, A: 0xff},
 		DefaultButtonFill:                 color.NRGBA{R: 0x15, G: 0x7e, B: 0xfb, A: 0xff},
+		AccentFill:                        color.NRGBA{R: 0x15, G: 0x7b, B: 0xf5, A: 0xff},
 		HoverOverlay:                      color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x0d},
 		PressOverlay:                      color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x19},
 		FloatingShadow:                    DropShadow{Peak: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13}, Reach: 24},
@@ -1018,6 +1039,7 @@ var (
 		CardFill:                          color.NRGBA{R: 0x25, G: 0x25, B: 0x25, A: 0xff},
 		PushButtonFill:                    color.NRGBA{R: 0x33, G: 0x3a, B: 0x3f, A: 0xff},
 		DefaultButtonFill:                 color.NRGBA{R: 0x15, G: 0x7e, B: 0xfb, A: 0xff},
+		AccentFill:                        color.NRGBA{R: 0x1b, G: 0x81, B: 0xfb, A: 0xff},
 		HoverOverlay:                      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x18},
 		PressOverlay:                      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x19},
 		FloatingShadow:                    DropShadow{Peak: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13}, Reach: 24},
@@ -1047,20 +1069,20 @@ var (
 	}
 )
 
-// WithAccent returns the set with the eight rows the platform derives from
+// WithAccent returns the set with the nine rows the platform derives from
 // the accent colour rebuilt for accent. Every other field is untouched:
 // UnemphasizedSelectedContentBackground, UnemphasizedSelectedTextBackground
 // and SidebarSelectionUnemphasized are grey, Link is a fixed blue, and the system colours are a fixed catalogue.
 // None of them moves when the user changes the accent.
 //
-// The eight rows and their rule:
+// The nine rows and their rule:
 //
 //   - ControlAccent is the accent itself, at the recorded row's alpha.
 //   - SelectedContentBackground, SelectedTextBackground, SelectedControl,
 //     KeyboardFocusIndicator, SidebarSelection,
-//     SidebarSelectionUnemphasizedLabel and DefaultButtonFill keep the
-//     accent's hue and saturation and take the recorded row's HSL lightness
-//     and alpha. In the catalogue all seven are the platform's blue, each
+//     SidebarSelectionUnemphasizedLabel, DefaultButtonFill and AccentFill
+//     keep the accent's hue and saturation and take the recorded row's HSL
+//     lightness and alpha. In the catalogue all eight are the platform's blue, each
 //     at a lightness of its own. For example, the text selection and the
 //     selected control are much lighter than the accent, and the focus ring
 //     is a shade darker at half coverage. The rebuilt row keeps that
@@ -1073,8 +1095,8 @@ var (
 // whose desktops publish an accent colour but no colour set of their own.
 // On macOS, theme/system's live reader asks AppKit for the five
 // NSColor-named rows directly and gets the platform's own answer. AppKit
-// has no name for SidebarSelection, SidebarSelectionUnemphasizedLabel and
-// DefaultButtonFill, so the live reader rebuilds those three by this rule
+// has no name for SidebarSelection, SidebarSelectionUnemphasizedLabel,
+// DefaultButtonFill and AccentFill, so the live reader rebuilds those four by this rule
 // from the live ControlAccent. Where accent is the platform's own blue —
 // the accent already in the recorded rows — the set is returned unchanged,
 // so a machine on the default accent gets the catalogue exactly.
@@ -1091,6 +1113,7 @@ func (p PlatformColors) WithAccent(accent color.NRGBA) PlatformColors {
 	p.SidebarSelection = atAccentHue(hue, sat, p.SidebarSelection)
 	p.SidebarSelectionUnemphasizedLabel = atAccentHue(hue, sat, p.SidebarSelectionUnemphasizedLabel)
 	p.DefaultButtonFill = atAccentHue(hue, sat, p.DefaultButtonFill)
+	p.AccentFill = atAccentHue(hue, sat, p.AccentFill)
 	return p
 }
 
