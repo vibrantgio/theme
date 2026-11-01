@@ -199,6 +199,8 @@ type Typography struct {
 type shaperCache struct {
 	shaper       *text.Shaper
 	pinnedShaper *text.Shaper
+	stems        map[StemWeight]*text.Shaper
+	pinnedStems  map[StemWeight]*text.Shaper
 }
 
 // shaperMu guards the shaper caches of every Typography value, including the
