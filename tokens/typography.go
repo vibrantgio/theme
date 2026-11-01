@@ -190,11 +190,6 @@ type Typography struct {
 	// degrades to the per-copy behaviour this field exists to end. Derive from
 	// DefaultTypography or WithFaces and the question does not arise.
 	shapers *shaperCache
-
-	// stem is the stem weight Shaper and DeterministicShaper draw Roboto
-	// Regular upright at. A theme sets it to the stem weight of its scheme
-	// through WithStemWeight. Zero is the face as shipped.
-	stem StemWeight
 }
 
 // shaperCache is the lazily filled pair of shapers that a Typography shares
@@ -204,8 +199,6 @@ type Typography struct {
 type shaperCache struct {
 	shaper       *text.Shaper
 	pinnedShaper *text.Shaper
-	stems        map[StemWeight]*text.Shaper
-	pinnedStems  map[StemWeight]*text.Shaper
 }
 
 // shaperMu guards the shaper caches of every Typography value, including the
@@ -230,8 +223,9 @@ func (t *Typography) cache() *shaperCache {
 // the platform's own fonts for anything Faces cannot serve. It is built on the
 // first call and cached, and every copy of the value it was built through —
 // including every copy an rx emission makes — hands back that same shaper.
-// It draws Roboto Regular upright at t's [Typography.StemWeight], and copies
-// at one stem weight share one shaper.
+// It holds Roboto twice: as shipped, and as the family [StemFont] names for
+// text darker than its fill. The draw site picks the family by the text
+// against its fill; theme/typeset does it for every text it lays out.
 //
 // The fallback is the point. Faces is Roboto and Roboto Mono, which between
 // them carry no arrow, no box-drawing character and no dingbat, so a shaper
@@ -263,15 +257,21 @@ func (t *Typography) cache() *shaperCache {
 // does not buy you a second shaper. Use WithFaces, which allocates a fresh
 // cache along with its wider collection.
 func (t *Typography) Shaper() *text.Shaper {
-	return t.shaperAt(t.stem)
+	shaperMu.Lock()
+	defer shaperMu.Unlock()
+	c := t.cache()
+	if c.shaper == nil {
+		c.shaper = text.NewShaper(text.WithCollection(stemFaces(t.Faces)))
+	}
+	return c.shaper
 }
 
 // DeterministicShaper returns the shaper golden tests must draw with: Faces
 // and nothing else, system fonts off, so that the same text shapes to the same
 // pixels on every machine. It is built on the first call and cached separately
-// from Shaper's, in the same cache every copy of the value shares. It draws at
-// t's stem weight, as Shaper does. The
-// single-goroutine rule under Shaper applies here too, and for the same reason.
+// from Shaper's, in the same cache every copy of the value shares. It holds
+// both Roboto families, as Shaper does. The single-goroutine rule under
+// Shaper applies here too, and for the same reason.
 //
 // A test that pins its faces this way says what it wants, which is stricter
 // than inheriting a default — it cannot drift when the default changes, and it
@@ -291,7 +291,13 @@ func (t *Typography) Shaper() *text.Shaper {
 // asserted at the glyph level — the shaper resolved this rune to a real face —
 // and never as pixels.
 func (t *Typography) DeterministicShaper() *text.Shaper {
-	return t.pinnedShaperAt(t.stem)
+	shaperMu.Lock()
+	defer shaperMu.Unlock()
+	c := t.cache()
+	if c.pinnedShaper == nil {
+		c.pinnedShaper = text.NewShaper(text.NoSystemFonts(), text.WithCollection(stemFaces(t.Faces)))
+	}
+	return c.pinnedShaper
 }
 
 // WithFaces returns a copy of t whose collection is Faces followed by extra,
@@ -415,10 +421,10 @@ func (t Typography) WithEmoji() Typography {
 		return t
 	}
 	if t.shapers == DefaultTypography.shapers {
-		return EmojiTypography().WithStemWeight(t.stem)
+		return EmojiTypography()
 	}
 	if jb := jetbrainsMonoTypography(); t.shapers == jb.shapers {
-		return jetbrainsEmojiTypography().WithStemWeight(t.stem)
+		return jetbrainsEmojiTypography()
 	}
 	return t.WithFaces(notocoloremoji.FontFace())
 }

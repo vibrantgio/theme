@@ -257,7 +257,7 @@ func TestFromSourceThemeWithTypographyEmitsIt(t *testing.T) {
 	if got[0].Code.Typeface != "JetBrains Mono" {
 		t.Errorf("Code.Typeface = %q, want JetBrains Mono", got[0].Code.Typeface)
 	}
-	if light := want.WithStemWeight(tokens.StemWeightLight); got[0].Shaper() != light.Shaper() {
+	if got[0].Shaper() != want.Shaper() {
 		t.Error("the stream built its own shaper instead of emitting the one WithTypography was given")
 	}
 }
@@ -272,48 +272,9 @@ func TestFromSourceThemeWithoutTypographyIsTheDefault(t *testing.T) {
 	if err != nil {
 		t.Fatalf("typography observe: %v", err)
 	}
-	live := tokens.EmojiTypography().WithStemWeight(tokens.StemWeightLight)
+	live := tokens.EmojiTypography()
 	if len(got) != 1 || got[0].Shaper() != live.Shaper() {
 		t.Error("with no WithTypography the stream did not emit EmojiTypography")
-	}
-}
-
-// TestFromSourceThemeChangesTheStemWeightWithTheScheme: a change from light
-// to dark, and one from dark to light, changes the stem weight the typography
-// draws at. Each emission's shaper is the one its scheme's stem weight gives.
-func TestFromSourceThemeChangesTheStemWeightWithTheScheme(t *testing.T) {
-	light := system.Appearance{Dark: false}
-	dark := system.Appearance{Dark: true}
-	for _, tc := range []struct {
-		name  string
-		vals  []system.Appearance
-		stems []tokens.StemWeight
-	}{
-		{"light to dark", []system.Appearance{light, dark}, []tokens.StemWeight{tokens.StemWeightLight, tokens.StemWeightDark}},
-		{"dark to light", []system.Appearance{dark, light}, []tokens.StemWeight{tokens.StemWeightDark, tokens.StemWeightLight}},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			src := &fakeSource{vals: tc.vals}
-			themes, err := collect(system.FromSourceTheme(src, time.Millisecond).Take(2))
-			if err != nil {
-				t.Fatalf("theme observe: %v", err)
-			}
-			if len(themes) != 2 {
-				t.Fatalf("expected 2 themes, got %d", len(themes))
-			}
-			for i, want := range tc.stems {
-				got, err := collect(themes[i].Typography)
-				if err != nil || len(got) != 1 {
-					t.Fatalf("theme[%d] typography: %v, %d emissions", i, err, len(got))
-				}
-				if got[0].StemWeight() != want {
-					t.Errorf("theme[%d] draws at stem weight %v, want %v", i, got[0].StemWeight(), want)
-				}
-				if at := tokens.EmojiTypography().WithStemWeight(want); got[0].Shaper() != at.Shaper() {
-					t.Errorf("theme[%d] built its own shaper at its stem weight", i)
-				}
-			}
-		})
 	}
 }
 

@@ -32,12 +32,16 @@
 package window
 
 import (
+	"image/color"
+
 	"gioui.org/layout"
 
 	"github.com/reactivego/rx"
 
 	"github.com/vibrantgio/mvu"
 	"github.com/vibrantgio/theme/theme"
+	"github.com/vibrantgio/theme/tokens"
+	"github.com/vibrantgio/theme/typeset"
 )
 
 // Window pairs an [mvu.Window] with the theme observable that scopes
@@ -64,6 +68,33 @@ func New(w *mvu.Window, theme rx.Observable[theme.Theme]) *Window {
 //
 // Render shadows the embedded [mvu.Window.Render]; callers that want
 // the raw layer-only signature can still reach it via w.Window.Render.
+//
+// Every layer lays out on the window background of the theme as its fill,
+// [typeset.WithFill], so text that stands on the window is drawn at the stem
+// weight of the text against the window background.
 func (w *Window) Render(build func(theme rx.Observable[theme.Theme]) []rx.Observable[layout.Widget]) rx.Subscription {
-	return w.Window.Render(build(w.Theme)...)
+	return w.Window.Render(OnWindowBackground(w.Theme, build(w.Theme)...)...)
+}
+
+// OnWindowBackground returns layers with the window background of th set as
+// the fill each one lays out on, [typeset.WithFill].
+func OnWindowBackground(th rx.Observable[theme.Theme], layers ...rx.Observable[layout.Widget]) []rx.Observable[layout.Widget] {
+	fills := rx.Map(rx.SwitchMap(th, func(t theme.Theme) rx.Observable[tokens.PlatformColors] {
+		return t.Platform
+	}), func(p tokens.PlatformColors) color.NRGBA {
+		return p.WindowBackground
+	})
+	out := make([]rx.Observable[layout.Widget], len(layers))
+	for i, l := range layers {
+		out[i] = rx.Map(rx.CombineLatest2(l, fills), func(n rx.Tuple2[layout.Widget, color.NRGBA]) layout.Widget {
+			draw, fill := n.First, n.Second
+			if draw == nil {
+				return nil
+			}
+			return func(gtx layout.Context) layout.Dimensions {
+				return draw(typeset.WithFill(gtx, fill))
+			}
+		})
+	}
+	return out
 }

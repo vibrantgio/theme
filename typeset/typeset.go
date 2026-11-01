@@ -53,6 +53,7 @@ package typeset
 import (
 	"image"
 	"image/color"
+	"maps"
 
 	"gioui.org/font"
 	"gioui.org/layout"
@@ -62,6 +63,7 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 
+	vgcolor "github.com/vibrantgio/theme/color"
 	"github.com/vibrantgio/theme/tokens"
 )
 
@@ -76,6 +78,61 @@ func Font(style tokens.TextStyle, fallback font.Weight) font.Font {
 		f.Weight = tokens.FontWeight(style.Weight)
 	}
 	return f
+}
+
+// fillKey is the key the fill that text stands on is set under in
+// layout.Context.Values.
+const fillKey = "github.com/vibrantgio/theme/typeset.fill"
+
+// unknownFill is the fill text is compared against when no surface set one
+// on gtx: the grey half way between black and white. Against it, the text
+// colour alone picks the stem weight. This is the case that must not be
+// reached inside a window or a golden render. It stays as the fallback for
+// text that no surface told its fill.
+var unknownFill = color.NRGBA{R: 0x80, G: 0x80, B: 0x80, A: 0xff}
+
+// WithFill returns gtx with fill as the fill that the text laid out under it
+// stands on. A surface calls it with the fill it paints, before it lays out
+// its content. A translucent fill is flattened onto the fill gtx already
+// carries. When gtx carries none, it is flattened onto the fallback grey that
+// [FontOn] compares against. gtx.Values is cloned rather than written, so
+// the caller's context keeps the fill it had.
+func WithFill(gtx layout.Context, fill color.NRGBA) layout.Context {
+	if fill.A < 0xff {
+		under, ok := Fill(gtx)
+		if !ok {
+			under = unknownFill
+		}
+		fill = vgcolor.Flatten(fill, under)
+	}
+	fill.A = 0xff
+	values := maps.Clone(gtx.Values)
+	if values == nil {
+		values = make(map[string]any, 1)
+	}
+	values[fillKey] = fill
+	gtx.Values = values
+	return gtx
+}
+
+// Fill returns the fill that text laid out under gtx stands on. It reports
+// false when no surface set one with [WithFill].
+func Fill(gtx layout.Context) (color.NRGBA, bool) {
+	c, ok := gtx.Values[fillKey].(color.NRGBA)
+	return c, ok
+}
+
+// FontOn is [Font] for text in fg on the fill gtx carries: the font that
+// draws the text at the stem weight of text darker or lighter than its fill,
+// [tokens.StemFont]. Without a fill on gtx, fg is compared against the grey
+// half way between black and white. A draw site that records its own paint
+// for [Layout] builds its font with FontOn.
+func FontOn(gtx layout.Context, style tokens.TextStyle, fallback font.Weight, fg color.NRGBA) font.Font {
+	fill, ok := Fill(gtx)
+	if !ok {
+		fill = unknownFill
+	}
+	return tokens.StemFont(Font(style, fallback), fg, fill)
 }
 
 // Label builds the widget.Label for a style at maxLines, with the style's line
@@ -248,6 +305,9 @@ func TextWeight(gtx layout.Context, sh *text.Shaper, txt string, style tokens.Te
 // the zero value, so it is what the two calls above pass and the three are the
 // same pixels for a site wanting no alignment of its own.
 //
+// The text is drawn at the stem weight of col against the fill gtx carries,
+// as [FontOn] picks it.
+//
 // It carries the weight as well as the alignment because the two are not
 // independent at the draw sites that centre a line: one shapes an initial at a
 // SemiBold fallback, the other a line in a role that states its weight.
@@ -261,7 +321,7 @@ func TextAligned(gtx layout.Context, sh *text.Shaper, txt string, style tokens.T
 	material := rec.Stop()
 	lbl := Label(style, maxLines)
 	lbl.Alignment = align
-	return Layout(gtx, sh, lbl, Font(style, fallback), unit.Sp(style.Size), txt, material)
+	return Layout(gtx, sh, lbl, FontOn(gtx, style, fallback, col), unit.Sp(style.Size), txt, material)
 }
 
 // LineWidth reports the width one line of txt wants in a role at a weight: the

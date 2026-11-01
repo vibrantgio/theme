@@ -2,14 +2,17 @@ package window_test
 
 import (
 	"context"
+	"image/color"
 	"testing"
 
 	"gioui.org/layout"
+	"gioui.org/op"
 
 	"github.com/reactivego/rx"
 
 	"github.com/vibrantgio/theme/theme"
 	"github.com/vibrantgio/theme/tokens"
+	"github.com/vibrantgio/theme/typeset"
 	"github.com/vibrantgio/theme/window"
 )
 
@@ -158,5 +161,30 @@ func TestThemeFieldIsTheArgument(t *testing.T) {
 	}
 	if len(gotColors) != 1 || gotColors[0] != tokens.PlatformLight {
 		t.Errorf("Theme passed through New differs from input: got %+v", gotColors)
+	}
+}
+
+// TestEveryLayerLaysOutOnTheWindowBackground: OnWindowBackground hands each
+// layer the window background of the theme's scheme as its fill.
+func TestEveryLayerLaysOutOnTheWindowBackground(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		th   theme.Theme
+		set  tokens.PlatformColors
+	}{{"light", lightTheme(), tokens.PlatformLight}, {"dark", darkTheme(), tokens.PlatformDark}} {
+		var got color.NRGBA
+		var ok bool
+		layer := rx.Of[layout.Widget](func(gtx layout.Context) layout.Dimensions {
+			got, ok = typeset.Fill(gtx)
+			return layout.Dimensions{}
+		})
+		draws, err := collect(window.OnWindowBackground(rx.Of(tc.th), layer)[0])
+		if err != nil || len(draws) != 1 {
+			t.Fatalf("%s: %d draws, err %v", tc.name, len(draws), err)
+		}
+		draws[0](layout.Context{Ops: new(op.Ops)})
+		if !ok || got != tc.set.WindowBackground {
+			t.Errorf("%s: the layer's fill is %v %v, want the window background %v", tc.name, got, ok, tc.set.WindowBackground)
+		}
 	}
 }
