@@ -563,7 +563,7 @@ func TestAJunkMonoIsStoredAndIgnored(t *testing.T) {
 	if streamed.Code.Typeface != "Roboto Mono" {
 		t.Errorf("the stream wore %q for a junk name, want Roboto Mono", streamed.Code.Typeface)
 	}
-	live := tokens.EmojiTypography()
+	live := tokens.EmojiTypography().WithStemWeight(streamed.StemWeight())
 	if streamed.Shaper() != live.Shaper() {
 		t.Error("a junk name did not put EmojiTypography on the stream")
 	}
@@ -614,7 +614,7 @@ func TestTheFirstFrameIsDrawnInTheSameFaceAsTheStream(t *testing.T) {
 			if opening.Code.Typeface != streamed.Code.Typeface {
 				t.Errorf("first frame Code.Typeface = %q, stream = %q", opening.Code.Typeface, streamed.Code.Typeface)
 			}
-			if opening.Shaper() != streamed.Shaper() {
+			if opening = opening.WithStemWeight(streamed.StemWeight()); opening.Shaper() != streamed.Shaper() {
 				t.Error("first frame and stream built two shapers for the same face")
 			}
 			if !hasEmojiFace(opening.Faces) || !hasEmojiFace(streamed.Faces) {

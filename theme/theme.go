@@ -23,11 +23,12 @@ type Theme struct {
 
 // Default returns a Theme whose every field emits the package-level default
 // value once and then completes. It is the canonical starting point for static
-// or test scenarios that do not need live token switching.
+// or test scenarios that do not need live token switching. Its scheme is
+// light, and its typography draws at the light scheme's stem weight.
 func Default() Theme {
 	return Theme{
 		Platform:   rx.Of(tokens.PlatformLight),
-		Typography: rx.Of(tokens.DefaultTypography),
+		Typography: rx.Of(tokens.DefaultTypography.WithStemWeight(tokens.StemWeightLight)),
 		Density:    rx.Of(tokens.Comfortable),
 		Motion:     rx.Of(tokens.Motion),
 		Spacing:    rx.Of(tokens.Spacing),

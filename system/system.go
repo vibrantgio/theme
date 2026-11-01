@@ -260,7 +260,7 @@ func WithTypography(t tokens.Typography) Option {
 // LiveTheme bridges system-appearance changes to a theme.Theme stream.
 // Each emission is a fresh theme.Theme whose Platform field matches the OS
 // dark-mode setting; Typography is [WithTypography]'s value or
-// tokens.EmojiTypography(); the remaining token categories use their
+// tokens.EmojiTypography(), at the stem weight of that setting; the remaining token categories use their
 // package defaults, modulated by the OS accessibility preferences below.
 //
 // Which accent the set carries is decided by precedence: an explicit
@@ -302,7 +302,9 @@ func FromSourceTheme(src Source, interval time.Duration, opts ...Option) rx.Obse
 // rebuilt for a pinned theme colour where one was chosen, and ReduceMotion
 // swapping the motion scale for its zero-duration variant. With no theme
 // colour pinned, [followLiveAccent] rebuilds the measured accent fills for
-// the live accent on macOS.
+// the live accent on macOS. The typography draws at the stem weight of the
+// appearance, so a change between light and dark changes the stem weight
+// with the colours.
 //
 // There is no high-contrast branch. The platform answers that preference
 // itself: on macOS the live reader asks AppKit for every name while
@@ -322,7 +324,7 @@ func (c *config) theme(v rx.Tuple2[Appearance, a11y.A11yPrefs]) theme.Theme {
 	}
 	return theme.Theme{
 		Platform:   rx.Of(platform),
-		Typography: rx.Of(c.typ),
+		Typography: rx.Of(c.typ.WithStemWeight(tokens.SchemeStemWeight(a.Dark))),
 		Density:    rx.Of(tokens.Comfortable),
 		Motion:     rx.Of(motion),
 		Spacing:    rx.Of(tokens.Spacing),

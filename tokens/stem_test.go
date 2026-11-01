@@ -29,22 +29,42 @@ func TestOnlyRobotoRegularTakesTheStemWeight(t *testing.T) {
 	}
 }
 
-// TestEveryCopySharesTheStemShaper: a copy of a typography hands back the
-// shaper of its source for each stem weight, and stem weight zero is the
-// shaper as shipped.
+// TestEveryCopySharesTheStemShaper: copies of a typography at one stem
+// weight hand back one shaper, and stem weight zero is the shaper as
+// shipped.
 func TestEveryCopySharesTheStemShaper(t *testing.T) {
-	a := DefaultTypography
-	b := DefaultTypography
-	if a.DeterministicShaperFor(StemWeightLight) != b.DeterministicShaperFor(StemWeightLight) {
+	a := DefaultTypography.WithStemWeight(StemWeightLight)
+	b := DefaultTypography.WithStemWeight(StemWeightLight)
+	if a.DeterministicShaper() != b.DeterministicShaper() || a.Shaper() != b.Shaper() {
 		t.Error("two copies built two shapers at one stem weight")
 	}
-	if a.DeterministicShaperFor(0) != a.DeterministicShaper() {
+	zero := DefaultTypography.WithStemWeight(0)
+	if zero.DeterministicShaper() != DefaultTypography.DeterministicShaper() {
 		t.Error("stem weight zero is not the shaper as shipped")
 	}
-	if a.DeterministicShaperFor(StemWeightLight) == a.DeterministicShaper() {
+	if a.DeterministicShaper() == DefaultTypography.DeterministicShaper() {
 		t.Error("the light stem weight shares the shaper as shipped")
+	}
+	if a.StemWeight() != StemWeightLight || DefaultTypography.StemWeight() != 0 {
+		t.Error("StemWeight does not report the stem weight set")
 	}
 	if SchemeStemWeight(false) != StemWeightLight || SchemeStemWeight(true) != StemWeightDark {
 		t.Error("SchemeStemWeight does not pick by scheme")
+	}
+}
+
+// TestTheStemWeightStaysThroughTheFaceOptions: adding emoji or a code face
+// to a typography keeps the stem weight it is drawn at.
+func TestTheStemWeightStaysThroughTheFaceOptions(t *testing.T) {
+	light := DefaultTypography.WithStemWeight(StemWeightLight)
+	for name, got := range map[string]Typography{
+		"WithEmoji":                   light.WithEmoji(),
+		"WithCodeFace JetBrains":      light.WithCodeFace(CodeFaceJetBrains),
+		"WithCodeFace then WithEmoji": light.WithCodeFace(CodeFaceJetBrains).WithEmoji(),
+		"WithFaces":                   light.WithFaces(),
+	} {
+		if got.StemWeight() != StemWeightLight {
+			t.Errorf("%s draws at stem weight %v, want %v", name, got.StemWeight(), StemWeightLight)
+		}
 	}
 }

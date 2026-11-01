@@ -42,16 +42,36 @@ func SchemeStemWeight(dark bool) StemWeight {
 	return StemWeightLight
 }
 
-// ShaperFor is [Typography.Shaper] with Roboto Regular upright drawn at the
-// stem weight w. Every copy of t shares the shaper for each w, as it shares
-// Shaper's. ShaperFor(0) is Shaper.
-func (t *Typography) ShaperFor(w StemWeight) *text.Shaper {
-	if w == 0 {
-		return t.Shaper()
-	}
+// Dark reports whether p is a dark scheme's set: its label is light.
+func (p PlatformColors) Dark() bool {
+	return int(p.Label.R)+int(p.Label.G)+int(p.Label.B) > 3*127
+}
+
+// WithStemWeight returns t with its text drawn at the stem weight w. The
+// roles, their sizes and their line heights stay the same. The copy shares
+// t's shaper cache, so every copy at one stem weight hands back one shaper.
+// A theme calls it with the stem weight of its scheme, [SchemeStemWeight].
+func (t Typography) WithStemWeight(w StemWeight) Typography {
+	t.stem = w
+	return t
+}
+
+// StemWeight returns the stem weight t draws its text at.
+func (t Typography) StemWeight() StemWeight {
+	return t.stem
+}
+
+// shaperAt is the shaper Shaper hands back for the stem weight w.
+func (t *Typography) shaperAt(w StemWeight) *text.Shaper {
 	shaperMu.Lock()
 	defer shaperMu.Unlock()
 	c := t.cache()
+	if w == 0 {
+		if c.shaper == nil {
+			c.shaper = text.NewShaper(text.WithCollection(t.Faces))
+		}
+		return c.shaper
+	}
 	if c.stems[w] == nil {
 		if c.stems == nil {
 			c.stems = map[StemWeight]*text.Shaper{}
@@ -61,16 +81,18 @@ func (t *Typography) ShaperFor(w StemWeight) *text.Shaper {
 	return c.stems[w]
 }
 
-// DeterministicShaperFor is [Typography.DeterministicShaper] with Roboto
-// Regular upright drawn at the stem weight w. Every copy of t shares the
-// shaper for each w. DeterministicShaperFor(0) is DeterministicShaper.
-func (t *Typography) DeterministicShaperFor(w StemWeight) *text.Shaper {
-	if w == 0 {
-		return t.DeterministicShaper()
-	}
+// pinnedShaperAt is the shaper DeterministicShaper hands back for the stem
+// weight w.
+func (t *Typography) pinnedShaperAt(w StemWeight) *text.Shaper {
 	shaperMu.Lock()
 	defer shaperMu.Unlock()
 	c := t.cache()
+	if w == 0 {
+		if c.pinnedShaper == nil {
+			c.pinnedShaper = text.NewShaper(text.NoSystemFonts(), text.WithCollection(t.Faces))
+		}
+		return c.pinnedShaper
+	}
 	if c.pinnedStems[w] == nil {
 		if c.pinnedStems == nil {
 			c.pinnedStems = map[StemWeight]*text.Shaper{}
