@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"image/color"
 	"math"
+	"slices"
 	"sync"
 
 	"gioui.org/font"
 	"gioui.org/font/opentype"
 	"github.com/vibrantgio/font/roboto"
+	"github.com/vibrantgio/font/roboto/regular/bold"
 	"github.com/vibrantgio/font/roboto/regular/normal"
 
 	vgcolor "github.com/vibrantgio/theme/color"
@@ -19,8 +21,9 @@ import (
 // is the width the library adds to each stem of Roboto Regular upright, in
 // em, in total over the two sides of the stem. Zero is the face as shipped,
 // and a negative value makes the stems narrower. No advance changes, so a
-// text's width does not follow its stem weight. The other Roboto faces
-// draw as shipped at every stem weight.
+// text's width does not follow its stem weight. Roboto Bold upright has
+// stem weights of its own, under [StemFont]. The other Roboto faces draw as
+// shipped at every stem weight.
 type StemWeight float32
 
 // platformStems are the platform's lowercase stem, as stored, in px at 1x,
@@ -73,8 +76,8 @@ func platformStem(size float64, lighter bool) float64 {
 // mid contrast".
 const shippedStem = 0.0907
 
-// The stem weights the shaper holds: the multiples of stemStep from
-// stemStepMin to stemStepMax. Text whose stem weight falls outside them
+// The stem weights the shaper holds for Roboto Regular upright: the
+// multiples of stemStep from stemStepMin to stemStepMax. Text whose stem weight falls outside them
 // draws at the nearest end. The ends hold the platform's stem from 8 pt to
 // about 40 pt for every colour on its fill.
 const (
@@ -172,6 +175,149 @@ func stemStepOf(size float32, fg, fill color.NRGBA) int {
 	return min(max(k, stemStepMin), stemStepMax)
 }
 
+// The platform's stems for semibold and bold text, as stored, in px at 1x,
+// for text darker than its fill and for text lighter than it. Roboto ships
+// no semibold face. Weight 600 and weight 700 both draw Roboto Bold: go-text
+// takes the next heavier face for a weight over 500, and that face is Bold.
+// The platform draws the two weights apart, so the font's weight, and not
+// the face it draws, selects the rows. The reference's section "What the
+// stem measures for the semibold, bold and monospaced faces" holds them:
+//
+//   - Weight 600 at 13 pt is System Settings' group title, MEASURED.
+//   - Weight 600 at 11 pt is Mail's sidebar section heading, MEASURED. It is
+//     the same in both schemes.
+//   - Weight 700 at 13 pt is TextEdit's light window title, MEASURED. No
+//     stored capture holds bold text lighter than its fill whose weight is
+//     read, so lighter text at weight 700 has no row.
+var boldStems = map[font.Weight][]boldStemRow{
+	font.SemiBold: {{size: 11, darker: 1.52, lighter: 1.52, hasLighter: true}, {size: 13, darker: 1.73, lighter: 1.99, hasLighter: true}},
+	font.Bold:     {{size: 13, darker: 2.02}},
+}
+
+type boldStemRow struct {
+	size            float64
+	darker, lighter float64
+	hasLighter      bool
+}
+
+// boldPlatformStem returns the platform's stem as stored, in px at 1x, for
+// text in weight w at size pt. Between two rows it is the straight line
+// through them. Outside the rows the stem keeps the nearest row's share of
+// the size. It reports false for a weight or a side of the fill with no
+// row.
+func boldPlatformStem(w font.Weight, size float64, lighter bool) (float64, bool) {
+	rows := boldStems[w]
+	if len(rows) == 0 || lighter && !rows[0].hasLighter {
+		return 0, false
+	}
+	at := func(i int) float64 {
+		if lighter {
+			return rows[i].lighter
+		}
+		return rows[i].darker
+	}
+	last := len(rows) - 1
+	switch {
+	case size <= rows[0].size:
+		return at(0) * size / rows[0].size, true
+	case size >= rows[last].size:
+		return at(last) * size / rows[last].size, true
+	}
+	i := 1
+	for size > rows[i].size {
+		i++
+	}
+	s0, s1 := rows[i-1].size, rows[i].size
+	return at(i-1) + (size-s0)*(at(i)-at(i-1))/(s1-s0), true
+}
+
+// shippedBoldStem is the stem of Roboto Bold upright as shipped, in em,
+// MEASURED from its l, n and i rendered at 1000 px by FreeType.
+const shippedBoldStem = 0.141
+
+// boldTargets are the roles whose bold text has a platform row, in the
+// text colour and on the fill each is measured on. The section heading and
+// the headline use the label colour on the window. The small section
+// heading uses the secondary label colour on the sidebar.
+func boldTargets() []boldTarget {
+	t := DefaultTypography
+	var out []boldTarget
+	for _, p := range []PlatformColors{PlatformLight, PlatformDark} {
+		out = append(out,
+			boldTarget{t.SectionHeading, p.Label, p.WindowBackground},
+			boldTarget{t.Headline, p.Label, p.WindowBackground},
+			boldTarget{t.SmallSectionHeading, p.SecondaryLabel, p.SidebarMaterial},
+		)
+	}
+	return out
+}
+
+type boldTarget struct {
+	role     TextStyle
+	fg, fill color.NRGBA
+}
+
+// boldSteps are the stem weights of Roboto Bold upright that the shaper
+// holds, as multiples of stemStep: the steps of the targets, and zero, the
+// face as shipped. Each held face takes about 3.1 MB in both shapers, so
+// the shaper holds no other step.
+var boldSteps = func() []int {
+	held := []int{0}
+	for _, tg := range boldTargets() {
+		k := boldStepFor(FontWeight(tg.role.Weight), tg.role.Size, tg.fg, tg.fill)
+		if !slices.Contains(held, k) {
+			held = append(held, k)
+		}
+	}
+	slices.Sort(held)
+	return held
+}()
+
+// boldStepFor is the stem weight of Roboto Bold upright text in weight w
+// at size pt in fg on fill, as a multiple of stemStep, before it is held:
+// the platform's stem less the blend correction, over the size, less the
+// stem as shipped. Text with no platform row has the step zero.
+func boldStepFor(w font.Weight, size float32, fg, fill color.NRGBA) int {
+	if size <= 0 {
+		return 0
+	}
+	fill.A = 0xff
+	fg = vgcolor.Flatten(fg, fill)
+	lighter := vgcolor.RelativeLuminance(fg) >= vgcolor.RelativeLuminance(fill)
+	s := float64(size)
+	stem, ok := boldPlatformStem(w, s, lighter)
+	if !ok {
+		return 0
+	}
+	return int(math.Round(((stem-blendCorrection(fg, fill))/s - shippedBoldStem) / stemStep))
+}
+
+// boldStepOf is the held stem weight of Roboto Bold upright text: the
+// held step nearest boldStepFor. Bold text in a role with no target, as
+// bold text in reading text and the document headings, draws at it.
+func boldStepOf(w font.Weight, size float32, fg, fill color.NRGBA) int {
+	k := boldStepFor(w, size, fg, fill)
+	best := 0
+	for _, h := range boldSteps {
+		if d, bd := abs(h-k), abs(best-k); d < bd || d == bd && abs(h) < abs(best) {
+			best = h
+		}
+	}
+	return best
+}
+
+func abs(k int) int {
+	if k < 0 {
+		return -k
+	}
+	return k
+}
+
+// drawsBold reports whether f, in Roboto, draws Roboto Bold upright.
+func drawsBold(f font.Font) bool {
+	return f.Style == font.Regular && (f.Weight == font.SemiBold || f.Weight == font.Bold)
+}
+
 // stemTypeface returns the key the shaper holds Roboto under at the stem
 // weight k × stemStep. It is the shaper's key and not a typeface. No caller
 // chooses it, [Typography.Faces] does not hold it, and no text on screen
@@ -182,9 +328,11 @@ func stemTypeface(k int) font.Typeface {
 }
 
 // StemFont returns f as the font that draws text at size pt in fg on fill
-// at its stem weight, [TextStemWeight]. Only Roboto, named or as the empty
-// typeface, has a family per stem weight; any other typeface returns f
-// unchanged. The shapers of [Typography] hold every family.
+// at its stem weight. Text in Roboto Bold upright, weight 600 or 700, has
+// the stem weight of its weight's platform rows. Other text in Roboto has
+// [TextStemWeight]. Only Roboto, named or as the empty typeface, has a
+// family per stem weight; any other typeface returns f unchanged. The
+// shapers of [Typography] hold every family.
 //
 // The empty typeface is the collection's default family, its first faces.
 // Every library collection starts with Roboto: [DefaultTypography] does, and
@@ -194,7 +342,13 @@ func StemFont(f font.Font, size float32, fg, fill color.NRGBA) font.Font {
 	if f.Typeface != roboto.RegularNormal.Typeface && f.Typeface != "" {
 		return f
 	}
-	if k := stemStepOf(size, fg, fill); k != 0 {
+	k := 0
+	if drawsBold(f) {
+		k = boldStepOf(f.Weight, size, fg, fill)
+	} else {
+		k = stemStepOf(size, fg, fill)
+	}
+	if k != 0 {
 		f.Typeface = stemTypeface(k)
 	}
 	return f
@@ -207,23 +361,25 @@ func (p PlatformColors) Dark() bool {
 
 // stemFaces returns faces followed by one family per stem weight the
 // shaper holds, but zero: a copy of every Roboto entry under that stem
-// weight's key, with the face of Roboto Regular upright at that stem
-// weight. The other copies share the faces as shipped. Gio's text.NewShaper
-// reads every face of its collection when it builds the shaper, so the
-// first shaper of a process builds every widened face.
+// weight's key. In a family, Roboto Regular upright is widened when the
+// step is in the regular range, and Roboto Bold upright is widened when the
+// step is in boldSteps. The other copies share the faces as shipped. Gio's
+// text.NewShaper reads every face of its collection when it builds the
+// shaper, so the first shaper of a process builds every widened face.
 func stemFaces(faces []font.FontFace) []font.FontFace {
-	out := make([]font.FontFace, 0, len(faces)*(stemStepMax-stemStepMin+1))
+	steps := heldSteps()
+	out := make([]font.FontFace, 0, len(faces)*(len(steps)+1))
 	out = append(out, faces...)
-	for k := stemStepMin; k <= stemStepMax; k++ {
-		if k == 0 {
-			continue
-		}
+	for _, k := range steps {
 		for _, f := range faces {
 			if f.Font.Typeface != roboto.RegularNormal.Typeface {
 				continue
 			}
-			if f.Font == roboto.RegularNormal {
-				f.Face = stemFace(k)
+			switch {
+			case f.Font == roboto.RegularNormal && k >= stemStepMin && k <= stemStepMax:
+				f.Face = stemFace(normal.TTF, k)
+			case f.Font == roboto.RegularBold && slices.Contains(boldSteps, k):
+				f.Face = stemFace(bold.TTF, k)
 			}
 			f.Font.Typeface = stemTypeface(k)
 			out = append(out, f)
@@ -232,28 +388,52 @@ func stemFaces(faces []font.FontFace) []font.FontFace {
 	return out
 }
 
+// heldSteps returns every non-zero step a family exists for, in order: the
+// regular range and boldSteps.
+func heldSteps() []int {
+	var steps []int
+	for k := stemStepMin; k <= stemStepMax; k++ {
+		if k != 0 {
+			steps = append(steps, k)
+		}
+	}
+	for _, k := range boldSteps {
+		if k != 0 && !slices.Contains(steps, k) {
+			steps = append(steps, k)
+		}
+	}
+	slices.Sort(steps)
+	return steps
+}
+
+type stemFaceKey struct {
+	ttf *byte
+	k   int
+}
+
 var (
 	stemFaceMu sync.Mutex
-	stemFaceAt = map[int]font.Face{}
+	stemFaceAt = map[stemFaceKey]font.Face{}
 )
 
-// stemFace returns Roboto Regular upright at the stem weight k × stemStep,
-// parsed once per process for each k.
-func stemFace(k int) font.Face {
+// stemFace returns the face ttf at the stem weight k × stemStep, parsed
+// once per process for each face and each k.
+func stemFace(ttf []byte, k int) font.Face {
 	stemFaceMu.Lock()
 	defer stemFaceMu.Unlock()
-	if f, ok := stemFaceAt[k]; ok {
+	key := stemFaceKey{&ttf[0], k}
+	if f, ok := stemFaceAt[key]; ok {
 		return f
 	}
 	w := float64(k) * stemStep
-	ttf, err := widen.Sideways(normal.TTF, w)
+	wide, err := widen.Sideways(ttf, w)
 	if err != nil {
-		panic(fmt.Sprintf("tokens: Roboto Regular at stem weight %v: %v", w, err))
+		panic(fmt.Sprintf("tokens: Roboto at stem weight %v: %v", w, err))
 	}
-	f, err := opentype.Parse(ttf)
+	f, err := opentype.Parse(wide)
 	if err != nil {
-		panic(fmt.Sprintf("tokens: Roboto Regular at stem weight %v: %v", w, err))
+		panic(fmt.Sprintf("tokens: Roboto at stem weight %v: %v", w, err))
 	}
-	stemFaceAt[k] = f
+	stemFaceAt[key] = f
 	return f
 }

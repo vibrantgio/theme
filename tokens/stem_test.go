@@ -3,6 +3,7 @@ package tokens
 import (
 	"image/color"
 	"math"
+	"slices"
 	"testing"
 
 	"gioui.org/font"
@@ -14,11 +15,13 @@ import (
 	vgcolor "github.com/vibrantgio/theme/color"
 )
 
-// TestEachStemFamilyWidensOnlyRobotoRegular: the shaper's collection is the
+// TestEachStemFamilyWidensOnlyItsHeldFaces: the shaper's collection is the
 // faces as shipped, then a copy of every Roboto entry under each stem
-// weight the shaper holds but zero. Of the copies, only Roboto Regular
-// upright has a face of its own, and each stem weight has its own.
-func TestEachStemFamilyWidensOnlyRobotoRegular(t *testing.T) {
+// weight the shaper holds but zero. Of the copies, Roboto Regular upright
+// has a face of its own at each step of the regular range, and Roboto Bold
+// upright at each step of boldSteps. Every other copy is the face as
+// shipped.
+func TestEachStemFamilyWidensOnlyItsHeldFaces(t *testing.T) {
 	faces := DefaultTypography.Faces
 	got := stemFaces(faces)
 	for i := range faces {
@@ -32,33 +35,89 @@ func TestEachStemFamilyWidensOnlyRobotoRegular(t *testing.T) {
 			shipped[f.Font] = f.Face
 		}
 	}
-	families := stemStepMax - stemStepMin
+	steps := heldSteps()
 	copies := got[len(faces):]
-	if len(copies) != families*len(shipped) {
-		t.Fatalf("%d stem faces, want one per Roboto face for each of %d stem weights, %d", len(copies), families, families*len(shipped))
+	if len(copies) != len(steps)*len(shipped) {
+		t.Fatalf("%d stem faces, want one per Roboto face for each of %d stem weights, %d", len(copies), len(steps), len(steps)*len(shipped))
 	}
-	widenedFaces := map[font.Typeface]font.Face{}
-	for _, c := range copies {
-		f := c.Font
-		f.Typeface = roboto.RegularNormal.Typeface
-		widened := c.Face != shipped[f]
-		if widened != (f == roboto.RegularNormal) {
-			t.Errorf("%v: widened %v, want widened only for Roboto Regular upright", c.Font, widened)
-		}
-		if widened {
-			widenedFaces[c.Font.Typeface] = c.Face
-		}
+	stepOf := map[font.Typeface]int{}
+	for _, k := range steps {
+		stepOf[stemTypeface(k)] = k
 	}
 	seen := map[font.Face]bool{}
-	for k := stemStepMin; k <= stemStepMax; k++ {
-		if k == 0 {
+	widened := 0
+	for _, c := range copies {
+		k, ok := stepOf[c.Font.Typeface]
+		if !ok {
+			t.Fatalf("%v: no held stem weight has this key", c.Font)
+		}
+		f := c.Font
+		f.Typeface = roboto.RegularNormal.Typeface
+		want := f == roboto.RegularNormal && k >= stemStepMin && k <= stemStepMax ||
+			f == roboto.RegularBold && slices.Contains(boldSteps, k)
+		if got := c.Face != shipped[f]; got != want {
+			t.Errorf("%v: widened %v, want %v", c.Font, got, want)
+		}
+		if want {
+			if seen[c.Face] {
+				t.Errorf("%v: shares its widened face with another step", c.Font)
+			}
+			seen[c.Face] = true
+			widened++
+		}
+	}
+	if want := stemStepMax - stemStepMin + len(boldSteps) - 1; widened != want {
+		t.Errorf("%d widened faces, want %d", widened, want)
+	}
+}
+
+// TestTheBoldStemFollowsTheWeight: Roboto Bold upright draws weight 600
+// and weight 700, and each weight has its own platform rows. For each
+// role with a row, the stem as stored that the step gives, the stem as
+// shipped plus the step at the size, plus the blend correction, is the
+// platform's stem to half a step. The shaper holds those steps and zero,
+// and no other. The Headline lighter than its fill has no platform row
+// whose weight is read, so it draws as shipped.
+func TestTheBoldStemFollowsTheWeight(t *testing.T) {
+	held := []int{0}
+	for _, tg := range boldTargets() {
+		w := FontWeight(tg.role.Weight)
+		k := boldStepOf(w, tg.role.Size, tg.fg, tg.fill)
+		if k != boldStepFor(w, tg.role.Size, tg.fg, tg.fill) {
+			t.Errorf("weight %v at %v pt: the held step %d is not the target's step", tg.role.Weight, tg.role.Size, k)
+		}
+		if !slices.Contains(held, k) {
+			held = append(held, k)
+		}
+		flat := vgcolor.Flatten(tg.fg, tg.fill)
+		lighter := vgcolor.RelativeLuminance(flat) >= vgcolor.RelativeLuminance(tg.fill)
+		size := float64(tg.role.Size)
+		want, ok := boldPlatformStem(w, size, lighter)
+		if !ok {
+			if k != 0 {
+				t.Errorf("weight %v at %v pt, lighter: step %d, want zero with no platform row", tg.role.Weight, size, k)
+			}
 			continue
 		}
-		f, ok := widenedFaces[stemTypeface(k)]
-		if !ok || seen[f] {
-			t.Errorf("stem weight %d × %v has no face of its own", k, stemStep)
+		stored := (shippedBoldStem+float64(k)*stemStep)*size + blendCorrection(flat, tg.fill)
+		if math.Abs(stored-want) > stemStep*size/2+1e-6 {
+			t.Errorf("weight %v at %v pt: step %d gives %.3f px, want the platform's %.3f px", tg.role.Weight, size, k, stored, want)
 		}
-		seen[f] = true
+	}
+	slices.Sort(held)
+	if !slices.Equal(held, boldSteps) {
+		t.Errorf("the shaper holds the bold steps %v, want the targets' %v", boldSteps, held)
+	}
+	l := PlatformLight
+	if a, b := boldStepOf(font.SemiBold, 13, l.Label, l.WindowBackground), boldStepOf(font.Bold, 13, l.Label, l.WindowBackground); a >= b {
+		t.Errorf("13 pt in the label colour: weight 600 at step %d, weight 700 at step %d", a, b)
+	}
+	for _, r := range DefaultTypography.DocumentHeadings {
+		for _, p := range []PlatformColors{PlatformLight, PlatformDark} {
+			if k := boldStepOf(FontWeight(r.Weight), r.Size, p.Label, p.WindowBackground); !slices.Contains(boldSteps, k) {
+				t.Errorf("a document heading at %v pt: step %d, not held", r.Size, k)
+			}
+		}
 	}
 }
 
@@ -151,7 +210,8 @@ func TestThePlatformStemFollowsTheRowsAndTheLine(t *testing.T) {
 
 // TestStemFontNamesAStemFamilyForRobotoOnly: text in Roboto, named or as
 // the empty typeface, shapes in the family of its stem weight, and at the
-// stem weight zero in Roboto as shipped. Text in any other typeface keeps
+// stem weight zero in Roboto as shipped. Roboto Bold upright takes the
+// stem weight of its own weight's rows. Text in any other typeface keeps
 // its font. No font changes its weight or style.
 func TestStemFontNamesAStemFamilyForRobotoOnly(t *testing.T) {
 	light := PlatformLight
@@ -168,10 +228,18 @@ func TestStemFontNamesAStemFamilyForRobotoOnly(t *testing.T) {
 		{"Roboto, lighter text", roboto.RegularNormal, 13, dark.Label, dark.WindowBackground},
 		{"empty typeface, lighter text", font.Font{}, 28, dark.Label, dark.WindowBackground},
 		{"Roboto, no size", roboto.RegularNormal, 0, light.Label, light.WindowBackground},
+		{"Roboto weight 600, darker text", font.Font{Typeface: "Roboto", Weight: font.SemiBold}, 13, light.Label, light.WindowBackground},
+		{"Roboto weight 700, darker text", roboto.RegularBold, 13, light.Label, light.WindowBackground},
+		{"Roboto weight 700, lighter text", roboto.RegularBold, 13, dark.Label, dark.WindowBackground},
+		{"Roboto Bold Italic", roboto.ItalicBold, 13, light.Label, light.WindowBackground},
 	} {
 		got := StemFont(tc.f, tc.size, tc.fg, tc.fill)
 		want := tc.f.Typeface
-		if k := stemStepOf(tc.size, tc.fg, tc.fill); k != 0 {
+		k := stemStepOf(tc.size, tc.fg, tc.fill)
+		if drawsBold(tc.f) {
+			k = boldStepOf(tc.f.Weight, tc.size, tc.fg, tc.fill)
+		}
+		if k != 0 {
 			want = stemTypeface(k)
 		}
 		if got.Typeface != want {
@@ -191,8 +259,10 @@ func TestStemFontNamesAStemFamilyForRobotoOnly(t *testing.T) {
 
 // TestAStemFamilyShapesInItsOwnFace: through both shapers, Roboto Regular
 // upright in a stem family shapes in a face of its own, with the advances
-// of the face as shipped. Roboto Medium in a stem family shapes in the face
-// as shipped.
+// of the face as shipped. Roboto Bold upright shapes in a face of its own
+// in a family of boldSteps, with the advances as shipped, and as shipped in
+// any other family. Roboto Medium in a stem family shapes in the face as
+// shipped.
 func TestAStemFamilyShapesInItsOwnFace(t *testing.T) {
 	typ := DefaultTypography
 	const px = 13
@@ -207,7 +277,7 @@ func TestAStemFamilyShapesInItsOwnFace(t *testing.T) {
 			gs = append(gs, g)
 		}
 	}
-	for _, k := range []int{stemStepMin, 1, stemStepMax} {
+	for _, k := range []int{stemStepMin, 1, 3, stemStepMax} {
 		in := func(f font.Font) font.Font {
 			f.Typeface = stemTypeface(k)
 			return f
@@ -223,6 +293,15 @@ func TestAStemFamilyShapesInItsOwnFace(t *testing.T) {
 				}
 				if shipped[i].Advance != widened[i].Advance {
 					t.Errorf("%s, step %d: glyph %d advances %v, want %v as shipped", name, k, i, widened[i].Advance, shipped[i].Advance)
+				}
+			}
+			bold, boldIn := shape(sh, roboto.RegularBold), shape(sh, in(roboto.RegularBold))
+			for i := range bold {
+				if (bold[i].ID != boldIn[i].ID) != slices.Contains(boldSteps, k) {
+					t.Errorf("%s, step %d: Roboto Bold glyph %d widened %v, want %v", name, k, i, bold[i].ID != boldIn[i].ID, slices.Contains(boldSteps, k))
+				}
+				if bold[i].Advance != boldIn[i].Advance {
+					t.Errorf("%s, step %d: Roboto Bold glyph %d advances %v, want %v as shipped", name, k, i, boldIn[i].Advance, bold[i].Advance)
 				}
 			}
 			medium, mediumIn := shape(sh, roboto.RegularMedium), shape(sh, in(roboto.RegularMedium))
