@@ -70,8 +70,8 @@
 //	ToolbarControlShadow  #000000 a0.035  #000000 a0.024  measured: the drop shadow a bordered toolbar control casts, 23 px of reach sunk 9 light and 2 sunk 6 dark
 //	ToolbarCheckedOverlay #000000 a0.102  #ffffff a0.161  measured: the chosen segment of a segmented toolbar control, over the control's own fill
 //	FindButtonFill   #fdfdfd        #262626        measured light: the find button's fill over the content; dark is the toolbar control's
-//	FindButtonRim    #ffffff        #404040        measured light: the find button's 1 px edge; dark is the toolbar control's rim
-//	FindButtonForeground #000000       #e9e9e9        measured light: the find button's symbol and title; dark is the toolbar's label
+//	FindButtonRim    #ffffff        #404040        measured light: the find button's 1 px rim; dark is the toolbar control's rim
+//	FindButtonForeground #000000       #e9e9e9        measured light: the find button's symbol and title, Text's value; dark is the toolbar's label
 //	PaneRim          #ffffff        #3a3a3a        measured: the 1 px rim the inset sidebar pane has on every side
 //	PaneShadow       #000000 a0.051 #000000 a0.051 measured: the shadow that pane casts, 24 px of reach with its rectangle sunk 9
 //	Seam             #e6e6e6        #000000        measured: the hairline between two flush regions, Mail's list seam
@@ -800,21 +800,26 @@ type PlatformColors struct {
 	ToolbarCheckedOverlay color.NRGBA `appkit:"-"`
 
 	// FindButtonFill, FindButtonRim and FindButtonForeground are the find
-	// button's face: its fill, the 1 px edge on every side, and what its
+	// button's face: its fill, the 1 px rim on every side, and what its
 	// symbol and its title are drawn in. The find button stands over the
 	// content and casts the toolbar control's drop shadow.
 	//
 	// MEASURED, voicememos-collection-search-light.png, a 1x capture: all
 	// 616 clear samples of the interior read #fdfdfd, 2/255 darker than the
-	// #ffffff content around the button. The edge reads #ffffff on two
-	// columns and two rows, which is two pixels at 1x; the shadow outside it
-	// is what shows it. The symbol's and the title's darkest pixels read
-	// #000000, which is not the label colour: that flattens to #272727 over
-	// white.
+	// #ffffff content around the button. The rim reads #ffffff on two
+	// columns and two rows, which is two pixels at 1x. The rim is lighter
+	// than the fill inside it and the shadow outside it. The title's darkest
+	// pixel reads #000000 on 31 pixels and the symbol's #020202. That is
+	// [PlatformColors.Text], the platform's text colour, and not the label
+	// colour, which flattens to #272727 over white.
 	//
 	// The reference holds no dark reading of the find button. The dark
-	// values are the toolbar control's own: [PlatformColors.ToolbarControlFill],
-	// [PlatformColors.ToolbarControlRim] and [PlatformColors.ToolbarLabel].
+	// values are the toolbar control's own, one set of three:
+	// [PlatformColors.ToolbarControlFill], [PlatformColors.ToolbarControlRim]
+	// and [PlatformColors.ToolbarLabel]. FindButtonForeground is a field of
+	// its own and not Text because Text's dark value, #ffffff, is not the
+	// toolbar control's label, #e9e9e9: the foreground keeps the set its fill
+	// and its rim come from.
 	FindButtonFill       color.NRGBA `appkit:"-"`
 	FindButtonRim        color.NRGBA `appkit:"-"`
 	FindButtonForeground color.NRGBA `appkit:"-"`
