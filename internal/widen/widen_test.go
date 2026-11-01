@@ -105,7 +105,10 @@ func whatMoves(t *testing.T, wide []byte, yMoves bool) {
 // horizontal stroke with two corners, so a vertical amount ey moves it up
 // by half of ey, to the rounding of one font unit. The cap height and the
 // x-height of the drawn text therefore move up by half of ey: 0.18 px at
-// 13 pt and 0.14 px at 10 pt for ey = 0.027 em.
+// 13 pt and 0.14 px at 10 pt for ey = 0.027 em. This is the stroke
+// growing, not a taller x-height: the Typography role's rule that the
+// typeface's own x-height stays is against a taller lowercase, and a bar
+// thickened by ey grows the outline by half of ey.
 func TestTheHeightsMoveByHalfTheAmount(t *testing.T) {
 	const ey = 0.027
 	tall, err := Outward(normal.TTF, 0.03, ey)
