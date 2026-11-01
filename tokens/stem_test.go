@@ -76,7 +76,9 @@ func TestEveryCopySharesTheShaper(t *testing.T) {
 // the stem weight of lighter text rises. Above 13 pt the stem weight falls
 // as the size grows. In each case the stem as stored that the weight gives,
 // the stem as shipped plus the weight at the size, plus the blend
-// correction, is the platform's stem to half a step.
+// correction, is the platform's stem to half a step. The one exception is a
+// stem that the floor raises: it is drawn minDrawnStem wide to one step,
+// and no stem is drawn narrower.
 func TestTheStemWeightFollowsSizeAndTheTextAgainstItsFill(t *testing.T) {
 	white := color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff}
 	l, d := PlatformLight, PlatformDark
@@ -112,8 +114,15 @@ func TestTheStemWeightFollowsSizeAndTheTextAgainstItsFill(t *testing.T) {
 			}
 			prev = w
 			flat := vgcolor.Flatten(p.fg, p.fill)
-			stored := (shippedStem+float64(w))*float64(size) + blendCorrection(flat, p.fill)
+			drawn := (shippedStem + float64(w)) * float64(size)
+			stored := drawn + blendCorrection(flat, p.fill)
 			want := platformStem(float64(size), p.lighter)
+			if drawn < minDrawnStem-1e-6 {
+				t.Errorf("%s at %v pt: weight %v draws the stem %.3f px wide, under %v px", p.name, size, w, drawn, minDrawnStem)
+			}
+			if raised := drawn-stemStep*float64(size) < minDrawnStem-1e-6; raised && stored > want {
+				continue
+			}
 			if math.Abs(stored-want) > stemStep*float64(size)/2+1e-6 {
 				t.Errorf("%s at %v pt: weight %v gives %.3f px, want the platform's %.3f px", p.name, size, w, stored, want)
 			}

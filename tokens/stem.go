@@ -78,10 +78,19 @@ const shippedStem = 0.0907
 // draws at the nearest end. The ends hold the platform's stem from 8 pt to
 // about 40 pt for every colour on its fill.
 const (
-	stemStep    = 0.0025
-	stemStepMin = -6
-	stemStepMax = 16
+	stemStep    = 0.005
+	stemStepMin = -3
+	stemStepMax = 8
 )
+
+// minDrawnStem is the narrowest stem the library draws, in px at 1x. A
+// stem drawn narrower than 1 px covers at most its own width of any pixel,
+// so its darkest pixel stays under the text colour at every offset. The
+// platform's lighter text at 10 pt reaches the text colour. Measured as
+// stored, Roboto in the dark scheme's label colour on its control
+// background at 10 pt reaches 95 % of the way to the text colour drawn at
+// 0.907 px, and 94 % drawn at 0.882 px.
+const minDrawnStem = 0.9
 
 // blendCorrection returns the amount, in px, by which a straight stem in fg
 // on fill reads wider as stored than its drawn width. Gio blends the text
@@ -143,7 +152,8 @@ var blendCorrections sync.Map
 // light. The stem weight is the amount that makes the library's stem as
 // stored read the platform's: the platform's stem less the blend
 // correction, over the size, less the stem as shipped. It is rounded to the
-// nearest stem weight the shaper holds.
+// nearest stem weight the shaper holds, and it is never less than the
+// stem weight that draws the stem minDrawnStem wide.
 func TextStemWeight(size float32, fg, fill color.NRGBA) StemWeight {
 	return StemWeight(stemStepOf(size, fg, fill)) * stemStep
 }
@@ -158,7 +168,8 @@ func stemStepOf(size float32, fg, fill color.NRGBA) int {
 	lighter := vgcolor.RelativeLuminance(fg) >= vgcolor.RelativeLuminance(fill)
 	s := float64(size)
 	w := (platformStem(s, lighter)-blendCorrection(fg, fill))/s - shippedStem
-	return min(max(int(math.Round(w/stemStep)), stemStepMin), stemStepMax)
+	k := max(int(math.Round(w/stemStep)), int(math.Ceil((minDrawnStem/s-shippedStem)/stemStep)))
+	return min(max(k, stemStepMin), stemStepMax)
 }
 
 // stemTypeface returns the key the shaper holds Roboto under at the stem
