@@ -70,7 +70,7 @@
 //	ToolbarControlShadow  #000000 a0.035  #000000 a0.024  measured: the drop shadow a bordered toolbar control casts, 23 px of reach sunk 9 light and 2 sunk 6 dark
 //	ToolbarCheckedOverlay #000000 a0.102  #ffffff a0.161  measured: the chosen segment of a segmented toolbar control, over the control's own fill
 //	FindButtonFill   #fdfdfd        #262626        measured light: the find button's fill over the content; dark is the toolbar control's
-//	FindButtonRim    #ffffff        #404040        measured light: the find button's 1 px rim; dark is the toolbar control's rim
+//	FindButtonRim    #ffffff        #404040        measured light: the find button's 2 px rim; dark is the toolbar control's rim
 //	FindButtonForeground #000000       #e9e9e9        measured light: the find button's symbol and title, Text's value; dark is the toolbar's label
 //	PaneRim          #ffffff        #3a3a3a        measured: the 1 px rim the inset sidebar pane has on every side
 //	PaneShadow       #000000 a0.051 #000000 a0.051 measured: the shadow that pane casts, 24 px of reach with its rectangle sunk 9
@@ -800,7 +800,7 @@ type PlatformColors struct {
 	ToolbarCheckedOverlay color.NRGBA `appkit:"-"`
 
 	// FindButtonFill, FindButtonRim and FindButtonForeground are the find
-	// button's face: its fill, the 1 px rim on every side, and what its
+	// button's face: its fill, the 2 px rim on every side, and what its
 	// symbol and its title are drawn in. The find button stands over the
 	// content and casts the toolbar control's drop shadow.
 	//
