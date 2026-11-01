@@ -31,7 +31,7 @@ const cataloguePath = "testdata/nscolors.tsv"
 //	shasum -a 256 ../../organisation/reference/macos/nscolors.tsv
 const (
 	referencePath   = "../../organisation/reference/macos/nscolors.tsv"
-	referenceDigest = "a494edb704eb10251fec5dbf113dca50f41bc1f3b6b37178f34441ac360ab18c"
+	referenceDigest = "eac3309a44ca3628b8289299fb12ca8946e80a1feef50c0888526b6efd09f131"
 )
 
 // appKitRowsWithoutField are the AppKit rows the token set has no field
