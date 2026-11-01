@@ -137,7 +137,7 @@ var platformNames = []struct {
 	{"toolbar-checked-overlay", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.ToolbarCheckedOverlay }},
 	{"find-button-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.FindButtonFill }},
 	{"find-button-rim", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.FindButtonRim }},
-	{"find-button-label", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.FindButtonLabel }},
+	{"find-button-foreground", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.FindButtonForeground }},
 	{"pane-rim", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.PaneRim }},
 	{"pane-shadow", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.PaneShadow.Peak }},
 	{"help-tag-edge", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.HelpTagEdge.Side }},

@@ -71,7 +71,7 @@
 //	ToolbarCheckedOverlay #000000 a0.102  #ffffff a0.161  measured: the chosen segment of a segmented toolbar control, over the control's own fill
 //	FindButtonFill   #fdfdfd        #262626        measured light: the find button's fill over the content; dark is the toolbar control's
 //	FindButtonRim    #ffffff        #404040        measured light: the find button's 1 px edge; dark is the toolbar control's rim
-//	FindButtonLabel  #000000        #e9e9e9        measured light: the find button's symbol and title; dark is the toolbar's label
+//	FindButtonForeground #000000       #e9e9e9        measured light: the find button's symbol and title; dark is the toolbar's label
 //	PaneRim          #ffffff        #3a3a3a        measured: the 1 px rim the inset sidebar pane has on every side
 //	PaneShadow       #000000 a0.051 #000000 a0.051 measured: the shadow that pane casts, 24 px of reach with its rectangle sunk 9
 //	Seam             #e6e6e6        #000000        measured: the hairline between two flush regions, Mail's list seam
@@ -799,7 +799,7 @@ type PlatformColors struct {
 	// over whatever that leaves.
 	ToolbarCheckedOverlay color.NRGBA `appkit:"-"`
 
-	// FindButtonFill, FindButtonRim and FindButtonLabel are the find
+	// FindButtonFill, FindButtonRim and FindButtonForeground are the find
 	// button's face: its fill, the 1 px edge on every side, and what its
 	// symbol and its title are drawn in. The find button stands over the
 	// content and casts the toolbar control's drop shadow.
@@ -815,9 +815,9 @@ type PlatformColors struct {
 	// The reference holds no dark reading of the find button. The dark
 	// values are the toolbar control's own: [PlatformColors.ToolbarControlFill],
 	// [PlatformColors.ToolbarControlRim] and [PlatformColors.ToolbarLabel].
-	FindButtonFill  color.NRGBA `appkit:"-"`
-	FindButtonRim   color.NRGBA `appkit:"-"`
-	FindButtonLabel color.NRGBA `appkit:"-"`
+	FindButtonFill       color.NRGBA `appkit:"-"`
+	FindButtonRim        color.NRGBA `appkit:"-"`
+	FindButtonForeground color.NRGBA `appkit:"-"`
 
 	// PaneRim is the 1 px rim the platform draws round an inset sidebar
 	// pane, on every side: opaque #ffffff light and #3a3a3a dark. It is the
@@ -996,7 +996,7 @@ var (
 		ToolbarCheckedOverlay:        color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x1a},
 		FindButtonFill:               color.NRGBA{R: 0xfd, G: 0xfd, B: 0xfd, A: 0xff},
 		FindButtonRim:                color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
-		FindButtonLabel:              color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
+		FindButtonForeground:         color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff},
 		PaneRim:                      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
 		PaneShadow:                   DropShadow{Peak: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x0d}, Reach: 24, Offset: 9},
 		HelpTagEdge: Edge{
@@ -1096,7 +1096,7 @@ var (
 		ToolbarCheckedOverlay:        color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x29},
 		FindButtonFill:               color.NRGBA{R: 0x26, G: 0x26, B: 0x26, A: 0xff},
 		FindButtonRim:                color.NRGBA{R: 0x40, G: 0x40, B: 0x40, A: 0xff},
-		FindButtonLabel:              color.NRGBA{R: 0xe9, G: 0xe9, B: 0xe9, A: 0xff},
+		FindButtonForeground:         color.NRGBA{R: 0xe9, G: 0xe9, B: 0xe9, A: 0xff},
 		PaneRim:                      color.NRGBA{R: 0x3a, G: 0x3a, B: 0x3a, A: 0xff},
 		PaneShadow:                   DropShadow{Peak: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x0d}, Reach: 24, Offset: 9},
 		HelpTagEdge: Edge{
