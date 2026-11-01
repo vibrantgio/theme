@@ -223,9 +223,9 @@ func (t *Typography) cache() *shaperCache {
 // the platform's own fonts for anything Faces cannot serve. It is built on the
 // first call and cached, and every copy of the value it was built through —
 // including every copy an rx emission makes — hands back that same shaper.
-// It holds Roboto twice: as shipped, and as the family [StemFont] names for
-// text darker than its fill. The draw site picks the family by the text
-// against its fill; theme/typeset does it for every text it lays out.
+// It holds Roboto and Roboto Mono as shipped, and one family per stem weight
+// that [StemFont] names. The draw site picks the family by the text against
+// its fill; theme/typeset does it for every text it lays out.
 //
 // The fallback is the point. Faces is Roboto and Roboto Mono, which between
 // them carry no arrow, no box-drawing character and no dingbat, so a shaper

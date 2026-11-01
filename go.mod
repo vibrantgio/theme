@@ -6,7 +6,7 @@ require (
 	gioui.org v0.10.2
 	github.com/go-text/typesetting v0.3.4
 	github.com/reactivego/rx v0.3.0
-	github.com/vibrantgio/font v0.4.5
+	github.com/vibrantgio/font v0.4.6-0.20261101212858-5bdcd87e1a22
 	github.com/vibrantgio/mvu v1.1.5
 	golang.org/x/image v0.44.0
 	golang.org/x/sys v0.47.0

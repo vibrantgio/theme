@@ -11,6 +11,7 @@ import (
 	"golang.org/x/image/math/fixed"
 
 	"github.com/vibrantgio/font/roboto"
+	"github.com/vibrantgio/font/robotomono"
 
 	vgcolor "github.com/vibrantgio/theme/color"
 )
@@ -19,8 +20,10 @@ import (
 // faces as shipped, then a copy of every Roboto entry under each stem
 // weight the shaper holds but zero. Of the copies, Roboto Regular upright
 // has a face of its own at each step of the regular range, and Roboto Bold
-// upright at each step of boldSteps. Every other copy is the face as
-// shipped.
+// upright at each step of boldSteps. Then follows a copy of every Roboto
+// Mono entry under each step of monoSteps but zero, and of these copies
+// Roboto Mono Regular upright has a face of its own. Every other copy is
+// the face as shipped.
 func TestEachStemFamilyWidensOnlyItsHeldFaces(t *testing.T) {
 	faces := DefaultTypography.Faces
 	got := stemFaces(faces)
@@ -30,13 +33,46 @@ func TestEachStemFamilyWidensOnlyItsHeldFaces(t *testing.T) {
 		}
 	}
 	shipped := map[font.Font]font.Face{}
+	monoShipped := map[font.Font]font.Face{}
 	for _, f := range faces {
-		if f.Font.Typeface == roboto.RegularNormal.Typeface {
+		switch f.Font.Typeface {
+		case roboto.RegularNormal.Typeface:
 			shipped[f.Font] = f.Face
+		case robotomono.RegularNormal.Typeface:
+			monoShipped[f.Font] = f.Face
 		}
 	}
 	steps := heldSteps()
 	copies := got[len(faces):]
+	monoCopies := copies[min(len(steps)*len(shipped), len(copies)):]
+	copies = copies[:len(copies)-len(monoCopies)]
+	if want := (len(monoSteps) - 1) * len(monoShipped); len(monoCopies) != want {
+		t.Fatalf("%d Roboto Mono stem faces, want one per Roboto Mono face for each of %d stem weights, %d", len(monoCopies), len(monoSteps)-1, want)
+	}
+	monoStepOfKey := map[font.Typeface]bool{}
+	for _, k := range monoSteps {
+		if k != 0 {
+			monoStepOfKey[monoTypeface(k)] = true
+		}
+	}
+	monoWidened := 0
+	for _, c := range monoCopies {
+		if !monoStepOfKey[c.Font.Typeface] {
+			t.Fatalf("%v: no held Roboto Mono stem weight has this key", c.Font)
+		}
+		f := c.Font
+		f.Typeface = robotomono.RegularNormal.Typeface
+		want := f == robotomono.RegularNormal
+		if got := c.Face != monoShipped[f]; got != want {
+			t.Errorf("%v: widened %v, want %v", c.Font, got, want)
+		}
+		if want {
+			monoWidened++
+		}
+	}
+	if want := len(monoSteps) - 1; monoWidened != want {
+		t.Errorf("%d widened Roboto Mono faces, want %d", monoWidened, want)
+	}
 	if len(copies) != len(steps)*len(shipped) {
 		t.Fatalf("%d stem faces, want one per Roboto face for each of %d stem weights, %d", len(copies), len(steps), len(steps)*len(shipped))
 	}
@@ -118,6 +154,41 @@ func TestTheBoldStemFollowsTheWeight(t *testing.T) {
 				t.Errorf("a document heading at %v pt: step %d, not held", r.Size, k)
 			}
 		}
+	}
+}
+
+// TestTheMonoStemIsThePlatformsMonospacedRow: for each colour and fill
+// that draws code in the Code role, the stem as stored that the held step
+// gives, the stem as shipped plus the step at the size, plus the blend
+// correction, is the platform's monospaced stem to half a step. The target
+// at 13 pt is DERIVED from the platform's 11 pt em: 1.31 px for darker text
+// and 1.59 px for lighter text. The shaper holds the targets' steps and
+// zero, and no other.
+func TestTheMonoStemIsThePlatformsMonospacedRow(t *testing.T) {
+	size := DefaultTypography.Code.Size
+	held := []int{0}
+	for _, tg := range monoTargets() {
+		k := monoStepOf(size, tg.fg, tg.fill)
+		if k != monoStepFor(size, tg.fg, tg.fill) {
+			t.Errorf("%v on %v: the held step %d is not the target's step", tg.fg, tg.fill, k)
+		}
+		if !slices.Contains(held, k) {
+			held = append(held, k)
+		}
+		flat := vgcolor.Flatten(tg.fg, tg.fill)
+		want := 1.31
+		if vgcolor.RelativeLuminance(flat) >= vgcolor.RelativeLuminance(tg.fill) {
+			want = 1.59
+		}
+		s := float64(size)
+		stored := (shippedMonoStem+float64(k)*stemStep)*s + blendCorrection(flat, tg.fill)
+		if math.Abs(stored-want) > stemStep*s/2+0.005 {
+			t.Errorf("%v on %v: step %d gives %.3f px, want the platform's %.2f px", tg.fg, tg.fill, k, stored, want)
+		}
+	}
+	slices.Sort(held)
+	if !slices.Equal(held, monoSteps) {
+		t.Errorf("the shaper holds the Roboto Mono steps %v, want the targets' %v", monoSteps, held)
 	}
 }
 
@@ -211,8 +282,10 @@ func TestThePlatformStemFollowsTheRowsAndTheLine(t *testing.T) {
 // TestStemFontNamesAStemFamilyForRobotoOnly: text in Roboto, named or as
 // the empty typeface, shapes in the family of its stem weight, and at the
 // stem weight zero in Roboto as shipped. Roboto Bold upright takes the
-// stem weight of its own weight's rows. Text in any other typeface keeps
-// its font. No font changes its weight or style.
+// stem weight of its own weight's rows. Roboto Mono Regular upright takes
+// the stem weight of the platform's monospaced row. Roboto Mono's bold and
+// italic faces, JetBrains Mono and any other typeface keep their font. No
+// font changes its weight or style.
 func TestStemFontNamesAStemFamilyForRobotoOnly(t *testing.T) {
 	light := PlatformLight
 	dark := PlatformDark
@@ -249,8 +322,22 @@ func TestStemFontNamesAStemFamilyForRobotoOnly(t *testing.T) {
 			t.Errorf("%s: %v changed its weight or style to %v", tc.name, tc.f, got)
 		}
 	}
-	if got := StemFont(mono, 13, light.Label, light.WindowBackground); got != mono {
-		t.Errorf("Roboto Mono, darker text: %v, want %v", got, mono)
+	for _, tc := range []struct {
+		name     string
+		fg, fill color.NRGBA
+	}{
+		{"darker text", light.Label, light.WindowBackground},
+		{"lighter text", dark.Label, dark.WindowBackground},
+	} {
+		got := StemFont(mono, 13, tc.fg, tc.fill)
+		if want := monoTypeface(monoStepOf(13, tc.fg, tc.fill)); got.Typeface != want || got.Weight != mono.Weight || got.Style != mono.Style {
+			t.Errorf("Roboto Mono Regular, %s: %v, want the typeface %q", tc.name, got, want)
+		}
+		for _, f := range []font.Font{robotomono.RegularBold, robotomono.ItalicNormal, robotomono.ItalicBold, {Typeface: CodeFaceJetBrains}} {
+			if got := StemFont(f, 13, tc.fg, tc.fill); got != f {
+				t.Errorf("%v, %s: %v, want the font unchanged", f, tc.name, got)
+			}
+		}
 	}
 	if k := stemStepOf(13, light.Label, light.WindowBackground); k == 0 {
 		t.Error("the label colour on the light window background at 13 pt draws as shipped")
@@ -262,7 +349,9 @@ func TestStemFontNamesAStemFamilyForRobotoOnly(t *testing.T) {
 // of the face as shipped. Roboto Bold upright shapes in a face of its own
 // in a family of boldSteps, with the advances as shipped, and as shipped in
 // any other family. Roboto Medium in a stem family shapes in the face as
-// shipped.
+// shipped. Roboto Mono Regular upright shapes in a face of its own in each
+// family of monoSteps, with the advances as shipped, and Roboto Mono Bold
+// shapes as shipped there.
 func TestAStemFamilyShapesInItsOwnFace(t *testing.T) {
 	typ := DefaultTypography
 	const px = 13
@@ -308,6 +397,35 @@ func TestAStemFamilyShapesInItsOwnFace(t *testing.T) {
 			for i := range medium {
 				if medium[i].ID != mediumIn[i].ID {
 					t.Errorf("%s, step %d: Roboto Medium glyph %d shapes in another face", name, k, i)
+				}
+			}
+		}
+	}
+	for _, k := range monoSteps {
+		if k == 0 {
+			continue
+		}
+		in := func(f font.Font) font.Font {
+			f.Typeface = monoTypeface(k)
+			return f
+		}
+		for name, sh := range map[string]*text.Shaper{"Shaper": typ.Shaper(), "DeterministicShaper": typ.DeterministicShaper()} {
+			shipped, widened := shape(sh, robotomono.RegularNormal), shape(sh, in(robotomono.RegularNormal))
+			if len(shipped) != len(widened) || len(shipped) == 0 {
+				t.Fatalf("%s: %d Roboto Mono glyphs as shipped, %d in the family of step %d", name, len(shipped), len(widened), k)
+			}
+			for i := range shipped {
+				if shipped[i].ID == widened[i].ID {
+					t.Errorf("%s, step %d: Roboto Mono glyph %d shapes in the face as shipped", name, k, i)
+				}
+				if shipped[i].Advance != widened[i].Advance {
+					t.Errorf("%s, step %d: Roboto Mono glyph %d advances %v, want %v as shipped", name, k, i, widened[i].Advance, shipped[i].Advance)
+				}
+			}
+			bold, boldIn := shape(sh, robotomono.RegularBold), shape(sh, in(robotomono.RegularBold))
+			for i := range bold {
+				if bold[i].ID != boldIn[i].ID {
+					t.Errorf("%s, step %d: Roboto Mono Bold glyph %d shapes in another face", name, k, i)
 				}
 			}
 		}

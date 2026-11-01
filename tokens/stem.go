@@ -12,6 +12,8 @@ import (
 	"github.com/vibrantgio/font/roboto"
 	"github.com/vibrantgio/font/roboto/regular/bold"
 	"github.com/vibrantgio/font/roboto/regular/normal"
+	"github.com/vibrantgio/font/robotomono"
+	mononormal "github.com/vibrantgio/font/robotomono/regular/normal"
 
 	vgcolor "github.com/vibrantgio/theme/color"
 	"github.com/vibrantgio/theme/internal/widen"
@@ -21,9 +23,10 @@ import (
 // is the width the library adds to each stem of Roboto Regular upright, in
 // em, in total over the two sides of the stem. Zero is the face as shipped,
 // and a negative value makes the stems narrower. No advance changes, so a
-// text's width does not follow its stem weight. Roboto Bold upright has
-// stem weights of its own, under [StemFont]. The other Roboto faces draw as
-// shipped at every stem weight.
+// text's width does not follow its stem weight. Roboto Bold upright and
+// Roboto Mono Regular upright have stem weights of their own, under
+// [StemFont]. The other Roboto and Roboto Mono faces draw as shipped at
+// every stem weight.
 type StemWeight float32
 
 // platformStems are the platform's lowercase stem, as stored, in px at 1x,
@@ -296,14 +299,7 @@ func boldStepFor(w font.Weight, size float32, fg, fill color.NRGBA) int {
 // held step nearest boldStepFor. Bold text in a role with no target, as
 // bold text in reading text and the document headings, draws at it.
 func boldStepOf(w font.Weight, size float32, fg, fill color.NRGBA) int {
-	k := boldStepFor(w, size, fg, fill)
-	best := 0
-	for _, h := range boldSteps {
-		if d, bd := abs(h-k), abs(best-k); d < bd || d == bd && abs(h) < abs(best) {
-			best = h
-		}
-	}
-	return best
+	return nearestHeld(boldSteps, boldStepFor(w, size, fg, fill))
 }
 
 func abs(k int) int {
@@ -311,6 +307,111 @@ func abs(k int) int {
 		return -k
 	}
 	return k
+}
+
+// The platform's stem for monospaced text, in em, for text darker than its
+// fill and for text lighter than it. The reference's section "What the
+// stem measures for the semibold, bold and monospaced faces" holds the
+// rows, MEASURED from TextEdit's 11 pt plain-text body: 1.11 px in black on
+// white and 1.34 px in white on the dark window. No stored capture holds
+// monospaced text at another size. The platform's regular face keeps one
+// stem em from 10 to 13 pt, so the library keeps the monospaced em at every
+// size. At the Code role's 13 pt the stem is DERIVED: 1.31 px and 1.59 px.
+const (
+	monoStemDarker  = 0.101
+	monoStemLighter = 0.122
+)
+
+// shippedMonoStem is the stem of Roboto Mono Regular upright as shipped,
+// in em, MEASURED from its l, n and i rendered at 1000 px by FreeType.
+const shippedMonoStem = 0.090
+
+// monoTargets are the text colours and fills that draw code in the Code
+// role, in both schemes: the label colour on the window, and the text
+// colour on the fill of a fenced code block and of an inline code span.
+// That fill is the alternating content background over the text
+// background.
+func monoTargets() []monoTarget {
+	var out []monoTarget
+	for _, p := range []PlatformColors{PlatformLight, PlatformDark} {
+		fence := vgcolor.Flatten(p.AlternatingContentBackground, p.TextBackground)
+		out = append(out,
+			monoTarget{p.Label, p.WindowBackground},
+			monoTarget{p.Text, fence},
+		)
+	}
+	return out
+}
+
+type monoTarget struct {
+	fg, fill color.NRGBA
+}
+
+// monoSteps are the stem weights of Roboto Mono Regular upright that the
+// shaper holds, as multiples of stemStep: the steps of the targets at the
+// Code role's size, and zero, the face as shipped. Each held face takes
+// heap in both shapers, so the shaper holds no other step.
+var monoSteps = func() []int {
+	held := []int{0}
+	for _, tg := range monoTargets() {
+		k := monoStepFor(DefaultTypography.Code.Size, tg.fg, tg.fill)
+		if !slices.Contains(held, k) {
+			held = append(held, k)
+		}
+	}
+	slices.Sort(held)
+	return held
+}()
+
+// monoStepFor is the stem weight of Roboto Mono Regular upright text at
+// size pt in fg on fill, as a multiple of stemStep, before it is held: the
+// platform's stem less the blend correction, over the size, less the stem
+// as shipped.
+func monoStepFor(size float32, fg, fill color.NRGBA) int {
+	if size <= 0 {
+		return 0
+	}
+	fill.A = 0xff
+	fg = vgcolor.Flatten(fg, fill)
+	em := monoStemDarker
+	if vgcolor.RelativeLuminance(fg) >= vgcolor.RelativeLuminance(fill) {
+		em = monoStemLighter
+	}
+	s := float64(size)
+	return int(math.Round(((em*s-blendCorrection(fg, fill))/s - shippedMonoStem) / stemStep))
+}
+
+// monoStepOf is the held stem weight of Roboto Mono Regular upright text:
+// the held step nearest monoStepFor. Code in a colour or on a fill with no
+// target, as highlighted code, draws at it.
+func monoStepOf(size float32, fg, fill color.NRGBA) int {
+	return nearestHeld(monoSteps, monoStepFor(size, fg, fill))
+}
+
+// nearestHeld returns the step of held nearest k. Of two steps at the same
+// distance it returns the one nearer zero.
+func nearestHeld(held []int, k int) int {
+	best := 0
+	for _, h := range held {
+		if d, bd := abs(h-k), abs(best-k); d < bd || d == bd && abs(h) < abs(best) {
+			best = h
+		}
+	}
+	return best
+}
+
+// drawsMonoRegular reports whether f draws Roboto Mono Regular upright.
+// Roboto Mono ships Regular and Bold, and go-text takes Bold for a weight
+// over 500 only.
+func drawsMonoRegular(f font.Font) bool {
+	return f.Typeface == robotomono.RegularNormal.Typeface && f.Style == font.Regular && f.Weight < font.SemiBold
+}
+
+// monoTypeface returns the key the shaper holds Roboto Mono under at the
+// stem weight k × stemStep. It is the shaper's key and not a typeface, as
+// for [stemTypeface].
+func monoTypeface(k int) font.Typeface {
+	return font.Typeface(fmt.Sprintf("Roboto Mono Stem %+d", k))
 }
 
 // drawsBold reports whether f, in Roboto, draws Roboto Bold upright.
@@ -330,15 +431,23 @@ func stemTypeface(k int) font.Typeface {
 // StemFont returns f as the font that draws text at size pt in fg on fill
 // at its stem weight. Text in Roboto Bold upright, weight 600 or 700, has
 // the stem weight of its weight's platform rows. Other text in Roboto has
-// [TextStemWeight]. Only Roboto, named or as the empty typeface, has a
-// family per stem weight; any other typeface returns f unchanged. The
-// shapers of [Typography] hold every family.
+// [TextStemWeight]. Text in Roboto Mono Regular upright has the stem weight
+// of the platform's monospaced row. Roboto Mono's bold and italic faces
+// have no platform row and return f unchanged. JetBrains Mono, the other
+// code face, and any other typeface return f unchanged: they draw as
+// shipped. The shapers of [Typography] hold every family.
 //
 // The empty typeface is the collection's default family, its first faces.
 // Every library collection starts with Roboto: [DefaultTypography] does, and
 // [Typography.WithFaces] appends. A collection that starts with another
 // family must name Roboto in its roles, or its text draws in Roboto.
 func StemFont(f font.Font, size float32, fg, fill color.NRGBA) font.Font {
+	if drawsMonoRegular(f) {
+		if k := monoStepOf(size, fg, fill); k != 0 {
+			f.Typeface = monoTypeface(k)
+		}
+		return f
+	}
 	if f.Typeface != roboto.RegularNormal.Typeface && f.Typeface != "" {
 		return f
 	}
@@ -363,7 +472,10 @@ func (p PlatformColors) Dark() bool {
 // shaper holds, but zero: a copy of every Roboto entry under that stem
 // weight's key. In a family, Roboto Regular upright is widened when the
 // step is in the regular range, and Roboto Bold upright is widened when the
-// step is in boldSteps. The other copies share the faces as shipped. Gio's
+// step is in boldSteps. Then follows one family per step of monoSteps but
+// zero: a copy of every Roboto Mono entry under that step's key, with Roboto
+// Mono Regular upright widened. The other copies share the faces as
+// shipped. Gio's
 // text.NewShaper reads every face of its collection when it builds the
 // shaper, so the first shaper of a process builds every widened face.
 func stemFaces(faces []font.FontFace) []font.FontFace {
@@ -382,6 +494,21 @@ func stemFaces(faces []font.FontFace) []font.FontFace {
 				f.Face = stemFace(bold.TTF, k)
 			}
 			f.Font.Typeface = stemTypeface(k)
+			out = append(out, f)
+		}
+	}
+	for _, k := range monoSteps {
+		if k == 0 {
+			continue
+		}
+		for _, f := range faces {
+			if f.Font.Typeface != robotomono.RegularNormal.Typeface {
+				continue
+			}
+			if f.Font == robotomono.RegularNormal {
+				f.Face = stemFace(mononormal.TTF, k)
+			}
+			f.Font.Typeface = monoTypeface(k)
 			out = append(out, f)
 		}
 	}
@@ -428,11 +555,11 @@ func stemFace(ttf []byte, k int) font.Face {
 	w := float64(k) * stemStep
 	wide, err := widen.Sideways(ttf, w)
 	if err != nil {
-		panic(fmt.Sprintf("tokens: Roboto at stem weight %v: %v", w, err))
+		panic(fmt.Sprintf("tokens: face at stem weight %v: %v", w, err))
 	}
 	f, err := opentype.Parse(wide)
 	if err != nil {
-		panic(fmt.Sprintf("tokens: Roboto at stem weight %v: %v", w, err))
+		panic(fmt.Sprintf("tokens: face at stem weight %v: %v", w, err))
 	}
 	stemFaceAt[key] = f
 	return f
