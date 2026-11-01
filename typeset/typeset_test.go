@@ -418,7 +418,8 @@ func TestNegativeLineHeightNeverReachesTheShaper(t *testing.T) {
 // TestTextIsTheRecipeInOneCall pins typeset.Text as the three-call recipe it
 // replaces and nothing more. The windows that adopted it had each written that
 // recipe out, so Text has to measure what their own copies measured — under a
-// floor, under a narrow Max and at more than one line alike.
+// floor, under a narrow Max and at more than one line alike. The recipe's
+// font is FontOn's, the font of the text against its fill.
 func TestTextIsTheRecipeInOneCall(t *testing.T) {
 	sh := pinned()
 	style := styleAt(20)
@@ -445,7 +446,7 @@ func TestTextIsTheRecipeInOneCall(t *testing.T) {
 			paint.ColorOp{Color: fg}.Add(g.Ops)
 			material := rec.Stop()
 			want := typeset.Layout(g, sh, typeset.Label(style, c.maxLines),
-				typeset.Font(style, font.Normal), unit.Sp(style.Size), c.txt, material)
+				typeset.FontOn(g, style, font.Normal, fg), unit.Sp(style.Size), c.txt, material)
 
 			var own op.Ops
 			h := gtx(&own, c.maxX)
@@ -493,7 +494,7 @@ func TestTextWeightSpendsTheFallbackOnAWeightlessRole(t *testing.T) {
 	paint.ColorOp{Color: fg}.Add(g.Ops)
 	material := rec.Stop()
 	want := typeset.Layout(g, sh, typeset.Label(weightless, 1),
-		typeset.Font(weightless, font.SemiBold), unit.Sp(weightless.Size), specimen, material)
+		typeset.FontOn(g, weightless, font.SemiBold, fg), unit.Sp(weightless.Size), specimen, material)
 
 	var own op.Ops
 	h := gtx(&own, 1<<20)
@@ -503,8 +504,15 @@ func TestTextWeightSpendsTheFallbackOnAWeightlessRole(t *testing.T) {
 
 	var normal op.Ops
 	n := gtx(&normal, 1<<20)
-	if got := typeset.Text(n, sh, specimen, weightless, fg, 1); got.Size.X >= want.Size.X {
-		t.Errorf("Text at Normal measured %d px wide, want narrower than SemiBold's %d: the fallback did not reach the font", got.Size.X, want.Size.X)
+	wantNormal := typeset.Layout(n, sh, typeset.Label(weightless, 1),
+		typeset.FontOn(n, weightless, font.Normal, fg), unit.Sp(weightless.Size), specimen, material)
+	if wantNormal == want {
+		t.Fatalf("the specimen measures %+v at Normal and at SemiBold alike", want)
+	}
+	var plain op.Ops
+	p := gtx(&plain, 1<<20)
+	if got := typeset.Text(p, sh, specimen, weightless, fg, 1); got != wantNormal {
+		t.Errorf("Text = %+v, want the recipe's at Normal %+v: the fallback did not reach the font", got, wantNormal)
 	}
 }
 

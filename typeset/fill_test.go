@@ -49,35 +49,38 @@ func TestATranslucentFillIsFlattened(t *testing.T) {
 	}
 }
 
-// TestFontOnPicksTheStemWeightByTheFill: through the fill on gtx, text in the
-// label colour and in the secondary label colour on the window background is
-// darker text in light and lighter text in dark. The white title on the
-// default button is lighter text in both schemes.
-func TestFontOnPicksTheStemWeightByTheFill(t *testing.T) {
+// TestFontOnPicksTheStemWeightBySizeAndFill: through the fill on gtx, the
+// font of text in the label colour, in the secondary label colour and of
+// the white title on the default button is the font of its role's size and
+// of its colour against that fill, in both schemes. At 13 pt the label
+// colour on the light window background draws in a widened face.
+func TestFontOnPicksTheStemWeightBySizeAndFill(t *testing.T) {
 	white := color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff}
-	role := tokens.DefaultTypography.SystemFont
-	shipped := font.Typeface(role.Typeface)
-	for _, tc := range []struct {
-		name   string
-		fg     color.NRGBA
-		fill   color.NRGBA
-		darker bool
-	}{
-		{"light: label colour on the window background", tokens.PlatformLight.Label, tokens.PlatformLight.WindowBackground, true},
-		{"dark: label colour on the window background", tokens.PlatformDark.Label, tokens.PlatformDark.WindowBackground, false},
-		{"light: secondary label colour on the window background", tokens.PlatformLight.SecondaryLabel, tokens.PlatformLight.WindowBackground, true},
-		{"dark: secondary label colour on the window background", tokens.PlatformDark.SecondaryLabel, tokens.PlatformDark.WindowBackground, false},
-		{"light: white title on the default button", white, tokens.PlatformLight.DefaultButtonFill, false},
-		{"dark: white title on the default button", white, tokens.PlatformDark.DefaultButtonFill, false},
-	} {
-		gtx := typeset.WithFill(layout.Context{Ops: new(op.Ops)}, tc.fill)
-		got := typeset.FontOn(gtx, role, font.Normal, tc.fg)
-		if want := tokens.StemFont(typeset.Font(role, font.Normal), tc.fg, tc.fill); got != want {
-			t.Errorf("%s: %v, want %v", tc.name, got, want)
+	typ := tokens.DefaultTypography
+	for _, role := range []tokens.TextStyle{typ.Caption1, typ.SystemFont, typ.LargeTitle} {
+		for _, tc := range []struct {
+			name string
+			fg   color.NRGBA
+			fill color.NRGBA
+		}{
+			{"light: label colour on the window background", tokens.PlatformLight.Label, tokens.PlatformLight.WindowBackground},
+			{"dark: label colour on the window background", tokens.PlatformDark.Label, tokens.PlatformDark.WindowBackground},
+			{"light: secondary label colour on the window background", tokens.PlatformLight.SecondaryLabel, tokens.PlatformLight.WindowBackground},
+			{"dark: secondary label colour on the window background", tokens.PlatformDark.SecondaryLabel, tokens.PlatformDark.WindowBackground},
+			{"light: white title on the default button", white, tokens.PlatformLight.DefaultButtonFill},
+			{"dark: white title on the default button", white, tokens.PlatformDark.DefaultButtonFill},
+		} {
+			gtx := typeset.WithFill(layout.Context{Ops: new(op.Ops)}, tc.fill)
+			got := typeset.FontOn(gtx, role, font.Normal, tc.fg)
+			if want := tokens.StemFont(typeset.Font(role, font.Normal), role.Size, tc.fg, tc.fill); got != want {
+				t.Errorf("%v pt, %s: %v, want %v", role.Size, tc.name, got, want)
+			}
 		}
-		if darker := got.Typeface != shipped; darker != tc.darker {
-			t.Errorf("%s: darker text %v, want %v", tc.name, darker, tc.darker)
-		}
+	}
+	role := typ.SystemFont
+	gtx := typeset.WithFill(layout.Context{Ops: new(op.Ops)}, tokens.PlatformLight.WindowBackground)
+	if got := typeset.FontOn(gtx, role, font.Normal, tokens.PlatformLight.Label); got.Typeface == font.Typeface(role.Typeface) {
+		t.Errorf("the label colour on the light window background at 13 pt draws in %q, the face as shipped", got.Typeface)
 	}
 }
 
@@ -87,14 +90,14 @@ func TestStemFontOnKeepsTheFontsOwnStyle(t *testing.T) {
 	p := tokens.PlatformLight
 	italic := font.Font{Style: font.Italic, Weight: font.Bold}
 	gtx := typeset.WithFill(layout.Context{Ops: new(op.Ops)}, p.WindowBackground)
-	got := typeset.StemFontOn(gtx, italic, p.Label)
-	if want := tokens.StemFont(italic, p.Label, p.WindowBackground); got != want {
+	got := typeset.StemFontOn(gtx, italic, 13, p.Label)
+	if want := tokens.StemFont(italic, 13, p.Label, p.WindowBackground); got != want {
 		t.Errorf("on the window background: %v, want %v", got, want)
 	}
 	if got.Style != font.Italic || got.Weight != font.Bold {
 		t.Errorf("the style and weight became %v %v", got.Style, got.Weight)
 	}
 	if got.Typeface == italic.Typeface {
-		t.Errorf("the label colour on the light window background kept typeface %q, want the darker text's", got.Typeface)
+		t.Errorf("the label colour on the light window background kept typeface %q, want a widened face's", got.Typeface)
 	}
 }

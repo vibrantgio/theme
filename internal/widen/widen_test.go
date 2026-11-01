@@ -2,6 +2,7 @@ package widen
 
 import (
 	"math"
+	"strconv"
 	"testing"
 
 	"github.com/vibrantgio/font/roboto/regular/normal"
@@ -12,9 +13,16 @@ import (
 
 // TestOnlyTheXValuesMove: every glyph of the widened face has the shipped
 // face's segments with the same y values, and the shipped advance. So the
-// cap height, the x-height and the spacing of the text stay.
+// cap height, the x-height and the spacing of the text stay. A negative
+// amount narrows the stems under the same rule.
 func TestOnlyTheXValuesMove(t *testing.T) {
-	wide, err := Sideways(normal.TTF, 0.03)
+	for _, em := range []float64{0.03, -0.015} {
+		t.Run(strconv.FormatFloat(em, 'f', -1, 64), func(t *testing.T) { onlyTheXValuesMove(t, em) })
+	}
+}
+
+func onlyTheXValuesMove(t *testing.T, em float64) {
+	wide, err := Sideways(normal.TTF, em)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -10,11 +10,12 @@ import (
 )
 
 // Sideways returns a copy of the TrueType font ttf whose simple glyphs are
-// wider by em in total. Each point moves by the x part of its outward
-// miter, by half of em on each side of a stroke. No y value changes, and no
-// advance changes. Each glyph's left side bearing in hmtx becomes its new
-// xMin. Composite glyphs are copied as they are, so they draw their widened
-// components. The copy writes loca in the long format.
+// wider by em in total. A negative em makes them narrower. Each point
+// moves by the x part of its outward miter, by half of em on each side of a
+// stroke. No y value changes, and no advance changes. Each glyph's left
+// side bearing in hmtx becomes its new xMin. Composite glyphs are copied as
+// they are, so they draw their widened components. The copy writes loca in
+// the long format.
 func Sideways(ttf []byte, em float64) ([]byte, error) {
 	be := binary.BigEndian
 	if len(ttf) < 12 {
