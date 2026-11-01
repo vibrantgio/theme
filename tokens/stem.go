@@ -26,7 +26,8 @@ import (
 // text's width does not follow its stem weight. Roboto Bold upright and
 // Roboto Mono Regular upright have stem weights of their own, under
 // [StemFont]. The other Roboto and Roboto Mono faces draw as shipped at
-// every stem weight.
+// every stem weight. Roboto Regular upright at the highest stem weights
+// also has taller horizontal strokes, under the bar amount.
 type StemWeight float32
 
 // platformStems are the platform's lowercase stem, as stored, in px at 1x,
@@ -88,6 +89,37 @@ const (
 	stemStepMin = -3
 	stemStepMax = 8
 )
+
+// The bar amount is the height the library adds to each horizontal stroke
+// of Roboto Regular upright, in em, in total over the two sides of the
+// stroke. The faces at the steps from barStepMin to stemStepMax hold it,
+// and the faces at the other steps hold none. Text lighter than its fill
+// at 8 pt and above has a step of 5 or less for every text colour and
+// fill, because its blend correction is not negative. So only text darker
+// than its fill draws with the bar amount: the label colour from 10 to
+// 13 pt in the light scheme is at steps 6 and 7. Darker text at a step of
+// 5 or less, as the secondary label colour and text from 15 pt up, keeps
+// the face's bars, because those faces also draw lighter text.
+//
+// The amount is MEASURED from the crossbar of an e in the label colour on
+// controlBackground, read as stored over four vertical offsets. At 13 pt
+// and step 6 it reads the platform's 1.02 px at 0.027 em. At 10 pt and
+// step 7 it reads the 13 pt row's em at 0.0275 em. Each side of the stroke
+// grows 0.18 px at 13 pt and 0.14 px at 10 pt, so the cap height and the
+// x-height move up by less than a quarter of a pixel row.
+const (
+	barStepMin = 6
+	barAmount  = 0.027
+)
+
+// barAmountAt returns the bar amount of Roboto Regular upright at the
+// step k.
+func barAmountAt(k int) float64 {
+	if k >= barStepMin {
+		return barAmount
+	}
+	return 0
+}
 
 // minDrawnStem is the narrowest stem the library draws, in px at 1x. A
 // stem drawn narrower than 1 px covers at most its own width of any pixel,
@@ -489,9 +521,9 @@ func stemFaces(faces []font.FontFace) []font.FontFace {
 			}
 			switch {
 			case f.Font == roboto.RegularNormal && k >= stemStepMin && k <= stemStepMax:
-				f.Face = stemFace(normal.TTF, k)
+				f.Face = stemFace(normal.TTF, k, barAmountAt(k))
 			case f.Font == roboto.RegularBold && slices.Contains(boldSteps, k):
-				f.Face = stemFace(bold.TTF, k)
+				f.Face = stemFace(bold.TTF, k, 0)
 			}
 			f.Font.Typeface = stemTypeface(k)
 			out = append(out, f)
@@ -506,7 +538,7 @@ func stemFaces(faces []font.FontFace) []font.FontFace {
 				continue
 			}
 			if f.Font == robotomono.RegularNormal {
-				f.Face = stemFace(mononormal.TTF, k)
+				f.Face = stemFace(mononormal.TTF, k, 0)
 			}
 			f.Font.Typeface = monoTypeface(k)
 			out = append(out, f)
@@ -536,6 +568,7 @@ func heldSteps() []int {
 type stemFaceKey struct {
 	ttf *byte
 	k   int
+	bar float64
 }
 
 var (
@@ -543,17 +576,18 @@ var (
 	stemFaceAt = map[stemFaceKey]font.Face{}
 )
 
-// stemFace returns the face ttf at the stem weight k × stemStep, parsed
-// once per process for each face and each k.
-func stemFace(ttf []byte, k int) font.Face {
+// stemFace returns the face ttf at the stem weight k × stemStep, with its
+// horizontal strokes taller by bar em, parsed once per process for each
+// face, each k and each bar.
+func stemFace(ttf []byte, k int, bar float64) font.Face {
 	stemFaceMu.Lock()
 	defer stemFaceMu.Unlock()
-	key := stemFaceKey{&ttf[0], k}
+	key := stemFaceKey{&ttf[0], k, bar}
 	if f, ok := stemFaceAt[key]; ok {
 		return f
 	}
 	w := float64(k) * stemStep
-	wide, err := widen.Sideways(ttf, w)
+	wide, err := widen.Outward(ttf, w, bar)
 	if err != nil {
 		panic(fmt.Sprintf("tokens: face at stem weight %v: %v", w, err))
 	}

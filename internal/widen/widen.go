@@ -1,5 +1,5 @@
-// Package widen makes the stems of a TrueType face wider without a change
-// to its heights or its spacing.
+// Package widen makes the stems and the horizontal strokes of a TrueType
+// face wider without a change to its spacing.
 package widen
 
 import (
@@ -17,6 +17,18 @@ import (
 // they are, so they draw their widened components. The copy writes loca in
 // the long format.
 func Sideways(ttf []byte, em float64) ([]byte, error) {
+	return Outward(ttf, em, 0)
+}
+
+// Outward returns a copy of the TrueType font ttf whose simple glyphs are
+// wider by ex in total and taller by ey in total, in em. Each point moves
+// by its outward miter: the x part times half of ex, and the y part times
+// half of ey. So a stem grows by ex and a horizontal stroke by ey, half on
+// each side. No advance changes. Each glyph's x bounds follow its points,
+// and its y bounds follow them when ey is not zero. Its left side bearing
+// in hmtx becomes its new xMin. The other
+// tables are copied as they are, so the line height does not change.
+func Outward(ttf []byte, ex, ey float64) ([]byte, error) {
 	be := binary.BigEndian
 	if len(ttf) < 12 {
 		return nil, errors.New("widen: no table directory")
@@ -52,7 +64,8 @@ func Sideways(ttf []byte, em float64) ([]byte, error) {
 	}
 	head := append([]byte(nil), tables[hi].data...)
 	hmtx := append([]byte(nil), tables[hmi].data...)
-	half := em * float64(be.Uint16(head[18:])) / 2
+	upem := float64(be.Uint16(head[18:]))
+	hx, hy := ex*upem/2, ey*upem/2
 	numGlyphs := int(be.Uint16(tables[mi].data[4:]))
 	numMetrics := int(be.Uint16(tables[hhi].data[34:]))
 	setLSB := func(g int, v int16) {
@@ -77,7 +90,7 @@ func Sideways(ttf []byte, em float64) ([]byte, error) {
 		be.PutUint32(newLoca[4*g:], uint32(len(out)))
 		src := glyf[at(g):at(g+1)]
 		if len(src) >= 10 && int16(be.Uint16(src)) > 0 {
-			w, err := glyph(src, half)
+			w, err := glyph(src, hx, hy)
 			if err != nil {
 				return nil, err
 			}
@@ -124,10 +137,11 @@ func checksum(b []byte) uint32 {
 // errGlyph is the error for a simple glyph whose data ends early.
 var errGlyph = errors.New("widen: short glyph")
 
-// glyph rewrites one simple glyph with each x moved by half font units along
-// the x part of the point's outward miter. The flags keep only the on-curve
-// bit, and every coordinate is written as a two-byte delta.
-func glyph(g []byte, half float64) (res []byte, err error) {
+// glyph rewrites one simple glyph with each point moved along its outward
+// miter: x by hx font units times the miter's x part, and y by hy font units
+// times its y part. The flags keep only the on-curve bit, and every
+// coordinate is written as a two-byte delta.
+func glyph(g []byte, hx, hy float64) (res []byte, err error) {
 	defer func() {
 		if recover() != nil {
 			res, err = nil, errGlyph
@@ -199,7 +213,7 @@ func glyph(g []byte, half float64) (res []byte, err error) {
 	if area > 0 {
 		sgn = -1
 	}
-	nx := make([]int, np)
+	nx, ny := make([]int, np), make([]int, np)
 	start = 0
 	for _, e := range ends {
 		cnt := e - start + 1
@@ -210,20 +224,27 @@ func glyph(g []byte, half float64) (res []byte, err error) {
 			n1x, n1y := outward(xs[pr], ys[pr], xs[i], ys[i], sgn)
 			n2x, n2y := outward(xs[i], ys[i], xs[nt], ys[nt], sgn)
 			// The miter is (n1+n2)/(1+n1·n2). The divisor stops at
-			// 0.25, so a sharp corner moves at most eight times half.
+			// 0.25, so a sharp corner moves at most eight times hx or hy.
 			d := max(1+n1x*n2x+n1y*n2y, 0.25)
-			nx[i] = xs[i] + int(math.Round((n1x+n2x)/d*half))
+			nx[i] = xs[i] + int(math.Round((n1x+n2x)/d*hx))
+			ny[i] = ys[i] + int(math.Round((n1y+n2y)/d*hy))
 		}
 		start = e + 1
 	}
 	xmin, xmax := math.MaxInt, math.MinInt
-	for _, x := range nx {
-		xmin, xmax = min(xmin, x), max(xmax, x)
+	ymin, ymax := math.MaxInt, math.MinInt
+	for i := range nx {
+		xmin, xmax = min(xmin, nx[i]), max(xmax, nx[i])
+		ymin, ymax = min(ymin, ny[i]), max(ymax, ny[i])
 	}
 	res = make([]byte, 0, 12+2*nc+il+5*np)
 	res = append(res, g[:10]...)
 	be.PutUint16(res[2:], uint16(int16(xmin)))
 	be.PutUint16(res[6:], uint16(int16(xmax)))
+	if hy != 0 {
+		be.PutUint16(res[4:], uint16(int16(ymin)))
+		be.PutUint16(res[8:], uint16(int16(ymax)))
+	}
 	res = append(res, g[10:10+2*nc]...)
 	res = be.AppendUint16(res, uint16(il))
 	res = append(res, instr...)
@@ -236,7 +257,7 @@ func glyph(g []byte, half float64) (res []byte, err error) {
 		prev = x
 	}
 	prev = 0
-	for _, y := range ys {
+	for _, y := range ny {
 		res = be.AppendUint16(res, uint16(int16(y-prev)))
 		prev = y
 	}
