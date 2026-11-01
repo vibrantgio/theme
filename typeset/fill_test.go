@@ -80,3 +80,21 @@ func TestFontOnPicksTheStemWeightByTheFill(t *testing.T) {
 		}
 	}
 }
+
+// TestStemFontOnKeepsTheFontsOwnStyle: StemFontOn picks the stem weight of
+// a ready font.Font by the fill on gtx and keeps its style and weight.
+func TestStemFontOnKeepsTheFontsOwnStyle(t *testing.T) {
+	p := tokens.PlatformLight
+	italic := font.Font{Style: font.Italic, Weight: font.Bold}
+	gtx := typeset.WithFill(layout.Context{Ops: new(op.Ops)}, p.WindowBackground)
+	got := typeset.StemFontOn(gtx, italic, p.Label)
+	if want := tokens.StemFont(italic, p.Label, p.WindowBackground); got != want {
+		t.Errorf("on the window background: %v, want %v", got, want)
+	}
+	if got.Style != font.Italic || got.Weight != font.Bold {
+		t.Errorf("the style and weight became %v %v", got.Style, got.Weight)
+	}
+	if got.Typeface == italic.Typeface {
+		t.Errorf("the label colour on the light window background kept typeface %q, want the darker text's", got.Typeface)
+	}
+}

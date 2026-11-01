@@ -128,11 +128,19 @@ func Fill(gtx layout.Context) (color.NRGBA, bool) {
 // half way between black and white. A draw site that records its own paint
 // for [Layout] builds its font with FontOn.
 func FontOn(gtx layout.Context, style tokens.TextStyle, fallback font.Weight, fg color.NRGBA) font.Font {
+	return StemFontOn(gtx, Font(style, fallback), fg)
+}
+
+// StemFontOn returns f as the font that draws text in fg on the fill gtx
+// carries, [tokens.StemFont]. It is [FontOn] for a draw site that builds its
+// font.Font without a [tokens.TextStyle], as a paragraph's italic span does.
+// Without a fill on gtx, fg is compared against the same grey as in FontOn.
+func StemFontOn(gtx layout.Context, f font.Font, fg color.NRGBA) font.Font {
 	fill, ok := Fill(gtx)
 	if !ok {
 		fill = unknownFill
 	}
-	return tokens.StemFont(Font(style, fallback), fg, fill)
+	return tokens.StemFont(f, fg, fill)
 }
 
 // Label builds the widget.Label for a style at maxLines, with the style's line

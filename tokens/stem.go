@@ -26,8 +26,8 @@ type StemWeight float32
 // The reference's section "What the same text measures in a platform window
 // and a library window" holds the platform's rows and the library's.
 //
-// One amount serves both measured sizes, because the amount is in em.
-// Darker text 0.031 em: 13 pt 1.29 px against the platform's 1.26, and 10 pt
+// Each amount was measured at 13 pt and at 10 pt, and it is the same
+// amount in em at both sizes. Darker text 0.031 em: 13 pt 1.29 px against the platform's 1.26, and 10 pt
 // 0.92 px against 0.97. Lighter text 0 em: the face as shipped gives 13 pt
 // 1.49 px against 1.51, and 10 pt 1.20 px against 1.17. The white title of
 // the default button reads 1.72 px in both schemes. That is the lighter
