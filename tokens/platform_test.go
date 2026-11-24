@@ -31,7 +31,7 @@ const cataloguePath = "testdata/nscolors.tsv"
 //	shasum -a 256 ../../organisation/reference/macos/nscolors.tsv
 const (
 	referencePath   = "../../organisation/reference/macos/nscolors.tsv"
-	referenceDigest = "eac3309a44ca3628b8289299fb12ca8946e80a1feef50c0888526b6efd09f131"
+	referenceDigest = "3daebb509c1aabe84ae24c38e1222d21e28954a5c6d883cfd1132f4c2185e33a"
 )
 
 // appKitRowsWithoutField are the AppKit rows the token set has no field
@@ -281,6 +281,7 @@ var accentRows = []string{
 	"SidebarSelectionUnemphasizedLabel",
 	"DefaultButtonFill",
 	"AccentFill",
+	"TextInsertionPoint",
 }
 
 // TestWithAccentKeepsThePlatformBlue pins that the recorded sets already

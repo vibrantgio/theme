@@ -20,9 +20,9 @@
 // for every one of these names itself; these recorded sets are what the
 // other platforms — and every test — read.
 //
-// Thirty-four fields are not AppKit's. The platform paints a sidebar, a
+// Thirty-five fields are not AppKit's reading. The platform paints a sidebar, a
 // grouped box, a selected sidebar row, the count at a sidebar row's trailing
-// end, a search field's recess on a sidebar, a push
+// end, a text field's insertion point, a search field's recess on a sidebar, a push
 // button, the find bar's button, a hovered and a pressed
 // control, the shadow under a
 // floating pane, a text field's hairline, an overlay scrollbar's thumb, a
@@ -30,8 +30,9 @@
 // the edge and the shadow of a help tag,
 // the several fills a toolbar band's controls take
 // and the dim a sheet lays over the window it
-// interrupts without giving any of them an NSColor name, so those fills
-// were read off the stored captures in the organization's macOS
+// interrupts. It gives none of them an NSColor name except the insertion
+// point, whose value the reference holds as a pixel and not as AppKit's
+// answer. So those fills were read off the stored captures in the organization's macOS
 // reference — the alternating row off the array AppKit answers with
 // instead of a name, and confirmed against the capture. Each
 // carries the struct tag `appkit:"-"`, which is the whole of the rule the
@@ -45,6 +46,7 @@
 //	SidebarSelection #178bfb        #1994fc        measured: the selected sidebar row's pill, its list holding the keyboard
 //	SidebarSelectionUnemphasized       #000000 a0.043  #ffffff a0.063  measured: that pill while its list does not hold the keyboard, a coverage over the rail
 //	SidebarSelectionUnemphasizedLabel  #0072f7  #148fff  measured: the label, symbol and count on that grey pill
+//	TextInsertionPoint #178bfb      #1994fc        measured light: the insertion point after a typed value; dark is DERIVED
 //	SidebarCount     #6d6d6d        #a4a4a4        measured: the count at the trailing end of a sidebar row
 //	SidebarSymbol    #000000        #ffffff        measured: the symbol at the leading end of a sidebar row
 //	CardFill         #f7f7f7        #252525        measured: the System Settings grouped box, dark untinted
@@ -451,6 +453,22 @@ type PlatformColors struct {
 	// It follows the user's accent, as DefaultButtonFill does:
 	// [PlatformColors.WithAccent] keeps each appearance's own lightness.
 	AccentFill color.NRGBA `appkit:"-"`
+
+	// TextInsertionPoint is what a text field draws its insertion point
+	// in: #178bfb light, the one column that stands after the typed query
+	// in voicememos-multi-folder-search-2026-09-18.png, x 758, sixteen rows
+	// tall over the toolbar's search recess. The dark value #1994fc is
+	// DERIVED: the reference holds no dark capture of an insertion point,
+	// and #1994fc is SidebarSelection's dark value, the row whose light
+	// value equals this one in the same application.
+	//
+	// AppKit names this colour textInsertionPointColor. The reference holds
+	// the pixel and not AppKit's answer, so the field carries the pixel and
+	// the live reader does not ask AppKit for it. It is not ControlAccent's
+	// #007aff and not DefaultButtonFill's #157efb.
+	//
+	// It follows the user's accent: [PlatformColors.WithAccent] moves it.
+	TextInsertionPoint color.NRGBA `appkit:"-"`
 
 	// HoverOverlay and PressOverlay are what a control lays over its own
 	// fill while the pointer is on it and while it is held: black in
@@ -981,6 +999,7 @@ var (
 		DisabledControlFill:               color.NRGBA{R: 0xf2, G: 0xf2, B: 0xf2, A: 0xff},
 		DefaultButtonFill:                 color.NRGBA{R: 0x15, G: 0x7e, B: 0xfb, A: 0xff},
 		AccentFill:                        color.NRGBA{R: 0x15, G: 0x7b, B: 0xf5, A: 0xff},
+		TextInsertionPoint:                color.NRGBA{R: 0x17, G: 0x8b, B: 0xfb, A: 0xff},
 		HoverOverlay:                      color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x0d},
 		PressOverlay:                      color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x19},
 		FloatingShadow:                    DropShadow{Peak: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13}, Reach: 24},
@@ -1081,6 +1100,7 @@ var (
 		DisabledControlFill:               color.NRGBA{R: 0x29, G: 0x29, B: 0x29, A: 0xff},
 		DefaultButtonFill:                 color.NRGBA{R: 0x15, G: 0x7e, B: 0xfb, A: 0xff},
 		AccentFill:                        color.NRGBA{R: 0x1b, G: 0x81, B: 0xfb, A: 0xff},
+		TextInsertionPoint:                color.NRGBA{R: 0x19, G: 0x94, B: 0xfc, A: 0xff},
 		HoverOverlay:                      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x18},
 		PressOverlay:                      color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x19},
 		FloatingShadow:                    DropShadow{Peak: color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0x13}, Reach: 24},
@@ -1113,20 +1133,20 @@ var (
 	}
 )
 
-// WithAccent returns the set with the nine rows the platform derives from
+// WithAccent returns the set with the ten rows the platform derives from
 // the accent colour rebuilt for accent. Every other field is untouched:
 // UnemphasizedSelectedContentBackground, UnemphasizedSelectedTextBackground
 // and SidebarSelectionUnemphasized are grey, Link is a fixed blue, and the system colours are a fixed catalogue.
 // None of them moves when the user changes the accent.
 //
-// The nine rows and their rule:
+// The ten rows and their rule:
 //
 //   - ControlAccent is the accent itself, at the recorded row's alpha.
 //   - SelectedContentBackground, SelectedTextBackground, SelectedControl,
 //     KeyboardFocusIndicator, SidebarSelection,
-//     SidebarSelectionUnemphasizedLabel, DefaultButtonFill and AccentFill
-//     keep the accent's hue and saturation and take the recorded row's HSL
-//     lightness and alpha. In the catalogue all eight are the platform's blue, each
+//     SidebarSelectionUnemphasizedLabel, DefaultButtonFill, AccentFill and
+//     TextInsertionPoint keep the accent's hue and saturation and take the
+//     recorded row's HSL lightness and alpha. In the catalogue all nine are the platform's blue, each
 //     at a lightness of its own. For example, the text selection and the
 //     selected control are much lighter than the accent, and the focus ring
 //     is a shade darker at half coverage. The rebuilt row keeps that
@@ -1140,8 +1160,9 @@ var (
 // On macOS, theme/system's live reader asks AppKit for the five
 // NSColor-named rows directly and gets the platform's own answer. AppKit
 // has no name for SidebarSelection, SidebarSelectionUnemphasizedLabel,
-// DefaultButtonFill and AccentFill, so the live reader rebuilds those four by this rule
-// from the live ControlAccent. Where accent is the platform's own blue —
+// DefaultButtonFill and AccentFill, and TextInsertionPoint carries a
+// measured pixel, so the live reader rebuilds those five by this rule from
+// the live ControlAccent. Where accent is the platform's own blue —
 // the accent already in the recorded rows — the set is returned unchanged,
 // so a machine on the default accent gets the catalogue exactly.
 func (p PlatformColors) WithAccent(accent color.NRGBA) PlatformColors {
@@ -1158,6 +1179,7 @@ func (p PlatformColors) WithAccent(accent color.NRGBA) PlatformColors {
 	p.SidebarSelectionUnemphasizedLabel = atAccentHue(hue, sat, p.SidebarSelectionUnemphasizedLabel)
 	p.DefaultButtonFill = atAccentHue(hue, sat, p.DefaultButtonFill)
 	p.AccentFill = atAccentHue(hue, sat, p.AccentFill)
+	p.TextInsertionPoint = atAccentHue(hue, sat, p.TextInsertionPoint)
 	return p
 }
 

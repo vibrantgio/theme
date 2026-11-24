@@ -118,6 +118,7 @@ var platformNames = []struct {
 	{"disabled-control-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.DisabledControlFill }},
 	{"default-button-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.DefaultButtonFill }},
 	{"accent-fill", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.AccentFill }},
+	{"text-insertion-point", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.TextInsertionPoint }},
 	{"hover-overlay", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.HoverOverlay }},
 	{"press-overlay", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.PressOverlay }},
 	{"floating-shadow", func(p tokens.PlatformColors) stdcolor.NRGBA { return p.FloatingShadow.Peak }},
@@ -865,7 +866,10 @@ const componentClasses = `/* ---- Component classes ----
    216 of 255 over that recess's own fill, to the byte on every channel, where
    an opaque text colour would plateau at black outright. The var carries that
    coverage, so the browser composites it onto the field's own fill exactly as
-   the Gio side flattens it. */
+   the Gio side flattens it.
+
+   The insertion point carries --platform-text-insertion-point, the colour
+   the Gio side draws it in. */
 .input {
   box-sizing: border-box;
   display: block;
@@ -879,6 +883,7 @@ const componentClasses = `/* ---- Component classes ----
   background: var(--platform-text-background);
   background-clip: padding-box;
   color: var(--platform-label);
+  caret-color: var(--platform-text-insertion-point);
   font-family: var(--font-family);
   font-size: var(--font-system-font-size);
   line-height: var(--font-system-font-line-height);
