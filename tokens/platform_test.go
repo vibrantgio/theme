@@ -31,7 +31,7 @@ const cataloguePath = "testdata/nscolors.tsv"
 //	shasum -a 256 ../../organisation/reference/macos/nscolors.tsv
 const (
 	referencePath   = "../../organisation/reference/macos/nscolors.tsv"
-	referenceDigest = "3daebb509c1aabe84ae24c38e1222d21e28954a5c6d883cfd1132f4c2185e33a"
+	referenceDigest = "c69879387c4af02a0af1a503eb9e4258b67101d06e0022538a505ee51df6f87f"
 )
 
 // appKitRowsWithoutField are the AppKit rows the token set has no field
@@ -147,11 +147,12 @@ func measuredName(field string) string {
 	return strings.ToLower(field[:1]) + field[1:]
 }
 
-// noAppKitName reports whether a field carries the `appkit:"-"` tag — the
-// rule that says the platform gives this fill no NSColor name, so the live
-// reader must not ask for one and the catalogue pins it from its measured
-// materials instead.
-func noAppKitName(f reflect.StructField) bool {
+// notAskedOfAppKit reports whether a field carries the `appkit:"-"` tag —
+// the rule that says the live reader does not ask AppKit for this field, and
+// the catalogue pins it from its measured materials instead. The platform
+// gives the colour no NSColor name, or the name's answer is not the pixel
+// that the platform draws.
+func notAskedOfAppKit(f reflect.StructField) bool {
 	return f.Tag.Get("appkit") == "-"
 }
 
@@ -243,7 +244,7 @@ func TestPlatformColorsMatchCatalogue(t *testing.T) {
 
 	seen := make(map[string]bool, typ.NumField())
 	for i := 0; i < typ.NumField(); i++ {
-		if noAppKitName(typ.Field(i)) {
+		if notAskedOfAppKit(typ.Field(i)) {
 			continue
 		}
 		field := typ.Field(i).Name
@@ -374,8 +375,8 @@ func min3(a, b, c uint8) uint8 {
 	return a
 }
 
-// TestMeasuredMaterialsMatchTheCatalogue pins every fill the platform gives
-// no NSColor name against the catalogue's
+// TestMeasuredMaterialsMatchTheCatalogue pins every fill the live reader
+// does not ask AppKit for against the catalogue's
 // measured-materials section in both schemes, and holds the two sections
 // disjoint: a field tagged `appkit:"-"` has a measured row and no AppKit
 // one, and every measured row has a field.
@@ -387,7 +388,7 @@ func TestMeasuredMaterialsMatchTheCatalogue(t *testing.T) {
 
 	seen := make(map[string]bool, len(measured))
 	for i := 0; i < typ.NumField(); i++ {
-		if !noAppKitName(typ.Field(i)) {
+		if !notAskedOfAppKit(typ.Field(i)) {
 			continue
 		}
 		field := typ.Field(i).Name

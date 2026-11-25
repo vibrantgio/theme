@@ -30,15 +30,16 @@
 // the edge and the shadow of a help tag,
 // the several fills a toolbar band's controls take
 // and the dim a sheet lays over the window it
-// interrupts. It gives none of them an NSColor name except the insertion
-// point, whose value the reference holds as a pixel and not as AppKit's
-// answer. So those fills were read off the stored captures in the organization's macOS
-// reference — the alternating row off the array AppKit answers with
-// instead of a name, and confirmed against the capture. Each
+// interrupts. Those fills were read off the stored captures in the
+// organization's macOS reference — the alternating row off the array AppKit
+// answers with instead of a name, and confirmed against the capture. Each
 // carries the struct tag `appkit:"-"`, which is the whole of the rule the
-// live reader and the tests use: a field so tagged has no name to ask
-// AppKit for and is pinned against the catalogue's "measured materials"
-// section instead of its AppKit rows.
+// live reader and the tests use: the live reader does not ask AppKit for a
+// field so tagged, and the tests pin it against the catalogue's
+// "measured materials" section instead of its AppKit rows. The tag has two
+// causes. The platform gives the colour no NSColor name. Or the name's
+// answer is not the pixel that the platform draws: the insertion point, the
+// default button's fill and the sidebar's selection have this cause.
 //
 //	field            light          dark           provenance
 //	-----            -----          ----           ----------
@@ -462,10 +463,10 @@ type PlatformColors struct {
 	// and #1994fc is SidebarSelection's dark value, the row whose light
 	// value equals this one in the same application.
 	//
-	// AppKit names this colour textInsertionPointColor. The reference holds
-	// the pixel and not AppKit's answer, so the field carries the pixel and
-	// the live reader does not ask AppKit for it. It is not ControlAccent's
-	// #007aff and not DefaultButtonFill's #157efb.
+	// AppKit names this colour textInsertionPointColor and answers #007aff
+	// for it in both appearances, ControlAccent's value. The platform draws
+	// #178bfb in light. The field holds the pixel, so the live reader does
+	// not ask AppKit for it. It is not DefaultButtonFill's #157efb.
 	//
 	// It follows the user's accent: [PlatformColors.WithAccent] moves it.
 	TextInsertionPoint color.NRGBA `appkit:"-"`

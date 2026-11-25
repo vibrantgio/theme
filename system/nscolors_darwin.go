@@ -31,12 +31,13 @@ import (
 // maintain.
 //
 // The measured materials are not asked for, and no list here names them.
-// The chrome material, the card's fill, the two state overlays, the
-// floating shadow and the highlight's fill carry the struct tag
-// `appkit:"-"`, which says the platform gives that fill no NSColor name
-// at all: they were read off the stored captures, and asking AppKit for a
-// name it does not answer would leave them at the recorded value anyway.
-// Skipping them keeps the naming rule honest rather than relying on that.
+// Each carries the struct tag `appkit:"-"`, which says that the live reader
+// does not ask AppKit for that field. The tag has two causes. The platform
+// gives the colour no NSColor name, as for the chrome material and the
+// card's fill. Or the name's answer is not the pixel that the platform
+// draws, as for the insertion point, the default button's fill and the
+// sidebar's selection. Each such field holds the value read off the stored
+// captures, and the live reader keeps that value.
 //
 // Every value is non-premultiplied sRGB with the alpha AppKit reports, to
 // the byte: the recorded sets quantize the catalogue's two-decimal alpha,
